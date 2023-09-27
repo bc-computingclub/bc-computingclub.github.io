@@ -1,0 +1,31 @@
+.main{
+    width:100%;
+    display:flex;
+    gap:1rem;
+}
+.sidebar{
+    width:300px;
+    border:solid 1px gray;
+}
+.sidebar h1{
+    font-size:22px;
+    padding:0.5rem;
+}
+.challenge-list > div{
+    padding:0.5rem 1.5rem;
+    border:solid 1px gray;
+    display:flex;
+    justify-content:space-between;
+    cursor:pointer;
+    user-select:none;
+    background-color:whitesmoke;
+}
+.challenge-list > div:hover{
+    background-color:gainsboro;
+}
+.content{
+    width:100%;
+}
+.code-cont{
+    width:600px;
+}
