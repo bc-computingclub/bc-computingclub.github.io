@@ -70,7 +70,7 @@ var sel;
 function registerProject(name, date, /**@type {string[]}*/ files, htmlOverride) {
     var div = document.createElement("div");
     var i = list.children.length + 1;
-    div.innerHTML = "\n        <div>".concat(i, "</div>\n        <div>").concat(date, "</div>\n        <div>").concat(name, "</div>\n    ");
+    div.innerHTML = "\n        <div>".concat(name, "</div>\n        <div style=\"font-size:12px\">").concat(date, "</div>\n        <div>").concat(i, "</div>\n    ");
     list.appendChild(div);
     div.onclick = function () {
         return __awaiter(this, void 0, void 0, function () {
@@ -80,7 +80,7 @@ function registerProject(name, date, /**@type {string[]}*/ files, htmlOverride) 
                 sel.classList.remove("sel");
                 sel = null;
                 var url = new URL(location.href);
-                url.searchParams["delete"]("index");
+                url.searchParams.delete("index");
                 history.replaceState("", "", url);
                 document.title = "View JS Challenge Code";
             }
@@ -164,6 +164,7 @@ b_fullscreen.onclick = function () {
 };
 // registry
 registerProject("Timer", "9/27/23", ["main.js", "index.html"], "<!-- A Basic Example of a Timer -->\n\n<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n    <meta charset=\"UTF-8\">\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n    <title>1 - Timer - Lv 1</title>\n</head>\n<body>\n    <p id=\"time-left\">60</p>\n    <p>Seconds Remaining</p>\n\n    <script src=\"main.js\"></script>\n</body>\n</html>");
+registerProject("Ex: Timer Widget", "10/4/23", ["index.html", "style.css"], "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n    <meta charset=\"UTF-8\">\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n    <title>Document</title>\n\n    <!-- Need to \"link\" our style.css file -->\n    <link rel=\"stylesheet\" href=\"style.css\">\n</head>\n<body>\n    <!-- Create a container for our timer -->\n    <div class=\"timer\">\n\n        <!-- This shows the actual time -->\n        <div class=\"time\">1 : 0 0</div>\n\n        <!-- Container for the main buttons -->\n        <div class=\"mainButtons\">\n            <button>Reset</button>\n            <button>Start</button>\n        </div>\n        <!-- This is a \"horizontal rule\" or a vertical line to separate the two sections -->\n        <hr>\n\n        <!-- Container to hold minute options -->\n        <div>\n            <span class=\"label\">Minutes</span>\n            <button>v</button>\n            <button>^</button>\n        </div>\n\n        <!-- Container to hold second options -->\n        <div>\n            <span class=\"label\">Seconds</span>\n            <button>v</button>\n            <button>^</button>\n        </div>\n        \n    </div>\n</body>\n</html>");
 // registerProject("Timer","9/27/23",["main.js","index.html"]);
 // load
 var url = new URL(location.href);

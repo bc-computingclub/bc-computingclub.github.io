@@ -39,9 +39,9 @@ function registerProject(name,date,/**@type {string[]}*/files,htmlOverride){
     let div = document.createElement("div");
     let i = list.children.length+1;
     div.innerHTML = `
-        <div>${i}</div>
-        <div>${date}</div>
         <div>${name}</div>
+        <div style="font-size:12px">${date}</div>
+        <div>${i}</div>
     `;
     list.appendChild(div);
 
@@ -130,6 +130,50 @@ registerProject("Timer","9/27/23",["main.js","index.html"],`<!-- A Basic Example
     <script src="main.js"></script>
 </body>
 </html>`);
+
+registerProject("Ex: Timer Widget","10/4/23",["index.html","style.css"],`<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+
+    <!-- Need to "link" our style.css file -->
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- Create a container for our timer -->
+    <div class="timer">
+
+        <!-- This shows the actual time -->
+        <div class="time">1 : 0 0</div>
+
+        <!-- Container for the main buttons -->
+        <div class="mainButtons">
+            <button>Reset</button>
+            <button>Start</button>
+        </div>
+        <!-- This is a "horizontal rule" or a vertical line to separate the two sections -->
+        <hr>
+
+        <!-- Container to hold minute options -->
+        <div>
+            <span class="label">Minutes</span>
+            <button>v</button>
+            <button>^</button>
+        </div>
+
+        <!-- Container to hold second options -->
+        <div>
+            <span class="label">Seconds</span>
+            <button>v</button>
+            <button>^</button>
+        </div>
+        
+    </div>
+</body>
+</html>`);
+
 // registerProject("Timer","9/27/23",["main.js","index.html"]);
 
 // load
