@@ -1,5 +1,9 @@
+:root{
+    --border:solid 1px #ccc;
+    /* --bg:rgb(246, 242, 240); */
+}
 body{
-    background-color:whitesmoke;
+    background-color:var(--bg,whitesmoke);
 }
 .main{
     width:100%;
@@ -96,4 +100,70 @@ button:active{
 pre{
     background:white !important;
     border-radius:5px;
+}
+
+/*  */
+
+.dropdown{
+    font-family:'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    position:fixed;
+    left:0px;
+    top:0px;
+    min-width:100px;
+    padding:5px;
+    /* background-color:rgb(255, 246, 246); */
+    background-color:whitesmoke;
+    border-radius:8px;
+    z-index:999;
+    user-select:none;
+    -webkit-user-select:none;
+    display:flex;
+    flex-direction:column;
+    gap:5px;
+    box-shadow:0px 3px 10px 0px rgba(0,0,0,0.1);
+    font-size:14px;
+    border:var(--border);
+}
+.dropdown-item{
+    padding:0.5rem 1.5rem;
+    /* background-color:rgb(249, 233, 233); */
+    background-color:white;
+    border-radius:5px;
+    cursor:pointer;
+    /* border:var(--border); */
+}
+.dropdown-item:hover{
+    filter:brightness(0.95);
+}
+
+.back{
+    position:fixed;
+    left:0px;
+    top:0px;
+    width:100vw;
+    height:100vh;
+    pointer-events:none;
+    z-index:1;
+}
+.overlay{
+    position:absolute;
+    top:0px;
+    left:0px;
+    z-index:2;
+}
+
+.dd-btn{
+    font-family:Arial;
+    padding:0.5rem 1.5rem;
+    border:solid 1px #ccc;
+    background-color:white;
+    border-radius:5px;
+    font-size:13.3px;
+    font-weight:normal;
+}
+.dd-btn:hover{
+    filter:brightness(0.95);
+}
+.dd-btn:active{
+    filter:brightness(0.9);
 }

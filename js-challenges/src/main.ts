@@ -1,7 +1,13 @@
 let list = document.querySelector(".challenge-list");
-/**@type {HTMLIFrameElement} */
-let frame = document.getElementById("frame");
+let frame = document.getElementById("frame") as HTMLIFrameElement;
 let codeCont = document.querySelector(".code-cont");
+let overlay = document.querySelector(".overlay") as HTMLElement;
+let back = document.querySelector(".back") as HTMLElement;
+
+back.onmousedown = function(){
+    back.style.pointerEvents = "none";
+    overlay.textContent = "";
+};
 
 // From Jaredcheeda, https://stackoverflow.com/questions/7381974/which-characters-need-to-be-escaped-in-html
 function escapeMarkup (dangerousInput) {
@@ -27,7 +33,7 @@ function escapeMarkup (dangerousInput) {
     return safeString;
 }
 
-let sel;
+let sel:HTMLElement;
 
 function registerProject(name,date,/**@type {string[]}*/files,htmlOverride){
     let div = document.createElement("div");
@@ -59,7 +65,7 @@ function registerProject(name,date,/**@type {string[]}*/files,htmlOverride){
         div.classList.add("sel");
         sel = div;
         let url = new URL(location.href);
-        url.searchParams.set("index",i-1);
+        url.searchParams.set("index",(i-1).toString());
         history.replaceState("","",url);
         document.title = "Challenge "+i+" - "+name;
 
@@ -84,7 +90,7 @@ function registerProject(name,date,/**@type {string[]}*/files,htmlOverride){
             `;
             codeCont.appendChild(div2);
 
-            let copyCode = div2.querySelector(".copy-code");
+            let copyCode = div2.querySelector(".copy-code") as HTMLElement;
             if(copyCode) copyCode.onclick = function(){
                 navigator.clipboard.writeText(ogText);
                 copyCode.textContent = "Copied!";
@@ -93,7 +99,7 @@ function registerProject(name,date,/**@type {string[]}*/files,htmlOverride){
                 },1000);
             };
     
-            Prism.highlightElement(div2.children[1].children[0]);
+            Prism.highlightElement(div2.children[1].children[0],null,null);
         }
 
         setTimeout(()=>{
@@ -133,3 +139,11 @@ let searchIndex = url.searchParams.get("index");
 if(searchIndex != null){
     list.children[searchIndex]?.click();
 }
+
+let dd_view = document.querySelector(".dd-view");
+registerDropdown(dd_view,[
+    "Challenges",
+    "Examples / Tutorials"
+],(i)=>{
+    
+});
