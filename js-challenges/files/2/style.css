@@ -1,0 +1,49 @@
+/*
+    ***Just typing "div" will select all divs on the page
+    
+    This will make all divs on the page have a solid black border
+    and will have 10px margin (distance from other elements)
+    and will have 10px padding (space between border and text/elements inside)
+*/
+div{
+    border:solid 1px black;
+    margin:10px;
+    padding:10px;
+}
+
+/* This is our div container that shows the current time "1 : 0 0"
+    make the text 30px which is fairly large (default size is 16px)
+    make the background color white
+    make it italic
+    center the text
+    change the font to 'sans-serif'
+*/
+.time{
+    font-size:30px;
+    background-color:white;
+    font-style:italic;
+    text-align:center;
+
+    font-family:sans-serif;
+}
+
+/* This is our main container for the whole timer widget
+    set the background color to lightgray
+    set the width to "fit-content" so that it shrinks to fit the container.
+
+    *** try switching the width property between "fit-content" or "auto"
+*/
+.timer{
+    background-color:lightgray;
+    width:fit-content;
+}
+
+/* This is the container for our main buttons (Reset, Start) */
+.mainButtons{
+    text-align:center;
+}
+
+/* These are the labels on the bottom half of the timer ("Minutes", "Seconds") */
+.label{
+    font-size:13px;
+}

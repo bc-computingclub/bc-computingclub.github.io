@@ -1,0 +1,14 @@
+{
+    "compilerOptions": {
+        "module": "commonjs",
+        "outDir": "out",
+        "rootDir": "src",
+        "lib": [
+            "DOM",
+            "ES2022"
+        ]
+    },
+    "exclude": [
+        "node_modules"
+    ]
+}
