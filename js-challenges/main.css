@@ -1,6 +1,7 @@
 :root{
     --border:solid 1px #ccc;
     /* --bg:rgb(246, 242, 240); */
+    filter:invert(1);
 }
 body{
     background-color:var(--bg,whitesmoke);

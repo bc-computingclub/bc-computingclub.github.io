@@ -142,7 +142,7 @@ if(searchIndex != null){
 
 let dd_view = document.querySelector(".dd-view");
 registerDropdown(dd_view,[
-    "Challenges",
+    "JS Challenges",
     "Examples / Tutorials"
 ],(i)=>{
     

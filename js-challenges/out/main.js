@@ -80,7 +80,7 @@ function registerProject(name, date, /**@type {string[]}*/ files, htmlOverride) 
                 sel.classList.remove("sel");
                 sel = null;
                 var url = new URL(location.href);
-                url.searchParams.delete("index");
+                url.searchParams["delete"]("index");
                 history.replaceState("", "", url);
                 document.title = "View JS Challenge Code";
             }
@@ -173,7 +173,7 @@ if (searchIndex != null) {
 }
 var dd_view = document.querySelector(".dd-view");
 registerDropdown(dd_view, [
-    "Challenges",
+    "JS Challenges",
     "Examples / Tutorials"
 ], function (i) {
 });

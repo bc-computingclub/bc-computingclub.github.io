@@ -11,6 +11,7 @@ function registerDropdown(btn, list, onclick) {
                 onclick(i);
                 back.style.pointerEvents = "none";
                 overlay.textContent = "";
+                btn.textContent = list[i];
             };
             div.appendChild(label);
         };
