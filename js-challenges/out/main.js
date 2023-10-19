@@ -70,7 +70,7 @@ var sel;
 function registerProject(name, date, /**@type {string[]}*/ files, htmlOverride) {
     var div = document.createElement("div");
     var i = list.children.length + 1;
-    div.innerHTML = "\n        <div>".concat(name, "</div>\n        <div style=\"font-size:12px\">").concat(date, "</div>\n        <div>").concat(i, "</div>\n    ");
+    div.innerHTML = "\n        <div>".concat(name, "</div>\n        <div class=\"challenge-date\">").concat(date, "</div>\n        <div>").concat(i, "</div>\n    ");
     list.appendChild(div);
     div.onclick = function () {
         return __awaiter(this, void 0, void 0, function () {

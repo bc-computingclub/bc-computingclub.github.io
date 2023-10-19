@@ -40,7 +40,7 @@ function registerProject(name,date,/**@type {string[]}*/files,htmlOverride){
     let i = list.children.length+1;
     div.innerHTML = `
         <div>${name}</div>
-        <div style="font-size:12px">${date}</div>
+        <div class="challenge-date">${date}</div>
         <div>${i}</div>
     `;
     list.appendChild(div);

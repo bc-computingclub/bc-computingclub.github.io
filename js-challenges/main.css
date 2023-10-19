@@ -5,6 +5,8 @@
 }
 body{
     background-color:var(--bg,whitesmoke);
+    height: 100dvh;
+    padding-inline: 2rem;
 }
 .main{
     width:100%;
@@ -18,11 +20,13 @@ h3{
     align-items:center;
     height:40px;
 }
-.main > div{
-    /* flex-shrink:0; */
-    /* display:flex; */
-    /* flex-direction:column; */
-}
+
+/* .main > div{
+    flex-shrink:0;
+    display:flex;
+    flex-direction:column;
+} */
+
 .sidebar{
     width:300px;
     /* border:solid 1px gray; */
@@ -32,8 +36,9 @@ h3{
     padding:0.5rem;
 }
 .challenge-list > div{
-    padding:0.5rem 1.5rem;
-    display:flex;
+    padding:1rem 1.5rem;
+    display:grid;
+    grid-template-columns: 60% auto auto;
     justify-content:space-between;
     align-items:center;
     cursor:pointer;
@@ -53,6 +58,9 @@ h3{
     background-color:dodgerblue;
     border-color:rgb(27, 122, 218);
     color:white;
+}
+.challenge-date {
+    font-size: inherit;
 }
 .content{
     width:calc(50% - 170px);
