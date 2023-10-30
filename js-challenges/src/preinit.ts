@@ -16,11 +16,11 @@ header.innerHTML = `
     <!--<div>JS Challenges _</div>-->
 </div>
 <div class="flx nav-list">
-    <a href="/index.html" class="nav-link nav-challenges ${_pathname.endsWith("index.html") || !_pathname.includes(".html") ? "cur" : ""}">
+    <a href="index.html" class="nav-link nav-challenges ${_pathname.endsWith("index.html") || !_pathname.includes(".html") ? "cur" : ""}">
         <div class="material-symbols-outlined">exercise</div>
         <div>Challenges</div>
     </a>
-    <a href="/tutorials.html" class="nav-link nav-tutorials ${_pathname.endsWith("tutorials.html") ? "cur" : ""}">
+    <a href="tutorials.html" class="nav-link nav-tutorials ${_pathname.endsWith("tutorials.html") ? "cur" : ""}">
         <div class="material-symbols-outlined">school</div>
         <div>Tutorials</div>
     </a>
