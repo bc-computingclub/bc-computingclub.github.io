@@ -1,4 +1,5 @@
 function registerDropdown(btn:Element,list:string[],onclick:(i:number)=>void){
+    if(!btn) return;
     (btn as HTMLElement).onmousedown = function(){
         let rect = btn.getBoundingClientRect();
         let div = document.createElement("div");

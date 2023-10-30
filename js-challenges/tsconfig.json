@@ -6,9 +6,11 @@
         "lib": [
             "DOM",
             "ES2022"
-        ]
+        ],
+        "sourceMap": true
     },
     "exclude": [
-        "node_modules"
+        "node_modules",
+        "_backups"
     ]
 }

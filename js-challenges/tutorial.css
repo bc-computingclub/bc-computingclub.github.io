@@ -1,0 +1,12 @@
+.main{
+    /* animation:BodyInit 0.2s cubic-bezier(0.075, 0.82, 0.165, 1); */
+}
+
+@keyframes BodyInit {
+    0%{
+        translate:-100vw 0px;
+    }
+    100%{
+        translate:0px 0px;
+    }
+}

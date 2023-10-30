@@ -1,4 +1,6 @@
 function registerDropdown(btn, list, onclick) {
+    if (!btn)
+        return;
     btn.onmousedown = function () {
         var rect = btn.getBoundingClientRect();
         var div = document.createElement("div");
@@ -24,3 +26,4 @@ function registerDropdown(btn, list, onclick) {
         back.style.pointerEvents = "all";
     };
 }
+//# sourceMappingURL=util.js.map

@@ -1,8 +1,6 @@
 let list = document.querySelector(".challenge-list");
 let frame = document.getElementById("frame") as HTMLIFrameElement;
 let codeCont = document.querySelector(".code-cont");
-let overlay = document.querySelector(".overlay") as HTMLElement;
-let back = document.querySelector(".back") as HTMLElement;
 
 back.onmousedown = function(){
     back.style.pointerEvents = "none";
@@ -34,42 +32,113 @@ function escapeMarkup (dangerousInput) {
 }
 
 let sel:HTMLElement;
+let curChallengeName = "JS Challenges </>"; //old: View JS Challenge Code
 
-function registerProject(name,date,/**@type {string[]}*/files,htmlOverride){
+let pageLoadFileIndex = -1;
+
+function replaceIFrameSrc(f:HTMLElement,src:string){
+    let newFrame = document.createElement("iframe");
+    newFrame.className = f.className;
+    newFrame.id = f.id;
+    newFrame.setAttribute("frameborder","0");
+    frame = newFrame;
+    newFrame.src = src;
+    f.replaceWith(newFrame);
+    // frame.parentElement.replaceChild(newFrame,frame);
+}
+
+let defaultTitle = curChallengeName;
+document.title = defaultTitle;
+
+let folderReg = new Map<string,HTMLElement>();
+let fileReg = new Map<number,HTMLElement>();
+
+function registerFolder(name:string,date:string){
     let div = document.createElement("div");
-    let i = list.children.length+1;
     div.innerHTML = `
-        <div>${name}</div>
-        <div style="font-size:12px">${date}</div>
-        <div>${i}</div>
+        <div class="list-div no-hover">
+            <div class="icon-btn" style="width:fit-content">
+                <div class="icon-open material-symbols-outlined">chevron_right</div>
+                <div>${name}</div>
+            </div>
+            <div class="challenge-date">${date}</div>
+        </div>
+        <div class="none"></div>
     `;
+    div.classList.add("folder-cont");
     list.appendChild(div);
 
-    div.onclick = async function(){
-        function close(){
-            codeCont.textContent = "";
-            frame.src = "";
-            sel.classList.remove("sel");
-            sel = null;
-            let url = new URL(location.href);
-            url.searchParams.delete("index");
-            history.replaceState("","",url);
-            document.title = "View JS Challenge Code";
+    let button = div.children[0] as HTMLElement;
+    let details = div.children[1] as HTMLElement;
+    let icon = div.querySelector(".icon-open") as HTMLElement;
+
+    folderReg.set(name,details);
+
+    let open = false;
+    button.onclick = function(){
+        open = !open;
+        if(open){
+            div.classList.add("open");
+            details.classList.remove("none");
+            icon.style.rotate = "90deg";
         }
+        else{
+            div.classList.remove("open");
+            details.classList.add("none");
+            icon.style.rotate = "0deg";
+        }
+    };
+    button.click();
+}
+
+function registerProject(name:string,date:string,files:string[],htmlOverride:string,folder?:string){
+    let div = document.createElement("div");
+    // let i = list.children.length+1;
+    let i = fileReg.size+1;
+    div.innerHTML = `
+        <div>${name}</div>
+        <div class="challenge-date">${date}</div>
+        <div class="material-symbols-outlined">javascript</div>
+        <!--<div>${i}</div>-->
+    `;
+    div.classList.add("list-div");
+    if(folder){
+        let folderDiv = folderReg.get(folder);
+        if(!folderDiv){
+            console.warn("An error occurred: folder '"+folder+"' was not found in the folder registry.");
+        }
+        else folderDiv.appendChild(div);
+    }
+    else list.appendChild(div);
+
+    fileReg.set(i-1,div);
+
+    div.onclick = async function(e,isBare=false){
+        for(let i = 0; i < list.children.length; i++){
+            let c = list.children[i];
+            c.classList.remove("sel");
+        }
+
         if(sel == div){
-            close();
+            document.title = defaultTitle;
+            sel = null;
+            let url1 = new URL(location.href);
+            url1.searchParams.delete("index");
+            location.search = "?"+url1.searchParams.toString();
             return;
         }
-        if(sel) close();
 
+        curChallengeName = "Challenge "+i+" - "+name;
+        document.title = curChallengeName;
         div.classList.add("sel");
         sel = div;
-        let url = new URL(location.href);
-        url.searchParams.set("index",(i-1).toString());
-        history.replaceState("","",url);
-        document.title = "Challenge "+i+" - "+name;
+        let url1 = new URL(location.href);
+        url1.searchParams.set("index",(i-1).toString());
+        if(!isBare){
+            location.search = "?"+url1.searchParams.toString();
+        }
 
-        for(const file of files){
+        if(isBare) for(const file of files){
             let div2 = document.createElement("div");
             let text = await (await fetch("files/"+i+"/"+file)).text();
             let ogText = text;
@@ -103,9 +172,11 @@ function registerProject(name,date,/**@type {string[]}*/files,htmlOverride){
         }
 
         setTimeout(()=>{
-            frame.src = "files/"+i+"/index.html";
+            replaceIFrameSrc(frame,"files/"+i+"/index.html");
         },0);
     };
+
+    if(pageLoadFileIndex == i-1) div.click();
 }
 let b_fullscreen = document.getElementById("fullscreen");
 b_fullscreen.onclick = function(){
@@ -113,6 +184,8 @@ b_fullscreen.onclick = function(){
 };
 
 // registry
+
+registerFolder("Timer","9/27/23");
 
 registerProject("Timer","9/27/23",["main.js","index.html"],`<!-- A Basic Example of a Timer -->
 
@@ -129,7 +202,7 @@ registerProject("Timer","9/27/23",["main.js","index.html"],`<!-- A Basic Example
 
     <script src="main.js"></script>
 </body>
-</html>`);
+</html>`,"Timer");
 
 registerProject("Ex: Timer Widget","10/4/23",["index.html","style.css"],`<!DOCTYPE html>
 <html lang="en">
@@ -172,17 +245,9 @@ registerProject("Ex: Timer Widget","10/4/23",["index.html","style.css"],`<!DOCTY
         
     </div>
 </body>
-</html>`);
+</html>`,"Timer");
 
 // registerProject("Timer","9/27/23",["main.js","index.html"]);
-
-// load
-
-let url = new URL(location.href);
-let searchIndex = url.searchParams.get("index");
-if(searchIndex != null){
-    list.children[searchIndex]?.click();
-}
 
 let dd_view = document.querySelector(".dd-view");
 registerDropdown(dd_view,[
@@ -191,3 +256,412 @@ registerDropdown(dd_view,[
 ],(i)=>{
     
 });
+
+// Header
+let nav_list = document.querySelector(".nav-list");
+let nav_challenges = document.querySelector(".nav-challenges") as HTMLElement;
+let nav_tutorials = document.querySelector(".nav-tutorials") as HTMLElement;
+let mainCont = document.querySelector(".main-cont");
+
+let main_js = document.querySelector(".main-js");
+let main_tut = document.querySelector(".main-tut");
+
+function clearNavMains(){
+    for(let i = 0; i < nav_list.children.length; i++){
+        let e = nav_list.children[i];
+        
+    }
+}
+// nav_tutorials.onclick = function(){
+    
+    // main_js.classList.add("hide");
+    // main_tut.classList.remove("hide");
+// };
+let headerList = [
+    {
+        name:"Challenges",
+        id:"challenges",
+        className:"js",
+        // off:"0px 100vh"
+        off:"-100vh 0px",
+        prevURL:null,
+        onLoad(){
+            document.title = curChallengeName;
+            sel = null;
+            
+            if(this.prevURL){
+                // location.href = this.prevURL;
+                let url = new URL(this.prevURL);
+                let url2 = new URL(location.href);
+                let search = url.searchParams.forEach((v,k)=>{
+                    url2.searchParams.set(k,v);
+                });
+                history.replaceState("","",url2.href);
+                this.prevURL = null;
+            }
+            // let url = new URL(location.href);
+            // let searchIndex = url.searchParams.get("index");
+            // if(searchIndex != null){
+            //     list.children[searchIndex]?.click();
+            // }
+            this.prevURL = location.href;
+        },
+        onLeave(){
+            // this.prevURL = location.href;
+        },
+        onStart(){
+            replaceIFrameSrc(frame,"");
+        }
+    },
+    {
+        name:"Tutorials",
+        id:"tutorials",
+        className:"tut",
+        // off:"0px -100vh"
+        off:"100vh 0px",
+        prevURL:null,
+        onLoad(){
+            document.title = "JS Tutorials";
+            let url = new URL(location.href);
+            url.searchParams.delete("index");
+            testStartOnLoad();
+
+            this.prevURL = location.href;
+        },
+        onLeave(){
+            
+        }
+    }
+];
+
+let curItem:any;
+function genHeaderList(){
+    nav_list.textContent = "";
+    for(let i = 0; i < mainCont.children.length; i++){
+        (mainCont.children[i] as HTMLElement).style.display = "initial";
+    }
+
+    for(const item of headerList){
+        let a = document.createElement("a");
+        a.textContent = item.name;
+        let m = document.querySelector(".main-"+item.className);
+        (m as HTMLElement).style.setProperty("--off",item.off);
+
+        a.onclick = function(e,isBare=false){
+            if(!isBare){
+                // let url = new URL(location.href);
+                // url.searchParams.set("p",item.id);
+                // history.pushState("","",url);
+            }
+
+            for(let i = 0; i < mainCont.children.length; i++){
+                let e = mainCont.children[i] as HTMLElement;
+                // e.style.display = "initial";
+                e.classList.add("hide");
+            }
+            m.classList.remove("hide");
+            (m as HTMLElement).style.display = "flex";
+
+            for(let i = 0; i < nav_list.children.length; i++){
+                let e = nav_list.children[i];
+                e.classList.remove("cur");
+            }
+            a.classList.add("cur");
+
+            // if(curItem) if(curItem.onLeave) curItem.onLeave();
+            curItem = item;
+            // item.onLoad();
+        };
+
+        nav_list.appendChild(a);
+
+        if(item.onStart) item.onStart();
+    }
+
+    let url = new URL(location.href);
+    let curPage = url.searchParams.get("p") || "challenges";
+    let pageInd = headerList.findIndex(v=>v.id == curPage);
+    if(pageInd != -1) (nav_list.children[pageInd] as HTMLElement).click();
+}
+
+async function createCodeFile(text:string,ext:string,title:string){
+    let codeCont2 = main_tut.querySelector(".code-cont");
+    codeCont2.textContent = "";
+    
+    let div2 = document.createElement("div");
+    let ogText = text;
+    if(ext == "html"){
+        text = escapeMarkup(text);
+    }
+    div2.innerHTML = `
+        <div class="file-title">
+            <div>${title}</div>
+            <button class="copy-code">Copy Code</button>
+        </div>
+        <pre><code class="language-${ext}">${text}</code></pre>
+    `;
+    codeCont2.appendChild(div2);
+
+    let copyCode = div2.querySelector(".copy-code") as HTMLElement;
+    if(copyCode) copyCode.onclick = function(){
+        navigator.clipboard.writeText(ogText);
+        copyCode.textContent = "Copied!";
+        setTimeout(()=>{
+            copyCode.textContent = "Copy Code";
+        },1000);
+    };
+
+    Prism.highlightElement(div2.children[1].children[0],null,null);
+
+    return new Project(div2.children[1].children[0] as HTMLElement);
+}
+
+enum MovementType{
+    abs,
+    rel
+}
+
+function wait(delay:number){
+    return new Promise<void>(resolve=>{
+        setTimeout(()=>{
+            resolve();
+        },delay);
+    });
+}
+
+let realTimeColorUpdate = true;
+let currentFile:Project;
+let animateText = true;
+
+class Action{
+    delay = 40;
+    setDelay(delay:number){
+        this.delay = delay;
+        return this;
+    }
+    execute(file:Project){}
+}
+class ActionMove extends Action{
+    constructor(line:number,col:number){
+        super();
+        this.line = line;
+        this.col = col;
+    }
+    line:number;
+    col:number;
+}
+class ActionMoveRel extends Action{
+    constructor(ev:string){
+        super();
+        this.ev = ev;
+    }
+    ev:string;
+    execute(file: Project): void {
+        for(let i = 0; i < this.ev.length; i++){
+            let c = this.ev[i];
+            if(c == "r") file.moveRight();
+            else if(c == "l") file.moveLeft();
+            else if(c == "u") file.moveUp();
+            else if(c == "d") file.moveDown();
+            else if(c == "h") file.moveHome();
+            else file.addText(c);
+        }
+    }
+}
+class ActionText extends Action{
+    constructor(text:string){
+        super();
+        this.text = text;
+    }
+    text:string;
+    execute(file:Project){
+        file.addText(this.text);
+    }
+}
+class Project{
+    constructor(ref:HTMLElement){
+        this.ref = ref;
+    }
+    // line = 0;
+    // col = 0;
+    ind = 0;
+    ref:HTMLElement;
+    fullText:string = "";
+
+    moveRight(){
+        this.ind++;
+    }
+    moveLeft(){
+        this.ind--;
+    }
+    moveUp(){
+        let end = -1;
+        for(let i = this.ind-1; i >= 0; i--){
+            let c = this.fullText[i];
+            if(c == "\n" || i <= 0){
+                end = i;
+                break;
+            }
+        }
+        if(end == -1){
+            this.ind = this.fullText.length-1;
+            console.log("...reached end...");
+            return;
+        }
+        let start = this.ind;
+        this.ind -= this.ind-end;
+        console.log("MOVE UP: ",start,end);
+    }
+    moveDown(){
+        let end = -1;
+        for(let i = this.ind+1; i < this.fullText.length; i++){
+            let c = this.fullText[i];
+            if(c == "\n"){
+                end = i;
+                break;
+            }
+        }
+        if(end == -1){
+            this.ind = this.fullText.length;
+            console.log("...reached end...");
+            return;
+        }
+        let start = this.ind;
+        this.ind += end-this.ind;
+        console.log("START, END:",start,end);
+    }
+    moveHome(){
+        let end = -1;
+        for(let i = this.ind-1; i >= -1; i--){
+            let c = this.fullText[i];
+            if(c == "\n" || i <= 0){
+                end = i;
+                break;
+            }
+        }
+        if(end == -1){
+            this.ind = this.fullText.length;
+            console.log("...reached end...");
+            return;
+        }
+        this.ind -= this.ind-end;
+        if(end != 0) this.ind++;
+    }
+
+    async addText(text:string){
+        if(!animateText){
+            this.fullText = this.fullText.substring(0,this.ind)+text+this.fullText.substring(this.ind);
+            this.ref.textContent = this.fullText;
+
+            this.ind += text.length;
+
+            Prism.highlightElement(this.ref,null,null);
+        }
+        else{
+            let left = this.fullText.substring(0,this.ind);
+            let right = this.fullText.substring(this.ind);
+            for(let i = 0; i < text.length; i++){
+                this.fullText = left+text.substring(0,i+1)+right;
+                this.ref.textContent = this.fullText;
+                Prism.highlightElement(this.ref,null,null);
+                await wait(5);
+            }
+
+            this.ind += text.length;
+        }
+    }
+}
+
+async function testStartOnLoad(){
+    currentFile = await createCodeFile("","js","TestFile.js");
+    
+    executeActions(currentFile,[
+        // new ActionText("// Line 1\n"),
+        // new ActionText("// Line 3\n"),
+        // new ActionText("// Line 4\n"),
+        // new ActionMoveRel(""),
+        // new ActionMoveRel("uu\n"),
+        // new ActionText("// Line 2")
+
+        new ActionText("// this is the start of the file\n"),
+        new ActionText(`
+function start(){
+
+}`
+        ),
+        new ActionMoveRel("u"),
+        new ActionText('\tconsole.log("hello");')
+    ]);
+}
+
+async function executeActions(file:Project,actions:Action[]){
+    if(!file){
+        alert("No file was specified");
+        return;
+    }
+    await wait(100);
+    for(let i = 0; i < actions.length; i++){
+        let action = actions[i];
+        action.execute(file);
+
+        await wait(300);
+    }
+}
+async function writeToCodeFile(move:MovementType){
+    let file = await createCodeFile("","js","TestFile.js");
+    let text = 
+`function start(){
+    console.log("hello");
+}`;
+    for(let i = 0; i < text.length; i++){
+        let c = text[i];
+        file.ref.textContent += c;
+        if(realTimeColorUpdate) Prism.highlightElement(file,null,null);
+        
+        await wait(40); //40
+    }
+    // testFile.textContent = ;
+    
+    if(!realTimeColorUpdate) Prism.highlightElement(file,null,null);
+}
+
+// genHeaderList();
+
+function updateState(isBare=false){
+    let url = new URL(location.href);
+    pageLoadFileIndex = parseInt(url.searchParams.get("index"));
+    
+    for(let i = 0; i < list.children.length; i++){
+        let c = list.children[i];
+        c.classList.remove("sel");
+    }
+    // if(pageLoadFileIndex != null && pageLoadFileIndex >= 0){
+    //     // @ts-ignore
+    //     (list.children[pageLoadFileIndex] as HTMLElement).onclick(null,isBare);
+    // }
+
+    let fileDiv = fileReg.get(pageLoadFileIndex);
+    if(!fileDiv){
+        console.warn("An error occurred: File with the index '"+pageLoadFileIndex+"' was not found in the file registry.");
+    }
+    else{
+        // @ts-ignore
+        fileDiv.onclick(null,isBare);
+        if(fileDiv.parentElement.parentElement.classList.contains("folder-cont")){
+            if(!fileDiv.parentElement.parentElement.classList.contains("open")) (fileDiv.parentElement.parentElement.children[0] as HTMLElement).click();
+        }
+    }
+}
+updateState(true);
+
+window.addEventListener("popstate",e=>{
+    updateState(true);
+});
+
+setTimeout(()=>{
+    let mainCont = document.querySelector(".main");
+    for(let i = 0; i < mainCont.children.length; i++){
+        let c = mainCont.children[i] as HTMLElement;
+        c.style.opacity = "1";
+    }
+},250);
