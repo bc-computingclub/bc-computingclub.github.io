@@ -2,18 +2,19 @@
     --border:solid 1px #ccc;
     /* --bg:rgb(246, 242, 240); */
     /* filter:invert(1); */
+    --bg:whitesmoke;
 }
 body{
     background-color:var(--bg,whitesmoke);
-    height: 100dvh;
+    height: 100vh;
     padding-inline: 2rem;
+    font-family:'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    overflow-x:hidden;
 }
 .main{
     width:100%;
     display:flex;
     gap:1rem;
-
-    font-family:'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 h3{
     display:flex;
@@ -73,7 +74,7 @@ h3{
     border-radius:5px;
     width:100%;
     /* height:100%; */
-    min-height:calc(100vh - 100px);
+    min-height:calc(100vh - 150px);
     background-color:white;
 }
 
@@ -176,4 +177,72 @@ pre{
 }
 .dd-btn:active{
     filter:brightness(0.9);
+}
+
+header{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+
+    background-color:white;
+    height:3rem;
+    padding:0px 2rem;
+    border-radius:0.5rem;
+
+    box-shadow:0px 4px 15px rbga(0,0,0,0.1);
+
+    position:relative;
+    z-index:99;
+}
+.nav-list{
+    gap:1rem;
+    
+}
+.nav-list > *{
+    border:solid 1px white;
+    border-radius:0.5rem;
+    padding:0.5rem;
+    transition:all 0.2s cubic-bezier(0.075, 0.82, 0.165, 1);
+    user-select:none;
+    -webkit-user-select:none;
+    font-size:13.33px;
+    padding:0.5rem 1.5rem;
+}
+.nav-list > *:hover,
+.nav-list > *.cur{
+    translate:0px -2px;
+    background-color:whitesmoke;
+    box-shadow:0px 2px 5px rgba(0,0,0,0.1);
+    border:solid 1px #ccc;
+}
+.nav-list > *:active{
+    background-color:#eee;
+    translate:0px 0px;
+    box-shadow:0px 0px 3px rgba(0,0,0,0.1);
+}
+
+.main-cont{
+    position:relative;
+}
+.main-cont .main{
+    position:absolute;
+    top:0px;
+    left:0px;
+    /* transition:all 0.3s cubic-bezier(0.075, 0.82, 0.165, 1); */
+    /* transition:all 0.3s cubic-bezier(1, 0.5, 0.5, 1); */
+    transition:all 0.3s cubic-bezier(0.165, 0.84, 0.44, 1);
+    background-color:var(--bg);
+    --off:0px 100vh;
+}
+.hide{
+    opacity:0;
+    pointer-events:none;
+    translate:var(--off);
+    height:0px;
+    overflow:hidden;
+}
+
+a{
+    text-decoration:none;
+    color:currentColor;
 }
