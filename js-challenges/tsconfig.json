@@ -3,6 +3,7 @@
         "module": "commonjs",
         "outDir": "out",
         "rootDir": "src",
+        "target": "ES6",
         "lib": [
             "DOM",
             "ES2022"

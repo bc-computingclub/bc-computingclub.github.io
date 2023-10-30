@@ -114,9 +114,28 @@ function registerProject(name:string,date:string,files:string[],htmlOverride:str
     fileReg.set(i-1,div);
 
     div.onclick = async function(e,isBare=false){
-        for(let i = 0; i < list.children.length; i++){
-            let c = list.children[i];
-            c.classList.remove("sel");
+        if(true) for(const [key,value] of fileReg){
+            value.classList.remove("sel");
+        }
+
+        codeCont.textContent = "";
+
+        if(!isBare){
+            let mainCont = document.querySelector(".main");
+            for(let i = 1; i < mainCont.children.length; i++){
+                let c = mainCont.children[i] as HTMLElement;
+                if(c.classList.contains("fade-in-anim")){
+                    c.classList.remove("fade-in-anim");
+                    setTimeout(()=>{
+                        c.classList.add("fade-in-anim");
+                        c.style.opacity = "0";
+                    },0);
+                }
+                else{
+                    c.classList.add("fade-in-anim");
+                    c.style.opacity = "0";
+                }
+            }
         }
 
         if(sel == div){
@@ -124,7 +143,9 @@ function registerProject(name:string,date:string,files:string[],htmlOverride:str
             sel = null;
             let url1 = new URL(location.href);
             url1.searchParams.delete("index");
-            location.search = "?"+url1.searchParams.toString();
+            history.pushState("","",url1.href);
+            replaceIFrameSrc(frame,"");
+            // location.search = "?"+url1.searchParams.toString();
             return;
         }
 
@@ -135,10 +156,12 @@ function registerProject(name:string,date:string,files:string[],htmlOverride:str
         let url1 = new URL(location.href);
         url1.searchParams.set("index",(i-1).toString());
         if(!isBare){
-            location.search = "?"+url1.searchParams.toString();
+            history.pushState("","",url1.href);
+            // location.search = "?"+url1.searchParams.toString();
+
         }
 
-        if(isBare) for(const file of files){
+        if(true) for(const file of files){
             let div2 = document.createElement("div");
             let text = await (await fetch("files/"+i+"/"+file)).text();
             let ogText = text;
@@ -168,20 +191,18 @@ function registerProject(name:string,date:string,files:string[],htmlOverride:str
                 },1000);
             };
     
-            Prism.highlightElement(div2.children[1].children[0],null,null);
+            // setTimeout(()=>{
+                Prism.highlightElement(div2.children[1].children[0],null,null);
+            // },0);
         }
 
-        setTimeout(()=>{
+        if(true) setTimeout(()=>{
             replaceIFrameSrc(frame,"files/"+i+"/index.html");
         },0);
     };
 
     if(pageLoadFileIndex == i-1) div.click();
 }
-let b_fullscreen = document.getElementById("fullscreen");
-b_fullscreen.onclick = function(){
-    frame.requestFullscreen();
-};
 
 // registry
 
@@ -246,6 +267,11 @@ registerProject("Ex: Timer Widget","10/4/23",["index.html","style.css"],`<!DOCTY
     </div>
 </body>
 </html>`,"Timer");
+
+let b_fullscreen = document.getElementById("fullscreen");
+b_fullscreen.onclick = function(){
+    frame.requestFullscreen();
+};
 
 // registerProject("Timer","9/27/23",["main.js","index.html"]);
 
@@ -642,7 +668,9 @@ function updateState(isBare=false){
 
     let fileDiv = fileReg.get(pageLoadFileIndex);
     if(!fileDiv){
-        console.warn("An error occurred: File with the index '"+pageLoadFileIndex+"' was not found in the file registry.");
+        console.warn("An error occurred: File with the index '"+pageLoadFileIndex+"' was not found in the file registry, correcting...");
+        replaceIFrameSrc(frame,"");
+        codeCont.textContent = "";
     }
     else{
         // @ts-ignore
@@ -658,10 +686,24 @@ window.addEventListener("popstate",e=>{
     updateState(true);
 });
 
-setTimeout(()=>{
-    let mainCont = document.querySelector(".main");
-    for(let i = 0; i < mainCont.children.length; i++){
-        let c = mainCont.children[i] as HTMLElement;
-        c.style.opacity = "1";
+// (()=>{
+//     let mainCont = document.querySelector(".main") as HTMLElement;
+//     for(let i = 0; i < mainCont.children.length; i++){
+//         let c = mainCont.children[i] as HTMLElement;
+//         c.onanimationend = function(){
+//             c.style.opacity = "1";
+//         };
+//     }
+// })();
+// setTimeout(()=>{
+    let mainCont2 = document.querySelector(".main");
+    for(let i = 1; i < mainCont2.children.length; i++){
+        let c = mainCont2.children[i] as HTMLElement;
+        c.classList.add("fade-in-anim");
+        c.onanimationend = function(){
+            c.classList.remove("fade-in-anim");
+            c.style.opacity = "1";
+        };
+        
     }
-},250);
+// },250);

@@ -1,3 +1,5 @@
+let bypassTutorialBlock = localStorage.getItem("bypassTutorialBlock") == "true";
+
 let back = document.createElement("div");
 back.className = "back";
 let overlay = document.createElement("div");
@@ -39,6 +41,18 @@ document.addEventListener("DOMContentLoaded",e=>{
     // if(navType.type == "back_forward" || navType.type == "navigate"){
     //     main.style.animation = "BodyInit 0.2s cubic-bezier(0.075, 0.82, 0.165, 1)";
     // }
+
+    if(_pathname.endsWith("tutorials.html")){
+        if(bypassTutorialBlock){
+            let sc = document.createElement("script");
+            sc.src = "out/tutorial.js";
+            document.body.appendChild(sc);
+        }
+        else{
+            let mainTutBlock = document.querySelector(".main-guard");
+            mainTutBlock.classList.remove("none");
+        }
+    }
 });
 
 window.addEventListener("beforeunload",e=>{
