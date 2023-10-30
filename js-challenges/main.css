@@ -3,7 +3,14 @@
     /* --bg:rgb(246, 242, 240); */
     /* filter:invert(1); */
     --bg:whitesmoke;
+    /* --grad-primary:linear-gradient(90deg,royalblue,dodgerblue); */
+    --grad-primary:linear-gradient(90deg,teal,rgb(32, 150, 154));
+    --bg-folder:rgb(226, 236, 238);
+
+    /* filter:invert(1) contrast(0.8) brightness(1.5); */
+
 }
+
 body{
     background-color:var(--bg,whitesmoke);
     height: 100vh;
@@ -22,6 +29,26 @@ h3{
     height:40px;
 }
 
+.main{
+    /* animation:BodyInit 0.2s cubic-bezier(0.075, 0.82, 0.165, 1); */
+}
+
+@keyframes BodyInit {
+    0%{
+        translate:100vw 0px;
+    }
+    100%{
+        translate:0px 0px;
+    }
+}
+
+/* Title */
+header > div:first-child{
+    /* font-weight:bold; */
+    font-family:monospace;
+    font-size:18px;
+}
+
 /* .main > div{
     flex-shrink:0;
     display:flex;
@@ -36,7 +63,7 @@ h3{
     font-size:22px;
     padding:0.5rem;
 }
-.challenge-list > div{
+.list-div{
     padding:1rem 1.5rem;
     display:grid;
     grid-template-columns: 60% auto auto;
@@ -45,20 +72,38 @@ h3{
     cursor:pointer;
     user-select:none;
     background-color:white;
-    border-radius:5px;
+    border-radius:7px;
     margin-bottom:5px;
     border:solid 1px #ccc;
+
+    transition:all 0.3s ease-out;
 }
-.challenge-list > div:hover{
+.list-div:last-child{
+    margin-bottom:0px;
+}
+.list-div .material-symbols-outlined{
+    /* margin-right:-0.25rem; */
+    font-size:44px;
+    /* font-size:22px; */
+    width:22px;
+    height:22px;
+    line-height:22px;
+}
+.list-div:not(.no-hover):hover{
     filter:brightness(0.95);
 }
-.challenge-list > div:active{
+.list-div:not(.no-hover):active{
     filter:brightness(0.9);
 }
-.challenge-list > div.sel{
-    background-color:dodgerblue;
-    border-color:rgb(27, 122, 218);
+.list-div.sel{
+    background:var(--grad-primary);
+    /* background-color:dodgerblue; */
+    /* border-color:rgb(27, 122, 218); */
     color:white;
+    box-shadow:0px 2px 5px rgba(0,0,0,0.1);
+}
+.list-div:not(.no-hover).sel:hover{
+    filter:brightness(1.25);
 }
 .challenge-date {
     font-size: inherit;
@@ -76,6 +121,11 @@ h3{
     /* height:100%; */
     min-height:calc(100vh - 150px);
     background-color:white;
+
+    /* Need to sort this out with making the preview scroll along with the code because the code could be pretty long */
+    /* position:fixed;
+    top:130px;
+    width:33%; */
 }
 
 code{
@@ -198,15 +248,29 @@ header{
     gap:1rem;
     
 }
+.nav-link{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    gap:1rem;
+}
+.nav-link .material-symbols-outlined{
+    font-size:24px;
+    width:24px;
+    height:24px;
+    margin-left:-0.25rem;
+    user-select:none;
+    -webkit-user-select:none;
+}
 .nav-list > *{
     border:solid 1px white;
     border-radius:0.5rem;
-    padding:0.5rem;
+    /* padding:0.5rem 0.25rem; */
     transition:all 0.2s cubic-bezier(0.075, 0.82, 0.165, 1);
     user-select:none;
     -webkit-user-select:none;
     font-size:13.33px;
-    padding:0.5rem 1.5rem;
+    padding:0.5rem 1.25rem;
 }
 .nav-list > *:hover,
 .nav-list > *.cur{
@@ -245,4 +309,96 @@ header{
 a{
     text-decoration:none;
     color:currentColor;
+}
+
+.wrapper-center > *{
+    display:flex;
+    justify-content:center;
+    width:100%;
+}
+
+.icon-btn{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    gap:1rem;
+}
+.icon-btn .material-symbols-outlined{
+    font-size:24px;
+    width:24px;
+    height:24px;
+    user-select:none;
+    -webkit-user-select:none;
+}
+
+.folder-cont{
+    display:flex !important;
+    flex-direction:column !important;
+
+    background-color:var(--bg-folder);
+    padding:0.5rem;
+    border-radius:7px;
+    margin-bottom:5px;
+    border:solid 1px #ccc;
+
+    transition:all 0.3s ease-out;
+}
+.folder-cont .icon-open{
+    /* transition:rotate 0.2s cubic-bezier(.82,.59,.69,1.59); */
+    transition:rotate 0.2s cubic-bezier(.82,.59,.69,1.59);
+}
+.folder-cont > div:first-child{
+    margin:-0.5rem;
+    padding:0.5rem 0.5rem;
+    background-color:var(--bg-folder);
+    border:none;
+}
+.folder-cont.open > div:first-child{
+    /* border-bottom-left-radius:0px; */
+    /* border-bottom-right-radius:0px; */
+}
+.folder-cont > div:last-child{
+    padding-top:1rem;
+}
+
+.none{
+    display:none;
+}
+
+.main > div:not(:nth-child(1)){
+    opacity:0;
+    translate:0px 0px;
+    /* transition:opacity 0.5s ease-out; */
+}
+.main > div:not(:nth-child(1)){
+    animation:FadeIn 0.5s cubic-bezier(.64,.41,.22,.84);
+}
+.main > div:nth-child(1){
+    animation-delay:0s;
+}
+.main > div:nth-child(2){
+    animation-delay:0.1s;
+}
+.main > div:nth-child(3){
+    animation-delay:0.175s;
+}
+
+.fade-away{
+    opacity:0;
+}
+
+@keyframes FadeIn {
+    0%{
+        opacity:0;
+        translate:0px 50px;
+    }
+    25%{
+        opacity:0;
+    }
+    50%{
+        opacity:1;
+    }
+    60%{
+        translate:0px 0px;
+    }
 }

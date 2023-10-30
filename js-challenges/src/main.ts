@@ -1,8 +1,6 @@
 let list = document.querySelector(".challenge-list");
 let frame = document.getElementById("frame") as HTMLIFrameElement;
 let codeCont = document.querySelector(".code-cont");
-let overlay = document.querySelector(".overlay") as HTMLElement;
-let back = document.querySelector(".back") as HTMLElement;
 
 back.onmousedown = function(){
     back.style.pointerEvents = "none";
@@ -34,7 +32,7 @@ function escapeMarkup (dangerousInput) {
 }
 
 let sel:HTMLElement;
-let curChallengeName = "View JS Challenge Code";
+let curChallengeName = "JS Challenges </>"; //old: View JS Challenge Code
 
 let pageLoadFileIndex = -1;
 
@@ -49,44 +47,98 @@ function replaceIFrameSrc(f:HTMLElement,src:string){
     // frame.parentElement.replaceChild(newFrame,frame);
 }
 
-function registerProject(name:string,date:string,files:string[],htmlOverride:string){
+let defaultTitle = curChallengeName;
+document.title = defaultTitle;
+
+let folderReg = new Map<string,HTMLElement>();
+let fileReg = new Map<number,HTMLElement>();
+
+function registerFolder(name:string,date:string){
     let div = document.createElement("div");
-    let i = list.children.length+1;
+    div.innerHTML = `
+        <div class="list-div no-hover">
+            <div class="icon-btn" style="width:fit-content">
+                <div class="icon-open material-symbols-outlined">chevron_right</div>
+                <div>${name}</div>
+            </div>
+            <div class="challenge-date">${date}</div>
+        </div>
+        <div class="none"></div>
+    `;
+    div.classList.add("folder-cont");
+    list.appendChild(div);
+
+    let button = div.children[0] as HTMLElement;
+    let details = div.children[1] as HTMLElement;
+    let icon = div.querySelector(".icon-open") as HTMLElement;
+
+    folderReg.set(name,details);
+
+    let open = false;
+    button.onclick = function(){
+        open = !open;
+        if(open){
+            div.classList.add("open");
+            details.classList.remove("none");
+            icon.style.rotate = "90deg";
+        }
+        else{
+            div.classList.remove("open");
+            details.classList.add("none");
+            icon.style.rotate = "0deg";
+        }
+    };
+    button.click();
+}
+
+function registerProject(name:string,date:string,files:string[],htmlOverride:string,folder?:string){
+    let div = document.createElement("div");
+    // let i = list.children.length+1;
+    let i = fileReg.size+1;
     div.innerHTML = `
         <div>${name}</div>
         <div class="challenge-date">${date}</div>
-        <div>${i}</div>
+        <div class="material-symbols-outlined">javascript</div>
+        <!--<div>${i}</div>-->
     `;
-    list.appendChild(div);
+    div.classList.add("list-div");
+    if(folder){
+        let folderDiv = folderReg.get(folder);
+        if(!folderDiv){
+            console.warn("An error occurred: folder '"+folder+"' was not found in the folder registry.");
+        }
+        else folderDiv.appendChild(div);
+    }
+    else list.appendChild(div);
+
+    fileReg.set(i-1,div);
 
     div.onclick = async function(e,isBare=false){
-        function close(){
-            codeCont.textContent = "";
-            replaceIFrameSrc(frame,"");
-            sel.classList.remove("sel");
-            sel = null;
-            // let url = new URL(location.href);
-            // url.searchParams.delete("index");
-            // history.replaceState("","",url);
-            // history.pushState("","",url);
-            curChallengeName = "View JS Challenge Code";
-            document.title = curChallengeName;
+        for(let i = 0; i < list.children.length; i++){
+            let c = list.children[i];
+            c.classList.remove("sel");
         }
+
         if(sel == div){
-            close();
+            document.title = defaultTitle;
+            sel = null;
+            let url1 = new URL(location.href);
+            url1.searchParams.delete("index");
+            location.search = "?"+url1.searchParams.toString();
             return;
         }
-        if(sel) close();
 
-        div.classList.add("sel");
-        sel = div;
-        let url = new URL(location.href);
-        url.searchParams.set("index",(i-1).toString());
-        history.pushState("Time: "+Date.now(),"Time: "+Date.now(),url);
         curChallengeName = "Challenge "+i+" - "+name;
         document.title = curChallengeName;
+        div.classList.add("sel");
+        sel = div;
+        let url1 = new URL(location.href);
+        url1.searchParams.set("index",(i-1).toString());
+        if(!isBare){
+            location.search = "?"+url1.searchParams.toString();
+        }
 
-        for(const file of files){
+        if(isBare) for(const file of files){
             let div2 = document.createElement("div");
             let text = await (await fetch("files/"+i+"/"+file)).text();
             let ogText = text;
@@ -133,6 +185,8 @@ b_fullscreen.onclick = function(){
 
 // registry
 
+registerFolder("Timer","9/27/23");
+
 registerProject("Timer","9/27/23",["main.js","index.html"],`<!-- A Basic Example of a Timer -->
 
 <!DOCTYPE html>
@@ -148,7 +202,7 @@ registerProject("Timer","9/27/23",["main.js","index.html"],`<!-- A Basic Example
 
     <script src="main.js"></script>
 </body>
-</html>`);
+</html>`,"Timer");
 
 registerProject("Ex: Timer Widget","10/4/23",["index.html","style.css"],`<!DOCTYPE html>
 <html lang="en">
@@ -191,7 +245,7 @@ registerProject("Ex: Timer Widget","10/4/23",["index.html","style.css"],`<!DOCTY
         
     </div>
 </body>
-</html>`);
+</html>`,"Timer");
 
 // registerProject("Timer","9/27/23",["main.js","index.html"]);
 
@@ -581,9 +635,21 @@ function updateState(isBare=false){
         let c = list.children[i];
         c.classList.remove("sel");
     }
-    if(pageLoadFileIndex != null && pageLoadFileIndex >= 0){
+    // if(pageLoadFileIndex != null && pageLoadFileIndex >= 0){
+    //     // @ts-ignore
+    //     (list.children[pageLoadFileIndex] as HTMLElement).onclick(null,isBare);
+    // }
+
+    let fileDiv = fileReg.get(pageLoadFileIndex);
+    if(!fileDiv){
+        console.warn("An error occurred: File with the index '"+pageLoadFileIndex+"' was not found in the file registry.");
+    }
+    else{
         // @ts-ignore
-        (list.children[pageLoadFileIndex] as HTMLElement).onclick(null,isBare);
+        fileDiv.onclick(null,isBare);
+        if(fileDiv.parentElement.parentElement.classList.contains("folder-cont")){
+            if(!fileDiv.parentElement.parentElement.classList.contains("open")) (fileDiv.parentElement.parentElement.children[0] as HTMLElement).click();
+        }
     }
 }
 updateState(true);
@@ -591,3 +657,11 @@ updateState(true);
 window.addEventListener("popstate",e=>{
     updateState(true);
 });
+
+setTimeout(()=>{
+    let mainCont = document.querySelector(".main");
+    for(let i = 0; i < mainCont.children.length; i++){
+        let c = mainCont.children[i] as HTMLElement;
+        c.style.opacity = "1";
+    }
+},250);

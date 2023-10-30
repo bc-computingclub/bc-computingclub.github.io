@@ -52,8 +52,6 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
 var list = document.querySelector(".challenge-list");
 var frame = document.getElementById("frame");
 var codeCont = document.querySelector(".code-cont");
-var overlay = document.querySelector(".overlay");
-var back = document.querySelector(".back");
 back.onmousedown = function () {
     back.style.pointerEvents = "none";
     overlay.textContent = "";
@@ -81,7 +79,7 @@ function escapeMarkup(dangerousInput) {
     return safeString;
 }
 var sel;
-var curChallengeName = "View JS Challenge Code";
+var curChallengeName = "JS Challenges </>"; //old: View JS Challenge Code
 var pageLoadFileIndex = -1;
 function replaceIFrameSrc(f, src) {
     var newFrame = document.createElement("iframe");
@@ -93,43 +91,81 @@ function replaceIFrameSrc(f, src) {
     f.replaceWith(newFrame);
     // frame.parentElement.replaceChild(newFrame,frame);
 }
-function registerProject(name, date, files, htmlOverride) {
+var defaultTitle = curChallengeName;
+document.title = defaultTitle;
+var folderReg = new Map();
+var fileReg = new Map();
+function registerFolder(name, date) {
     var div = document.createElement("div");
-    var i = list.children.length + 1;
-    div.innerHTML = "\n        <div>".concat(name, "</div>\n        <div class=\"challenge-date\">").concat(date, "</div>\n        <div>").concat(i, "</div>\n    ");
+    div.innerHTML = "\n        <div class=\"list-div no-hover\">\n            <div class=\"icon-btn\" style=\"width:fit-content\">\n                <div class=\"icon-open material-symbols-outlined\">chevron_right</div>\n                <div>".concat(name, "</div>\n            </div>\n            <div class=\"challenge-date\">").concat(date, "</div>\n        </div>\n        <div class=\"none\"></div>\n    ");
+    div.classList.add("folder-cont");
     list.appendChild(div);
+    var button = div.children[0];
+    var details = div.children[1];
+    var icon = div.querySelector(".icon-open");
+    folderReg.set(name, details);
+    var open = false;
+    button.onclick = function () {
+        open = !open;
+        if (open) {
+            div.classList.add("open");
+            details.classList.remove("none");
+            icon.style.rotate = "90deg";
+        }
+        else {
+            div.classList.remove("open");
+            details.classList.add("none");
+            icon.style.rotate = "0deg";
+        }
+    };
+    button.click();
+}
+function registerProject(name, date, files, htmlOverride, folder) {
+    var div = document.createElement("div");
+    // let i = list.children.length+1;
+    var i = fileReg.size + 1;
+    div.innerHTML = "\n        <div>".concat(name, "</div>\n        <div class=\"challenge-date\">").concat(date, "</div>\n        <div class=\"material-symbols-outlined\">javascript</div>\n        <!--<div>").concat(i, "</div>-->\n    ");
+    div.classList.add("list-div");
+    if (folder) {
+        var folderDiv = folderReg.get(folder);
+        if (!folderDiv) {
+            console.warn("An error occurred: folder '" + folder + "' was not found in the folder registry.");
+        }
+        else
+            folderDiv.appendChild(div);
+    }
+    else
+        list.appendChild(div);
+    fileReg.set(i - 1, div);
     div.onclick = function (e, isBare) {
         if (isBare === void 0) { isBare = false; }
         return __awaiter(this, void 0, void 0, function () {
-            function close() {
-                codeCont.textContent = "";
-                replaceIFrameSrc(frame, "");
-                sel.classList.remove("sel");
-                sel = null;
-                // let url = new URL(location.href);
-                // url.searchParams.delete("index");
-                // history.replaceState("","",url);
-                // history.pushState("","",url);
-                curChallengeName = "View JS Challenge Code";
-                document.title = curChallengeName;
-            }
-            var url, _loop_1, _i, files_1, file;
+            var i_1, c, url1_1, url1, _loop_1, _i, files_1, file;
             return __generator(this, function (_a) {
                 switch (_a.label) {
                     case 0:
+                        for (i_1 = 0; i_1 < list.children.length; i_1++) {
+                            c = list.children[i_1];
+                            c.classList.remove("sel");
+                        }
                         if (sel == div) {
-                            close();
+                            document.title = defaultTitle;
+                            sel = null;
+                            url1_1 = new URL(location.href);
+                            url1_1.searchParams["delete"]("index");
+                            location.search = "?" + url1_1.searchParams.toString();
                             return [2 /*return*/];
                         }
-                        if (sel)
-                            close();
-                        div.classList.add("sel");
-                        sel = div;
-                        url = new URL(location.href);
-                        url.searchParams.set("index", (i - 1).toString());
-                        history.pushState("Time: " + Date.now(), "Time: " + Date.now(), url);
                         curChallengeName = "Challenge " + i + " - " + name;
                         document.title = curChallengeName;
+                        div.classList.add("sel");
+                        sel = div;
+                        url1 = new URL(location.href);
+                        url1.searchParams.set("index", (i - 1).toString());
+                        if (!isBare) {
+                            location.search = "?" + url1.searchParams.toString();
+                        }
+                        if (!isBare) return [3 /*break*/, 4];
                         _loop_1 = function (file) {
                             var div2, text, ogText, ext, copyCode;
                             return __generator(this, function (_b) {
@@ -195,8 +231,9 @@ b_fullscreen.onclick = function () {
     frame.requestFullscreen();
 };
 // registry
-registerProject("Timer", "9/27/23", ["main.js", "index.html"], "<!-- A Basic Example of a Timer -->\n\n<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n    <meta charset=\"UTF-8\">\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n    <title>1 - Timer - Lv 1</title>\n</head>\n<body>\n    <p id=\"time-left\">60</p>\n    <p>Seconds Remaining</p>\n\n    <script src=\"main.js\"></script>\n</body>\n</html>");
-registerProject("Ex: Timer Widget", "10/4/23", ["index.html", "style.css"], "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n    <meta charset=\"UTF-8\">\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n    <title>Document</title>\n\n    <!-- Need to \"link\" our style.css file -->\n    <link rel=\"stylesheet\" href=\"style.css\">\n</head>\n<body>\n    <!-- Create a container for our timer -->\n    <div class=\"timer\">\n\n        <!-- This shows the actual time -->\n        <div class=\"time\">1 : 0 0</div>\n\n        <!-- Container for the main buttons -->\n        <div class=\"mainButtons\">\n            <button>Reset</button>\n            <button>Start</button>\n        </div>\n        <!-- This is a \"horizontal rule\" or a vertical line to separate the two sections -->\n        <hr>\n\n        <!-- Container to hold minute options -->\n        <div>\n            <span class=\"label\">Minutes</span>\n            <button>v</button>\n            <button>^</button>\n        </div>\n\n        <!-- Container to hold second options -->\n        <div>\n            <span class=\"label\">Seconds</span>\n            <button>v</button>\n            <button>^</button>\n        </div>\n        \n    </div>\n</body>\n</html>");
+registerFolder("Timer", "9/27/23");
+registerProject("Timer", "9/27/23", ["main.js", "index.html"], "<!-- A Basic Example of a Timer -->\n\n<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n    <meta charset=\"UTF-8\">\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n    <title>1 - Timer - Lv 1</title>\n</head>\n<body>\n    <p id=\"time-left\">60</p>\n    <p>Seconds Remaining</p>\n\n    <script src=\"main.js\"></script>\n</body>\n</html>", "Timer");
+registerProject("Ex: Timer Widget", "10/4/23", ["index.html", "style.css"], "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n    <meta charset=\"UTF-8\">\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n    <title>Document</title>\n\n    <!-- Need to \"link\" our style.css file -->\n    <link rel=\"stylesheet\" href=\"style.css\">\n</head>\n<body>\n    <!-- Create a container for our timer -->\n    <div class=\"timer\">\n\n        <!-- This shows the actual time -->\n        <div class=\"time\">1 : 0 0</div>\n\n        <!-- Container for the main buttons -->\n        <div class=\"mainButtons\">\n            <button>Reset</button>\n            <button>Start</button>\n        </div>\n        <!-- This is a \"horizontal rule\" or a vertical line to separate the two sections -->\n        <hr>\n\n        <!-- Container to hold minute options -->\n        <div>\n            <span class=\"label\">Minutes</span>\n            <button>v</button>\n            <button>^</button>\n        </div>\n\n        <!-- Container to hold second options -->\n        <div>\n            <span class=\"label\">Seconds</span>\n            <button>v</button>\n            <button>^</button>\n        </div>\n        \n    </div>\n</body>\n</html>", "Timer");
 // registerProject("Timer","9/27/23",["main.js","index.html"]);
 var dd_view = document.querySelector(".dd-view");
 registerDropdown(dd_view, [
@@ -265,7 +302,7 @@ var headerList = [
         onLoad: function () {
             document.title = "JS Tutorials";
             var url = new URL(location.href);
-            url.searchParams.delete("index");
+            url.searchParams["delete"]("index");
             testStartOnLoad();
             this.prevURL = location.href;
         },
@@ -626,13 +663,32 @@ function updateState(isBare) {
         var c = list.children[i];
         c.classList.remove("sel");
     }
-    if (pageLoadFileIndex != null && pageLoadFileIndex >= 0) {
+    // if(pageLoadFileIndex != null && pageLoadFileIndex >= 0){
+    //     // @ts-ignore
+    //     (list.children[pageLoadFileIndex] as HTMLElement).onclick(null,isBare);
+    // }
+    var fileDiv = fileReg.get(pageLoadFileIndex);
+    if (!fileDiv) {
+        console.warn("An error occurred: File with the index '" + pageLoadFileIndex + "' was not found in the file registry.");
+    }
+    else {
         // @ts-ignore
-        list.children[pageLoadFileIndex].onclick(null, isBare);
+        fileDiv.onclick(null, isBare);
+        if (fileDiv.parentElement.parentElement.classList.contains("folder-cont")) {
+            if (!fileDiv.parentElement.parentElement.classList.contains("open"))
+                fileDiv.parentElement.parentElement.children[0].click();
+        }
     }
 }
 updateState(true);
 window.addEventListener("popstate", function (e) {
     updateState(true);
 });
+setTimeout(function () {
+    var mainCont = document.querySelector(".main");
+    for (var i = 0; i < mainCont.children.length; i++) {
+        var c = mainCont.children[i];
+        c.style.opacity = "1";
+    }
+}, 250);
 //# sourceMappingURL=main.js.map

@@ -1,5 +1,5 @@
 // 1. Set how much time we have left in seconds
-let time = 5;
+let time = 60;
 
 // 2. Get the HTML element to display how much time we have left
 let timeElement = document.getElementById("time-left");
