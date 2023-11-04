@@ -1,3 +1,12 @@
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
 let bypassTutorialBlock = localStorage.getItem("bypassTutorialBlock") == "true";
 let back = document.createElement("div");
 back.className = "back";
@@ -10,7 +19,7 @@ header.innerHTML = `
     <div class="material-symbols-outlined">terminal</div>
     <div style="display:flex;justify-content:space-between;align-items:center">
         <span class="material-symbols-outlined" style="font-size:50px;line-height:50px;width:50px;height:50px;margin-right:-3px">javascript</span> 
-        <span>Challenges _</span>
+        <span><span class="title-main">challenges</span> _</span>
     </div>
 
     <!--<div>JS Challenges _</div>-->
@@ -55,4 +64,37 @@ window.addEventListener("beforeunload", e => {
         c.classList.add("fade-away");
     }
 });
+const titleMain = document.querySelector(".title-main");
+function initTitleMain() {
+    let text = (_pathname.endsWith("/tutorials.html") ? "tutorials" : "challenges");
+    titleMain.textContent = text;
+    let arr = text.split("");
+    let list = "abcdefghijklmnopqrstuvwxyz";
+    for (let i = 0; i < text.length; i++) {
+        let time = 0;
+        let ind = list.indexOf(arr[i]);
+        let startInd = ind;
+        let startSpeedMult = (Math.random() + 1) * 50;
+        function change() {
+            return __awaiter(this, void 0, void 0, function* () {
+                if (ind == startInd && time != 0) {
+                    titleMain.textContent = arr.join("");
+                    return;
+                }
+                time++;
+                ind += 2;
+                ind %= list.length;
+                arr[i] = list[ind];
+                titleMain.textContent = arr.join("");
+                let speed = Math.cos(time / list.length * Math.PI) * startSpeedMult + i * i / 30;
+                yield wait(speed);
+                change();
+            });
+        }
+        setTimeout(() => {
+            change();
+        }, i * 50); //40
+    }
+}
+initTitleMain();
 //# sourceMappingURL=preinit.js.map

@@ -23,4 +23,11 @@ function registerDropdown(btn, list, onclick) {
         back.style.pointerEvents = "all";
     };
 }
+function wait(delay) {
+    return new Promise(resolve => {
+        setTimeout(() => {
+            resolve();
+        }, delay);
+    });
+}
 //# sourceMappingURL=util.js.map

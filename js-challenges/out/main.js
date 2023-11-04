@@ -415,13 +415,6 @@ var MovementType;
     MovementType[MovementType["abs"] = 0] = "abs";
     MovementType[MovementType["rel"] = 1] = "rel";
 })(MovementType || (MovementType = {}));
-function wait(delay) {
-    return new Promise(resolve => {
-        setTimeout(() => {
-            resolve();
-        }, delay);
-    });
-}
 let realTimeColorUpdate = true;
 let currentFile;
 let animateText = true;

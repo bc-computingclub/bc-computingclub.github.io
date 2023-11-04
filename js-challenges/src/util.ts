@@ -22,3 +22,11 @@ function registerDropdown(btn:Element,list:string[],onclick:(i:number)=>void){
         back.style.pointerEvents = "all";
     };
 }
+
+function wait(delay:number){
+    return new Promise<void>(resolve=>{
+        setTimeout(()=>{
+            resolve();
+        },delay);
+    });
+}

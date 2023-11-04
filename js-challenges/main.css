@@ -411,3 +411,7 @@ a{
         opacity:1;
     }
 }
+
+.title-main{
+    text-transform:capitalize;
+}

@@ -447,14 +447,6 @@ enum MovementType{
     rel
 }
 
-function wait(delay:number){
-    return new Promise<void>(resolve=>{
-        setTimeout(()=>{
-            resolve();
-        },delay);
-    });
-}
-
 let realTimeColorUpdate = true;
 let currentFile:Project;
 let animateText = true;
