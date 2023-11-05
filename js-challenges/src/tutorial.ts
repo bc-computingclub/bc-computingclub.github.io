@@ -1,1 +1,5 @@
-console.log("Initializing tutorial engine");
+console.log("Loading tutorials...");
+
+showMainCont();
+
+testStartOnLoad();

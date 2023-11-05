@@ -34,19 +34,16 @@ document.body.appendChild(overlay);
 document.body.appendChild(header);
 
 document.addEventListener("DOMContentLoaded",e=>{
-    let main = document.querySelector(".main") as HTMLElement;
-
-    // let navType = performance.getEntriesByType("navigation")[0].toJSON();
-    // console.log(navType);
-    // if(navType.type == "back_forward" || navType.type == "navigate"){
-    //     main.style.animation = "BodyInit 0.2s cubic-bezier(0.075, 0.82, 0.165, 1)";
-    // }
-
     if(_pathname.endsWith("tutorials.html")){
         if(bypassTutorialBlock){
-            let sc = document.createElement("script");
-            sc.src = "out/tutorial.js";
-            document.body.appendChild(sc);
+            let sc2 = document.createElement("script");
+            sc2.src = "out/tutorial_engine.js";
+            document.body.appendChild(sc2);
+            sc2.onload = function(){
+                let sc = document.createElement("script");
+                sc.src = "out/tutorial.js";
+                document.body.appendChild(sc);
+            };
         }
         else{
             let mainTutBlock = document.querySelector(".main-guard");
@@ -99,3 +96,17 @@ function initTitleMain(){
     }
 }
 initTitleMain();
+
+function showMainCont(){
+    let mainCont2 = document.querySelector(".main0");
+    mainCont2.classList.remove("none","hide");
+    for(let i = 1; i < mainCont2.children.length; i++){
+        let c = mainCont2.children[i] as HTMLElement;
+        c.classList.add("fade-in-anim");
+        c.onanimationend = function(){
+            c.classList.remove("fade-in-anim");
+            c.style.opacity = "1";
+        };
+        
+    }
+}

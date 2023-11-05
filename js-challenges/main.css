@@ -7,7 +7,13 @@
     --grad-primary:linear-gradient(90deg,teal,rgb(32, 150, 154));
     --bg-folder:rgb(226, 236, 238);
 
-    /* filter:invert(1) contrast(0.8) brightness(1.5); */
+    filter:invert(1) contrast(0.8) brightness(1.5) hue-rotate(180deg);
+    /* filter:invert(1) contrast(0.8) brightness(1.5) hue-rotate(240deg); */
+    /* filter:invert(1) contrast(0.8) brightness(1.5) hue-rotate(200deg); */
+    /* filter:hue-rotate(180deg); */
+    /* filter:hue-rotate(270deg); */
+    /* filter:hue-rotate(315deg); */
+    /* filter:hue-rotate(45deg); */
 
 }
 
