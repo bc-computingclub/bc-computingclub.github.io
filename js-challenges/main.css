@@ -421,3 +421,52 @@ a{
 .title-main{
     text-transform:capitalize;
 }
+
+.codeDiv{
+    position:relative;
+}
+.codeDiv > *{
+    margin:0.5em 0px;
+    /* position:absolute; */
+    /* width:100%; */
+}
+.codeDiv textarea{
+    opacity:0.5;
+    top:-0.5em;
+    left:0px;
+    width:100%;
+    height:calc(100% - 0.5em);
+    position:absolute;
+    resize:none;
+
+    caret-color:red;
+    color:transparent;
+    background-color:transparent;
+    user-select:none;
+    -webkit-user-select:none;
+    border:none;
+    outline:none;
+
+    font-size:14px;
+
+    padding:1em;
+    /* font-size:1em; */
+    tab-size:4;
+    white-space:pre;
+    /* font-family:Consolas,Monaco,'Andale Mono','Ubuntu Mono',monospace; */
+    font-family:monospace;
+    line-height:1.5;
+    hyphens:none;
+
+    word-spacing: normal;
+    word-break: normal;
+    word-wrap: normal;
+
+    overflow:hidden;
+}
+pre{
+    font-family:monospace !important;
+}
+code{
+    font-family:monospace !important;
+}

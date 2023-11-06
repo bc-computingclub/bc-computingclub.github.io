@@ -113,13 +113,14 @@ class ActionIndent extends Action {
     }
 }
 class Project {
-    constructor(ref) {
+    constructor(ref, ta) {
         // line = 0;
         // col = 0;
         this.ind = 0;
         this.fullText = "";
         this.indent = 0;
         this.ref = ref;
+        this.ta = ta;
     }
     moveRight() {
         return __awaiter(this, void 0, void 0, function* () {
@@ -219,6 +220,7 @@ class Project {
                 this.fullText = this.fullText.substring(0, this.ind) + text + this.fullText.substring(this.ind);
                 this.ref.textContent = this.fullText;
                 this.ind += text.length;
+                this.ta.value = this.fullText;
                 Prism.highlightElement(this.ref, null, null);
             }
             else {
@@ -227,6 +229,7 @@ class Project {
                 for (let i = 0; i < text.length; i++) {
                     this.fullText = left + text.substring(0, i + 1) + right;
                     this.ref.textContent = this.fullText;
+                    this.ta.value = this.fullText;
                     Prism.highlightElement(this.ref, null, null);
                     yield wait(5);
                 }
@@ -282,7 +285,7 @@ let headerList = [
             document.title = "JS Tutorials";
             let url = new URL(location.href);
             url.searchParams.delete("index");
-            testStartOnLoad();
+            // testStartOnLoad();
             this.prevURL = location.href;
         },
         onLeave() {
@@ -346,9 +349,13 @@ function createCodeFile(text, ext, title) {
             <div>${title}</div>
             <button class="copy-code">Copy Code</button>
         </div>
-        <pre><code class="language-${ext}">${text}</code></pre>
+        <div class="codeDiv">
+            <pre><code class="language-${ext}">${text}</code></pre>
+            <textarea></textarea>
+        </div>
     `;
         codeCont2.appendChild(div2);
+        let ta = div2.querySelector("textarea");
         let copyCode = div2.querySelector(".copy-code");
         if (copyCode)
             copyCode.onclick = function () {
@@ -358,39 +365,9 @@ function createCodeFile(text, ext, title) {
                     copyCode.textContent = "Copy Code";
                 }, 1000);
             };
-        Prism.highlightElement(div2.children[1].children[0], null, null);
-        return new Project(div2.children[1].children[0]);
-    });
-}
-function testStartOnLoad() {
-    return __awaiter(this, void 0, void 0, function* () {
-        currentFile = yield createCodeFile("", "js", "TestFile.js");
-        executeActions(currentFile, [
-            // new ActionText("// Line 1\n"),
-            // new ActionText("// Line 3\n"),
-            // new ActionText("// Line 4\n"),
-            // new ActionMoveRel(""),
-            // new ActionMoveRel("uu\n"),
-            // new ActionText("// Line 2")
-            new ActionText("// this is the start of the file\n"),
-            new ActionText(`
-function start(){
-
-}`),
-            new ActionMoveRel("uu"),
-            new ActionIndent("set", 1),
-            new ActionText('\nconsole.log("hello");'),
-            new ActionText('\n\nconsole.log("hello");'),
-            new ActionComment('\n// test comment'),
-            new ActionText('\n\nlet a = 123;'),
-            new ActionText(`
-if(true){
-}`),
-            new ActionMoveRel("u\n"),
-            new ActionIndent("add", 1),
-            new ActionText('console.log("inside");'),
-            new ActionText('\nconsole.log("inside 2");'),
-        ]);
+        ta.value = text;
+        Prism.highlightElement(div2.children[1].children[0].children[0], null, null);
+        return new Project(div2.children[1].children[0].children[0], ta);
     });
 }
 function executeActions(file, actions) {

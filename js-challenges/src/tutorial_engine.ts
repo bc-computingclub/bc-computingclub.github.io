@@ -96,13 +96,15 @@ class ActionIndent extends Action{
     }
 }
 class Project{
-    constructor(ref:HTMLElement){
+    constructor(ref:HTMLElement,ta:HTMLTextAreaElement){
         this.ref = ref;
+        this.ta = ta;
     }
     // line = 0;
     // col = 0;
     ind = 0;
     ref:HTMLElement;
+    ta:HTMLTextAreaElement;
     fullText:string = "";
     indent = 0;
 
@@ -196,6 +198,7 @@ class Project{
 
             this.ind += text.length;
 
+            this.ta.value = this.fullText;
             Prism.highlightElement(this.ref,null,null);
         }
         else{
@@ -204,6 +207,7 @@ class Project{
             for(let i = 0; i < text.length; i++){
                 this.fullText = left+text.substring(0,i+1)+right;
                 this.ref.textContent = this.fullText;
+                this.ta.value = this.fullText;
                 Prism.highlightElement(this.ref,null,null);
                 await wait(5);
             }
@@ -262,7 +266,7 @@ let headerList = [
             document.title = "JS Tutorials";
             let url = new URL(location.href);
             url.searchParams.delete("index");
-            testStartOnLoad();
+            // testStartOnLoad();
 
             this.prevURL = location.href;
         },
@@ -336,9 +340,13 @@ async function createCodeFile(text:string,ext:string,title:string){
             <div>${title}</div>
             <button class="copy-code">Copy Code</button>
         </div>
-        <pre><code class="language-${ext}">${text}</code></pre>
+        <div class="codeDiv">
+            <pre><code class="language-${ext}">${text}</code></pre>
+            <textarea></textarea>
+        </div>
     `;
     codeCont2.appendChild(div2);
+    let ta = div2.querySelector("textarea");
 
     let copyCode = div2.querySelector(".copy-code") as HTMLElement;
     if(copyCode) copyCode.onclick = function(){
@@ -349,47 +357,10 @@ async function createCodeFile(text:string,ext:string,title:string){
         },1000);
     };
 
-    Prism.highlightElement(div2.children[1].children[0],null,null);
+    ta.value = text;
+    Prism.highlightElement(div2.children[1].children[0].children[0],null,null);
 
-    return new Project(div2.children[1].children[0] as HTMLElement);
-}
-
-async function testStartOnLoad(){
-    currentFile = await createCodeFile("","js","TestFile.js");
-    
-    executeActions(currentFile,[
-        // new ActionText("// Line 1\n"),
-        // new ActionText("// Line 3\n"),
-        // new ActionText("// Line 4\n"),
-        // new ActionMoveRel(""),
-        // new ActionMoveRel("uu\n"),
-        // new ActionText("// Line 2")
-
-        new ActionText("// this is the start of the file\n"),
-        new ActionText(`
-function start(){
-
-}`
-        ),
-        new ActionMoveRel("uu"),
-
-        new ActionIndent("set",1),
-
-        new ActionText('\nconsole.log("hello");'),
-        new ActionText('\n\nconsole.log("hello");'),
-        new ActionComment('\n// test comment'),
-        new ActionText('\n\nlet a = 123;'),
-
-        new ActionText(`
-if(true){
-}`
-        ),
-        new ActionMoveRel("u\n"),
-        new ActionIndent("add",1),
-        new ActionText('console.log("inside");'),
-        new ActionText('\nconsole.log("inside 2");'),
-        
-    ]);
+    return new Project(div2.children[1].children[0].children[0] as HTMLElement,ta);
 }
 
 async function executeActions(file:Project,actions:Action[]){
