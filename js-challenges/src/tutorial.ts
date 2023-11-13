@@ -39,7 +39,7 @@ if(true){
         
     ]);
 
-    executeActions(currentFile,[
+    else if(false) executeActions(currentFile,[
         // new ActionText("// Line 1\n"),
         // new ActionText("// Line 3\n"),
         // new ActionText("// Line 4\n"),
@@ -71,6 +71,14 @@ if(true){
         new ActionText('console.log("inside");'),
         new ActionText('\nconsole.log("inside 2");'),
         
+    ]);
+    else executeActions(currentFile,[
+        new ActionText("// start of file"),
+        new ActionText("\n// start of file"),
+        new ActionText("\n// start of file"),
+        new ActionText("\n// start of file"),
+        new ActionText("\n// start of file"),
+        new ActionText("\n// start of file"),
     ]);
 }
 testStartOnLoad();

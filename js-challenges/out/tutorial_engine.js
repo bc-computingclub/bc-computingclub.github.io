@@ -114,12 +114,14 @@ class ActionIndent extends Action {
 }
 class Project {
     constructor(ref, ta) {
+        var _a;
         // line = 0;
         // col = 0;
         this.ind = 0;
         this.fullText = "";
         this.indent = 0;
         this.ref = ref;
+        this.area = (_a = ref.parentElement) === null || _a === void 0 ? void 0 : _a.nextElementSibling;
         this.ta = ta;
     }
     moveRight() {
@@ -193,6 +195,7 @@ class Project {
         });
     }
     addText(text) {
+        var _a;
         return __awaiter(this, void 0, void 0, function* () {
             let before = text;
             if (text[0] != "\n") {
@@ -216,12 +219,17 @@ class Project {
                 }
             }
             console.log("text", `[${before.replaceAll("\t", "\\t").replaceAll("\n", "\\n")}]`, `[${text.replaceAll("\t", "\\t").replaceAll("\n", "\\n")}]`);
+            (_a = this.area) === null || _a === void 0 ? void 0 : _a.focus();
             if (!animateText) {
                 this.fullText = this.fullText.substring(0, this.ind) + text + this.fullText.substring(this.ind);
                 this.ref.textContent = this.fullText;
                 this.ind += text.length;
                 this.ta.value = this.fullText;
                 Prism.highlightElement(this.ref, null, null);
+                if (this.area) {
+                    this.area.selectionStart = this.ind;
+                    this.area.selectionEnd = this.ind;
+                }
             }
             else {
                 let left = this.fullText.substring(0, this.ind);
@@ -231,6 +239,10 @@ class Project {
                     this.ref.textContent = this.fullText;
                     this.ta.value = this.fullText;
                     Prism.highlightElement(this.ref, null, null);
+                    if (this.area) {
+                        this.area.selectionStart = this.ind + text.length;
+                        this.area.selectionEnd = this.ind + text.length;
+                    }
                     yield wait(5);
                 }
                 this.ind += text.length;

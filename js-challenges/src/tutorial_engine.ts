@@ -98,12 +98,14 @@ class ActionIndent extends Action{
 class Project{
     constructor(ref:HTMLElement,ta:HTMLTextAreaElement){
         this.ref = ref;
+        this.area = ref.parentElement?.nextElementSibling as HTMLTextAreaElement;
         this.ta = ta;
     }
     // line = 0;
     // col = 0;
     ind = 0;
     ref:HTMLElement;
+    area:HTMLTextAreaElement;
     ta:HTMLTextAreaElement;
     fullText:string = "";
     indent = 0;
@@ -191,6 +193,7 @@ class Project{
             }
         }
         console.log("text",`[${before.replaceAll("\t","\\t").replaceAll("\n","\\n")}]`,`[${text.replaceAll("\t","\\t").replaceAll("\n","\\n")}]`);
+        this.area?.focus();
 
         if(!animateText){
             this.fullText = this.fullText.substring(0,this.ind)+text+this.fullText.substring(this.ind);
@@ -200,6 +203,10 @@ class Project{
 
             this.ta.value = this.fullText;
             Prism.highlightElement(this.ref,null,null);
+            if(this.area){
+                this.area.selectionStart = this.ind;
+                this.area.selectionEnd = this.ind;
+            }
         }
         else{
             let left = this.fullText.substring(0,this.ind);
@@ -209,6 +216,10 @@ class Project{
                 this.ref.textContent = this.fullText;
                 this.ta.value = this.fullText;
                 Prism.highlightElement(this.ref,null,null);
+                if(this.area){
+                    this.area.selectionStart = this.ind+text.length;
+                    this.area.selectionEnd = this.ind+text.length;
+                }
                 await wait(5);
             }
 
