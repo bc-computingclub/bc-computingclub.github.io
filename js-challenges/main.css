@@ -6,8 +6,15 @@
     /* --grad-primary:linear-gradient(90deg,royalblue,dodgerblue); */
     --grad-primary:linear-gradient(90deg,teal,rgb(32, 150, 154));
     --bg-folder:rgb(226, 236, 238);
+    --border-folder:#ccc;
+    --border2-folder:rgb(187, 204, 204);
+    --text:black;
 
-    filter:invert(1) contrast(0.8) brightness(1.5) hue-rotate(180deg);
+    --layer1:rgba(0,0,0,0.04);
+    --layer2:rgba(0,0,0,0.08);
+    --layer-1:rgba(255,255,255,0.65);
+
+    /* filter:invert(1) contrast(0.8) brightness(1.5) hue-rotate(180deg); */
     /* filter:invert(1) contrast(0.8) brightness(1.5) hue-rotate(240deg); */
     /* filter:invert(1) contrast(0.8) brightness(1.5) hue-rotate(200deg); */
     /* filter:hue-rotate(180deg); */
@@ -245,7 +252,8 @@ header{
     padding:0px 2rem;
     border-radius:0.5rem;
 
-    box-shadow:0px 4px 15px rbga(0,0,0,0.1);
+    /* box-shadow:0px 4px 15px rbga(0,0,0,0.1); */
+    box-shadow:0px 1px 3px rgba(0,0,0,0.1);
 
     position:relative;
     z-index:99;
@@ -345,7 +353,7 @@ a{
     padding:0.5rem;
     border-radius:7px;
     margin-bottom:5px;
-    border:solid 1px #ccc;
+    border:solid 1px var(--border-folder);
 
     transition:all 0.3s ease-out;
 }
@@ -439,7 +447,7 @@ a{
     position:absolute;
     resize:none;
 
-    caret-color:red;
+    caret-color:var(--text);
     color:transparent;
     background-color:transparent;
     user-select:none;
@@ -463,10 +471,172 @@ a{
     word-wrap: normal;
 
     overflow:hidden;
+
+    pointer-events:none;
 }
 pre{
     font-family:monospace !important;
 }
 code{
     font-family:monospace !important;
+}
+
+/* Progress */
+.progress-list{
+    
+}
+.progress-list > div{
+    padding:0.5rem;
+    border:solid 1px gray;
+    border-radius:5px;
+    background-color:rgba(0,0,0,0.05);
+}
+.progress-list > div:hover{
+    background-color:rgba(0,0,0,0.2);
+}
+
+.select-menu{
+    position:absolute;
+    left:50%;
+    top:50%;
+    transform:translate(-50%,-50%);
+    margin-top:2rem;
+    /* height:700px; */
+    /* height:50vh; */
+    min-height:500px;
+    height:75vh;
+    /* height:minmax(75vh,500px); */
+    z-index:5;
+
+    display:flex;
+    gap:1rem;
+    max-width:calc(100vw - 2rem);
+}
+.select-menu .card{
+    background-color:white;
+    /* border:solid 1px gray; */
+    border-radius:8px;
+    box-shadow:0px 2px 5px rgba(0,0,0,0.2);
+    padding:0.5rem;
+    display:flex;
+    flex-direction:column;
+}
+.select-menu .card.lesson-list-cont{
+    grid-row-end:2;
+    width:300px;
+}
+.select-menu .card.lesson-desc{
+    width:600px;
+    height:50%;
+}
+.select-menu .card.lesson-prev{
+    width:600px;
+    height:50%;
+}
+.lesson-list{
+    display:flex;
+    flex-direction:column;
+    overflow-y:auto;
+    height:100%;
+    font-size:14px;
+    gap:0.25rem;
+    background:var(--bg-folder);
+    border-radius:5px;
+    padding:0.5rem;
+}
+.lesson-list > div{
+    padding:0.6rem 1rem;
+    background-color:var(--layer-1);
+    /* background-color:white; */
+    /* background:var(--bg-folder); */
+    /* border:solid 1px var(--border2-folder); */
+    border-radius:5px;
+    /* box-shadow:0px 1px 3px rgba(0,0,0,0.2); */
+    cursor:default;
+
+    transition:background-color 0.1s ease-out;
+
+    /* animation:ShowLesson 0.2s cubic-bezier(0.1,0,0,1); */
+}
+.lesson-list > div.section{
+    padding-left:38px;
+    background-color:var(--bg-folder);
+    position:relative;
+}
+.lesson-list > div.section::before{
+    content:">";
+    font-family:monospace;
+    left:15px;
+    font-size:18px;
+    line-height:1;
+    position:absolute;
+}
+.lesson-list > div.sel{
+    color:white;
+    background:var(--grad-primary);
+}
+.lesson-list > div:hover{
+    background-color:white;
+    color:black;
+}
+.card-title{
+    margin-bottom:0.5rem;
+    font-size:16px;
+    /* background-color:var(--layer1); */
+    padding:0.25rem 1rem;
+    border-radius:5px;
+}
+.lesson-crumbs{
+    display:flex;
+    gap:0.5rem;
+    font-size:13px;
+    /* padding:0.5rem 0.75rem; */
+    padding:0.5rem 0px;
+    /* width:100px; */
+    flex-wrap:wrap;
+}
+.lesson-crumbs > div{
+    background-color:var(--layer1);
+    border-radius:5px;
+    padding:0.25rem 0.75rem;
+    cursor:default;
+    transition:background-color 0.1s ease-out;
+    position:relative;
+    margin-right:10px;
+    white-space:nowrap;
+}
+.lesson-crumbs > div:not(:last-child)::after{
+    content:">";
+    font-family:monospace;
+    position:absolute;
+    right:-12.5px;
+    color:#333;
+}
+.lesson-crumbs > div:hover,
+.lesson-crumbs > div:last-child{
+    background-color:var(--layer2);
+}
+
+@keyframes ShowLesson {
+    0%{
+        transform:translateY(5px);
+        /* transform:translateY(10px); */
+        opacity:0;
+    }
+    100%{
+        opacity:1;
+        transform:translateY(0px);
+    }
+}
+
+.blur{
+    filter:blur(10px);
+    pointer-events:none;
+    user-select:none;
+    -webkit-user-select:none;
+}
+.v-group{
+    display:flex;
+    flex-direction:column;
+    gap:1rem;
 }

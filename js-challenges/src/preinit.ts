@@ -98,8 +98,9 @@ function initTitleMain(){
 initTitleMain();
 
 function showMainCont(){
-    let mainCont2 = document.querySelector(".main0");
-    mainCont2.classList.remove("none","hide");
+    let mainCont3 = document.querySelector(".main0");
+    mainCont3.classList.remove("none","hide");
+    let mainCont2 = (mainCont3.classList.contains("main") ? mainCont3 : mainCont3.querySelector(".main"));
     for(let i = 1; i < mainCont2.children.length; i++){
         let c = mainCont2.children[i] as HTMLElement;
         c.classList.add("fade-in-anim");

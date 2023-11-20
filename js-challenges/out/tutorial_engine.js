@@ -112,6 +112,15 @@ class ActionIndent extends Action {
         });
     }
 }
+class ActionDeclareVar extends Action {
+    constructor() {
+        super();
+    }
+    execute(file) {
+        return __awaiter(this, void 0, void 0, function* () {
+        });
+    }
+}
 class Project {
     constructor(ref, ta) {
         var _a;
@@ -234,6 +243,7 @@ class Project {
             else {
                 let left = this.fullText.substring(0, this.ind);
                 let right = this.fullText.substring(this.ind);
+                let skip = 0;
                 for (let i = 0; i < text.length; i++) {
                     this.fullText = left + text.substring(0, i + 1) + right;
                     this.ref.textContent = this.fullText;
@@ -243,7 +253,11 @@ class Project {
                         this.area.selectionStart = this.ind + text.length;
                         this.area.selectionEnd = this.ind + text.length;
                     }
-                    yield wait(5);
+                    skip++;
+                    if (skip >= 1) { //0
+                        skip = 0;
+                        yield wait(15); //5
+                    }
                 }
                 this.ind += text.length;
             }
