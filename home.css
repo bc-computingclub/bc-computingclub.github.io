@@ -1,0 +1,12 @@
+:root {
+    --bg-col: whitesmoke;
+    --col: black;
+    --cta-btn-col: rgb(72, 72, 158); 
+    --font: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+body {
+    background-color: var(--bg-col);
+    color: var(--col);
+    font-family: var(--font);
+}
