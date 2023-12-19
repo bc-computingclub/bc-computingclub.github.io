@@ -1,6 +1,6 @@
 {
     "compilerOptions": {
-        "module": "commonjs",
+        "module": "CommonJS",
         "target": "ES2022",
         "lib": [
             "DOM",
@@ -9,7 +9,10 @@
         ],
         "sourceMap": true,
         "rootDir": "src",
-        "outDir": "out"
+        "outDir": "out",
+        "types": [
+            "./lib/monaco/monaco.d.ts"
+        ]
     },
     "exclude": [
         "node_modules",
