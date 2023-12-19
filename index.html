@@ -1,24 +1,28 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Code Challenges</title>
     <link rel="stylesheet" href="home.css">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
 </head>
+
 <body>
     <!--Navbar - sticky, persistent across website. -->
     <div class="nav-container"> <!-- Links will need to be updated-->
         <div class="logo">
             <a href="index.html">
+                <img src="images/error.png" alt="Code Challenge Logo" class="logo-thumbnail" onmouseenter="{console.log(3)}">
                 <!-- Insert placeholder logo here -->
             </a>
         </div>
         <div class="nav-links">
-            <a href="#learn">Learn</a>
-            <a href="#practice">Practice</a>
-            <a href="#experiment">Experiment</a>
-            <a href="#profile">Profile</a>
+            <a href="#learn" class="active">Learn <span class="material-symbols-outlined">Auto_stories</span></a>
+            <a href="#practice">Practice <span class="material-symbols-outlined">Checkbook</span></a>
+            <a href="#experiment">Experiment <span class="material-symbols-outlined">Experiment</span></a>
+            <a href="#profile"><span class="material-symbols-outlined">Person</span></a>
         </div>
     </div>
 
@@ -27,28 +31,28 @@
         <div class="cards">
             <div class="learn-card card">
                 <div class="card-left"> <!-- Keep in mind - all of the text here is still a placeholder, change as you see fit. -->
-                    Apply your knoweldge of Web Scripting
+                    Apply your knowledge of Web Scripting
                 </div>
                 <div class="card-right">
-                    Filler text. This should be a quick overview of what this card represents. Could be a screenshot or video/gif.
+                    Filler text. This should be a quick overview of what this card represents. Could be a screenshot or video/gif.<br><br>
                     <a href="learn.html">Start your journey</a> <!-- Link will need to be changed -->
                 </div>
             </div>
             <div class="practice-card card">
-                <div class="card-left"> 
+                <div class="card-left hide-txt"> 
                     Challenge yourself something something
                 </div>
-                <div class="card-right">
-                    Filler text. This should be a quick overview of what this card represents. Could be a screenshot or video/gif.
+                <div class="card-right hide-txt">
+                    Filler text. This should be a quick overview of what this card represents. Could be a screenshot or video/gif.<br><br>
                     <a href="learn.html">Practice</a> <!-- Link will need to be changed -->
                 </div>
             </div>
             <div class="experiment-card card">
-                <div class="card-left">
+                <div class="card-left hide-txt">
                     Mess around and Experiment something
                 </div>
-                <div class="card-right">
-                    Filler text. This should be a quick overview of what this card represents. Could be a screenshot or video/gif.
+                <div class="card-right hide-txt">
+                    Filler text. This should be a quick overview of what this card represents. Could be a screenshot or video/gif.<br><br>
                     <a href="learn.html">Experiment</a> <!-- Link will need to be changed -->
                 </div>
             </div>

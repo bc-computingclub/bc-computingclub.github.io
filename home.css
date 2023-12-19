@@ -1,12 +1,158 @@
 :root {
-    --bg-col: whitesmoke;
+    --bg-col: rgb(216, 216, 216);
     --col: black;
-    --cta-btn-col: rgb(72, 72, 158); 
+    --cta-btn-col: rgb(56, 71, 119); 
     --font: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    --secondary-col:white;
+    --tertiary-col: rgb(97, 106, 138);
+}
+
+* {
+    font-family: var(--font);
+    box-sizing: border-box;
+    margin: 0px;
+    padding: 0px;
 }
 
 body {
     background-color: var(--bg-col);
     color: var(--col);
-    font-family: var(--font);
 }
+
+a {
+    text-decoration: none;
+    color: var(--col);
+}
+
+.nav-container {
+    background-color: var(--secondary-col);
+    width: 100%;
+    position: sticky;
+    top: 0px;
+    height: 100px;
+    padding-block: 1em;
+
+    display: grid;
+    align-items: center;
+    grid-template-columns: auto auto;
+}
+
+.logo-thumbnail {
+    height: 50px;
+    width: 50px;
+    fill: cover;
+    border-radius: 4px;
+    filter: grayscale(1);
+}
+
+.logo {
+    margin-left: 1em;
+    justify-self: self-start;
+}
+
+.nav-links {
+    margin-inline: 1em;
+    display: grid;
+    grid-template-columns: auto auto auto auto;
+    gap: 1em;
+    justify-self: end;
+}
+
+.nav-links >* {
+    color: var(--secondary-col);
+    padding-inline: 1em;
+    padding-block: 0.7em;
+    display: flex;
+    gap: 0.5em;
+    justify-content: center;
+    align-items: center;
+    border-radius: 4px;
+    text-transform: uppercase;
+    font-weight: bolder;
+
+    transform: scale(1);
+    transition-timing-function: ease-in;
+    transform-origin: bottom;
+    transition-duration: 0.15s;
+}
+
+.nav-links >*:hover {
+    transform: scale(1.05);
+}
+
+.nav-links >*:not(.active) {
+    background-color: var(--col);
+}
+
+.nav-links >*.active {
+    background-color: var(--cta-btn-col);
+}
+
+.cards-container {
+    height: calc(100dvh - 100px);
+    display: grid;
+    grid-template-rows: auto auto;
+    padding-inline: 8em;
+}
+
+.cards {
+    display: grid;
+    align-content: center;
+    position: relative;
+    justify-content: center;
+}
+
+.card {
+    padding-inline: 2em;
+    padding-block: 4em;
+    border-radius: 5px;
+    color: var(--secondary-col);
+    display: grid;
+    grid-template-columns: auto auto;
+    gap: 6em;
+    align-items: center;
+    height: 340px;
+    max-width: 800px;
+
+    position: absolute;
+}
+
+.learn-card {
+    z-index: 1;
+    background-color: var(--cta-btn-col);
+    right: 10%;
+    top: 46%;
+}
+
+.practice-card {
+    z-index: 0;
+    background-color: var(--tertiary-col);
+    right: 5%;
+    top: 56%;
+}
+
+.experiment-card {
+    z-index: -1;
+    background-color: var(--secondary-col);
+    top: 66%;
+    right: 0;
+}
+
+.card-left, .card-right{
+    text-align: start;
+}
+
+.card-left {
+    font-size: 3rem;
+}
+
+.card-right {
+    font-size: 1.4rem;
+    border-left: 4px solid var(--secondary-col);
+    padding-inline-start: 1em;
+}
+
+/* planning to toggle w/ js */
+.card >*.hide-txt {
+    visibility: hidden;
+} 
