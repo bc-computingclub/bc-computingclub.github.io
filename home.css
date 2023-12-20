@@ -1,12 +1,22 @@
 @import url(https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0);
+@import url(styles/theme.css);
+@import url(styles/util.css);
 
 :root {
     --bg-col: rgb(216, 216, 216);
+    --secondary-bg-col:white;
     --col: black;
     --cta-btn-col: rgb(56, 71, 119); 
     --font: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     --secondary-col:white;
     --tertiary-col: rgb(97, 106, 138);
+
+    --lighten0:rgba(255,255,255,0.25);
+    --lighten:rgba(255,255,255,0.1);
+    --lighten2:rgba(255,255,255,0.05);
+    --darken0:rgba(0,0,0,0.25);
+    --darken:rgba(0,0,0,0.1);
+    --darken2:rgba(0,0,0,0.05);
 }
 
 * {
@@ -27,7 +37,7 @@ a {
 }
 
 .nav-container {
-    background-color: var(--secondary-col);
+    background-color: var(--secondary-bg-col);
     width: 100%;
     position: sticky;
     top: 0px;
@@ -88,6 +98,7 @@ a {
 
 .nav-links >*.active {
     background-color: var(--cta-btn-col);
+    color:white;
 }
 
 .cards-container {

@@ -5,7 +5,8 @@
         "lib": [
             "DOM",
             "ES2022",
-            "ES2015.Iterable"
+            "ES2015.Iterable",
+            "DOM.Iterable"
         ],
         "sourceMap": true,
         "rootDir": "src",
