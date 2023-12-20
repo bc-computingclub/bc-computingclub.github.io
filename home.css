@@ -17,6 +17,7 @@
     --darken0:rgba(0,0,0,0.25);
     --darken:rgba(0,0,0,0.1);
     --darken2:rgba(0,0,0,0.05);
+    --another-col:rgb(178, 183, 201);
 }
 
 * {
@@ -96,9 +97,18 @@ a {
     background-color: var(--col);
 }
 
-.nav-links >*.active {
+.learn-link.active {
     background-color: var(--cta-btn-col);
     color:white;
+}
+
+.practice-link.active {
+    background-color: var(--tertiary-col);
+}
+
+.experiment-link.active {
+    background-color: var(--another-col);
+    color: var(--col);
 }
 
 .cards-container {
@@ -106,13 +116,18 @@ a {
     display: grid;
     grid-template-rows: auto auto;
     padding-inline: 8em;
+    align-content: center;
+    justify-content: center;
 }
 
 .cards {
     display: grid;
     align-content: center;
-    position: relative;
     justify-content: center;
+    position: relative;
+    height: 340px;
+    width: 800px;
+    margin-bottom: calc(2em + 40px);
 }
 
 .card {
@@ -121,34 +136,54 @@ a {
     border-radius: 5px;
     color: var(--secondary-col);
     display: grid;
-    grid-template-columns: auto auto;
-    gap: 6em;
+    grid-template-columns: 1fr 1fr;
+    gap: 4em;
     align-items: center;
     height: 340px;
-    max-width: 800px;
+    width: 800px;
 
     position: absolute;
+    animation-name: fade-from-left;
+    animation-duration: 1.5s;
+    animation-fill-mode: forwards;
+    animation-timing-function: cubic-bezier(0,1.07,.71,.96);
+}
+
+@keyframes fade-from-left {
+    0% {
+        translate: 100px 0;
+    }
+    100% {
+        opacity: 1;
+        translate: 0 0;
+    }
 }
 
 .learn-card {
     z-index: 1;
     background-color: var(--cta-btn-col);
-    right: 10%;
-    top: 46%;
+    top: 0;
+    left: 0;
 }
 
 .practice-card {
     z-index: 0;
     background-color: var(--tertiary-col);
-    right: 5%;
-    top: 56%;
+    top: 20px;
+    left: 20px;
+    opacity: 0;
+    
+    animation-delay: 0.2s;
 }
 
 .experiment-card {
+    opacity: 0;
     z-index: -1;
-    background-color: var(--secondary-col);
-    top: 66%;
-    right: 0;
+    background-color: var(--another-col);
+    top: 40px;
+    left: 40px;
+    
+    animation-delay: 0.4s;
 }
 
 .card-left, .card-right{
@@ -156,11 +191,11 @@ a {
 }
 
 .card-left {
-    font-size: 3rem;
+    font-size: 2.6rem;
 }
 
 .card-right {
-    font-size: 1.4rem;
+    font-size: 1.6rem;
     border-left: 4px solid var(--secondary-col);
     padding-inline-start: 1em;
 }
@@ -170,8 +205,50 @@ a {
     visibility: hidden;
 } 
 
-/*  */
-
 .material-symbols-outlined{
     max-width:1em;
+}
+
+.card-controls {
+    display: grid;
+    grid-template-columns: auto auto auto;
+    gap: 2em;
+    align-content: center;
+    justify-content: center;
+    width: 840px;
+
+    animation-name: slide-up;
+    animation-duration: 0.65s;
+    animation-timing-function: cubic-bezier(0,1.07,.69,.95);
+    animation-fill-mode: forwards;
+}
+
+@keyframes slide-up {
+    0% {
+        translate: 0 300px;
+        opacity: 0;
+    }
+    100% {
+        translate: 0 0;
+        opacity: 1;
+    }
+}
+
+.card-btn {
+    width: 120px;
+    height: 8px;
+    border-radius: 8px;
+    background-color: var(--secondary-col);
+    transform: scale(1);
+    transition-duration: 0.2s;
+    transition-timing-function: ease-in-out;
+    cursor: pointer;
+    
+    &:hover{
+        transform: scale(1.2);
+    }
+ 
+    &.active-card-btn {
+        background-color: var(--tertiary-col);
+    }
 }
