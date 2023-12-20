@@ -1,8 +1,104 @@
-body{
-    background-color:#050505;
+:root{
+    --bg:whitesmoke;
+    --border:darkgray;
+    --text:white;
+
+    --editor-gap:4px;
+
+    /* --vscode-editorGutter-background:var(--bg) !important; */
 }
+
 .cont{
-    width:800px;
-    height:600px;
-    border:1px solid grey;
+    /* padding-top:1rem; */
+    margin:0px;
+    /* width:800px; */
+    height:100%;
+    /* height:600px; */
+    /* border:1px solid gray; */
+    /* flex-grow:1; */
+    /* min-height:500px; */;
+}
+
+.monaco-editor{
+    padding-top:1rem;
+    border-radius:5px;
+    margin:5px;
+    box-sizing:border-box;
+    width:calc(100% - 500px) !important;
+}
+.overflow-guard{
+    box-sizing:border-box;
+    margin-right:15px;
+}
+
+.nav-container{
+    height:60px;
+    padding-block:0px;
+    position:static;
+}
+.nav-links > *{
+    font-size:14px;
+    padding-block:0.5em;
+}
+
+.flx-v{
+    display:flex;
+    flex-direction:column;
+    /* gap:var(--editor-gap); */
+}
+.flx-h{
+    display:flex;
+    height:100%;
+    /* gap:var(--editor-gap); */
+}
+
+body{
+    height:100vh;
+    overflow:hidden;
+}
+
+.pane{
+    /* border:solid 1px var(--border); */
+    box-sizing:border-box;
+    /* margin-top:5px; */
+    border-radius:4px;
+    background-color:var(--bg);
+}
+.pane-files{
+    width:200px;
+    border-left:none;
+    background-color:var(--bg);
+    margin:var(--editor-gap);
+}
+.pane-code{
+    /* flex-grow:1; */
+    width:50%;
+    border-left:none;
+    border-right:none;
+    margin-top:var(--editor-gap);
+    margin-bottom:var(--editor-gap);
+}
+.pane-preview{
+    /* width:50%; */
+    border-right:none;
+}
+.d-open-files{
+    margin:0px;
+    height:42px;
+    /* border-bottom:solid 1px var(--border); */
+    padding:4px;
+    background-color:var(--bg);
+    display:flex;
+    gap:3px;
+}
+.file-link{
+    padding:6px 12px;
+    font-size:14px;
+    /* background-color:var(--secondary-col); */
+    color:var(--bg);
+    border-radius:3px;
+    background-color:var(--cta-btn-col);
+    width:max-content;
+    user-select:none;
+    -webkit-user-select:none;
 }

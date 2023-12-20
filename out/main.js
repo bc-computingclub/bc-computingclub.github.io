@@ -23,7 +23,7 @@ require(['vs/editor/editor.main'], function () {
         },
         minimap: {
             enabled: false
-        },
+        }
         // codeLens:false
     });
     console.log(editor);

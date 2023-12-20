@@ -1,3 +1,5 @@
+@import url(https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0);
+
 :root {
     --bg-col: rgb(216, 216, 216);
     --col: black;
@@ -8,13 +10,13 @@
 }
 
 * {
-    font-family: var(--font);
     box-sizing: border-box;
     margin: 0px;
     padding: 0px;
 }
 
 body {
+    font-family: var(--font);
     background-color: var(--bg-col);
     color: var(--col);
 }
@@ -156,3 +158,9 @@ a {
 .card >*.hide-txt {
     visibility: hidden;
 } 
+
+/*  */
+
+.material-symbols-outlined{
+    max-width:1em;
+}
