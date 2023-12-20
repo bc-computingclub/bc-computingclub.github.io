@@ -147,6 +147,24 @@ a {
     animation-duration: 1.5s;
     animation-fill-mode: forwards;
     animation-timing-function: cubic-bezier(0,1.07,.71,.96);
+
+    -webkit-box-shadow: 0px 10px 17px -11px rgba(0,0,0,0.54);
+    -moz-box-shadow: 0px 10px 17px -11px rgba(0,0,0,0.54);
+    box-shadow: 0px 10px 17px -11px rgba(0,0,0,0.54);
+
+    transform: scale(1);
+    transition-duration: 0.2s;
+    cursor: pointer;
+
+    &.current-card:hover{
+        -webkit-box-shadow: 0px 10px 17px -11px rgba(0,0,0,1);
+        -moz-box-shadow: 0px 10px 17px -11px rgba(0,0,0,1);
+        box-shadow: 0px 10px 17px -11px rgba(0,0,0,1);
+    }
+
+    &:hover{
+        transform: scale(1.01);
+    }
 }
 
 @keyframes fade-from-left {
@@ -160,14 +178,14 @@ a {
 }
 
 .learn-card {
-    z-index: 1;
+    z-index: 2;
     background-color: var(--cta-btn-col);
     top: 0;
     left: 0;
 }
 
 .practice-card {
-    z-index: 0;
+    z-index: 1;
     background-color: var(--tertiary-col);
     top: 20px;
     left: 20px;
@@ -178,7 +196,7 @@ a {
 
 .experiment-card {
     opacity: 0;
-    z-index: -1;
+    z-index: 0;
     background-color: var(--another-col);
     top: 40px;
     left: 40px;
@@ -212,7 +230,7 @@ a {
 .card-controls {
     display: grid;
     grid-template-columns: auto auto auto;
-    gap: 2em;
+    gap: 1em;
     align-content: center;
     justify-content: center;
     width: 840px;
@@ -225,7 +243,7 @@ a {
 
 @keyframes slide-up {
     0% {
-        translate: 0 300px;
+        translate: 0 100px;
         opacity: 0;
     }
     100% {
@@ -235,20 +253,17 @@ a {
 }
 
 .card-btn {
-    width: 120px;
+    width: 12px;
     height: 8px;
     border-radius: 8px;
-    background-color: var(--secondary-col);
-    transform: scale(1);
+    background-color: var(--tertiary-col);
     transition-duration: 0.2s;
     transition-timing-function: ease-in-out;
     cursor: pointer;
-    
-    &:hover{
-        transform: scale(1.2);
-    }
- 
+    transform-origin: center;
+
     &.active-card-btn {
-        background-color: var(--tertiary-col);
+        width: 160px;
+        background-color: var(--cta-btn-col);
     }
 }

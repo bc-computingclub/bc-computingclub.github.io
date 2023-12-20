@@ -9,7 +9,7 @@ const practiceBtn = document.querySelector(".practice-link") as HTMLElement;
 const experimentBtn = document.querySelector(".experiment-link") as HTMLElement;
 const navLinkArr = [learnBtn,practiceBtn,experimentBtn];
 
-let currentCard = cardArray[0];
+let currentCard = cardArray[0]; // currentCard has class current-card
 console.log(currentCard);
 
 buttonArr.forEach((button) => {
