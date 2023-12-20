@@ -18,9 +18,9 @@
             </a>
         </div>
         <div class="nav-links">
-            <a href="#learn" class="active">Learn <span class="material-symbols-outlined">Auto_stories</span></a>
-            <a href="#practice">Practice <span class="material-symbols-outlined">Checkbook</span></a>
-            <a href="#experiment">Experiment <span class="material-symbols-outlined">Experiment</span></a>
+            <a href="#learn" class="learn-link active">Learn <span class="material-symbols-outlined">Auto_stories</span></a>
+            <a href="#practice" class="practice-link">Practice <span class="material-symbols-outlined">Checkbook</span></a>
+            <a href="#experiment" class="experiment-link">Experiment <span class="material-symbols-outlined">Experiment</span></a>
             <a href="#profile"><span class="material-symbols-outlined">Person</span></a>
         </div>
     </div>
@@ -28,39 +28,37 @@
     <div class="cards-container">
         <!--This section contains the 3 cards corresponding to the links in the navbar, with a quick explanation that links to each of the 3 sections of the website.-->
         <div class="cards">
-            <div class="learn-card card">
+            <div class="learn-card card" card-label="learn">
                 <div class="card-left"> <!-- Keep in mind - all of the text here is still a placeholder, change as you see fit. -->
                     Apply your knowledge of Web Scripting
                 </div>
                 <div class="card-right">
-                    Filler text. This should be a quick overview of what this card represents. Could be a screenshot or video/gif.<br><br>
-                    <a href="learn.html">Start your journey</a> <!-- Link will need to be changed -->
+                    Filler text. This should be a quick overview of what this card represents. Could be a screenshot or video/gif.
                 </div>
             </div>
-            <div class="practice-card card">
+            <div class="practice-card card" card-label="practice">
                 <div class="card-left hide-txt"> 
                     Challenge yourself something something
                 </div>
                 <div class="card-right hide-txt">
-                    Filler text. This should be a quick overview of what this card represents. Could be a screenshot or video/gif.<br><br>
-                    <a href="learn.html">Practice</a> <!-- Link will need to be changed -->
+                    Filler text. This should be a quick overview of what this card represents. Could be a screenshot or video/gif.
                 </div>
             </div>
-            <div class="experiment-card card">
+            <div class="experiment-card card" card-label="experiment">
                 <div class="card-left hide-txt">
                     Mess around and Experiment something
                 </div>
                 <div class="card-right hide-txt">
-                    Filler text. This should be a quick overview of what this card represents. Could be a screenshot or video/gif.<br><br>
-                    <a href="learn.html">Experiment</a> <!-- Link will need to be changed -->
+                    Filler text. This should be a quick overview of what this card represents. Could be a screenshot or video/gif.
                 </div>
             </div>
         </div>
 
         <div class="card-controls">
-            <div class="learn-card-link"></div>
-            <div class="practice-card-link"></div>
-            <div class="experiment-card-link"></div>
+            <div class="card-btn active-card-btn" card-label="learn"></div>
+            <div class="card-btn" card-label="practice"></div>
+            <div class="card-btn" card-label="experiment"></div>
+            
         </div>
 
     </div>
@@ -76,5 +74,7 @@
             </div>
         </div>
     </div>
+
+    <script src="out/cards.js"></script>
 </body>
 </html>
