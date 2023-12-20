@@ -160,13 +160,13 @@ a {
     background-color: var(--tertiary-col);
     top: 20px;
     left: 20px;
-    opacity: 0.2;
+    opacity: 0;
     
     animation-delay: 0.2s;
 }
 
 .experiment-card {
-    opacity: 0.2;
+    opacity: 0;
     z-index: -1;
     background-color: var(--another-col);
     top: 40px;
