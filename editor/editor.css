@@ -11,6 +11,10 @@
     /* --vscode-editorGutter-background:var(--bg) !important; */
 }
 
+body .nav-links > .active{
+    background-color:var(--cta-btn-col);
+}
+
 .cont{
     /* padding-top:1rem; */
     background-color:var(--editor-bg);
