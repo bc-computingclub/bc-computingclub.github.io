@@ -177,12 +177,13 @@ body{
 }
 .pane-preview > iframe{
     background-color:white;
+    border:none;
 
     /* margin:var(--editor-gap); */
-    margin-top:0px;
+    margin-top:-1px;
     width:100%;
-    height:calc(100% - 45px);
-    /* border-radius:3px; */
+    height:calc(100% - 46px); 
+    border-radius:3px;
 }
 
 .header{
@@ -218,4 +219,8 @@ body{
     /* text-transform:uppercase; */
     /* font-weight:bold; */
     font-family:monospace;
+}
+
+.icon-refresh{
+    transition:rotate 0.3s ease-out;
 }

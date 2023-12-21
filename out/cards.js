@@ -6,7 +6,7 @@ const learnBtn = document.querySelector(".learn-link");
 const practiceBtn = document.querySelector(".practice-link");
 const experimentBtn = document.querySelector(".experiment-link");
 const navLinkArr = [learnBtn, practiceBtn, experimentBtn];
-let currentCard = cardArray[0];
+let currentCard = cardArray[0]; // currentCard has class current-card
 console.log(currentCard);
 buttonArr.forEach((button) => {
     button.addEventListener("click", () => {

@@ -102,8 +102,13 @@ async function init() {
     });
     project = new Project("Test Project");
     project.createFile("index.html", `<html>
+    <head>
+        <link rel="stylesheet" href="style.css">
+    </head>
     <body>
         <div>Hello</div>
+
+        <script src="script.js"></script>
     </body>
 </html>`, "html");
     project.createFile("style.css", `body{
@@ -133,24 +138,64 @@ function onResize(isFirst = false, who) {
     if (project.hasEditor())
         project.getCurEditor().layout();
 }
-// // @ts-ignore
-// require.config({paths:{vs:"../lib/monaco/min/vs"}});
-// // @ts-ignore
-// require(['vs/editor/editor.main'], function () {
-//     var editor = monaco.editor.create(jsCont, {
-//         value: [`<html>
-//     <body>
-//         <div>Hello</div>
-//     </body>
-// </html>`].join('\n'),
-//         language: 'html',
-//         theme:"vs-light",
-//         bracketPairColorization:{
-//             enabled:false
-//         },
-//         minimap:{
-//             enabled:false
-//         }
-//     });
-// });
+let b_refresh = document.querySelector(".b-refresh");
+let icon_refresh = document.querySelector(".icon-refresh");
+let iframe = document.querySelector("iframe");
+let _icRef_state = false;
+b_refresh.addEventListener("click", e => {
+    let newIF = document.createElement("iframe");
+    iframe.replaceWith(newIF);
+    iframe = newIF;
+    icon_refresh.style.rotate = _icRef_state ? "360deg" : "0deg";
+    _icRef_state = !_icRef_state;
+    let text = project.files[0].editor.getValue();
+    // let file = new File([new Uint8Array([...text].map((v,i)=>v.charCodeAt(i)))],"index.html");
+    // let bytes = new Uint8Array([...text].map((v,i)=>text.charCodeAt(i)));
+    // console.log(bytes);
+    // let file = new Blob([bytes]);
+    // let url = URL.createObjectURL(file);
+    // let a = document.createElement("a");
+    // a.href = url;
+    // a.download = "index.html";
+    // console.log(a.href);
+    // a.click();
+    let root = iframe.contentDocument;
+    root.open();
+    root.write(text);
+    let scripts = iframe.contentDocument.scripts;
+    let newScriptList = [];
+    for (const c of scripts) {
+        let div = document.createElement("div");
+        div.textContent = c.src;
+        c.replaceWith(div);
+        newScriptList.push(div);
+    }
+    for (const c of newScriptList) {
+        // if(!c.hasAttribute("src")) continue;
+        // let src = c.src.replace(location.ancestorOrigins[0]+"/editor","");
+        // c.innerHTML = project.files.find(v=>+"/"+v.name == src)?.editor.getValue();
+        let sc = document.createElement("script");
+        sc.innerHTML = project.files[2].editor.getValue();
+        c.replaceWith(sc);
+    }
+    let styles = iframe.contentDocument.querySelectorAll("link");
+    for (const c of styles) {
+        let st = document.createElement("style");
+        st.innerHTML = project.files[1].editor.getValue();
+        c.replaceWith(st);
+    }
+});
+document.addEventListener("keydown", e => {
+    let k = e.key.toLowerCase();
+    if (e.ctrlKey) {
+        if (k == "r") {
+            // e.preventDefault();
+            // b_refresh.click();
+        }
+        else if (k == "s") {
+            e.preventDefault();
+            b_refresh.click();
+        }
+    }
+});
 //# sourceMappingURL=editor.js.map
