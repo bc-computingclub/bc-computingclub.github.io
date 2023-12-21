@@ -141,7 +141,7 @@ function onResize(isFirst = false, who) {
 let b_refresh = document.querySelector(".b-refresh");
 let icon_refresh = document.querySelector(".icon-refresh");
 let iframe = document.querySelector("iframe");
-let _icRef_state = false;
+let _icRef_state = true;
 b_refresh.addEventListener("click", e => {
     let newIF = document.createElement("iframe");
     iframe.replaceWith(newIF);
@@ -186,7 +186,15 @@ b_refresh.addEventListener("click", e => {
     }
 });
 document.addEventListener("keydown", e => {
+    if (!e.key)
+        return;
     let k = e.key.toLowerCase();
+    if (menusOpen.length) {
+        if (k == "escape") {
+            closeAllMenus();
+        }
+        return;
+    }
     if (e.ctrlKey) {
         if (k == "r") {
             // e.preventDefault();

@@ -11,6 +11,8 @@
     --secondary-col:white;
     --tertiary-col: rgb(97, 106, 138);
 
+    --menu-btn-bg:black;
+
     --lighten0:rgba(255,255,255,0.25);
     --lighten:rgba(255,255,255,0.1);
     --lighten2:rgba(255,255,255,0.05);
@@ -94,7 +96,7 @@ a {
 }
 
 .nav-links >*:not(.active) {
-    background-color: var(--col);
+    background-color: var(--menu-btn-bg);
 }
 
 .learn-link.active {

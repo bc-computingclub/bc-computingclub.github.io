@@ -26,10 +26,12 @@ body.theme-dark{
     --bg-col:#050505;
     --cta-btn-col:#245;
 
+    --menu-btn-bg:var(--bg-col);
+
     & iframe{
         filter:invert(1) hue-rotate(180deg);
     }
 }
-body.theme-dark .nav-links > *:not(.active){
-    background-color:var(--bg-col);
+body.theme-dark .menu .inp-cont{
+    --c-bg:rgba(255,255,255,0.15);
 }
