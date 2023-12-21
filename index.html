@@ -13,14 +13,14 @@
     <div class="nav-container"> <!-- Links will need to be updated-->
         <div class="logo">
             <a href="index.html">
-                <img src="images/error.png" alt="Code Challenge Logo" class="logo-thumbnail" onmouseenter="{console.log(3)}">
+                <img src="images/error.png" alt="Code Challenge Logo" class="logo-thumbnail">
                 <!-- Insert placeholder logo here -->
             </a>
         </div>
         <div class="nav-links">
-            <a href="#learn" class="learn-link active">Learn <span class="material-symbols-outlined">Auto_stories</span></a>
-            <a href="#practice" class="practice-link">Practice <span class="material-symbols-outlined">Checkbook</span></a>
-            <a href="#experiment" class="experiment-link">Experiment <span class="material-symbols-outlined">Experiment</span></a>
+            <a href="#learn" class="learn-link active" card-label="learn">Learn <span class="material-symbols-outlined">Auto_stories</span></a>
+            <a href="#practice" class="practice-link" card-label="practice">Practice <span class="material-symbols-outlined">Checkbook</span></a>
+            <a href="#experiment" class="experiment-link" card-label="experiment">Experiment <span class="material-symbols-outlined">Experiment</span></a>
             <a href="#profile"><span class="material-symbols-outlined">Person</span></a>
         </div>
     </div>
@@ -28,7 +28,7 @@
     <div class="cards-container">
         <!--This section contains the 3 cards corresponding to the links in the navbar, with a quick explanation that links to each of the 3 sections of the website.-->
         <div class="cards">
-            <div class="learn-card card current-card" card-label="learn">
+            <div class="learn-card card current-card initial-state" card-label="learn" position="1">
                 <div class="card-left"> <!-- Keep in mind - all of the text here is still a placeholder, change as you see fit. -->
                     Apply your knowledge of Web Scripting
                 </div>
@@ -36,19 +36,19 @@
                     Filler text. This should be a quick overview of what this card represents. Could be a screenshot or video/gif.
                 </div>
             </div>
-            <div class="practice-card card" card-label="practice">
-                <div class="card-left hide-txt"> 
+            <div class="practice-card card initial-state" card-label="practice" position="2">
+                <div class="card-left"> 
                     Challenge yourself something something
                 </div>
-                <div class="card-right hide-txt">
+                <div class="card-right">
                     Filler text. This should be a quick overview of what this card represents. Could be a screenshot or video/gif.
                 </div>
             </div>
-            <div class="experiment-card card" card-label="experiment">
-                <div class="card-left hide-txt">
+            <div class="experiment-card card initial-state" card-label="experiment" position="3">
+                <div class="card-left">
                     Mess around and Experiment something
                 </div>
-                <div class="card-right hide-txt">
+                <div class="card-right">
                     Filler text. This should be a quick overview of what this card represents. Could be a screenshot or video/gif.
                 </div>
             </div>
@@ -58,7 +58,6 @@
             <div class="card-btn active-card-btn" card-label="learn"></div>
             <div class="card-btn" card-label="practice"></div>
             <div class="card-btn" card-label="experiment"></div>
-            
         </div>
 
     </div>

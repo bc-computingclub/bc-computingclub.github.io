@@ -8,8 +8,10 @@
     --col: black;
     --cta-btn-col: rgb(56, 71, 119); 
     --font: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    --secondary-col:white;
-    --tertiary-col: rgb(97, 106, 138);
+    --secondary-col:rgb(255, 255, 255);
+    --tertiary-col: #216779;
+    --faded-col:rgb(128, 136, 167);
+    --another-col:rgb(80, 62, 110);
 
     --lighten0:rgba(255,255,255,0.25);
     --lighten:rgba(255,255,255,0.1);
@@ -17,7 +19,6 @@
     --darken0:rgba(0,0,0,0.25);
     --darken:rgba(0,0,0,0.1);
     --darken2:rgba(0,0,0,0.05);
-    --another-col:rgb(178, 183, 201);
 }
 
 * {
@@ -108,7 +109,6 @@ a {
 
 .experiment-link.active {
     background-color: var(--another-col);
-    color: var(--col);
 }
 
 .cards-container {
@@ -141,66 +141,113 @@ a {
     align-items: center;
     height: 340px;
     width: 800px;
+    user-select: none;
 
     position: absolute;
-    animation-name: fade-from-left;
-    animation-duration: 1.5s;
-    animation-fill-mode: forwards;
-    animation-timing-function: cubic-bezier(0,1.07,.71,.96);
 
     -webkit-box-shadow: 0px 10px 17px -11px rgba(0,0,0,0.54);
     -moz-box-shadow: 0px 10px 17px -11px rgba(0,0,0,0.54);
     box-shadow: 0px 10px 17px -11px rgba(0,0,0,0.54);
-
-    transform: scale(1);
-    transition-duration: 0.2s;
     cursor: pointer;
 
-    &.current-card:hover{
-        -webkit-box-shadow: 0px 10px 17px -11px rgba(0,0,0,1);
-        -moz-box-shadow: 0px 10px 17px -11px rgba(0,0,0,1);
-        box-shadow: 0px 10px 17px -11px rgba(0,0,0,1);
+    &.current-card{
+        transition: box-shadow 0.2s ease;
     }
 
-    &:hover{
-        transform: scale(1.01);
+    &.current-card:hover{
+        -webkit-box-shadow: 2px 10px 17px -11px rgba(0,0,0,0.8);
+        -moz-box-shadow: 2px 10px 17px -11px rgba(0,0,0,0.8);
+        box-shadow: 2px 10px 17px -11px rgba(0,0,0,0.8);
+    }
+
+    &[position="1"]{
+        z-index: 3;
+        animation: 0.7s to-first-position ease-out forwards;
+        &.initial-state{
+            top: 0px;
+            left: 0px;
+        }
+    }
+
+    &[position="2"]{
+        z-index: 2;
+        animation: 0.7s to-second-position ease-out forwards;
+        &.initial-state{
+            top: 20px;
+            left: 20px;
+            animation: 0.7s altsecond ease-out forwards;
+        }
+    }
+
+    &[position="3"]{ /* default position for new cards*/
+        z-index: 1;
+        animation: 0.7s to-third-position ease-out forwards;
+        &.initial-state{
+            top: 40px;
+            left: 40px;
+        }
     }
 }
 
-@keyframes fade-from-left {
-    0% {
-        translate: 100px 0;
+@keyframes to-first-position {
+    from {
+        top: 20px;
+        left: 20px;
     }
-    100% {
+    to {
+        top: 0px;
+        left: 0px;
+    }
+}
+
+@keyframes to-second-position {
+    from {
+        top: 40px;
+        left: 40px;
+    }
+    to {
+        top: 20px;
+        left: 20px;
+    }
+}
+
+@keyframes altsecond {
+    from {
+        top: 40px;
+        left: 40px;
+        opacity: 0.3;
+    }
+    to {
+        top: 20px;
+        left: 20px;
         opacity: 1;
-        translate: 0 0;
+    }
+}
+
+@keyframes to-third-position {
+    from {
+        top: 60px;
+        left: 60px;
+        opacity: 0.3;
+    }
+    to {
+        top: 40px;
+        left: 40px;
+        opacity: 1;
     }
 }
 
 .learn-card {
-    z-index: 2;
     background-color: var(--cta-btn-col);
-    top: 0;
-    left: 0;
 }
 
 .practice-card {
-    z-index: 1;
     background-color: var(--tertiary-col);
-    top: 20px;
-    left: 20px;
-    opacity: 0;
-    
     animation-delay: 0.2s;
 }
 
 .experiment-card {
-    opacity: 0;
-    z-index: 0;
     background-color: var(--another-col);
-    top: 40px;
-    left: 40px;
-    
     animation-delay: 0.4s;
 }
 
@@ -218,10 +265,23 @@ a {
     padding-inline-start: 1em;
 }
 
-/* planning to toggle w/ js */
-.card >*.hide-txt {
-    visibility: hidden;
-} 
+.card.remove-card {
+    animation-name: remove-card;
+    animation-duration: .25s;
+    animation-timing-function: linear;
+    animation-fill-mode: forwards;
+}
+
+@keyframes remove-card {
+    0% {
+        opacity: 1;
+        translate: 0 0;
+    }
+    100% {   
+        opacity: 0;
+        translate: -20px -20px;
+    }
+}
 
 .material-symbols-outlined{
     max-width:1em;
@@ -236,7 +296,7 @@ a {
     width: 840px;
 
     animation-name: slide-up;
-    animation-duration: 0.65s;
+    animation-duration: 0.7s;
     animation-timing-function: cubic-bezier(0,1.07,.69,.95);
     animation-fill-mode: forwards;
 }
@@ -253,17 +313,24 @@ a {
 }
 
 .card-btn {
-    width: 12px;
+    width: 25px;
     height: 8px;
     border-radius: 8px;
-    background-color: var(--tertiary-col);
-    transition-duration: 0.2s;
+    background-color: var(--faded-col);
+    transition-duration: 0.6s;
     transition-timing-function: ease-in-out;
-    cursor: pointer;
     transform-origin: center;
 
     &.active-card-btn {
         width: 160px;
-        background-color: var(--cta-btn-col);
+        &[card-label="learn"] {
+            background-color: var(--cta-btn-col);
+        }
+        &[card-label="practice"] {
+            background-color: var(--tertiary-col);   
+        }
+        &[card-label="experiment"] {
+            background-color: var(--another-col);
+        }
     }
 }
