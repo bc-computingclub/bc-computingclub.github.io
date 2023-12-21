@@ -6,12 +6,19 @@
     --bg-col: rgb(216, 216, 216);
     --secondary-bg-col:white;
     --col: black;
-    --cta-btn-col: rgb(56, 71, 119); 
-    --font: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     --secondary-col:rgb(255, 255, 255);
-    --tertiary-col: #216779;
-    --faded-col:rgb(128, 136, 167);
-    --another-col:rgb(80, 62, 110);
+    --font: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    --faded-col:rgb(150, 157, 184);
+    
+    /* Colors for cards */
+    --learn-col: rgb(56, 71, 119); 
+    --practice-col: rgb(33, 103, 121); 
+    --experiment-col:rgb(80, 62, 110); 
+
+    /* Secondary colors for cards */
+    --learn-col-alt: rgb(113, 125, 170); 
+    --practice-col-alt: rgb(98, 147, 160); 
+    --experiment-col-alt:rgb(143, 125, 172); 
 
     --menu-btn-bg:black;
 
@@ -101,16 +108,16 @@ a {
 }
 
 .learn-link.active {
-    background-color: var(--cta-btn-col);
+    background-color: var(--learn-col);
     color:white;
 }
 
 .practice-link.active {
-    background-color: var(--tertiary-col);
+    background-color: var(--practice-col);
 }
 
 .experiment-link.active {
-    background-color: var(--another-col);
+    background-color: var(--experiment-col);
 }
 
 .cards-container {
@@ -144,6 +151,7 @@ a {
     height: 340px;
     width: 800px;
     user-select: none;
+    border: 2px solid transparent;
 
     position: absolute;
 
@@ -153,13 +161,27 @@ a {
     cursor: pointer;
 
     &.current-card{
-        transition: box-shadow 0.2s ease;
+        transition:
+            box-shadow 0.2s ease, 
+            background-color 0.2s ease-in;
     }
 
     &.current-card:hover{
         -webkit-box-shadow: 2px 10px 17px -11px rgba(0,0,0,0.8);
         -moz-box-shadow: 2px 10px 17px -11px rgba(0,0,0,0.8);
         box-shadow: 2px 10px 17px -11px rgba(0,0,0,0.8);
+    }
+
+    &:not(.current-card){
+        &.learn-card{
+            background-color: var(--learn-col-alt);
+        }
+        &.practice-card{
+            background-color: var(--practice-col-alt);
+        }
+        &.experiment-card{
+            background-color: var(--experiment-col-alt);
+        }
     }
 
     &[position="1"]{
@@ -240,16 +262,16 @@ a {
 }
 
 .learn-card {
-    background-color: var(--cta-btn-col);
+    background-color: var(--learn-col);
 }
 
 .practice-card {
-    background-color: var(--tertiary-col);
+    background-color: var(--practice-col);
     animation-delay: 0.2s;
 }
 
 .experiment-card {
-    background-color: var(--another-col);
+    background-color: var(--experiment-col);
     animation-delay: 0.4s;
 }
 
@@ -269,9 +291,13 @@ a {
 
 .card.remove-card {
     animation-name: remove-card;
-    animation-duration: .25s;
+    animation-duration: .3s;
     animation-timing-function: linear;
     animation-fill-mode: forwards;
+
+    & >*{
+        visibility: hidden;
+    }
 }
 
 @keyframes remove-card {
@@ -281,7 +307,7 @@ a {
     }
     100% {   
         opacity: 0;
-        translate: -20px -20px;
+        translate: -10px -10px;
     }
 }
 
@@ -326,13 +352,13 @@ a {
     &.active-card-btn {
         width: 160px;
         &[card-label="learn"] {
-            background-color: var(--cta-btn-col);
+            background-color: var(--learn-col);
         }
         &[card-label="practice"] {
-            background-color: var(--tertiary-col);   
+            background-color: var(--practice-col);   
         }
         &[card-label="experiment"] {
-            background-color: var(--another-col);
+            background-color: var(--experiment-col);
         }
     }
 }
