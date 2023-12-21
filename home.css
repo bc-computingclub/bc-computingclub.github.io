@@ -13,6 +13,8 @@
     --faded-col:rgb(128, 136, 167);
     --another-col:rgb(80, 62, 110);
 
+    --menu-btn-bg:black;
+
     --lighten0:rgba(255,255,255,0.25);
     --lighten:rgba(255,255,255,0.1);
     --lighten2:rgba(255,255,255,0.05);
@@ -95,7 +97,7 @@ a {
 }
 
 .nav-links >*:not(.active) {
-    background-color: var(--col);
+    background-color: var(--menu-btn-bg);
 }
 
 .learn-link.active {
