@@ -186,7 +186,7 @@ a {
 
     &[position="1"]{
         z-index: 3;
-        animation: 0.7s to-first-position ease-out forwards;
+        animation: 0.7s to-first ease-out forwards;
         &.initial-state{
             top: 0px;
             left: 0px;
@@ -195,25 +195,26 @@ a {
 
     &[position="2"]{
         z-index: 2;
-        animation: 0.7s to-second-position ease-out forwards;
+        animation: 0.7s to-second ease-out forwards;
         &.initial-state{
             top: 20px;
             left: 20px;
-            animation: 0.7s altsecond ease-out forwards;
+            animation: 0.7s to-second-alt ease-out forwards;
         }
     }
 
     &[position="3"]{ /* default position for new cards*/
         z-index: 1;
-        animation: 0.7s to-third-position ease-out forwards;
+        animation: 0.7s to-third ease-out forwards;
         &.initial-state{
             top: 40px;
-            left: 40px;
+            left: 40px;   
+            animation: 0.7s to-third-alt ease-out forwards;
         }
     }
 }
 
-@keyframes to-first-position {
+@keyframes to-first {
     from {
         top: 20px;
         left: 20px;
@@ -224,7 +225,7 @@ a {
     }
 }
 
-@keyframes to-second-position {
+@keyframes to-second {
     from {
         top: 40px;
         left: 40px;
@@ -235,20 +236,20 @@ a {
     }
 }
 
-@keyframes altsecond {
+@keyframes to-second-alt {
     from {
         top: 40px;
         left: 40px;
-        opacity: 0.3;
+        filter: grayscale(1);
     }
     to {
         top: 20px;
         left: 20px;
-        opacity: 1;
+        filter: grayscale(0);
     }
 }
 
-@keyframes to-third-position {
+@keyframes to-third {
     from {
         top: 60px;
         left: 60px;
@@ -258,6 +259,19 @@ a {
         top: 40px;
         left: 40px;
         opacity: 1;
+    }
+}
+
+@keyframes to-third-alt {
+    from {
+        top: 60px;
+        left: 60px;
+        filter: grayscale(1);
+    }
+    to {
+        top: 40px;
+        left: 40px;
+        filter: grayscale(0);
     }
 }
 
@@ -280,7 +294,7 @@ a {
 }
 
 .card-left {
-    font-size: 2.6rem;
+    font-size: 2rem;
 }
 
 .card-right {
@@ -341,7 +355,7 @@ a {
 }
 
 .card-btn {
-    width: 25px;
+    width: 30px;
     height: 8px;
     border-radius: 8px;
     background-color: var(--faded-col);
