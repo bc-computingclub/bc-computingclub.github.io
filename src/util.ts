@@ -191,35 +191,35 @@ class LogInMenu extends Menu{
     load(): void {
         super.load();
 
-        this.body.innerHTML = `
-            <div class="i-username"></div>
-            <div class="i-password"></div>
-            <div class="b-submit"></div>
-        `;
+        // this.body.innerHTML = `
+        //     <div class="i-username"></div>
+        //     <div class="i-password"></div>
+        //     <div class="b-submit"></div>
+        // `;
 
-        this.setupTextInput(".i-username",{
-            label:"Username",
-            title:"username",
-            noErrorCheck:true,
-            async validate(v){
-                return v.length >= 5;
-            }
-        });
-        this.setupTextInput(".i-password",{
-            label:"Password",
-            title:"password",
-            noErrorCheck:true,
-            async validate(v){
-                return v.length >= 8;
-            },
-            isPassword:true
-        });
-        this.setupTextInput(".b-submit",{
-            buttonText:"Submit",
-            onClick(){
+        // this.setupTextInput(".i-username",{
+        //     label:"Username",
+        //     title:"username",
+        //     noErrorCheck:true,
+        //     async validate(v){
+        //         return v.length >= 5;
+        //     }
+        // });
+        // this.setupTextInput(".i-password",{
+        //     label:"Password",
+        //     title:"password",
+        //     noErrorCheck:true,
+        //     async validate(v){
+        //         return v.length >= 8;
+        //     },
+        //     isPassword:true
+        // });
+        // this.setupTextInput(".b-submit",{
+        //     buttonText:"Submit",
+        //     onClick(){
                 
-            }
-        });
+        //     }
+        // });
 
         if(false) this.body.innerHTML = `
             <div class="two-col">
@@ -248,6 +248,10 @@ class LogInMenu extends Menu{
         
         `;
         else{
+            if(!socket.connected){
+                this.body.textContent = "Failed to connect to the server.";
+                return;
+            }
             this.body.innerHTML = `
                 <div class="two-col">
                     <div>
