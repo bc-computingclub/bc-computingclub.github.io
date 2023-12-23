@@ -1,6 +1,8 @@
 import * as http from "http";
 import express, { NextFunction, Request, Response } from "express";
 import {Server, Socket} from "socket.io";
+import fs from "fs";
+
 console.log("started...");
 const app = express();
 export const server = http.createServer(app);
@@ -10,6 +12,34 @@ export const io = new Server(server,{
         origin:"*"
     }
 });
+
+export function sanitizeEmail(email:string){
+    email = email.trim();
+    
+    // let chars = email.split("");
+    // let forSlashe = chars.filter(v=>v == "/").length;
+    // let backSlashe = chars.filter(v=>v == "\\").length;
+    // let lt = chars.filter(v=>v == "<").length;
+    // let gt = chars.filter(v=>v == ">").length;
+    // let colon = chars.filter(v=>v == ":").length;
+    // let quote = chars.filter(v=>v == '"').length;
+    // let pipe = chars.filter(v=>v == "|").length;
+    // let question = chars.filter(v=>v == "?").length;
+    // let astrix = chars.filter(v=>v == "*").length;
+    // let period = chars.filter(v=>v == ".").length;
+    
+    email = email.replaceAll("/","(f)");
+    email = email.replaceAll("\\","(b)");
+    email = email.replaceAll("<","(l)");
+    email = email.replaceAll(">","(g)");
+    email = email.replaceAll(":","(c)");
+    email = email.replaceAll('"',"(o)");
+    email = email.replaceAll("|","(p)");
+    email = email.replaceAll("?","(q)");
+    email = email.replaceAll("*","(a)");
+
+    return email;
+}
 
 function checkAuth(req:Request,res:Response,next:NextFunction){
     console.log("log:",req.headers);
@@ -24,21 +54,103 @@ function checkAuth(req:Request,res:Response,next:NextFunction){
     }
 }
 
-class User{
-    constructor(username:string,pw:string){
-        this.username = username;
-        this.pw = pw;
-    }
-    username:string;
-    pw:string;
+export interface CredentialResData{
+    name:string;
+    email:string;
+    email_verified:boolean;
+    picture:string;
 
-    add(){
-        users.set(this.username,this);
+    _joinDate:string;
+    _lastLoggedIn:string;
+}
+export class User{
+    constructor(name:string,email:string,picture:string,_joinDate:string,_lastLoggedIn:string,sockId:string){
+        this.name = name;
+        this.email = email;
+        this.sanitized_email = sanitizeEmail(email);
+        this.picture = picture;
+        this.joinDate = _joinDate;
+        this.lastLoggedIn = _lastLoggedIn;
+
+        this.tokens = [];
+        this.sockIds = [];
+    }
+    name:string;
+    email:string;
+    sanitized_email:string;
+    picture:string;
+    joinDate:string;
+    lastLoggedIn:string;
+
+    private tokens:string[];
+    private sockIds:string[];
+
+    addToken(token:string){
+        if(this.tokens.includes(token)) return;
+        this.tokens = []; // if on new login should we clear all the other tokens?
+        
+        this.tokens.push(token);
+    }
+    hasToken(token:string){
+        return this.tokens.includes(token);
+    }
+    deleteTokens(){
+        this.tokens = [];
+    }
+    getFirstToken(){
+        return this.tokens[0];
+    }
+
+    getSocketIds(){
+        return this.sockIds;
+    }
+    addSocketId(sockId:string){
+        if(this.sockIds.includes(sockId)) return;
+        this.sockIds.push(sockId);
+        socks.set(sockId,this.email);
+    }
+    removeSocketId(sockId:string){
+        if(!this.sockIds.includes(sockId)) return;
+        this.sockIds.splice(this.sockIds.indexOf(sockId),1);
+        socks.delete(sockId);
+    }
+
+    getTransferData(){
+        return {
+            name:this.name,
+            email:this.email,
+            picture:this.picture,
+            _joinDate:this.joinDate,
+            _lastLoggedIn:this.lastLoggedIn
+        } as CredentialResData;
+    }
+
+    // _saveLock:Promise<void>; // do we need this? to prevent conflicts with saving? if there is a saveLock then await it and then proceed
+    getPath(){
+        return "../users/"+this.sanitized_email+".json";
+    }
+    saveToFile(){
+        // if we don't save tokens this will require users to relog when there's a server restart maybe? do we need to save them?
+        let data = {
+            name:this.name,
+            email:this.email,
+            picture:this.picture,
+            joinDate:this.joinDate,
+            lastLoggedIn:this.lastLoggedIn
+        };
+        fs.writeFile(this.getPath(),JSON.stringify(data),{encoding:"utf8"},err=>{
+            if(err) console.log("Err while saving file: ",err);
+        });
     }
 }
-let users = new Map<string,User>();
-new User("claeb","0897").add();
-new User("bob","123").add();
+export const users = new Map<string,User>();
+const socks = new Map<string,string>();
+
+export function getUserBySock(sockId:string){
+    let email = socks.get(sockId);
+    if(!email) return;
+    return users.get(email);
+}
 
 app.use("/projects/:userId/:auth",(req,res,next)=>{
     let p = req.params;
@@ -49,7 +161,7 @@ app.use("/projects/:userId/:auth",(req,res,next)=>{
         res.send("User not found");
         return;
     }
-    if(user.pw != p.auth){
+    if(!user.hasToken(p.auth)){
         // console.log("Err: auth incorrect");
         res.send("Auth incorrect");
         return;
@@ -66,18 +178,5 @@ app.use("/projects/:userId/:auth",(req,res,next)=>{
     next();
 
 },express.static("../projects/"));
-
-
-// app.get("/test/:userId/books/:bookId",(req,res)=>{
-//     // res.send(req.params);
-//     // res.redirect("/public/test.txt");
-//     res.
-// });
-// router.get("/test",async function(req:Request,res:Response,next:NextFunction){
-//     res.redirect("/public");
-// });
-// app.use("/public",checkAuth,express.static("../public"));
-
-
 
 export {Socket};

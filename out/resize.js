@@ -67,7 +67,7 @@ for (const a of resizes) {
         }[dir]);
         d.style.position = "absolute";
         d.style.opacity = "0";
-        d.style.zIndex = "9999999";
+        d.style.zIndex = "6";
         // 
         d.onmousedown = function (e) {
             dragging = { elm: a, call: resizeListeners[a.id] || resizeListeners["*"] };

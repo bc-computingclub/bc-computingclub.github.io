@@ -1,4 +1,4 @@
-import type { Socket } from "socket.io-client"
+// import type { Socket } from "socket.io-client";
 
 // declare let socket:Socket;
 
@@ -13,6 +13,11 @@ function setConneted(val:boolean){
 }
 
 socket.on("connect",()=>{
+    if(!connected){
+        // reconnect
+        logUserIn();
+    }
+    
     setConneted(true);
 });
 socket.on("disconnect",()=>{
@@ -21,9 +26,15 @@ socket.on("disconnect",()=>{
 
 // 
 
-function signup(){
-    
+function _logout(data:CredentialResData){
+    console.log("...starting logout");
+    socket.emit("logout",data,(data:CredentialResData)=>{
+        console.log("Log out successful");
+    });
 }
-function login(){
-
+function _login(data:CredentialResData,token:string){
+    console.log("...starting login");
+    socket.emit("login",data,token,(data:CredentialResData)=>{
+        console.log("Log in successful: ",data);
+    });
 }

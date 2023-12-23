@@ -236,3 +236,16 @@ document.addEventListener("keydown",e=>{
         }
     }
 });
+
+// header
+let h_profile = document.querySelector(".h-profile");
+h_profile.addEventListener("click",e=>{
+    new LogInMenu().load();
+});
+
+// document.addEventListener("DOMContentLoaded",async e=>{
+//     await wait(800);
+//     if(localStorage.getItem("logData")){
+//         logUserIn();
+//     }
+// });

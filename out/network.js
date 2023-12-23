@@ -1,5 +1,4 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
+// import type { Socket } from "socket.io-client";
 // declare let socket:Socket;
 // @ts-ignore
 let socket = io("http://127.0.0.1:3000");
@@ -9,14 +8,26 @@ function setConneted(val) {
     console.log("NEW Connection Status: ", connected);
 }
 socket.on("connect", () => {
+    if (!connected) {
+        // reconnect
+        logUserIn();
+    }
     setConneted(true);
 });
 socket.on("disconnect", () => {
     setConneted(false);
 });
 // 
-function signup() {
+function _logout(data) {
+    console.log("...starting logout");
+    socket.emit("logout", data, (data) => {
+        console.log("Log out successful");
+    });
 }
-function login() {
+function _login(data, token) {
+    console.log("...starting login");
+    socket.emit("login", data, token, (data) => {
+        console.log("Log in successful: ", data);
+    });
 }
 //# sourceMappingURL=network.js.map

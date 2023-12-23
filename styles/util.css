@@ -104,7 +104,7 @@ button.icon-btn-single:hover{
 }
 .menu{
     width:400px;
-    height:400px;
+    height:250px;
     background-color:var(--secondary-bg-col);
     border-radius:5px;
     box-shadow:0px 4px 5px 2px rgba(0,0,0,0.1);
@@ -239,4 +239,73 @@ button.icon-btn-single:hover{
 .material-symbols-outlined{
     user-select:none;
     -webkit-user-select:none;
+}
+
+/*  */
+
+button{
+    background-color:var(--col);
+    color:var(--secondary-bg-col);
+    border:none;
+    padding:8px 16px;
+    border-radius:3px;
+    position:relative;
+}
+button:hover::after{
+    content:"";
+    position:absolute;
+    top:0px;
+    left:0px;
+    width:100%;
+    height:100%;
+    /* background-color:rgba(255,255,255,0.2); */
+    background-color:var(--lighten0);
+    border-radius:inherit;
+}
+
+.two-col{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    position:relative;
+    gap:10px;
+}
+.two-col > div{
+    /* background-color:red; */
+    display:grid;
+    justify-content:center;
+    align-items:center;
+    /* max-width:50%; */
+}
+
+/* Sign in with Google Cont */
+.sign-in-cont{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:12px;
+    background-color:white;
+    padding:8px 12px;
+    font-size:14px;
+    border:solid 1px lightgray;
+    border-radius:3px;
+    user-select:none;
+    -webkit-user-select:none;
+    color:var(--secondary-bg-col);
+}
+.sign-in-cont:hover{
+    background-color:whitesmoke;
+}
+.si-icon-cont{
+    width:16px;
+    height:16px;
+}
+.si-info{
+    display:flex;
+    flex-direction:column;
+    gap:6px;
+}
+.h-profile img{
+    width:30px;
+    height:30px;
+    border-radius:50%;
 }
