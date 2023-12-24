@@ -38,3 +38,9 @@ function _login(data:CredentialResData,token:string){
         console.log("Log in successful: ",data);
     });
 }
+
+// header
+let h_profile = document.querySelector(".h-profile") as HTMLElement;
+h_profile.addEventListener("click",e=>{
+    new LogInMenu().load();
+});

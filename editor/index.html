@@ -8,26 +8,11 @@
     <link rel="stylesheet" href="editor.css">
 </head>
 <body>
-    <script src="https://accounts.google.com/gsi/client" async></script>
-    
     <script src="../out/util.js"></script>
-    <script src="../out/pre_init.js"></script>
+    <script>genHeader(2)</script>
+    <!-- <script src="https://accounts.google.com/gsi/client" async></script> -->
+    <!-- <script src="../out/pre_init.js"></script> -->
     
-    <!--Navbar - sticky, persistent across website. -->
-    <div class="nav-container"> <!-- Links will need to be updated-->
-        <div class="logo">
-            <a href="../index.html">
-                <img src="/images/error.png" alt="Code Challenge Logo" class="logo-thumbnail">
-                <!-- Insert placeholder logo here -->
-            </a>
-        </div>
-        <div class="nav-links">
-            <a>Learn <span class="material-symbols-outlined">Auto_stories</span></a>
-            <a>Practice <span class="material-symbols-outlined">Checkbook</span></a>
-            <a class="active">Experiment <span class="material-symbols-outlined">Experiment</span></a>
-            <a class="h-profile"><span class="material-symbols-outlined">Person</span></a>
-        </div>
-    </div>
     <div class="flx-v main">
         <div class="flx-h">
             <div class="pane-files pane resize" resize="r">
@@ -69,10 +54,10 @@
         </div>
     </div>
     <script>var exports = {};</script>
-    <script src="../out/socket.io.min.js"></script>
+    <script src="/out/socket.io.min.js"></script>
     <script src="../out/network.js"></script>
     <script src="../out/resize.js"></script>
-    <script src="../lib/monaco/min/vs/loader.js"></script>
+    <script id="s-loader" src="../lib/monaco/min/vs/loader.js" async></script>
     <script src="../out/editor.js"></script>
 </body>
 </html>

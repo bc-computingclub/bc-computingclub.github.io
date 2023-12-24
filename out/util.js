@@ -283,6 +283,7 @@ function logUserIn(data, token) {
     if (data) {
         localStorage.setItem("token", token);
         localStorage.setItem("logData", JSON.stringify(data));
+        h_profile.classList.add("logged-in");
         h_profile.innerHTML = `
             <img src="${data.picture}">
         `;
@@ -290,6 +291,7 @@ function logUserIn(data, token) {
         return;
     }
     // clear user - log out
+    h_profile.classList.remove("logged-in");
     h_profile.innerHTML = `<span class="material-symbols-outlined">Person</span>`;
     localStorage.removeItem("logData");
     localStorage.removeItem("token");
@@ -299,4 +301,42 @@ function logUserIn(data, token) {
 // let testMenu2 = new LogInMenu();
 // testMenu2.load();
 // testMenu.load();
+// Gen Header
+function genHeader(i, isCompact = true) {
+    let navCont = document.createElement("div");
+    navCont.className = "nav-container";
+    navCont.innerHTML = `
+        <div class="logo">
+            <a href="/index.html">
+                <img src="/images/error.png" alt="Code Challenge Logo" class="logo-thumbnail">
+                <!-- Insert placeholder logo here -->
+            </a>
+        </div>
+        <div class="nav-links">
+            <a href="/learn/lesson/index.html" class="nav-link">Learn <span class="material-symbols-outlined">Auto_stories</span></a>
+            <a href="/practice/index.html" class="nav-link">Practice <span class="material-symbols-outlined">Checkbook</span></a>
+            <a href="/editor/index.html" class="nav-link">Experiment <span class="material-symbols-outlined">Experiment</span></a>
+            <a class="h-profile"><span class="material-symbols-outlined">Person</span></a>
+        </div>
+    `;
+    if (isCompact)
+        navCont.classList.add("compact");
+    document.body.appendChild(navCont);
+    let links = navCont.querySelectorAll(".nav-link");
+    links[i].classList.add("active");
+    document.body.classList.add([
+        "learn-page",
+        "practice-page",
+        "experiment-page"
+    ][i]);
+}
+// Add General Scripts
+function addScript(src, isAsync = false) {
+    let sc = document.createElement("script");
+    sc.src = src;
+    sc.async = isAsync;
+    document.body.appendChild(sc);
+}
+addScript("/out/pre_init.js");
+addScript("https://accounts.google.com/gsi/client", true);
 //# sourceMappingURL=util.js.map

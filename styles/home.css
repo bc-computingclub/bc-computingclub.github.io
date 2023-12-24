@@ -2,7 +2,7 @@
 @import url(/styles/theme.css);
 @import url(/styles/util.css);
 
-:root {
+:root1 {
     --bg-col: rgb(216, 216, 216);
     --secondary-bg-col:white;
     --col: black;
@@ -28,6 +28,44 @@
     --darken0:rgba(0,0,0,0.25);
     --darken:rgba(0,0,0,0.1);
     --darken2:rgba(0,0,0,0.05);
+
+    --dark-text:black;
+}
+:root{
+    --bg-col:#050505;
+    --secondary-bg-col:#000;
+    --col:whitesmoke;
+    --secondary-col:lightgray;
+    --font: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    --faded-col:rgb(150, 157, 184);
+
+    /* Colors for cards */
+    --learn-col: rgb(56, 71, 119); 
+    --experiment-col: rgb(33, 103, 121); 
+    --practice-col:rgb(80, 62, 110); 
+
+    /* Secondary colors for cards */
+    --learn-col-alt: rgb(113, 125, 170); 
+    --experiment-col-alt: rgb(98, 147, 160); 
+    --practice-col-alt:rgb(143, 125, 172);
+
+    --menu-btn-bg:var(--bg-col);
+
+    color-scheme:dark;
+    --darken0:rgba(255,255,255,0.25);
+    --darken:rgba(255,255,255,0.1);
+    --darken2:rgba(255,255,255,0.05);
+    --lighten0:rgba(0,0,0,0.25);
+    --lighten:rgba(0,0,0,0.1);
+    --lighten2:rgba(0,0,0,0.05);
+    
+    --dark-text:black;
+
+    /* extra */
+    --bg:#111;
+    --editor-bg:#1e1e1e;
+    --border:#333;
+    /* --cta-btn-col:#245; */
 }
 
 * {
@@ -108,16 +146,19 @@ a {
 }
 
 .learn-link.active {
-    background-color: var(--learn-col);
+    --cta-btn-col:var(--learn-col);
+    /* background-color: var(--learn-col); */
     color:white;
 }
 
 .practice-link.active {
-    background-color: var(--practice-col);
+    --cta-btn-col:var(--practice-col);
+    /* background-color: var(--practice-col); */
 }
 
 .experiment-link.active {
-    background-color: var(--experiment-col);
+    --cta-btn-col:var(--experiment-col);
+    /* background-color: var(--experiment-col); */
 }
 
 .cards-container {

@@ -13,8 +13,51 @@ body.themestyle-dark{
 
 /* Themes */
 
+body.learn-page{
+    /* --learn-col:#3060dd; */
+    /* --learn-col:#405599 !important; */
+    --cta-btn-col:var(--learn-col) !important;
+}
+body.practice-page{
+    --cta-btn-col:var(--practice-col) !important;
+}
+body.experiment-page{
+    /* --experiment-col:#228882 !important; */
+    --cta-btn-col:var(--experiment-col) !important;
+    /* --cta-btn-col:var(--experiment-col) !important; */
+}
+
 body.theme-light{
     --cta-btn-col:#228882;
+
+    --bg-col: rgb(216, 216, 216);
+    --secondary-bg-col:white;
+    --col: black;
+    --secondary-col:rgb(255, 255, 255);
+    --font: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    --faded-col:rgb(150, 157, 184);
+    
+    /* Colors for cards */
+    --learn-col: rgb(56, 71, 119); 
+    --experiment-col: rgb(33, 103, 121); 
+    --practice-col:rgb(80, 62, 110); 
+
+    /* Secondary colors for cards */
+    --learn-col-alt: rgb(113, 125, 170); 
+    --experiment-col-alt: rgb(98, 147, 160); 
+    --practice-col-alt:rgb(143, 125, 172); 
+
+    --menu-btn-bg:black;
+
+    --lighten0:rgba(255,255,255,0.25);
+    --lighten:rgba(255,255,255,0.1);
+    --lighten2:rgba(255,255,255,0.05);
+    --darken0:rgba(0,0,0,0.25);
+    --darken:rgba(0,0,0,0.1);
+    --darken2:rgba(0,0,0,0.05);
+
+    --dark-text:black;
+    color-scheme:light;
 }
 body.theme-dark{
     --bg:#111;

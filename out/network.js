@@ -30,4 +30,9 @@ function _login(data, token) {
         console.log("Log in successful: ", data);
     });
 }
+// header
+let h_profile = document.querySelector(".h-profile");
+h_profile.addEventListener("click", e => {
+    new LogInMenu().load();
+});
 //# sourceMappingURL=network.js.map

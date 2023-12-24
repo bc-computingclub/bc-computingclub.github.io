@@ -15,10 +15,14 @@ function updateCurrentButton(targetButtonAttr:string) {
         } else { button.classList.remove("active-card-btn"); }
     })
 
+    let i = 0;
     navLinkArr.forEach((link) => { // updates nav links with color of current card
         if(link.getAttribute("card-label") == targetButtonAttr) {
             link.classList.add("active");
+            document.body.classList.remove("learn-page","practice-page","experiment-page");
+            document.body.classList.add(["learn-page","practice-page","experiment-page"][i]); // <- caleb: I added this just so other things like the menus will have the corresponding accents on them
         } else { link.classList.remove("active"); }
+        i++;
     })
 }
 

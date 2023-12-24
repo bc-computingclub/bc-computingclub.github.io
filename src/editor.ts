@@ -139,7 +139,6 @@ async function init(){
 
     onResize(true);
 }
-init();
 
 window.addEventListener("resize",e=>{
     onResize();
@@ -237,11 +236,12 @@ document.addEventListener("keydown",e=>{
     }
 });
 
-// header
-let h_profile = document.querySelector(".h-profile");
-h_profile.addEventListener("click",e=>{
-    new LogInMenu().load();
-});
+let s_loader = document.getElementById("s-loader") as HTMLElement;
+s_loader.onload = function(){
+    console.log("loaded loader");
+    init();
+};
+
 
 // document.addEventListener("DOMContentLoaded",async e=>{
 //     await wait(800);
