@@ -5,13 +5,61 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Lesson</title>
     <link rel="stylesheet" href="/styles/home.css">
+    <link rel="stylesheet" href="/editor/editor.css">
     <link rel="stylesheet" href="/styles/lesson.css">
 </head>
 <body>
+    <script src="/out/pre_init.js"></script>
     <script src="/out/util.js"></script>
     <script>genHeader(0);</script>
 
+    <div class="flx-v main">
+        <div class="flx-h">
+            <div class="pane-lesson pane resize" resize="r">
+                <div class="header flx-sb">
+                    <div>Lesson</div>
+                    <div>
+                        <button class="icon-btn-single">
+                            <div class="material-symbols-outlined">more_horiz</div>
+                        </button>
+                        <!-- <button class="icon-btn-single">
+                            <div class="material-symbols-outlined">note_add</div>
+                        </button> -->
+                    </div>
+                </div>
+                <div class="file-list">
+                    <div class="file-item">index.html</div>
+                    <div class="file-item">style.css</div>
+                    <div class="file-item">script.js</div>
+                </div>
+            </div>
+            <div class="pane-code pane flx-v resize" resize="r">
+                <div class="d-open-files pane"></div>
+                <div class="cont-js cont pane"></div>
+                <div class="bubbles-overlay"></div>
+            </div>
+            <div class="pane-preview pane">
+                <div class="d-preview-controls header flx" style="gap:20px">
+                    <div>Preview</div>
+                    <button class="b-refresh icon-btn">
+                        <div class="icon-refresh material-symbols-outlined">sync</div>
+                        <div class="label">Refresh</div>
+                    </button>
+                    <div style="margin-left:auto;gap:10px" class="flx-h flx-al">
+                        <div class="material-symbols-outlined">invert_colors</div>
+                        <div class="material-symbols-outlined">open_in_new</div>
+                    </div>
+                </div>
+                <iframe src="" frameborder="0"></iframe>
+            </div>
+        </div>
+    </div>
+
+    <script>var exports = {};</script>
     <script src="/out/socket.io.min.js"></script>
     <script src="/out/network.js"></script>
+    <script src="/out/resize.js"></script>
+    <script id="s-loader" src="/lib/monaco/min/vs/loader.js"></script>
+    <script src="/out/lesson.js"></script>
 </body>
 </html>

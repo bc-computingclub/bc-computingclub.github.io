@@ -221,9 +221,10 @@ class LogInMenu extends Menu{
         //     }
         // });
 
-        if(false) this.body.innerHTML = `
+        if(true){
+            this.body.innerHTML = `
             <div class="two-col">
-                <div>
+                <div class="g-cont">
                     <div id="g_id_onload"
                         data-client_id="639454147876-f7ehoq29hcqnmis69l7shgbr2nbtv02o.apps.googleusercontent.com"
                         data-context="use"
@@ -242,11 +243,16 @@ class LogInMenu extends Menu{
                     </div>
                 </div>
                 <div>
-                    <button>Continue</button>
+                    <button class="b-continue">Continue</button>
                 </div>
             </div>
-        
-        `;
+            `;
+            google.accounts.id.renderButton(this.body.querySelector(".g-cont"),{});
+            let b_continue = this.body.querySelector(".b-continue");
+            b_continue.addEventListener("click",e=>{
+                closeAllMenus();
+            });
+        }
         else{
             if(!socket.connected){
                 this.body.textContent = "Failed to connect to the server.";
@@ -299,6 +305,18 @@ function decodeJwtResponse(token:string) {
 declare const google:any;
 let initializedSignInPrompt = false;
 
+function initializeSignIn(){
+    if(!initializedSignInPrompt){
+        google.accounts.id.initialize({
+            client_id: '639454147876-f7ehoq29hcqnmis69l7shgbr2nbtv02o',
+            callback: handleCredentialResponse,
+            context:"use",
+            ux_mode:"popup",
+            auto_prompt:"false"
+        });
+        initializedSignInPrompt = true;
+    }
+}
 function promptSignIn(){
     if(!initializedSignInPrompt){
         google.accounts.id.initialize({
@@ -323,11 +341,27 @@ function handleCredentialResponse(response:CredentialResponse){
     closeAllMenus();
 }
 
+let loginProm:Promise<void>;
+let _loginRes:()=>void;
+loginProm = new Promise<void>(resolve=>{
+    _loginRes = resolve;
+});
+let g_user:CredentialResData;
+async function waitForUser(){
+    if(!loginProm) return;
+    await loginProm;
+}
 function logUserIn(data?:CredentialResData,token?:string){
     if(!data) data = JSON.parse(localStorage.getItem("logData")) as CredentialResData;
     if(!token) token = localStorage.getItem("token");
     
-    if(!data || !token) return;
+    if(!data || !token){
+        // you are not logged in, cancel prom
+        _loginRes();
+        _loginRes = null;
+        loginProm = null;
+        return;
+    }
     
     if(data){
         localStorage.setItem("token",token);
@@ -336,6 +370,12 @@ function logUserIn(data?:CredentialResData,token?:string){
         h_profile.innerHTML = `
             <img src="${data.picture}">
         `;
+        let img = h_profile.querySelector("img");
+        img.onerror = (err:Event,source,lineno,colno,error)=>{
+            if(err) console.warn("> Failed loading profile picture",err.type);
+            g_user = null;
+            return;
+        };
 
         _login(data,token);
         return;
@@ -384,11 +424,134 @@ function genHeader(i:number,isCompact=true){
 }
 
 // Add General Scripts
-function addScript(src:string,isAsync=false){
+function addScript(src:string,isAsync=false,call?:()=>void){
     let sc = document.createElement("script");
     sc.src = src;
     sc.async = isAsync;
     document.body.appendChild(sc);
+    if(call) sc.onload = function(){
+        call();
+    };
 }
-addScript("/out/pre_init.js");
-addScript("https://accounts.google.com/gsi/client",true);
+// addScript("/out/pre_init.js");
+addScript("https://accounts.google.com/gsi/client",true,()=>{
+    initializeSignIn();
+});
+
+// Pane Resizing
+window.addEventListener("resize",e=>{
+    onResize();
+});
+let onResize = function(isFirst?:boolean,who?:HTMLElement){};
+let d_files:HTMLElement;
+let main:HTMLElement;
+let codeCont:HTMLElement;
+
+let pane_lesson:HTMLElement;
+let pane_files:HTMLElement;
+let pane_code:HTMLElement;
+let pane_preview:HTMLElement;
+
+class Project{
+    constructor(title:string){
+        this.title = title;
+        this.files = [];
+        this.openFiles = [];
+    }
+    title:string;
+    files:FFile[];
+    openFiles:FFile[];
+    curFile:FFile;
+
+    createFile(name:string,text:string,lang?:string){
+        let f = new FFile(this,name,text,lang);
+        this.files.push(f);
+    }
+
+    hasEditor(){
+        return (this.curFile?.curEditor != null);
+    }
+    getCurEditor(){
+        return this.curFile.curEditor;
+    }
+}
+
+class FFile{
+    constructor(p:Project,name:string,text:string,lang?:string){
+        this.p = p;
+        this.name = name;
+        this.text = text;
+        this.lang = lang;
+    }
+    p:Project;
+    name:string;
+    text:string;
+    lang:string;
+
+    link:HTMLElement;
+    cont:HTMLElement;
+    editor:monaco.editor.IStandaloneCodeEditor;
+    curEditor:monaco.editor.IStandaloneCodeEditor;
+
+    editorHandle:HTMLElement;
+
+    open(){
+        if(!this.p.openFiles.includes(this)){
+            let link = document.createElement("div");
+            this.link = link;
+            link.textContent = this.name;
+            link.className = "file-link";
+            d_files.appendChild(link);
+            this.p.openFiles.push(this);
+            let t = this;
+            link.onmousedown = function(){
+                t.open();
+            };
+
+            let cont = document.createElement("div");
+            cont.className = "js-cont cont";
+            this.cont = cont;
+
+            let editor = monaco.editor.create(cont, {
+                value: [this.text].join('\n'),
+                language: this.lang,
+                theme:"vs-light",
+                bracketPairColorization:{
+                    enabled:false
+                },
+                minimap:{
+                    enabled:false
+                }
+            });
+
+            let textArea = cont.querySelector("textarea");
+            let overflowGuard = cont.querySelector(".overflow-guard");
+            textArea.oninput = function(){
+                overflowGuard.scrollTo({top:0,left:0,behavior:"instant"});
+            };
+            this.curEditor = editor;
+            this.editor = editor;
+            this.p.curFile = this;
+
+            // @ts-ignore
+            editor.onDidScrollChange(function(){
+                scrollOffset = editor.getScrollTop();
+                console.log("scroll",scrollOffset);
+                updateBubbles();
+            });
+        }
+        // deselect others
+        for(const c of d_files.children){
+            c.classList.remove("cur");
+        }
+        this.link.classList.add("cur");
+
+        for(const c of codeCont.children){
+            codeCont.removeChild(c);
+        }
+        codeCont.appendChild(this.cont);
+        this.editor.layout();
+        
+        loadEditorTheme();
+    }
+}

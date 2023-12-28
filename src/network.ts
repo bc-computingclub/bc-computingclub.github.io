@@ -30,12 +30,23 @@ function _logout(data:CredentialResData){
     console.log("...starting logout");
     socket.emit("logout",data,(data:CredentialResData)=>{
         console.log("Log out successful");
+        g_user = null;
     });
 }
 function _login(data:CredentialResData,token:string){
     console.log("...starting login");
     socket.emit("login",data,token,(data:CredentialResData)=>{
         console.log("Log in successful: ",data);
+        if(g_user) if(g_user.email != data.email){
+            location.reload();
+            return;
+        }
+        g_user = data;
+        if(loginProm){
+            _loginRes();
+            _loginRes = null;
+            loginProm = null;
+        }
     });
 }
 
