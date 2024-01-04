@@ -37,13 +37,31 @@ class Menu{
         this.body = null;
     }
 
-    load(){
+    canClose(){
+        return true;
+    }
+
+    _priority = 0;
+
+    load(priority=0){
+        let list = [...menusOpen];
+        for(const m of list){
+            // if(m._priority < priority) m.close();
+            if(m._priority < priority) m.menu.style.display = "none";
+        }
+        let isHidden = false;
+        if(list.some(v=>v._priority > priority)) isHidden = true;
+
+        this._priority = priority;
+        
         let t = this;
         
         let menu = document.createElement("div");
         menu.className = "menu";
         this.menu = menu;
         menuCont.appendChild(menu);
+
+        if(isHidden) menu.style.display = "none";
 
         let head = document.createElement("div");
         head.className = "menu-header";
@@ -52,12 +70,12 @@ class Menu{
                 <div class="material-symbols-outlined">${this.icon || ""}</div>
                 <div>${this.title}</div>
             </div>
-            <div class="material-symbols-outlined b-close">close</div>
+            ${this.canClose() ? '<div class="material-symbols-outlined b-close">close</div>' : ""}
         `;
         menu.appendChild(head);
 
         let b_close = head.querySelector(".b-close");
-        b_close.addEventListener("click",e=>{
+        if(b_close) b_close.addEventListener("click",e=>{
             t.close();
         });
 
@@ -76,6 +94,17 @@ class Menu{
             this.reset();
 
             menusOpen.splice(menusOpen.indexOf(this),1);
+
+            // restore other menus
+
+            console.log("on close");
+            let list = [...menusOpen];
+            for(const m of list){
+                if(m._priority < this._priority) m.menu.style.display = "block";
+            }
+
+            // 
+
             if(!menusOpen.length) menuCont.classList.remove("show");
         }
     }
@@ -368,12 +397,13 @@ function logUserIn(data?:CredentialResData,token?:string){
         localStorage.setItem("logData",JSON.stringify(data));
         h_profile.classList.add("logged-in");
         h_profile.innerHTML = `
-            <img src="${data.picture}">
+            <img referrerpolicy="no-referrer" src="${data.picture}">
         `;
         let img = h_profile.querySelector("img");
         img.onerror = (err:Event,source,lineno,colno,error)=>{
             if(err) console.warn("> Failed loading profile picture",err.type);
             g_user = null;
+            new PromptLoginMenu().load();
             return;
         };
 
@@ -536,7 +566,6 @@ class FFile{
             // @ts-ignore
             editor.onDidScrollChange(function(){
                 scrollOffset = editor.getScrollTop();
-                console.log("scroll",scrollOffset);
                 updateBubbles();
             });
         }

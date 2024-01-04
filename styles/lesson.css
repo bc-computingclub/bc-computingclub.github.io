@@ -4,18 +4,24 @@ body{
 
 /* Panes */
 .pane-lesson{
-    width:250px;
+    width:385px;
     margin:var(--editor-gap);
 }
 .pane-code{
-    width:calc(50% - 133px);
+    /* width:calc(50% - 133px); */
+    width:calc(50% - 200px);
 }
 .pane-preview{
-    width:calc(50% - 133px);
+    width:calc(50% - 200px);
+    /* width:calc(50% - 133px); */
 }
 
 .bubble-overlay{
     position:relative;
+}
+.global-bubble-overlay{
+    position:absolute;
+    z-index:99;
 }
 .bubble{
     padding:1rem;
@@ -35,7 +41,7 @@ body{
 .bubble:hover{
     /* opacity:0.2; */
 }
-.bubble::after{
+.bubble:not(.no-callout)::after{
     content:"";
     position:absolute;
     top:17.5px;
@@ -52,4 +58,39 @@ body{
 .d-open-files{
     position:relative;
     z-index:1;
+}
+.bubble.centered{
+    transform:translate(-50%,-50%);
+}
+.bubble.global{
+    width:300px;
+    font-size:16px;
+}
+
+/*  */
+
+.menu-lesson-banner{
+    width:90%;
+    height:max-content;
+    max-width:600px;
+}
+.menu-lesson-banner .section div{
+    margin-left:8px;
+}
+.menu-banner-preview{
+    width:90%;
+    height:max-content;
+    max-width:600px;
+}
+.menu-banner-preview iframe{
+    width:100%;
+    border:solid 1px var(--lighten0);
+    /* filter:none !important; */
+}
+.d-getting-started{
+    display:flex;
+    justify-content:center;
+}
+.b-getting-started{
+    padding:0.6rem 2rem;
 }
