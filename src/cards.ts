@@ -5,6 +5,8 @@ const navLinkArr = Array.from(document.querySelectorAll<HTMLElement>(".link"));;
 let cardArray = getCardArray();
 let currentCard = cardArray[0];
 let isAnimating = false;
+let canCycle:boolean = true;
+let cardCycleDelay = 2000;
 
 function updateCurrentButton(targetButtonAttr:string) {
     let targetButton: HTMLElement;
@@ -28,6 +30,7 @@ function updateCurrentButton(targetButtonAttr:string) {
 
 let card : HTMLElement;
 cardContainer.addEventListener("click", (event) => {
+    canCycle = false;
     if(isAnimating) {
         return;
     }
@@ -35,6 +38,10 @@ cardContainer.addEventListener("click", (event) => {
     if (currentCard == card) {
         removeCard(card);
     }
+    setTimeout(() => { 
+        canCycle = true;
+        cycleCards; 
+    }, 10000)
 })
 
 function removeCard(card:HTMLElement) {
@@ -57,10 +64,41 @@ function removeCard(card:HTMLElement) {
         cardContainer.append(tempCard);
         currentCard = cardArray[0];
         currentCard.classList.add("current-card");
+        toggleSwitching();
         updateCurrentButton(currentCard.getAttribute("card-label"));
+    });
+}
+
+let cycleTimeout; 
+
+function toggleSwitching() {
+    currentCard.addEventListener("mouseenter", () => {
+        canCycle = false;
+        clearTimeout(cycleTimeout); 
+        console.log("trying to stop the damn animation");
+    });
+
+    currentCard.addEventListener("mouseleave", () => {
+        canCycle = true;
+        cycleTimeout = setTimeout(cycleCards, 500); 
+        console.log("trying to start the damn animation");
     });
 }
 
 function getCardArray() {
     return Array.from(document.querySelectorAll<HTMLElement>(".card"));
 }
+
+window.addEventListener("load", () => {
+    toggleSwitching();
+    cycleTimeout = setTimeout(cycleCards, 2000); 
+});
+
+function cycleCards() {
+    if (canCycle) {
+        removeCard(currentCard);
+        cardCycleDelay = 5000;
+        cycleTimeout = setTimeout(cycleCards, cardCycleDelay);
+    }
+}
+
