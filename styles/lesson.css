@@ -6,13 +6,21 @@ body{
 .pane-lesson{
     width:385px;
     margin:var(--editor-gap);
+    display:none;
+}
+.pane-tutor-code{
+    /* width:calc(50% - 133px); */
+    /* width:calc(50% - 200px); */
+    width:calc(50% - 300px);
 }
 .pane-code{
     /* width:calc(50% - 133px); */
-    width:calc(50% - 200px);
+    /* width:calc(50% - 200px); */
+    width:calc(50% - 300px);
 }
 .pane-preview{
-    width:calc(50% - 200px);
+    /* width:calc(50% - 200px); */
+    width:calc(50% - 300px);
     /* width:calc(50% - 133px); */
 }
 

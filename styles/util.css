@@ -403,6 +403,12 @@ body .nav-links > .active{
     background-color:var(--bg);
     overflow:hidden;
 }
+.pane-tutor-code{
+    border-left:none;
+    border-right:none;
+    margin-top:var(--editor-gap);
+    margin-bottom:var(--editor-gap);
+}
 .pane-code{
     /* flex-grow:1; */
     /* width:50%; */

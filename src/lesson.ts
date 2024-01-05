@@ -64,11 +64,16 @@ class TextArea{
 }
 
 class Lesson{
-    constructor(title:string){
-        this.p = new Project(title);
+    constructor(title:string,parent:HTMLElement,tutParent:HTMLElement){
+        this.p = new Project(title,parent);
+        this.tut = new Project("tut_"+title,tutParent,{
+            readonly:true,
+            disableCopy:true
+        });
     }
     events:LEvent[];
     p:Project;
+    tut:Project;
 
     bannerSection:TextArea;
     finalInstance:FinalProjectInstance;
@@ -76,6 +81,9 @@ class Lesson{
     init(){
         addBannerBubble(this);
         addBannerPreviewBubble(this);
+
+        this.p.init();
+        this.tut.init();
     }
     async start(){
         await wait(350);
@@ -86,16 +94,44 @@ class Lesson{
 }
 
 let lesson:Lesson;
-d_files = document.querySelector(".d-open-files");
+// d_files = document.querySelector(".d-open-files");
 main = document.querySelector(".main") as HTMLElement;
-codeCont = document.querySelector(".cont-js");
+// codeCont = document.querySelector(".cont-js");
 
 pane_lesson = document.querySelector(".pane-lesson") as HTMLElement;
+pane_tutor_code = document.querySelector(".pane-tutor-code") as HTMLElement;
 pane_code = document.querySelector(".pane-code") as HTMLElement;
 pane_preview = document.querySelector(".pane-preview") as HTMLElement;
 
-let bubbles_ov = document.querySelector(".bubbles-overlay") as HTMLElement;
+// let bubbles_ov = document.querySelector(".bubbles-overlay") as HTMLElement;
 let g_bubbles_ov = document.querySelector(".global-bubble-overlay") as HTMLElement;
+
+function setupEditor(parent:HTMLElement){
+    let d_files = document.createElement("div");
+    d_files.className = "d-open-files pane";
+    let contJs = document.createElement("div");
+    contJs.className = "cont-js cont pane";
+    parent.appendChild(d_files);
+    parent.appendChild(contJs);
+}
+function postSetupEditor(project:Project){
+    let parent = project.parent;
+    project.d_files = parent.querySelector(".d-open-files");
+    project.codeCont = parent.querySelector(".cont-js");
+
+    console.log("completed post setup");
+
+    project.createFile("test.html",`<p>Hello</p>`,"html");
+    project.files[0].open();
+    project.createFile("main.js",`console.log("hello");\nconsole.log("hello");\nconsole.log("hello");\nconsole.log("hello");`,"javascript");
+    project.files[1].open();
+
+    // loadEditorTheme();
+    
+    // project.files[0].d_files;
+    // project.files[0].codeCont;
+    // project.files[0].bubbles_ov;
+}
 
 class PromptLoginMenu extends Menu{
     constructor(){
@@ -114,9 +150,13 @@ class PromptLoginMenu extends Menu{
         button.onclick = function(){
             closeAllMenus();
             new LogInMenu().load();
-        };}
+        };
+    }
 }
 async function initLessonPage(){
+    setupEditor(pane_tutor_code);
+    setupEditor(pane_code);
+    
     await waitForUser();
     
     if(g_user == null){ // not logged in
@@ -135,7 +175,7 @@ async function initLessonPage(){
         });
     });
 
-    lesson = new Lesson("Lesson 01");
+    lesson = new Lesson("Lesson 01",pane_code,pane_tutor_code);
     lesson.bannerSection = new TextArea([
         new TextSection("What Will We Be Doing in This Lesson?",[
             "Want to start coding?",
@@ -159,7 +199,7 @@ async function initLessonPage(){
 `)
     ]);
     lesson.events = [
-        new LE_AddGBubble("Hello!\nIn order to do anything we first need to create an HTML document.",BubbleLoc.global),
+        new LE_AddGBubble("Hello!\nIn order to do anything, we first need to create an HTML document.",BubbleLoc.global),
         // new LE_AddBubble("Hello!",10,10),
     ];
 
@@ -221,7 +261,7 @@ function addBubble(line:number,col:number,text:string="This is a text bubble and
 
     let b = document.createElement("div");
     b.innerHTML = text;
-    bubbles_ov.appendChild(b);
+    lesson.p.curFile.bubbles_ov.appendChild(b);
     // let x = col*10;
     // let y = line*19;
     // x = 0;

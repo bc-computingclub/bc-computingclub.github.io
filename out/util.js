@@ -416,23 +416,32 @@ window.addEventListener("resize", e => {
     onResize();
 });
 let onResize = function (isFirst, who) { };
-let d_files;
+// let d_files:HTMLElement;
 let main;
-let codeCont;
+// let codeCont:HTMLElement;
 let pane_lesson;
 let pane_files;
+let pane_tutor_code;
 let pane_code;
 let pane_preview;
 class Project {
-    constructor(title) {
+    constructor(title, parent, settings = {}) {
         this.title = title;
         this.files = [];
         this.openFiles = [];
+        this.parent = parent;
+        this.readonly = settings.readonly || false;
+        this.disableCopy = settings.disableCopy || false;
     }
     title;
     files;
     openFiles;
     curFile;
+    parent;
+    d_files;
+    codeCont;
+    readonly = false;
+    disableCopy = false;
     createFile(name, text, lang) {
         let f = new FFile(this, name, text, lang);
         this.files.push(f);
@@ -442,6 +451,9 @@ class Project {
     }
     getCurEditor() {
         return this.curFile.curEditor;
+    }
+    init() {
+        postSetupEditor(this);
     }
 }
 class FFile {
@@ -460,13 +472,16 @@ class FFile {
     editor;
     curEditor;
     editorHandle;
+    // d_files:HTMLElement;
+    // codeCont:HTMLElement;
+    bubbles_ov;
     open() {
         if (!this.p.openFiles.includes(this)) {
             let link = document.createElement("div");
             this.link = link;
             link.textContent = this.name;
             link.className = "file-link";
-            d_files.appendChild(link);
+            this.p.d_files.appendChild(link);
             this.p.openFiles.push(this);
             let t = this;
             link.onmousedown = function () {
@@ -478,14 +493,22 @@ class FFile {
             let editor = monaco.editor.create(cont, {
                 value: [this.text].join('\n'),
                 language: this.lang,
-                theme: "vs-light",
+                theme: "vs-" + themes[curTheme].style,
                 bracketPairColorization: {
                     enabled: false
                 },
                 minimap: {
                     enabled: false
-                }
+                },
+                readOnly: this.p.readonly
             });
+            if (this.p.disableCopy)
+                editor.onKeyDown(e => {
+                    if (e.ctrlKey && e.keyCode == monaco.KeyCode.KeyC) {
+                        alert("Please don't try to copy and paste from the tutor's code");
+                        e.preventDefault();
+                    }
+                });
             let textArea = cont.querySelector("textarea");
             let overflowGuard = cont.querySelector(".overflow-guard");
             textArea.oninput = function () {
@@ -499,16 +522,21 @@ class FFile {
                 scrollOffset = editor.getScrollTop();
                 updateBubbles();
             });
+            // create ov_bubbles
+            let bubbles_ov = document.createElement("div");
+            bubbles_ov.className = "bubbles-overlay";
+            this.bubbles_ov = bubbles_ov;
+            // append
         }
         // deselect others
-        for (const c of d_files.children) {
+        for (const c of this.p.d_files.children) {
             c.classList.remove("cur");
         }
         this.link.classList.add("cur");
-        for (const c of codeCont.children) {
-            codeCont.removeChild(c);
+        for (const c of this.p.codeCont.children) {
+            this.p.codeCont.removeChild(c);
         }
-        codeCont.appendChild(this.cont);
+        this.p.codeCont.appendChild(this.cont);
         this.editor.layout();
         loadEditorTheme();
     }
