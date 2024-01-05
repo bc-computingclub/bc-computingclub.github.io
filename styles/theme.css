@@ -71,10 +71,10 @@ body.theme-dark{
 
     --menu-btn-bg:var(--bg-col);
 
-    & iframe{
-        /* filter:invert(1) hue-rotate(180deg); */
-        filter:brightness(0.9);
-        background-color:var(--bg-col);
+    & iframe {
+        filter: invert(1) hue-rotate(180deg);
+        /*filter:brightness(0.9);*/
+        /*background-color:var(--bg-col);*/
     }
 }
 body.theme-dark .menu .inp-cont{

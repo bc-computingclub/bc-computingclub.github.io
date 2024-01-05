@@ -181,7 +181,7 @@ async function initLessonPage() {
     ]);
     lesson.events = [
         new LE_AddGBubble("Hello!\nIn order to do anything, we first need to create an HTML document.", BubbleLoc.global),
-        // new LE_AddBubble("Hello!",10,10),
+        new LE_AddBubble("Hello!", 2, 0),
     ];
     // lesson.p.createFile("index.html");
     //     lesson.p.createFile("index.html",`<html>
@@ -220,7 +220,7 @@ onResize = function (isFirst = false, who) {
 onResize();
 initLessonPage();
 // 
-let scrollOffset = 0;
+// let scrollOffset = 0;
 let bubbles = [];
 function addBubble(line, col, text = "This is a text bubble and some more text here is this and you can do this") {
     // let marginOverlayers = document.querySelector(".margin-view-overlays") as HTMLElement;
@@ -235,7 +235,8 @@ function addBubble(line, col, text = "This is a text bubble and some more text h
     bubbles.push({
         e: b,
         line, col,
-        loc: BubbleLoc.code
+        loc: BubbleLoc.code,
+        file: lesson.p.curFile
     });
     // y -= scrollOffset;
     // y += 40;
@@ -256,7 +257,8 @@ function addBubbleAt(loc, text) {
     bubbles.push({
         e: b,
         line: 0, col: 0,
-        loc
+        loc,
+        file: lesson.p.curFile
     });
     b.style.position = "absolute";
     b.classList.add("bubble");
@@ -381,9 +383,9 @@ function updateBubble(i) {
     let x = 0;
     let y = 0;
     if (b.loc == BubbleLoc.code) {
-        let x = b.col * 7.7;
-        let y = b.line * 19;
-        y -= scrollOffset;
+        x = b.col * 7.7;
+        y = b.line * 19;
+        y -= b.file.scrollOffset;
         y += 25;
         let start = 64 + 22 - 7.7;
         x += start;

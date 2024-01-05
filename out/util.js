@@ -474,7 +474,32 @@ class FFile {
     editorHandle;
     // d_files:HTMLElement;
     // codeCont:HTMLElement;
+    scrollOffset = 0;
     bubbles_ov;
+    curRow = 0;
+    curCol = 0;
+    curI = 0;
+    type(lineno, colno, text) {
+        // let v = this.editor.getValue({lineEnding:"lf",preserveBOM:true});
+        // v = v.substring(0,this.curI)+text+v.substring(this.curI);
+        // this.editor.setValue(v);
+        // this.editor.setSelection(new Selection(),v);
+        // let sel = this.editor.getSelection();
+        // let id = {major:1,minor:1};
+        // let op = {
+        //     identifier:id,range:sel,text,forceMoveMarkers:true
+        // };
+        // this.editor.executeEdits("my-source",[op]);
+        //
+        this.editor.trigger("keyboard", "type", {
+            text
+        });
+        // this.editor.trigger("keyboard","cursorMove",{
+        //     to:"left",
+        //     by:"character",
+        //     value:5
+        // });
+    }
     open() {
         if (!this.p.openFiles.includes(this)) {
             let link = document.createElement("div");
@@ -500,8 +525,31 @@ class FFile {
                 minimap: {
                     enabled: false
                 },
-                readOnly: this.p.readonly
+                // readOnly:this.p.readonly
+                // cursorSmoothCaretAnimation:"on"
             });
+            if (this.p.readonly) {
+                editor.onDidFocusEditorText(e => {
+                    if (document.activeElement instanceof HTMLElement) {
+                        document.activeElement.blur();
+                        // is tutor editor
+                        let cursor = cont.querySelector(".inputarea.monaco-mouse-cursor-text");
+                        cursor.style.backgroundColor = "white";
+                        cursor.style.zIndex = "1";
+                        cursor.style.width = "2px";
+                        cursor.style.height = "19px";
+                        cursor.style.border = "solid 1px white";
+                    }
+                    // console.warn("trigger!");
+                    // editor.trigger("blur","",[]);
+                });
+                editor.onDidChangeCursorPosition(e => {
+                    editor.setPosition({ column: 1, lineNumber: 1 });
+                });
+                setTimeout(() => {
+                    editor.focus();
+                }, 100);
+            }
             if (this.p.disableCopy)
                 editor.onKeyDown(e => {
                     if (e.ctrlKey && e.keyCode == monaco.KeyCode.KeyC) {
@@ -519,14 +567,14 @@ class FFile {
             this.p.curFile = this;
             // @ts-ignore
             editor.onDidScrollChange(function () {
-                scrollOffset = editor.getScrollTop();
+                t.scrollOffset = editor.getScrollTop();
                 updateBubbles();
             });
             // create ov_bubbles
             let bubbles_ov = document.createElement("div");
             bubbles_ov.className = "bubbles-overlay";
             this.bubbles_ov = bubbles_ov;
-            // append
+            cont.appendChild(bubbles_ov);
         }
         // deselect others
         for (const c of this.p.d_files.children) {

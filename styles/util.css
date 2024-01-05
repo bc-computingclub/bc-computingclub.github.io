@@ -408,6 +408,7 @@ body .nav-links > .active{
     border-right:none;
     margin-top:var(--editor-gap);
     margin-bottom:var(--editor-gap);
+    margin-right:var(--editor-gap);
 }
 .pane-code{
     /* flex-grow:1; */

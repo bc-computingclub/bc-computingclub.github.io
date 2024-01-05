@@ -45,6 +45,8 @@ body{
     font-size:14px;
 
     transition:opacity 0.2s ease-out;
+
+    color:white;
 }
 .bubble:hover{
     /* opacity:0.2; */
@@ -53,7 +55,7 @@ body{
     content:"";
     position:absolute;
     top:17.5px;
-    left:-15px;
+    left:-14px;
     /* width:20px; */
     /* height:20px; */
     /* transform:rotate(45deg); */
