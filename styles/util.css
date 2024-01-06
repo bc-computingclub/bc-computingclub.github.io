@@ -513,3 +513,14 @@ body .nav-links > .active{
 .monaco-scrollable-element.vs{
     width:calc(100% - 64px) !important;
 }
+
+/*  */
+
+.b-add-file{
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    aspect-ratio:1;
+    transform:scale(0.75);
+    filter:invert(1);
+}

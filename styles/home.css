@@ -417,3 +417,9 @@ a {
         }
     }
 }
+
+/*  */
+
+.hide{
+    display:none;
+}

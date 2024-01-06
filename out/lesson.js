@@ -4,9 +4,135 @@ class Balloon {
     }
     msg;
 }
+class TaskSection {
+}
+class TextTaskSection extends TaskSection {
+    constructor(text) {
+        super();
+        this.text = text;
+    }
+    text;
+    get() {
+        return this.text;
+    }
+}
+class CodeTaskSection extends TaskSection {
+    constructor(code) {
+        super();
+        this.code = code;
+    }
+    code;
+    get() {
+        return `
+            <div class="code-block"><pre>${this.code}</pre></div>
+        `;
+    }
+}
+class Task {
+    constructor(title) {
+        this.title = title;
+    }
+    title;
+    hasStarted = false;
+    isFinished = false;
+    _resFinish;
+    _prom;
+    addToHook(hook) {
+        addHook(hook, this);
+    }
+    preventContinueIfFail() {
+        return false;
+    }
+    getSections() {
+        return [];
+    }
+    check(data) {
+        return true;
+    }
+    async start() {
+        lesson.currentSubTask = this;
+        this.hasStarted = true;
+        console.warn(`:: Started Task #${lesson._subTaskNum++} :: #${lesson._taskCount++}`, this.title);
+        this._prom = new Promise(resolve => { this._resFinish = resolve; });
+    }
+    async finish() {
+        if (this._prom)
+            await this._prom;
+        lesson.currentSubTask = null;
+        this.isFinished = true;
+    }
+}
+class AddFileTask extends Task {
+    constructor(name, isRequired) {
+        super("Add a file named: " + name);
+        this.name = name;
+        this.isRequired = isRequired;
+    }
+    name;
+    isRequired;
+    preventContinueIfFail() {
+        return this.isRequired;
+    }
+    async start() {
+        super.start();
+        let b = addBubbleAt(BubbleLoc.add_file, this.title);
+        this.addToHook(listenHooks.addFile);
+        await this.finish();
+        closeBubble(b);
+    }
+    check(name) {
+        return (name == this.name);
+    }
+}
+class AddGenericCodeTask extends Task {
+    constructor(code) {
+        super("Add this piece of code...");
+        this.code = code;
+    }
+    code;
+    async start() {
+        super.start();
+        // 
+        await this.finish();
+    }
+    getSections() {
+        return [
+            new CodeTaskSection(this.code)
+        ];
+    }
+}
+let listenHooks = {
+    addFile: []
+};
+let _hookCount = 0;
+function addHook(hook, task) {
+    hook.push(task);
+    console.log("...added hook");
+    _hookCount++;
+}
+function resolveHook(hook, data) {
+    let list = [...hook];
+    let result = 0;
+    for (let i = 0; i < list.length; i++) {
+        let f = list[i];
+        if (!f.check(data)) {
+            console.log("...hook resolve failed check; Unresolved: " + _hookCount);
+            if (f.preventContinueIfFail())
+                result = 1;
+            continue;
+        }
+        f._resFinish();
+        hook.splice(hook.indexOf(f), 1);
+        _hookCount--;
+        console.log("...resolved hook; Unresolved: " + _hookCount);
+    }
+    return result;
+}
 class LEvent {
     constructor() { }
-    end;
+    getTasks() {
+        return [];
+    }
 }
 class LE_AddBubble extends LEvent {
     constructor(text, lineno, colno) {
@@ -20,23 +146,52 @@ class LE_AddBubble extends LEvent {
     colno;
     async run() {
         addBubble(this.lineno, this.colno, this.text);
-        if (this.end)
-            await this.end();
     }
 }
 class LE_AddGBubble extends LEvent {
-    constructor(text, loc) {
+    constructor(lines, loc, tasks) {
         super();
-        text = text.replaceAll("\n", "<br><br>");
+        let text = lines.join("<br><br>").replaceAll("\n", "<br><br>");
         this.text = text;
         this.loc = loc;
+        this.tasks = tasks;
     }
     text;
     loc;
+    tasks;
     async run() {
-        addBubbleAt(this.loc, this.text);
-        if (this.end)
-            await this.end();
+        console.warn(`::: Started SUPER Task #${lesson._taskNum} :::`, this.text);
+        let res;
+        let prom = new Promise(resolve => { res = resolve; });
+        let b_confirm = document.createElement("button");
+        b_confirm.textContent = "Okay";
+        let b = addBubbleAt(this.loc, this.text);
+        b.e.appendChild(document.createElement("br"));
+        b.e.appendChild(document.createElement("br"));
+        b.e.appendChild(b_confirm);
+        b_confirm.addEventListener("click", e => {
+            console.log("click");
+            res();
+        });
+        await prom;
+        closeBubble(b);
+        for (const t of this.tasks) {
+            await wait(300);
+            await t.start();
+        }
+    }
+}
+class RunTasksLEvent extends LEvent {
+    constructor(tasks) {
+        super();
+        this.tasks = tasks;
+    }
+    tasks;
+    async run() {
+        for (const t of this.tasks) {
+            await wait(300);
+            await t.start();
+        }
     }
 }
 class FileInstance {
@@ -72,6 +227,11 @@ class Lesson {
     tut;
     bannerSection;
     finalInstance;
+    _taskNum = 0;
+    _subTaskNum = 0;
+    _taskCount = 0;
+    currentTask;
+    currentSubTask;
     init() {
         addBannerBubble(this);
         addBannerPreviewBubble(this);
@@ -79,8 +239,13 @@ class Lesson {
         this.tut.init();
     }
     async start() {
+        this._taskNum = 0;
+        this.currentTask = null;
+        this.currentSubTask = null;
         await wait(350);
         for (const e of this.events) {
+            this._subTaskNum = 0;
+            this.currentTask = e;
             await e.run();
         }
     }
@@ -102,6 +267,10 @@ function setupEditor(parent) {
     contJs.className = "cont-js cont pane";
     parent.appendChild(d_files);
     parent.appendChild(contJs);
+    let add_file = document.createElement("button");
+    add_file.className = "b-add-file";
+    add_file.innerHTML = "<div class='material-symbols-outlined'>add</div>";
+    d_files.appendChild(add_file);
 }
 function postSetupEditor(project) {
     let parent = project.parent;
@@ -112,6 +281,17 @@ function postSetupEditor(project) {
     project.files[0].open();
     project.createFile("main.js", `console.log("hello");\nconsole.log("hello");\nconsole.log("hello");\nconsole.log("hello");`, "javascript");
     project.files[1].open();
+    let add_file = parent.querySelector(".b-add-file");
+    add_file.addEventListener("click", e => {
+        if (project.isTutor) {
+            alert("Sorry! You can't add files to the tutor's project!");
+            return;
+        }
+        let name = prompt("Enter file name:", "index.html");
+        if (!name)
+            return;
+        project.createFile(name, "");
+    });
     // loadEditorTheme();
     // project.files[0].d_files;
     // project.files[0].codeCont;
@@ -180,8 +360,25 @@ async function initLessonPage() {
 `)
     ]);
     lesson.events = [
-        new LE_AddGBubble("Hello!\nIn order to do anything, we first need to create an HTML document.", BubbleLoc.global),
-        new LE_AddBubble("Hello!", 2, 0),
+        new LE_AddGBubble([
+            "Hello!",
+            "In order to do anything, we first need to create an HTML document."
+        ], BubbleLoc.global, [
+            new AddFileTask("index.html", false)
+        ]),
+        new LE_AddGBubble([
+            "Cool! Now you have an HTML document!",
+            'Note: Using the name "index" for our file name means the browser will automatically pick this page when someone tries to go to your site!',
+            "i[So what even is an HTML document and what can we do with it?]"
+        ], BubbleLoc.global, []),
+        new LE_AddGBubble([
+            "An HTML document defines what is h[in the page.]",
+            "For example, this is where you would put b[buttons, text, and images.]",
+            "i[Let's try adding a button.]"
+        ], BubbleLoc.global, [
+            new AddGenericCodeTask("<button>Click Me!</button>")
+        ])
+        // new LE_AddBubble("Hello!",2,0),
     ];
     // lesson.p.createFile("index.html");
     //     lesson.p.createFile("index.html",`<html>
@@ -219,9 +416,13 @@ onResize = function (isFirst = false, who) {
 };
 onResize();
 initLessonPage();
-// 
-// let scrollOffset = 0;
 let bubbles = [];
+function closeBubble(b) {
+    b.e.style.animation = "RemoveBubble forwards 0.15s ease-out";
+    b.e.onanimationend = function () {
+        b.e.parentElement.removeChild(b.e);
+    };
+}
 function addBubble(line, col, text = "This is a text bubble and some more text here is this and you can do this") {
     // let marginOverlayers = document.querySelector(".margin-view-overlays") as HTMLElement;
     // let start = marginOverlayers?.offsetWidth || 64;
@@ -254,16 +455,21 @@ function addBubbleAt(loc, text) {
     let b = document.createElement("div");
     b.innerHTML = text;
     g_bubbles_ov.appendChild(b);
-    bubbles.push({
+    let data = {
         e: b,
         line: 0, col: 0,
         loc,
         file: lesson.p.curFile
-    });
+    };
+    bubbles.push(data);
     b.style.position = "absolute";
     b.classList.add("bubble");
     updateBubble(bubbles.length - 1);
+    return data;
 }
+let dev = {
+    skipGetStarted: true
+};
 class BannerMenu extends Menu {
     constructor(text, lesson) {
         super("Welcome!");
@@ -292,6 +498,8 @@ class BannerMenu extends Menu {
             closeAllMenus();
             lesson.start();
         };
+        setTimeout(() => { if (dev.skipGetStarted)
+            b_gettingStarted.click(); }, 20);
     }
 }
 function loadIFrameSimpleMode(iframe, inst) {
@@ -396,6 +604,13 @@ function updateBubble(i) {
         b.e.classList.add("centered");
         b.e.classList.add("no-callout");
         b.e.classList.add("global");
+    }
+    else if (b.loc == BubbleLoc.add_file) {
+        let userAddFile = lesson.p.parent.querySelector(".b-add-file");
+        let rect = userAddFile.getBoundingClientRect();
+        x = rect.x;
+        y = rect.y + rect.height + 15 - 60;
+        b.e.classList.add("dir-top");
     }
     b.e.style.left = x + "px";
     b.e.style.top = y + "px";

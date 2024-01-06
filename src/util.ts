@@ -506,8 +506,15 @@ class Project{
     disableCopy = false;
 
     createFile(name:string,text:string,lang?:string){
+        let res = resolveHook(listenHooks.addFile,name);
+        if(res == 1){
+            console.warn("Failed creation prevented from hook");
+            return;
+        }
         let f = new FFile(this,name,text,lang);
         this.files.push(f);
+        f.open();
+        return f;
     }
 
     hasEditor(){
@@ -520,10 +527,24 @@ class Project{
     init(){
         postSetupEditor(this);
     }
+
+    get isTutor(){ //temp for now
+        return this.disableCopy;
+    }
 }
 
 class FFile{
     constructor(p:Project,name:string,text:string,lang?:string){
+        if(!lang){
+            let ext = name.split(".").pop();
+            let map = {
+                "html":"html",
+                "css":"css",
+                "js":"javascript"
+            };
+            lang = map[ext] || "text";
+        }
+        
         this.p = p;
         this.name = name;
         this.text = text;
@@ -580,7 +601,7 @@ class FFile{
             this.link = link;
             link.textContent = this.name;
             link.className = "file-link";
-            this.p.d_files.appendChild(link);
+            this.p.d_files.insertBefore(link,this.p.d_files.lastChild);
             this.p.openFiles.push(this);
             let t = this;
             link.onmousedown = function(){
@@ -612,11 +633,12 @@ class FFile{
 
                         // is tutor editor
                         let cursor = cont.querySelector(".inputarea.monaco-mouse-cursor-text") as HTMLElement;
-                        cursor.style.backgroundColor = "white";
+                        cursor.style.backgroundColor = "var(--col)";
                         cursor.style.zIndex = "1";
                         cursor.style.width = "2px";
                         cursor.style.height = "19px";
-                        cursor.style.border = "solid 1px white";
+                        cursor.style.border = "solid 1px var(--col)";
+                        cursor.classList.add("custom-cursor");
                     }
                     // console.warn("trigger!");
                     // editor.trigger("blur","",[]);
@@ -671,3 +693,15 @@ class FFile{
         loadEditorTheme();
     }
 }
+
+function cursorLoop(){
+    let delay = 500;
+
+    let list = document.querySelectorAll(".custom-cursor");
+    for(const c of list){
+        if(c.classList.toggle("hide")) delay = 500;
+    }
+    
+    setTimeout(cursorLoop,delay);
+}
+cursorLoop();
