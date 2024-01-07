@@ -42,10 +42,6 @@ cardContainer.addEventListener("click", (event) => {
     if (currentCard == card) {
         removeCard(card);
     }
-    setTimeout(() => {
-        canCycle = true;
-        cycleCards;
-    }, 10000);
 });
 function removeCard(card) {
     isAnimating = true;
