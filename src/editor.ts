@@ -59,10 +59,9 @@ onResize = function(isFirst=false,who?:HTMLElement){
 };
 onResize();
 
-let b_refresh = document.querySelector(".b-refresh") as HTMLButtonElement;
-let icon_refresh = document.querySelector(".icon-refresh") as HTMLElement;
-let iframe = document.querySelector("iframe") as HTMLIFrameElement;
-let _icRef_state = true;
+b_refresh = document.querySelector(".b-refresh") as HTMLButtonElement;
+icon_refresh = document.querySelector(".icon-refresh") as HTMLElement;
+iframe = document.querySelector("iframe") as HTMLIFrameElement;
 b_refresh.addEventListener("click",e=>{
     let newIF = document.createElement("iframe");
     iframe.replaceWith(newIF);

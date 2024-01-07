@@ -1,5 +1,9 @@
 body.themestyle-light{
-    
+    --bubble-bg:rgba(46, 70, 140, 0.7);
+
+    & pre.code{
+        filter:invert(0);
+    }
 }
 body.themestyle-dark{
     color-scheme:dark;
@@ -9,6 +13,12 @@ body.themestyle-dark{
     --lighten0:rgba(0,0,0,0.25);
     --lighten:rgba(0,0,0,0.1);
     --lighten2:rgba(0,0,0,0.05);
+
+    --bubble-bg:rgba(46, 70, 140, 0.7);
+
+    & pre.code{
+        filter:invert(1);
+    }
 }
 
 /* Themes */
@@ -58,6 +68,8 @@ body.theme-light{
 
     --dark-text:black;
     color-scheme:light;
+
+    --theme-inv-filter:invert(1);
 }
 body.theme-dark{
     --bg:#111;
@@ -70,6 +82,8 @@ body.theme-dark{
     --cta-btn-col:#245;
 
     --menu-btn-bg:var(--bg-col);
+
+    --theme-inv-filter:invert(0);
 
     & iframe {
         filter: invert(1) hue-rotate(180deg);

@@ -7,6 +7,7 @@
     <link rel="stylesheet" href="/styles/home.css">
     <link rel="stylesheet" href="/editor/editor.css">
     <link rel="stylesheet" href="/styles/lesson.css">
+    <link rel="stylesheet" href="/lib/prism/prism.css">
 </head>
 <body>
     <script src="/out/pre_init.js"></script>
@@ -56,10 +57,19 @@
             </div>
         </div>
     </div>
+    <div class="d-current-tasks">
+        <div class="header" style="padding:0px !important;height:30px">Current Tasks</div>
+        <hr>
+        <div class="lower-cont">
+            <div class="d-task"></div>
+            <div class="d-sub-tasks"></div>
+        </div>
+    </div>
 
     <script>var exports = {};</script>
     <script src="/out/socket.io.min.js"></script>
     <script src="/out/network.js"></script>
+    <script src="/lib/prism/prism.js"></script>
     <script src="/out/resize.js"></script>
     <script id="s-loader" src="/lib/monaco/min/vs/loader.js"></script>
     <script src="/out/lesson.js"></script>

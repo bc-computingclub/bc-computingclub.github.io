@@ -1,3 +1,5 @@
+const d_task = document.querySelector(".d-task");
+const d_subTasks = document.querySelector(".d-sub-tasks");
 class Balloon {
     constructor(msg) {
         this.msg = msg;
@@ -17,14 +19,20 @@ class TextTaskSection extends TaskSection {
     }
 }
 class CodeTaskSection extends TaskSection {
-    constructor(code) {
+    constructor(code, lang) {
         super();
         this.code = code;
+        this.lang = lang;
     }
     code;
+    lang;
     get() {
         return `
-            <div class="code-block"><pre>${this.code}</pre></div>
+            <pre class="code"><code class="language-${this.lang}">${escapeMarkup(this.code)}</code></pre>
+            <div class="sub-task-btns">
+                <button class="b-mark-done">Mark Done</button>
+                <button class="b-replay"><div class="material-symbols-outlined">replay</div></button>
+            </div>
         `;
     }
 }
@@ -32,9 +40,15 @@ class Task {
     constructor(title) {
         this.title = title;
     }
+    supertask;
     title;
     hasStarted = false;
     isFinished = false;
+    _preVal;
+    _preCol;
+    _preLine;
+    taskRef;
+    canBeFinished = false;
     _resFinish;
     _prom;
     addToHook(hook) {
@@ -50,16 +64,57 @@ class Task {
         return true;
     }
     async start() {
-        lesson.currentSubTask = this;
-        this.hasStarted = true;
+        lesson.loadSubTask(this);
         console.warn(`:: Started Task #${lesson._subTaskNum++} :: #${lesson._taskCount++}`, this.title);
-        this._prom = new Promise(resolve => { this._resFinish = resolve; });
+        let t = this;
+        this._prom = new Promise(resolve => {
+            this._resFinish = function (v) {
+                if (t.canBeFinished) {
+                    resolve(v);
+                    return 1;
+                }
+            };
+        });
     }
     async finish() {
+        this.canBeFinished = true;
+        let res = null;
         if (this._prom)
-            await this._prom;
-        lesson.currentSubTask = null;
+            res = await this._prom;
+        lesson.finishSubTask(this);
         this.isFinished = true;
+        hideTutMouse();
+        this.cleanup();
+        return res;
+    }
+    cleanup() { }
+    async play() { }
+    async replay(editor) {
+        // if(!this.canBeFinished) return;
+        if (!this.canBeFinished && !this.isFinished)
+            return;
+        if (lesson.currentSubTask)
+            lesson.currentSubTask._resFinish("rp_" + this.supertask.tasks.indexOf(this));
+        // else // I don't know how I can restart it if it's completely finished 
+        return;
+        let t = this;
+        if (!t.canBeFinished)
+            return;
+        t.cleanup();
+        editor.setValue(t._preVal);
+        editor.setPosition({ lineNumber: t._preLine, column: t._preCol });
+        t.canBeFinished = false;
+        t.hasStarted = false;
+        t.isFinished = false;
+        let list = [...d_subTasks.children];
+        let ind = this.supertask.tasks.indexOf(t);
+        for (let i = ind; i < list.length; i++) {
+            d_subTasks.removeChild(list[i]);
+            this.supertask.tasks[i].taskRef = null;
+        }
+        lesson.loadSubTask(t);
+        await t.play();
+        this.canBeFinished = true;
     }
 }
 class AddFileTask extends Task {
@@ -75,30 +130,144 @@ class AddFileTask extends Task {
     }
     async start() {
         super.start();
+        let b_tutAddFile = lesson.tut.parent.querySelector(".b-add-file");
+        let rect = b_tutAddFile.getBoundingClientRect();
+        await showTutMouse();
+        await moveTutMouseTo(rect.x + rect.width / 2, rect.y + rect.height / 2);
+        await wait(300);
+        await fakeClickButton(b_tutAddFile);
+        lesson.tut.createFile(this.name, "");
+        await wait(500);
         let b = addBubbleAt(BubbleLoc.add_file, this.title);
         this.addToHook(listenHooks.addFile);
-        await this.finish();
+        let res = await this.finish();
         closeBubble(b);
+        return res;
     }
     check(name) {
         return (name == this.name);
     }
 }
 class AddGenericCodeTask extends Task {
-    constructor(code) {
-        super("Add this piece of code...");
+    constructor(code, lang) {
+        super("Add the following code:");
         this.code = code;
+        this.lang = lang;
     }
     code;
+    lang;
+    async play() {
+        let editor = lesson.tut.getCurEditor();
+        // editor.getSupportedActions().forEach((value: monaco.editor.IEditorAction) => {
+        //     console.log(value);
+        // });
+        lesson.tut.curFile.blockPosChange = false;
+        let pos = editor.getPosition();
+        await showTutMouse();
+        await moveTutMouseTo(58 + pos.column * 7.7, 115 + pos.lineNumber * 16.5);
+        await wait(150);
+        await hideTutMouse();
+        await wait(200);
+        let list = document.querySelectorAll(".custom-cursor");
+        for (const c of list) {
+            c.style.display = "block";
+        }
+        for (let i = 0; i < this.code.length; i++) {
+            editor.updateOptions({ readOnly: false });
+            editor.trigger("keyboard", "type", {
+                text: this.code.substring(i, i + 1)
+            });
+            editor.updateOptions({ readOnly: true });
+            await wait(Math.ceil(30 + Math.random() * 100));
+        }
+        for (const c of list) {
+            c.style.display = null;
+        }
+        pos = editor.getPosition();
+        lesson.tut.curFile.curRow = pos.lineNumber;
+        lesson.tut.curFile.curCol = pos.column;
+        lesson.tut.curFile.blockPosChange = true;
+        moveTutMouseTo(58 + pos.column * 7.7, 115 + pos.lineNumber * 16.5);
+        if (false) {
+            let b = addBubble(lesson.tut.curFile, "<button>I'm Done</button>");
+            b.e.classList.add("small");
+            let btn = b.e.querySelector("button");
+            btn.addEventListener("click", e => {
+                closeBubble(b);
+                this._resFinish();
+            });
+        }
+        if (!lesson._hasShownMarkDoneReminder) {
+            lesson._hasShownMarkDoneReminder = true;
+            let f = lesson.tut.curFile;
+            let b = addBubble(f, `Make sure you click "Mark Done" when you're finished copying the code!`, f.curRow, f.curCol, "top");
+            this._finishBubble = b;
+        }
+    }
     async start() {
         super.start();
-        // 
-        await this.finish();
+        await this.play();
+        return await this.finish();
     }
+    _finishBubble;
     getSections() {
         return [
-            new CodeTaskSection(this.code)
+            new CodeTaskSection(this.code, this.lang)
         ];
+    }
+    cleanup() {
+        // let b_markDone = this.taskRef.querySelector(".b-mark-done") as HTMLButtonElement;
+        // b_markDone.disabled = false;
+        if (this._finishBubble) {
+            closeBubble(this._finishBubble);
+            this._finishBubble = null;
+        }
+    }
+}
+class AddTutorSideText extends Task {
+    constructor(text, comment) {
+        super(comment);
+        this.text = text;
+        this.comment = comment;
+    }
+    text;
+    comment;
+    async start() {
+        super.start();
+        let editor = lesson.tut.getCurEditor();
+        lesson.tut.curFile.blockPosChange = false;
+        let speedScale = 1;
+        if (this.text.length < 5)
+            speedScale = 2;
+        let pos = editor.getPosition();
+        await showTutMouse();
+        await moveTutMouseTo(58 + pos.column * 7.7, 115 + pos.lineNumber * 16.5);
+        await wait(150);
+        await hideTutMouse();
+        await wait(200);
+        let list = document.querySelectorAll(".custom-cursor");
+        for (const c of list) {
+            c.style.display = "block";
+        }
+        for (let i = 0; i < this.text.length; i++) {
+            editor.updateOptions({ readOnly: false });
+            editor.trigger("keyboard", "type", {
+                text: this.text.substring(i, i + 1)
+            });
+            editor.updateOptions({ readOnly: true });
+            await wait(Math.ceil((30 + Math.random() * 100) * speedScale));
+        }
+        for (const c of list) {
+            c.style.display = null;
+        }
+        pos = editor.getPosition();
+        lesson.tut.curFile.curRow = pos.lineNumber;
+        lesson.tut.curFile.curCol = pos.column;
+        lesson.tut.curFile.blockPosChange = true;
+        moveTutMouseTo(58 + pos.column * 7.7, 115 + pos.lineNumber * 16.5);
+        this.canBeFinished = true;
+        this._resFinish();
+        return await this.finish();
     }
 }
 let listenHooks = {
@@ -121,7 +290,11 @@ function resolveHook(hook, data) {
                 result = 1;
             continue;
         }
-        f._resFinish();
+        if (f._resFinish)
+            f._resFinish();
+        else {
+            console.warn("Weird, there wasn't a finish for the hook...?");
+        }
         hook.splice(hook.indexOf(f), 1);
         _hookCount--;
         console.log("...resolved hook; Unresolved: " + _hookCount);
@@ -133,6 +306,8 @@ class LEvent {
     getTasks() {
         return [];
     }
+    getTaskText() { return ""; }
+    tasks;
 }
 class LE_AddBubble extends LEvent {
     constructor(text, lineno, colno) {
@@ -145,26 +320,28 @@ class LE_AddBubble extends LEvent {
     lineno;
     colno;
     async run() {
-        addBubble(this.lineno, this.colno, this.text);
+        addBubble(lesson.p.curFile, this.text, this.lineno, this.colno);
     }
 }
 class LE_AddGBubble extends LEvent {
     constructor(lines, loc, tasks) {
         super();
+        this.ogLines = lines;
         let text = lines.join("<br><br>").replaceAll("\n", "<br><br>");
         this.text = text;
         this.loc = loc;
         this.tasks = tasks;
     }
+    ogLines;
     text;
     loc;
-    tasks;
+    // tasks:Task[];
     async run() {
         console.warn(`::: Started SUPER Task #${lesson._taskNum} :::`, this.text);
         let res;
         let prom = new Promise(resolve => { res = resolve; });
         let b_confirm = document.createElement("button");
-        b_confirm.textContent = "Okay";
+        b_confirm.textContent = "Next";
         let b = addBubbleAt(this.loc, this.text);
         b.e.appendChild(document.createElement("br"));
         b.e.appendChild(document.createElement("br"));
@@ -175,10 +352,41 @@ class LE_AddGBubble extends LEvent {
         });
         await prom;
         closeBubble(b);
-        for (const t of this.tasks) {
-            await wait(300);
-            await t.start();
+        let tt = this;
+        async function loop(start = 0) {
+            for (let i = start; i < tt.tasks.length; i++) {
+                let t = tt.tasks[i];
+                await wait(300);
+                let res = await t.start();
+                // new reset stuff
+                t._resFinish = null;
+                t._prom = null;
+                t.canBeFinished = false;
+                t.hasStarted = false;
+                // t.isFinished = false;
+                t.cleanup();
+                if (typeof res == "string") {
+                    if (res.startsWith("rp_")) {
+                        let newStart = parseInt(res.replace("rp_", ""));
+                        let startT = tt.tasks[newStart];
+                        let editor = lesson.tut.getCurEditor();
+                        editor.setValue(startT._preVal);
+                        editor.setPosition({ lineNumber: startT._preLine, column: startT._preCol });
+                        let list = [...d_subTasks.children];
+                        for (let i = newStart; i < list.length; i++) {
+                            d_subTasks.removeChild(list[i]);
+                            tt.tasks[i].taskRef = null;
+                        }
+                        await loop(newStart);
+                        return;
+                    }
+                }
+            }
         }
+        await loop(0);
+    }
+    getTaskText() {
+        return this.ogLines[this.ogLines.length - 1];
     }
 }
 class RunTasksLEvent extends LEvent {
@@ -186,7 +394,6 @@ class RunTasksLEvent extends LEvent {
         super();
         this.tasks = tasks;
     }
-    tasks;
     async run() {
         for (const t of this.tasks) {
             await wait(300);
@@ -232,6 +439,7 @@ class Lesson {
     _taskCount = 0;
     currentTask;
     currentSubTask;
+    _hasShownMarkDoneReminder = false;
     init() {
         addBannerBubble(this);
         addBannerPreviewBubble(this);
@@ -240,14 +448,79 @@ class Lesson {
     }
     async start() {
         this._taskNum = 0;
-        this.currentTask = null;
+        this.clearAllTasks();
         this.currentSubTask = null;
         await wait(350);
         for (const e of this.events) {
+            for (const t of e.tasks) { // associate super task with sub task
+                t.supertask = e;
+            }
             this._subTaskNum = 0;
-            this.currentTask = e;
+            this.loadTask(e);
             await e.run();
+            await wait(300);
         }
+    }
+    loadTask(e) {
+        this.currentTask = e;
+        if (e instanceof LE_AddGBubble) {
+            if (!e.tasks.length)
+                return;
+        }
+        this.clearAllTasks();
+        this.currentTask = e;
+        d_task.innerHTML = `<div>${formatBubbleText(e.getTaskText())}</div>`;
+    }
+    clearAllTasks() {
+        this.currentTask = null;
+        // this.currentSubTask = null; // temporary?
+        d_task.innerHTML = "";
+        d_subTasks.innerHTML = "";
+    }
+    loadSubTask(t) {
+        this.currentSubTask = t;
+        t.hasStarted = true;
+        let editor = lesson.tut.getCurEditor();
+        let pos = editor?.getPosition();
+        if (t._preVal == null) {
+            t._preVal = editor?.getValue() || "";
+            t._preLine = pos?.lineNumber || 1;
+            t._preCol = pos?.column || 1;
+        }
+        let div = document.createElement("div");
+        // div.className = "flx-sb c";
+        let ind = lesson.currentTask.tasks.indexOf(t);
+        div.innerHTML = `<div class="flx-sb c"><div><span class="l-num">#${ind + 1} </span><span>${t.title}</span></div><div class="material-symbols-outlined cb">check_box_outline_blank</div></div>`;
+        let sects = t.getSections();
+        d_subTasks.appendChild(div);
+        for (const s of sects) {
+            let d = document.createElement("div");
+            d.innerHTML = s.get();
+            t.taskRef = d;
+            div.appendChild(d);
+            let code = d.querySelector("code");
+            if (code) {
+                // @ts-ignore
+                Prism.highlightElement(code, null, null);
+                let markDone = d.querySelector(".b-mark-done");
+                markDone.addEventListener("click", e => {
+                    if (t._resFinish())
+                        markDone.disabled = true;
+                });
+                let b_replay = d.querySelector(".b-replay");
+                b_replay.addEventListener("click", e => {
+                    // replay
+                    t.replay(editor);
+                });
+            }
+        }
+    }
+    finishSubTask(t) {
+        // this.currentSubTask = null; // temporary?
+        let ind = lesson.currentTask.tasks.indexOf(t);
+        let c = d_subTasks.children[ind];
+        let cb = c.querySelector(".cb");
+        cb.textContent = "select_check_box";
     }
 }
 let lesson;
@@ -260,6 +533,30 @@ pane_code = document.querySelector(".pane-code");
 pane_preview = document.querySelector(".pane-preview");
 // let bubbles_ov = document.querySelector(".bubbles-overlay") as HTMLElement;
 let g_bubbles_ov = document.querySelector(".global-bubble-overlay");
+let tutMouse = document.createElement("div");
+tutMouse.className = "tut-mouse";
+document.body.appendChild(tutMouse);
+async function hideTutMouse() {
+    tutMouse.style.opacity = "0";
+    await wait(350);
+}
+async function showTutMouse() {
+    tutMouse.style.opacity = "1";
+    await wait(350);
+}
+async function moveTutMouseTo(x, y) {
+    tutMouse.style.left = x + "px";
+    tutMouse.style.top = y + "px";
+    await wait(350);
+}
+hideTutMouse();
+async function fakeClickButton(e) {
+    await wait(50);
+    e.classList.add("f-hover");
+    await wait(150);
+    e.classList.remove("f-hover");
+    await wait(150);
+}
 function setupEditor(parent) {
     let d_files = document.createElement("div");
     d_files.className = "d-open-files pane";
@@ -277,10 +574,10 @@ function postSetupEditor(project) {
     project.d_files = parent.querySelector(".d-open-files");
     project.codeCont = parent.querySelector(".cont-js");
     console.log("completed post setup");
-    project.createFile("test.html", `<p>Hello</p>`, "html");
-    project.files[0].open();
-    project.createFile("main.js", `console.log("hello");\nconsole.log("hello");\nconsole.log("hello");\nconsole.log("hello");`, "javascript");
-    project.files[1].open();
+    // project.createFile("test.html",`<p>Hello</p>`,"html");
+    // project.files[0].open();
+    // project.createFile("main.js",`console.log("hello");\nconsole.log("hello");\nconsole.log("hello");\nconsole.log("hello");`,"javascript");
+    // project.files[1].open();
     let add_file = parent.querySelector(".b-add-file");
     add_file.addEventListener("click", e => {
         if (project.isTutor) {
@@ -376,9 +673,13 @@ async function initLessonPage() {
             "For example, this is where you would put b[buttons, text, and images.]",
             "i[Let's try adding a button.]"
         ], BubbleLoc.global, [
-            new AddGenericCodeTask("<button>Click Me!</button>")
-        ])
-        // new LE_AddBubble("Hello!",2,0),
+            new AddGenericCodeTask("<button>Click Me!</button>", "html"),
+            new AddTutorSideText("\n\n", "Add a few lines to make some space"),
+            new AddGenericCodeTask("<button>Click Me 2!</button>", "html"),
+        ]),
+        new LE_AddGBubble([
+            "Awesome!"
+        ], BubbleLoc.global, [])
     ];
     // lesson.p.createFile("index.html");
     //     lesson.p.createFile("index.html",`<html>
@@ -423,27 +724,35 @@ function closeBubble(b) {
         b.e.parentElement.removeChild(b.e);
     };
 }
-function addBubble(line, col, text = "This is a text bubble and some more text here is this and you can do this") {
+function addBubble(file, text = "This is a text bubble and some more text here is this and you can do this", line, col, dir) {
+    if (line == null)
+        line = file.curRow;
+    if (col == null)
+        col = file.curCol;
     // let marginOverlayers = document.querySelector(".margin-view-overlays") as HTMLElement;
     // let start = marginOverlayers?.offsetWidth || 64;
     let b = document.createElement("div");
     b.innerHTML = text;
-    lesson.p.curFile.bubbles_ov.appendChild(b);
+    file.bubbles_ov.appendChild(b);
     // let x = col*10;
     // let y = line*19;
     // x = 0;
     // y = 0;
-    bubbles.push({
+    let data = {
         e: b,
         line, col,
         loc: BubbleLoc.code,
-        file: lesson.p.curFile
-    });
+        file
+    };
+    bubbles.push(data);
+    if (dir)
+        b.classList.add("dir-" + dir);
     // y -= scrollOffset;
     // y += 40;
     b.style.position = "absolute";
     b.classList.add("bubble");
     updateBubble(bubbles.length - 1);
+    return data;
 }
 var BubbleLoc;
 (function (BubbleLoc) {
@@ -451,9 +760,19 @@ var BubbleLoc;
     BubbleLoc[BubbleLoc["add_file"] = 1] = "add_file";
     BubbleLoc[BubbleLoc["global"] = 2] = "global";
 })(BubbleLoc || (BubbleLoc = {}));
+function formatBubbleText(text) {
+    while (text.includes("[")) {
+        let ind = text.indexOf("[");
+        let id = text[ind - 1];
+        let str = `<span class="l-${id}">`;
+        text = text.replace(id + "[", str); // replaces just the first instance which is where we're at
+    }
+    text = text.replaceAll("]", "</span>");
+    return text;
+}
 function addBubbleAt(loc, text) {
     let b = document.createElement("div");
-    b.innerHTML = text;
+    b.innerHTML = formatBubbleText(text);
     g_bubbles_ov.appendChild(b);
     let data = {
         e: b,
@@ -593,8 +912,10 @@ function updateBubble(i) {
     if (b.loc == BubbleLoc.code) {
         x = b.col * 7.7;
         y = b.line * 19;
+        x -= b.file.scrollOffsetX;
         y -= b.file.scrollOffset;
-        y += 25;
+        // y += 25;
+        y += 88;
         let start = 64 + 22 - 7.7;
         x += start;
     }
@@ -608,11 +929,66 @@ function updateBubble(i) {
     else if (b.loc == BubbleLoc.add_file) {
         let userAddFile = lesson.p.parent.querySelector(".b-add-file");
         let rect = userAddFile.getBoundingClientRect();
+        // x = rect.x + 34;
+        // y = rect.y+rect.height+15 - 60 - 52;
         x = rect.x;
         y = rect.y + rect.height + 15 - 60;
-        b.e.classList.add("dir-top");
+        b.e.classList.add("dir-top2");
     }
     b.e.style.left = x + "px";
     b.e.style.top = y + "px";
 }
+// refresh system
+b_refresh = document.querySelector(".b-refresh");
+icon_refresh = document.querySelector(".icon-refresh");
+iframe = document.querySelector("iframe");
+// let _icRef_state = true;
+b_refresh.addEventListener("click", e => {
+    let newIF = document.createElement("iframe");
+    iframe.replaceWith(newIF);
+    iframe = newIF;
+    icon_refresh.style.rotate = _icRef_state ? "360deg" : "0deg";
+    _icRef_state = !_icRef_state;
+    let file = lesson.p.files.find(v => v.name == "index.html");
+    if (!file) {
+        alert("No index.html file found! Please create a new file called index.html, this file will be used in the preview.");
+        return;
+    }
+    let text = file.editor.getValue();
+    // let file = new File([new Uint8Array([...text].map((v,i)=>v.charCodeAt(i)))],"index.html");
+    // let bytes = new Uint8Array([...text].map((v,i)=>text.charCodeAt(i)));
+    // console.log(bytes);
+    // let file = new Blob([bytes]);
+    // let url = URL.createObjectURL(file);
+    // let a = document.createElement("a");
+    // a.href = url;
+    // a.download = "index.html";
+    // console.log(a.href);
+    // a.click();
+    let root = iframe.contentDocument;
+    root.open();
+    root.write(text);
+    let scripts = iframe.contentDocument.scripts;
+    let newScriptList = [];
+    for (const c of scripts) {
+        let div = document.createElement("div");
+        div.textContent = c.src;
+        c.replaceWith(div);
+        newScriptList.push(div);
+    }
+    for (const c of newScriptList) {
+        // if(!c.hasAttribute("src")) continue;
+        // let src = c.src.replace(location.ancestorOrigins[0]+"/editor","");
+        // c.innerHTML = project.files.find(v=>+"/"+v.name == src)?.editor.getValue();
+        let sc = document.createElement("script");
+        sc.innerHTML = project.files[2].editor.getValue();
+        c.replaceWith(sc);
+    }
+    let styles = iframe.contentDocument.querySelectorAll("link");
+    for (const c of styles) {
+        let st = document.createElement("style");
+        st.innerHTML = project.files[1].editor.getValue();
+        c.replaceWith(st);
+    }
+});
 //# sourceMappingURL=lesson.js.map

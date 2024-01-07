@@ -50,10 +50,9 @@ onResize = function (isFirst = false, who) {
         project.getCurEditor().layout();
 };
 onResize();
-let b_refresh = document.querySelector(".b-refresh");
-let icon_refresh = document.querySelector(".icon-refresh");
-let iframe = document.querySelector("iframe");
-let _icRef_state = true;
+b_refresh = document.querySelector(".b-refresh");
+icon_refresh = document.querySelector(".icon-refresh");
+iframe = document.querySelector("iframe");
 b_refresh.addEventListener("click", e => {
     let newIF = document.createElement("iframe");
     iframe.replaceWith(newIF);

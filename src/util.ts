@@ -521,7 +521,7 @@ class Project{
         return (this.curFile?.curEditor != null);
     }
     getCurEditor(){
-        return this.curFile.curEditor;
+        return this.curFile?.curEditor;
     }
 
     init(){
@@ -565,11 +565,15 @@ class FFile{
     // d_files:HTMLElement;
     // codeCont:HTMLElement;
     scrollOffset = 0;
+    scrollOffsetX = 0;
     bubbles_ov:HTMLElement;
 
     curRow = 0;
     curCol = 0;
     curI = 0;
+    _mouseOver = false;
+    blockPosChange = true;
+
     type(lineno:number,colno:number,text:string){
         // let v = this.editor.getValue({lineEnding:"lf",preserveBOM:true});
         // v = v.substring(0,this.curI)+text+v.substring(this.curI);
@@ -622,7 +626,8 @@ class FFile{
                 minimap:{
                     enabled:false
                 },
-                // readOnly:this.p.readonly
+                contextmenu:!this.p.isTutor,
+                readOnly:this.p.isTutor
                 // cursorSmoothCaretAnimation:"on"
             });
             if(this.p.readonly){
@@ -644,8 +649,15 @@ class FFile{
                     // editor.trigger("blur","",[]);
                 });
                 editor.onDidChangeCursorPosition(e=>{
-                    editor.setPosition({column:1,lineNumber:1});
+                    // if(t._mouseOver) editor.setPosition({column:1,lineNumber:1});
+                    if(t.blockPosChange) editor.setPosition({column:this.curCol,lineNumber:this.curRow});
                 });
+                // editor.onMouseMove(e=>{
+                //     t._mouseOver = true;
+                // });
+                // editor.onMouseLeave(e=>{
+                //     t._mouseOver = false;
+                // });
                 setTimeout(()=>{
                     editor.focus();
                 },100);
@@ -669,6 +681,7 @@ class FFile{
             // @ts-ignore
             editor.onDidScrollChange(function(){
                 t.scrollOffset = editor.getScrollTop();
+                t.scrollOffsetX = editor.getScrollLeft();
                 updateBubbles();
             });
 
@@ -705,3 +718,33 @@ function cursorLoop(){
     setTimeout(cursorLoop,delay);
 }
 cursorLoop();
+
+// From Jaredcheeda, https://stackoverflow.com/questions/7381974/which-characters-need-to-be-escaped-in-html
+function escapeMarkup (dangerousInput) {
+    const dangerousString = String(dangerousInput);
+    const matchHtmlRegExp = /["'&<>]/;
+    const match = matchHtmlRegExp.exec(dangerousString);
+    if (!match) {
+      return dangerousInput;
+    }
+  
+    const encodedSymbolMap = {
+      '"': '&quot;',
+      '\'': '&#39;',
+      '&': '&amp;',
+      '<': '&lt;',
+      '>': '&gt;'
+    };
+    const dangerousCharacters = dangerousString.split('');
+    const safeCharacters = dangerousCharacters.map(function (character) {
+      return encodedSymbolMap[character] || character;
+    });
+    const safeString = safeCharacters.join('');
+    return safeString;
+}
+
+// refresh system
+let b_refresh:HTMLButtonElement;
+let icon_refresh:HTMLElement;
+let iframe:HTMLIFrameElement;
+let _icRef_state = true;
