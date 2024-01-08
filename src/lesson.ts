@@ -57,6 +57,8 @@ abstract class Task{
     _resFinish:(v?:string)=>number|void;
     _prom:Promise<string|void>;
 
+    finalDelay = 0;
+
     addToHook(hook:Task[]){
         addHook(hook,this);
     }
@@ -90,6 +92,7 @@ abstract class Task{
         this.isFinished = true;
         hideTutMouse();
         this.cleanup();
+        if(this.finalDelay) await wait(this.finalDelay);
         return res;
     }
     cleanup(){}
@@ -159,6 +162,8 @@ class AddGenericCodeTask extends Task{
         super("Add the following code:");
         this.code = code;
         this.lang = lang;
+
+        this.finalDelay = 2600;
     }
     code:string;
     lang:string;
@@ -285,9 +290,58 @@ class AddTutorSideText extends Task{
         return await this.finish();
     }
 }
+class DoRefreshTask extends Task{
+    constructor(text:string,comment?:string){
+        if(!comment) comment = text;
+        super(comment);
+        this.text = text;
+
+        this.finalDelay = 3000;
+    }
+    text:string;
+    b:Bubble;
+    async start(){
+        super.start();
+
+        this.addToHook(listenHooks.refresh);
+        this.b = addBubbleAt(BubbleLoc.refresh,this.text);
+
+        return await this.finish();
+    }
+    cleanup(): void {
+        closeBubble(this.b);
+    }
+}
+class ClickButtonTask extends Task{
+    constructor(btn:HTMLButtonElement,text:string,dir:string,comment?:string){
+        if(!comment) comment = text;
+        super(comment);
+        this.btn = btn;
+        this.dir = dir;
+        this.text = text;
+    }
+    text:string;
+    dir:string;
+    btn:HTMLButtonElement;
+    async start(){
+        super.start();
+
+        let t = this;
+        let func = function(){
+            t._resFinish();
+            t.btn.removeEventListener("click",func);
+        };
+        this.btn.addEventListener("click",func);
+
+        // let b = addBubbleAt()
+
+        return await this.finish();
+    }
+}
 
 let listenHooks = {
-    addFile:[] as Task[]
+    addFile:[] as Task[],
+    refresh:[] as Task[]
 };
 let _hookCount = 0;
 function addHook(hook:Task[],task:Task){
@@ -538,8 +592,15 @@ class Lesson{
                 // @ts-ignore
                 Prism.highlightElement(code,null,null);
                 let markDone = d.querySelector(".b-mark-done") as HTMLButtonElement;
-                markDone.addEventListener("click",e=>{
-                    if(t._resFinish()) markDone.disabled = true;
+                markDone.addEventListener("click",async e=>{
+                    if(t._resFinish()){
+                        markDone.disabled = true;
+                        await wait(400);
+                        let b = addBubble(lesson.tut.curFile,"Let's continue.");
+                        await wait(2000);
+                        closeBubble(b);
+                        await wait(200);
+                    }
                 });
 
                 let b_replay = d.querySelector(".b-replay") as HTMLButtonElement;
@@ -726,8 +787,7 @@ async function initLessonPage(){
             "i[Let's try adding a button.]"
         ],BubbleLoc.global,[
             new AddGenericCodeTask("<button>Click Me!</button>","html"),
-            new AddTutorSideText("\n\n","Add a few lines to make some space"),
-            new AddGenericCodeTask("<button>Click Me 2!</button>","html"),
+            new DoRefreshTask("Refresh the preview to see how it looks.","Refresh the preview")
         ]),
         new LE_AddGBubble([
             "Awesome!"
@@ -789,6 +849,7 @@ type Bubble = {
 };
 let bubbles:Bubble[] = [];
 function closeBubble(b:Bubble){
+    if(!b) return;
     b.e.style.animation = "RemoveBubble forwards 0.15s ease-out";
     b.e.onanimationend = function(){
         b.e.parentElement.removeChild(b.e);
@@ -797,6 +858,7 @@ function closeBubble(b:Bubble){
 function addBubble(file:FFile,text:string="This is a text bubble and some more text here is this and you can do this",line?:number,col?:number,dir?:string){
     if(line == null) line = file.curRow;
     if(col == null) col = file.curCol;
+    if(dir == null) dir = "top";
     // let marginOverlayers = document.querySelector(".margin-view-overlays") as HTMLElement;
     // let start = marginOverlayers?.offsetWidth || 64;
 
@@ -831,7 +893,8 @@ function addBubble(file:FFile,text:string="This is a text bubble and some more t
 enum BubbleLoc{
     code,
     add_file,
-    global
+    global,
+    refresh
 }
 function formatBubbleText(text:string){
     while(text.includes("[")){
@@ -1028,6 +1091,12 @@ function updateBubble(i:number){
         y = rect.y+rect.height+15 - 60;
         b.e.classList.add("dir-top2");
     }
+    else if(b.loc == BubbleLoc.refresh){
+        let rect = b_refresh.getBoundingClientRect();
+        x = rect.x;
+        y = rect.y+rect.height+15 - 60;
+        b.e.classList.add("dir-top2");
+    }
 
     b.e.style.left = x+"px";
     b.e.style.top = y+"px";
@@ -1051,6 +1120,9 @@ b_refresh.addEventListener("click",e=>{
         alert("No index.html file found! Please create a new file called index.html, this file will be used in the preview.");
         return;
     }
+
+    resolveHook(listenHooks.refresh,null);
+
     let text = file.editor.getValue();
     // let file = new File([new Uint8Array([...text].map((v,i)=>v.charCodeAt(i)))],"index.html");
     // let bytes = new Uint8Array([...text].map((v,i)=>text.charCodeAt(i)));
@@ -1091,5 +1163,28 @@ b_refresh.addEventListener("click",e=>{
         let st = document.createElement("style");
         st.innerHTML = project.files[1].editor.getValue();
         c.replaceWith(st);
+    }
+});
+
+// key events
+document.addEventListener("keydown",e=>{
+    if(!e.key) return;
+    let k = e.key.toLowerCase();
+
+    if(menusOpen.length){
+        if(k == "escape"){
+            closeAllMenus();
+        }
+        return;
+    }
+
+    if(e.ctrlKey){
+        if(k == "r"){
+            e.preventDefault();
+            b_refresh.click();
+        }
+        else if(k == "s"){
+            e.preventDefault();
+        }
     }
 });

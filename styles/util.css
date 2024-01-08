@@ -410,6 +410,7 @@ body .nav-links > .active{
 .pane-tutor-code{
     border-left:none;
     border-right:none;
+    margin-left:var(--editor-gap);
     margin-top:var(--editor-gap);
     margin-bottom:var(--editor-gap);
     margin-right:var(--editor-gap);

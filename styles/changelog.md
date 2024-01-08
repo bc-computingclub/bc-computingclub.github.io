@@ -27,3 +27,7 @@
 - added "replay" of any code addition in a Task
     - works even going back in time but doesn't work currently if all have been "Marked Done"
     - this system skyrocketed the already insane complexity I have no idea how this even works still
+
+### 1/7/24 - Claeb
+- fixed tutor code left margin to be consistent
+- added OnRefreshTask
