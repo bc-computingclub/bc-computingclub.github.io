@@ -70,7 +70,143 @@ io.on("connection",socket=>{
     socket.on("getUserLastLoggedIn",(token:string)=>{
 
     });
+
+    // lesson
+    socket.on("uploadLessonFiles",async (lessonId:string,list:ULFile[],call:()=>void)=>{
+        if(!valVar(list,"object")) return;
+        if(!valVar(lessonId,"string")) return;
+        if(!valVar(call,"function")) return;
+        
+        let user = getUserBySock(socket.id);
+        if(!user) return;
+        // need to validate type integrity here
+        
+        console.log("uploading...");
+        let uid = user.sanitized_email;
+
+        let path = "../lesson/"+uid+"/"+lessonId;
+        if(!await access(path)) await mkdir(path);
+
+        let curFiles = await readdir(path);
+        if(!curFiles) return;
+
+        curFiles = curFiles.filter(v=>!list.some(w=>w.name == v));
+        for(const f of curFiles){
+            console.log("...removing file:",path+"/"+f);
+            await removeFile(path+"/"+f);
+        }
+        for(const f of list){
+            console.log("...writing file:",path+"/"+f.name,f.enc);
+            await write(path+"/"+f.name,f.val,f.enc);
+        }
+
+        // todo - cache file values so if they're the same then they don't need to be reuploaded, or do this on the client maybe to speed it up
+
+        console.log(":: done uploading");
+        call();
+    });
+    socket.on("restoreLessonFiles",async (lessonId:string,call:(data:any)=>void)=>{
+        if(!valVar(lessonId,"string")) return;
+        if(!valVar(call,"function")) return;
+
+        let user = getUserBySock(socket.id);
+        if(!user) return;
+
+        console.log("restoring...");
+        let uid = user.sanitized_email;
+        let path = "../lesson/"+uid+"/"+lessonId;
+        if(!await access(path)){
+            call(null);
+            return;
+        }
+        let curFiles = await readdir(path);
+        let files:ULFile[] = [];
+        for(const f of curFiles){
+            files.push(new ULFile(f,await read(path+"/"+f,"utf8"),"","utf8"));
+        }
+        call(files);
+    });
 });
+
+function access(path:string){
+    return new Promise<boolean>(resolve=>{
+        fs.access(path,err=>{
+            if(err){
+                console.log("err: ",err);
+                resolve(false);
+            }
+            else resolve(true);
+        });
+    });
+}
+function write(path:string,data:any,encoding?:BufferEncoding){
+    return new Promise<boolean>(resolve=>{
+        fs.writeFile(path,data,{encoding},err=>{
+            if(err){
+                console.log("err: ",err);
+                resolve(false);
+            }
+            else resolve(true);
+        });
+    });
+}
+function read(path:string,encoding?:BufferEncoding){
+    return new Promise<any>(resolve=>{
+        fs.readFile(path,{encoding},(err,data)=>{
+            if(err){
+                console.log("err: ",err);
+                resolve(null);
+            }
+            else resolve(data);
+        });
+    });
+}
+function removeFile(path:string){
+    return new Promise<boolean>(resolve=>{
+        fs.rm(path,err=>{
+            if(err){
+                console.log("err: ",err);
+                resolve(false);
+            }
+            else resolve(true);
+        });
+    });
+}
+function mkdir(path:string,encoding?:BufferEncoding){
+    return new Promise<boolean>(resolve=>{
+        fs.mkdir(path,{recursive:true},err=>{
+            if(err){
+                console.log("err: ",err);
+                resolve(false);
+            }
+            else resolve(true);
+        });
+    });
+}
+function readdir(path:string){
+    return new Promise<string[]>(resolve=>{
+        fs.readdir(path,(err,files)=>{
+            if(err){
+                console.log("err: ",err);
+                resolve(null);
+            }
+            else resolve(files);
+        });
+    });
+}
+
+class ULFile{
+    constructor(name:string,val:string,path:string,enc:BufferEncoding){
+        this.name = name;
+        this.val = val;
+        this.path = path;
+        this.enc = enc;
+    }
+    name:string;
+    val:string;
+    path:string;
+    enc:BufferEncoding;
+}
 
 server.listen(3000,()=>{
     console.log('listening on *:3000');

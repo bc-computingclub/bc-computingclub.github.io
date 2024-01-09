@@ -163,7 +163,7 @@ class AddGenericCodeTask extends Task{
         this.code = code;
         this.lang = lang;
 
-        this.finalDelay = 2600;
+        // this.finalDelay = 2600;
     }
     code:string;
     lang:string;
@@ -296,7 +296,7 @@ class DoRefreshTask extends Task{
         super(comment);
         this.text = text;
 
-        this.finalDelay = 3000;
+        // this.finalDelay = 3000;
     }
     text:string;
     b:Bubble;
@@ -538,6 +538,7 @@ class Lesson{
         this.clearAllTasks();
         this.currentSubTask = null;
 
+        await restoreLessonFiles(this);
         await wait(350);
         for(const e of this.events){
             for(const t of e.tasks){ // associate super task with sub task
@@ -595,11 +596,13 @@ class Lesson{
                 markDone.addEventListener("click",async e=>{
                     if(t._resFinish()){
                         markDone.disabled = true;
-                        await wait(400);
-                        let b = addBubble(lesson.tut.curFile,"Let's continue.");
-                        await wait(2000);
-                        closeBubble(b);
-                        await wait(200);
+                        if(false){ // let's continue bubble
+                            await wait(400);
+                            let b = addBubble(lesson.tut.curFile,"Let's continue.");
+                            await wait(2000);
+                            closeBubble(b);
+                            await wait(200);
+                        }
                     }
                 });
 
@@ -659,7 +662,12 @@ async function fakeClickButton(e:Element){
     await wait(150);
 }
 
-function setupEditor(parent:HTMLElement){
+enum EditorType{
+    none,
+    self,
+    tutor
+}
+function setupEditor(parent:HTMLElement,type:EditorType){
     let d_files = document.createElement("div");
     d_files.className = "d-open-files pane";
     let contJs = document.createElement("div");
@@ -671,6 +679,14 @@ function setupEditor(parent:HTMLElement){
     add_file.className = "b-add-file";
     add_file.innerHTML = "<div class='material-symbols-outlined'>add</div>";
     d_files.appendChild(add_file);
+
+    if(type != EditorType.none){
+        let label = document.createElement("div");
+        label.innerHTML = `<div class="material-symbols-outlined">menu</div><div>${(type == EditorType.tutor ? "TUTOR" : "YOU")}</div>`;
+        // label.textContent = (type == EditorType.tutor ? "Tutor's Code" : "Your Code");
+        label.className = (type == EditorType.tutor ? "editor-type-tutor" : "editor-type-self");
+        d_files.appendChild(label);
+    }
 }
 function postSetupEditor(project:Project){
     let parent = project.parent;
@@ -725,8 +741,8 @@ class PromptLoginMenu extends Menu{
     }
 }
 async function initLessonPage(){
-    setupEditor(pane_tutor_code);
-    setupEditor(pane_code);
+    setupEditor(pane_tutor_code,EditorType.tutor);
+    setupEditor(pane_code,EditorType.self);
     
     await waitForUser();
     
@@ -787,7 +803,18 @@ async function initLessonPage(){
             "i[Let's try adding a button.]"
         ],BubbleLoc.global,[
             new AddGenericCodeTask("<button>Click Me!</button>","html"),
-            new DoRefreshTask("Refresh the preview to see how it looks.","Refresh the preview")
+            new DoRefreshTask("Refresh the preview to see how it looks.","Refresh the preview"),
+            new AddTutorSideText("\n\n","Add some space"),
+            new AddGenericCodeTask(`<button>Click</button>
+
+<div>
+<h1>Test</h1>
+<p>Test paragrph</p>
+</div>\b\b`,"html"),
+            new AddFileTask("main.js",false),
+            new AddGenericCodeTask('alert("hi");',"javascript"),
+            new AddTutorSideText("\n\n","Add some space"),
+            new AddGenericCodeTask('alert("hi");',"javascript"),
         ]),
         new LE_AddGBubble([
             "Awesome!"
@@ -1108,6 +1135,18 @@ icon_refresh = document.querySelector(".icon-refresh") as HTMLElement;
 iframe = document.querySelector("iframe") as HTMLIFrameElement;
 // let _icRef_state = true;
 b_refresh.addEventListener("click",e=>{
+    // http://localhost:3000/lesson/claebcode@gmail.com/j0Il_K7cF6seBhkHAAAB/claebcode@gmail.com/tmp_lesson/
+    let file1 = lesson.p.files.find(v=>v.name == "index.html");
+    if(!file1){
+        alert("No index.html file found! Please create a new file called index.html, this file will be used in the preview.");
+        return;
+    }
+    iframe.src = "http://localhost:3000/lesson/"+g_user.sanitized_email+"/"+socket.id+"/"+g_user.sanitized_email+"/tmp_lesson";
+    
+    resolveHook(listenHooks.refresh,null);
+    
+    return;
+    
     let newIF = document.createElement("iframe");
     iframe.replaceWith(newIF);
     iframe = newIF;
@@ -1167,7 +1206,7 @@ b_refresh.addEventListener("click",e=>{
 });
 
 // key events
-document.addEventListener("keydown",e=>{
+document.addEventListener("keydown",async e=>{
     if(!e.key) return;
     let k = e.key.toLowerCase();
 
@@ -1180,11 +1219,21 @@ document.addEventListener("keydown",e=>{
 
     if(e.ctrlKey){
         if(k == "r"){
+            console.log("ASD");
             e.preventDefault();
+            await uploadLessonFiles(lesson);
             b_refresh.click();
         }
         else if(k == "s"){
+            uploadLessonFiles(lesson);
             e.preventDefault();
         }
     }
 });
+
+setTimeout(()=>{
+    iframe.addEventListener("keydown",e=>{
+        console.log("asd");
+        e.preventDefault();
+    });
+},3000);

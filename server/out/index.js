@@ -72,7 +72,146 @@ connection_1.io.on("connection", socket => {
     });
     socket.on("getUserLastLoggedIn", (token) => {
     });
+    // lesson
+    socket.on("uploadLessonFiles", async (lessonId, list, call) => {
+        if (!valVar(list, "object"))
+            return;
+        if (!valVar(lessonId, "string"))
+            return;
+        if (!valVar(call, "function"))
+            return;
+        let user = (0, connection_1.getUserBySock)(socket.id);
+        if (!user)
+            return;
+        // need to validate type integrity here
+        console.log("uploading...");
+        let uid = user.sanitized_email;
+        let path = "../lesson/" + uid + "/" + lessonId;
+        if (!await access(path))
+            await mkdir(path);
+        let curFiles = await readdir(path);
+        if (!curFiles)
+            return;
+        curFiles = curFiles.filter(v => !list.some(w => w.name == v));
+        for (const f of curFiles) {
+            console.log("...removing file:", path + "/" + f);
+            await removeFile(path + "/" + f);
+        }
+        for (const f of list) {
+            console.log("...writing file:", path + "/" + f.name, f.enc);
+            await write(path + "/" + f.name, f.val, f.enc);
+        }
+        // todo - cache file values so if they're the same then they don't need to be reuploaded, or do this on the client maybe to speed it up
+        console.log(":: done uploading");
+        call();
+    });
+    socket.on("restoreLessonFiles", async (lessonId, call) => {
+        if (!valVar(lessonId, "string"))
+            return;
+        if (!valVar(call, "function"))
+            return;
+        let user = (0, connection_1.getUserBySock)(socket.id);
+        if (!user)
+            return;
+        console.log("restoring...");
+        let uid = user.sanitized_email;
+        let path = "../lesson/" + uid + "/" + lessonId;
+        if (!await access(path)) {
+            call(null);
+            return;
+        }
+        let curFiles = await readdir(path);
+        let files = [];
+        for (const f of curFiles) {
+            files.push(new ULFile(f, await read(path + "/" + f, "utf8"), "", "utf8"));
+        }
+        call(files);
+    });
 });
+function access(path) {
+    return new Promise(resolve => {
+        fs_1.default.access(path, err => {
+            if (err) {
+                console.log("err: ", err);
+                resolve(false);
+            }
+            else
+                resolve(true);
+        });
+    });
+}
+function write(path, data, encoding) {
+    return new Promise(resolve => {
+        fs_1.default.writeFile(path, data, { encoding }, err => {
+            if (err) {
+                console.log("err: ", err);
+                resolve(false);
+            }
+            else
+                resolve(true);
+        });
+    });
+}
+function read(path, encoding) {
+    return new Promise(resolve => {
+        fs_1.default.readFile(path, { encoding }, (err, data) => {
+            if (err) {
+                console.log("err: ", err);
+                resolve(null);
+            }
+            else
+                resolve(data);
+        });
+    });
+}
+function removeFile(path) {
+    return new Promise(resolve => {
+        fs_1.default.rm(path, err => {
+            if (err) {
+                console.log("err: ", err);
+                resolve(false);
+            }
+            else
+                resolve(true);
+        });
+    });
+}
+function mkdir(path, encoding) {
+    return new Promise(resolve => {
+        fs_1.default.mkdir(path, { recursive: true }, err => {
+            if (err) {
+                console.log("err: ", err);
+                resolve(false);
+            }
+            else
+                resolve(true);
+        });
+    });
+}
+function readdir(path) {
+    return new Promise(resolve => {
+        fs_1.default.readdir(path, (err, files) => {
+            if (err) {
+                console.log("err: ", err);
+                resolve(null);
+            }
+            else
+                resolve(files);
+        });
+    });
+}
+class ULFile {
+    constructor(name, val, path, enc) {
+        this.name = name;
+        this.val = val;
+        this.path = path;
+        this.enc = enc;
+    }
+    name;
+    val;
+    path;
+    enc;
+}
 connection_1.server.listen(3000, () => {
     console.log('listening on *:3000');
 });

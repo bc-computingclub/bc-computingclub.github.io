@@ -66,6 +66,11 @@
     --editor-bg:#1e1e1e;
     --border:#333;
     /* --cta-btn-col:#245; */
+
+    /* --tutor-col:rgb(41, 93, 42); */
+    /* --tutor-col:rgb(93, 91, 41); */
+    /* --tutor-col:rgb(41, 82, 93); */
+    --tutor-col:rgb(61, 49, 109);
 }
 
 * {

@@ -55,3 +55,44 @@ let h_profile = document.querySelector(".h-profile") as HTMLElement;
 h_profile.addEventListener("click",e=>{
     new LogInMenu().load();
 });
+
+// lesson
+class ULFile{
+    constructor(name:string,val:string,path:string,enc:string){
+        this.name = name;
+        this.val = val;
+        this.path = path;
+        this.enc = enc;
+    }
+    name:string;
+    val:string;
+    path:string;
+    enc:string;
+}
+function uploadLessonFiles(lesson:Lesson){ // for refresh
+    let list:ULFile[] = [];
+    for(const f of lesson.p.files){
+        list.push(new ULFile(f.name,f.editor.getValue(),"","utf8"));
+    }
+    return new Promise<void>(resolve=>{
+        socket.emit("uploadLessonFiles","tmp_lesson",list,(err:any)=>{
+            if(err) console.log("ERR while uploading files:",err);
+            resolve();
+        });
+    });
+}
+async function restoreLessonFiles(lesson:Lesson){
+    let files = await new Promise<ULFile[]>(resolve=>{
+        socket.emit("restoreLessonFiles","tmp_lesson",(files:ULFile[])=>{
+            if(!files){
+                console.log("ERR while restoring files");
+                resolve([]);
+                return;
+            }
+            resolve(files);
+        });
+    });
+    for(const f of files){
+        lesson.p.createFile(f.name,f.val);
+    }
+}

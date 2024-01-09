@@ -314,6 +314,7 @@ interface CredentialResponse {
 interface CredentialResData{
     name:string;
     email:string;
+    sanitized_email:string;
     email_verified:boolean;
     picture:string;
 
@@ -511,6 +512,11 @@ class Project{
             console.warn("Failed creation prevented from hook");
             return;
         }
+        let q = this.files.find(v=>v.name == name);
+        if(q){
+            q.open();
+            return null;
+        }
         let f = new FFile(this,name,text,lang);
         this.files.push(f);
         f.open();
@@ -605,7 +611,7 @@ class FFile{
             this.link = link;
             link.textContent = this.name;
             link.className = "file-link";
-            this.p.d_files.insertBefore(link,this.p.d_files.lastChild);
+            this.p.d_files.insertBefore(link,this.p.d_files.children[this.p.d_files.children.length-2]);
             this.p.openFiles.push(this);
             let t = this;
             link.onmousedown = function(){

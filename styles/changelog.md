@@ -31,3 +31,15 @@
 ### 1/7/24 - Claeb
 - fixed tutor code left margin to be consistent
 - added OnRefreshTask
+
+### 1/8/24 - Claeb
+- removed pesky finalDelays (need to find a new solution for this)
+- changed the color of the tutor side to make it more unique
+- added labels for the tutor and you sides with menu's that I'll implement later
+- added support for uploading files to the server which can be viewed at a url without access from anyone who doesn't have your socket.id (current auth token)
+- refreshing now uses the new full preview mode
+- added more to the tutorial a little bit for testing (not constructive adding, only for testing)
+- added restore lesson files which gets the current files from the server and loads them just before the tutorial starts
+- creating new files with the same name as existing ones just switches to those
+- added animation to newly added sub tasks
+- probably some other things but I forgot

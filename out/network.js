@@ -47,4 +47,45 @@ let h_profile = document.querySelector(".h-profile");
 h_profile.addEventListener("click", e => {
     new LogInMenu().load();
 });
+// lesson
+class ULFile {
+    constructor(name, val, path, enc) {
+        this.name = name;
+        this.val = val;
+        this.path = path;
+        this.enc = enc;
+    }
+    name;
+    val;
+    path;
+    enc;
+}
+function uploadLessonFiles(lesson) {
+    let list = [];
+    for (const f of lesson.p.files) {
+        list.push(new ULFile(f.name, f.editor.getValue(), "", "utf8"));
+    }
+    return new Promise(resolve => {
+        socket.emit("uploadLessonFiles", "tmp_lesson", list, (err) => {
+            if (err)
+                console.log("ERR while uploading files:", err);
+            resolve();
+        });
+    });
+}
+async function restoreLessonFiles(lesson) {
+    let files = await new Promise(resolve => {
+        socket.emit("restoreLessonFiles", "tmp_lesson", (files) => {
+            if (!files) {
+                console.log("ERR while restoring files");
+                resolve([]);
+                return;
+            }
+            resolve(files);
+        });
+    });
+    for (const f of files) {
+        lesson.p.createFile(f.name, f.val);
+    }
+}
 //# sourceMappingURL=network.js.map

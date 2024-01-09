@@ -130,6 +130,7 @@ class User {
         return {
             name: this.name,
             email: this.email,
+            sanitized_email: this.sanitized_email,
             picture: this.picture,
             _joinDate: this.joinDate,
             _lastLoggedIn: this.lastLoggedIn
@@ -190,3 +191,28 @@ app.use("/projects/:userId/:auth", (req, res, next) => {
     }
     next();
 }, express_1.default.static("../projects/"));
+app.use("/lesson/:userId/:auth/", (req, res, next) => {
+    let p = req.params;
+    if (!p)
+        return;
+    let user = exports.users.get(p.userId);
+    if (!user) {
+        res.send("User not found");
+        return;
+    }
+    // if(!user.hasToken(p.auth)){
+    // res.send("Auth incorrect");
+    // return;
+    // }
+    // todo - add token system instead of using socketIds
+    if (!user.getSocketIds().includes(p.auth)) {
+        res.send("Auth incorrect");
+        return;
+    }
+    let arr = req.originalUrl.split("/");
+    if (arr.at(4) != p.userId) {
+        res.send("UserId Mismatch");
+        return;
+    }
+    next();
+}, express_1.default.static("../lesson/"));

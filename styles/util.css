@@ -569,6 +569,19 @@ body .nav-links > .active{
     flex-direction:column;
     gap:6px;
 }
+.d-sub-tasks > div{
+    animation:ShowSubTask 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+@keyframes ShowSubTask {
+    0%{
+        scale:0.8;
+        opacity:0.5;
+    }
+    100%{
+        scale:1;
+        opacity:1;
+    }
+}
 .d-sub-tasks .l-num{
     margin-right:5px;
 }
