@@ -1,3 +1,5 @@
+let serverURL = "http://localhost:3000";
+
 function wait(delay:number){
     return new Promise<void>(resolve=>{
         setTimeout(()=>{
@@ -436,6 +438,15 @@ function genHeader(i:number,isCompact=true){
                 <!-- Insert placeholder logo here -->
             </a>
         </div>
+        <div class="d-lesson-confirm">
+            <div>Press "I'm Done" to let the Tutor know when you're done with this step.</div>
+            <button class="b-im-done icon-btn">
+                <div class="material-symbols-outlined">done</div>
+                <div>I'm Done</div>
+            </button>
+            <button class="b-replay"><div class="material-symbols-outlined">replay</div></button>
+            <button class="b-go-back-step"><div class="material-symbols-outlined">keyboard_double_arrow_left</div></button>
+        </div>
         <div class="nav-links">
             <a href="/learn/lesson/index.html" class="nav-link">Learn <span class="material-symbols-outlined">Auto_stories</span></a>
             <a href="/practice/index.html" class="nav-link">Practice <span class="material-symbols-outlined">Checkbook</span></a>
@@ -515,7 +526,7 @@ class Project{
         let q = this.files.find(v=>v.name == name);
         if(q){
             q.open();
-            return null;
+            return q;
         }
         let f = new FFile(this,name,text,lang);
         this.files.push(f);

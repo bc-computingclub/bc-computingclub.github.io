@@ -1,5 +1,60 @@
+const d_currentTasks = document.querySelector(".d-current-tasks");
 const d_task = document.querySelector(".d-task");
 const d_subTasks = document.querySelector(".d-sub-tasks");
+const d_lesson_confirm = document.querySelector(".d-lesson-confirm") as HTMLElement;
+const b_imDone = d_lesson_confirm.querySelector(".b-im-done") as HTMLButtonElement;
+const b_replay = d_lesson_confirm.querySelector(".b-replay");
+const b_goBackStep = d_lesson_confirm.querySelector(".b-go-back-step");
+
+b_imDone.addEventListener("click",e=>{
+    if(lesson.currentSubTask){
+        lesson.currentSubTask._resFinish();
+        b_imDone.disabled = true;
+    }
+});
+b_replay.addEventListener("click",e=>{
+    if(lesson.currentSubTask){
+        lesson.currentSubTask.replay(lesson.tut.getCurEditor()); // this needs to be fixed later; need to store on task _preTutFile and _prePFile to switch back to
+        // ^^^ this has now been fixed but needs more fixing, need to store temporary state each time? uses a lot of ram but hmm
+    }
+});
+b_goBackStep.addEventListener("click",e=>{
+    if(lesson.currentSubTask){
+        let ind = lesson.currentTask.tasks.indexOf(lesson.currentSubTask);
+        let startInd = ind;
+        if(ind <= 0) return;
+        let t:Task;
+        while(ind >= 0){
+            ind--;
+            t = lesson.currentTask.tasks[ind];
+            if(t instanceof AddTutorSideText) continue;
+            if(t.requiresDoneConfirm) break;
+        }
+        let ct = lesson.currentTask.tasks[startInd-1];
+        if(ct instanceof AddFileTask){
+            ct.file.editor.setValue("");
+            ct.file.editor.setPosition(ct.file.editor.getPosition().with(1,1));
+        }
+        t.replay(lesson.tut.getCurEditor()); // ^^^
+    }
+});
+async function hideLessonConfirm(){
+    await wait(50);
+    d_lesson_confirm.style.opacity = "0";
+    await wait(1500);
+}
+async function showLessonConfirm(){
+    let preTask = lesson.currentTask;
+    let preSubTask = lesson.currentSubTask;
+    // await wait(2000);
+    await wait(1000);
+    if(lesson.currentTask != preTask || lesson.currentSubTask != preSubTask){
+        console.warn("Canceled opening LessonConfirm, task/subtask changed in the middle of opening");
+        return;
+    }
+    d_lesson_confirm.style.opacity = "1";
+    await wait(500);
+}
 
 class Balloon{
     constructor(msg:string){
@@ -51,6 +106,8 @@ abstract class Task{
     _preVal:string;
     _preCol:number;
     _preLine:number;
+    _prePFile:FFile;
+    _preTutFile:FFile;
     taskRef:HTMLElement;
 
     canBeFinished = false;
@@ -58,6 +115,8 @@ abstract class Task{
     _prom:Promise<string|void>;
 
     finalDelay = 0;
+
+    requiresDoneConfirm = true;
 
     addToHook(hook:Task[]){
         addHook(hook,this);
@@ -87,6 +146,7 @@ abstract class Task{
     async finish():Promise<string|void>{
         this.canBeFinished = true;
         let res = null;
+        if(this.requiresDoneConfirm) showLessonConfirm();
         if(this._prom) res = await this._prom;
         lesson.finishSubTask(this);
         this.isFinished = true;
@@ -128,37 +188,90 @@ class AddFileTask extends Task{
         super("Add a file named: "+name);
         this.name = name;
         this.isRequired = isRequired;
+        this.requiresDoneConfirm = false; // you have to do the step in order to continue
     }
     name:string;
     isRequired:boolean;
+    b:Bubble;
+    alreadyHas = false;
+    file:FFile;
     preventContinueIfFail(): boolean {
         return this.isRequired;
     }
     async start(){
         super.start();
+        this.alreadyHas = false;
 
         let b_tutAddFile = lesson.tut.parent.querySelector(".b-add-file");
         let rect = b_tutAddFile.getBoundingClientRect();
+        let tarBtn = b_tutAddFile;
         await showTutMouse();
+        
+        let r2 = tutMouse.getBoundingClientRect();
+        let text2 = "Let's create "+this.name;
+        let existingFile = lesson.tut.files.find(v=>v.name == this.name);
+        let goesBack = false;
+        if(existingFile){
+            text2 = "Let's go back to "+this.name;
+            let fileElm = lesson.tut.d_files.children[lesson.tut.files.indexOf(existingFile)];
+            rect = fileElm.getBoundingClientRect();
+            tarBtn = fileElm;
+            goesBack = true;
+        }
+        let b2 = addBubbleAt(BubbleLoc.xy,text2,"top",{
+            x:r2.x+r2.width/2 + 17,
+            y:r2.y+r2.height/2 - 22,
+            click:true
+        });
+        await b2.clickProm;
+
         await moveTutMouseTo(rect.x+rect.width/2,rect.y+rect.height/2);
         await wait(300);
-        await fakeClickButton(b_tutAddFile);
-        lesson.tut.createFile(this.name,"");
+        await fakeClickButton(tarBtn);
+        if(existingFile){
+            existingFile.open();
+            lesson.tut.curFile = existingFile;
+        }
+        this.file = lesson.tut.createFile(this.name,"");
         await wait(500);
 
-        let b = addBubbleAt(BubbleLoc.add_file,this.title);
-        this.addToHook(listenHooks.addFile);
+        let alreadyFoundFile = lesson.p.files.find(v=>v.name == this.name);
+        if(!alreadyFoundFile){
+            this.b = addBubbleAt(BubbleLoc.add_file,this.title);
+            this.addToHook(listenHooks.addFile);
+        }
+        else if(!goesBack){
+            this.b = addBubbleAt(BubbleLoc.add_file,"Oh! I see you already have a "+this.name+" file! I'll switch you to it.",null,{click:true});
+            await this.b.clickProm;
+            await wait(100);
+            alreadyFoundFile.open();
+            await wait(300);
+            this.canBeFinished = true;
+            this._resFinish();
+        }
+        else{
+            await wait(300);
+            this.canBeFinished = true;
+            this._resFinish();
+        }
         let res = await this.finish();
 
-        closeBubble(b);
         return res;
     }
     check(name:string){
         return (name == this.name);
     }
+    cleanup(): void {
+        closeBubble(this.b);
+    }
+}
+class SubMsg{
+    constructor(){
+
+    }
 }
 class AddGenericCodeTask extends Task{
-    constructor(code:string,lang:string){
+    constructor(code:string,lang:string,submsgs:SubMsg[]=[]){
         super("Add the following code:");
         this.code = code;
         this.lang = lang;
@@ -177,6 +290,21 @@ class AddGenericCodeTask extends Task{
         let pos = editor.getPosition();
         await showTutMouse();
         await moveTutMouseTo(58 + pos.column*7.7,115 + pos.lineNumber*16.5);
+
+        await wait(250);
+        let r2 = tutMouse.getBoundingClientRect();
+        let preText = "Let's add some code here.";
+        if(!lesson._hasShownFollowAlong){
+            preText += "<br><br>i[Follow along! But feel free to make your own changes and experiment!]";
+            lesson._hasShownFollowAlong = true;
+        }
+        let b2 = addBubbleAt(BubbleLoc.xy,preText,"top",{
+            x:r2.x+r2.width/2 + 17,
+            y:r2.y+r2.height/2 - 22,
+            click:true
+        });
+        await b2.clickProm;
+
         await wait(150);
         await hideTutMouse();
         await wait(200);
@@ -185,9 +313,25 @@ class AddGenericCodeTask extends Task{
             (c as HTMLElement).style.display = "block";
         }
         for(let i = 0; i < this.code.length; i++){
+            let key = this.code.substring(i,i+1);
+            if(key == "\x05"){
+                await wait(250);
+                continue;
+            }
+            else if(key == "\x01"){
+                let pos = editor.getPosition();
+                editor.setPosition(pos.with(pos.lineNumber,pos.column-1));
+                continue;
+            }
+            else if(key == "\x02"){
+                let pos = editor.getPosition();
+                editor.setPosition(pos.with(pos.lineNumber,pos.column+1));
+                continue;
+            }
+            
             editor.updateOptions({readOnly:false});
             editor.trigger("keyboard","type",{
-                text:this.code.substring(i,i+1)
+                text:key
             });
             editor.updateOptions({readOnly:true});
             await wait(Math.ceil(30+Math.random()*100));
@@ -302,9 +446,14 @@ class DoRefreshTask extends Task{
     b:Bubble;
     async start(){
         super.start();
+        await wait(500);
 
-        this.addToHook(listenHooks.refresh);
+        // this.addToHook(listenHooks.refresh); // since you may want to look at the preview for a while, this should require the "I'm Done" instead
         this.b = addBubbleAt(BubbleLoc.refresh,this.text);
+        console.log(11);
+        await waitForQuickHook(listenHooks.refresh);
+        console.log(22);
+        this.cleanup();
 
         return await this.finish();
     }
@@ -339,11 +488,35 @@ class ClickButtonTask extends Task{
     }
 }
 
+class TmpTask extends Task{
+    constructor(){
+        super("");
+        this.requiresDoneConfirm = false;
+    }
+    async start(): Promise<string | void> {
+        let t = this;
+        this._prom = new Promise<string|void>(resolve=>{this._resFinish = function(v){
+            if(t.canBeFinished){
+                resolve(v);
+                return 1;
+            }
+        }});
+        console.log(":::: has started");
+        return await this.finish();
+    }
+}
+
 let listenHooks = {
     addFile:[] as Task[],
     refresh:[] as Task[]
 };
 let _hookCount = 0;
+async function waitForQuickHook(hook:Task[]){
+    let t = new TmpTask();
+    t.start();
+    addHook(hook,t);
+    await t._prom;
+}
 function addHook(hook:Task[],task:Task){
     hook.push(task);
     console.log("...added hook");
@@ -447,7 +620,20 @@ class LE_AddGBubble extends LEvent{
                         let newStart = parseInt(res.replace("rp_",""));
                         let startT = tt.tasks[newStart];
                         
+                        if(lesson.tut.curFile != startT._preTutFile){
+                            let fileElm = lesson.tut.d_files.children[lesson.tut.files.indexOf(startT._preTutFile)];
+                            let rect = fileElm.getBoundingClientRect();
+                            await showTutMouse();
+                            await moveTutMouseTo(rect.x+rect.width/2,rect.y+rect.height/2);
+                            await wait(300);
+                            await fakeClickButton(fileElm);
+                            startT._preTutFile.open();
+                            await wait(500);
+                        }
+                        console.log("INCLUDES? ",lesson.tut.files.includes(startT._preTutFile));
+                        lesson.tut.curFile = startT._preTutFile;
                         let editor = lesson.tut.getCurEditor();
+                        // let editor = startT._preTutFile.editor;
                         editor.setValue(startT._preVal);
                         editor.setPosition({lineNumber:startT._preLine,column:startT._preCol});
                         
@@ -524,7 +710,8 @@ class Lesson{
     currentTask:LEvent;
     currentSubTask:Task;
 
-    _hasShownMarkDoneReminder = false;
+    _hasShownMarkDoneReminder = true; //false
+    _hasShownFollowAlong = false;
 
     init(){
         addBannerBubble(this);
@@ -568,6 +755,7 @@ class Lesson{
     }
     loadSubTask(t:Task){
         this.currentSubTask = t;
+        b_imDone.disabled = false;
         t.hasStarted = true;
         let editor = lesson.tut.getCurEditor();
         let pos = editor?.getPosition();
@@ -575,6 +763,8 @@ class Lesson{
             t._preVal = editor?.getValue() || "";
             t._preLine = pos?.lineNumber || 1;
             t._preCol = pos?.column || 1;
+            t._prePFile = lesson.p.curFile;
+            t._preTutFile = lesson.tut.curFile;
         }
 
         let div = document.createElement("div");
@@ -617,9 +807,13 @@ class Lesson{
     finishSubTask(t:Task){
         // this.currentSubTask = null; // temporary?
         let ind = lesson.currentTask.tasks.indexOf(t);
-        let c = d_subTasks.children[ind];
-        let cb = c.querySelector(".cb");
-        cb.textContent = "select_check_box";
+        if(ind != -1){
+            let c = d_subTasks.children[ind];
+            let cb = c?.querySelector(".cb");
+            if(cb) cb.textContent = "select_check_box";
+        }
+
+        hideLessonConfirm();
     }
 }
 
@@ -802,15 +996,15 @@ async function initLessonPage(){
             "For example, this is where you would put b[buttons, text, and images.]",
             "i[Let's try adding a button.]"
         ],BubbleLoc.global,[
+            // new AddGenericCodeTask("<button>\x05\x05Click Me!\x05\x05</button>\x05\x01\x01\x05","html"),
             new AddGenericCodeTask("<button>Click Me!</button>","html"),
             new DoRefreshTask("Refresh the preview to see how it looks.","Refresh the preview"),
             new AddTutorSideText("\n\n","Add some space"),
             new AddGenericCodeTask(`<button>Click</button>
 
-<div>
+<div></div>\x01\x01\x01\x01\x01\x01
 <h1>Test</h1>
-<p>Test paragrph</p>
-</div>\b\b`,"html"),
+<p>Test paragrph</p>`,"html"),
             new AddFileTask("main.js",false),
             new AddGenericCodeTask('alert("hi");',"javascript"),
             new AddTutorSideText("\n\n","Add some space"),
@@ -872,7 +1066,11 @@ type Bubble = {
     line:number,
     col:number,
     loc:BubbleLoc,
-    file:FFile
+    file:FFile,
+
+    ops?:any,
+    clickRes?:()=>void;
+    clickProm?:Promise<void>
 };
 let bubbles:Bubble[] = [];
 function closeBubble(b:Bubble){
@@ -921,9 +1119,10 @@ enum BubbleLoc{
     code,
     add_file,
     global,
-    refresh
+    refresh,
+    xy
 }
-function formatBubbleText(text:string){
+function formatBubbleText(text:string,ops?:any){
     while(text.includes("[")){
         let ind = text.indexOf("[");
         let id = text[ind-1];
@@ -931,20 +1130,39 @@ function formatBubbleText(text:string){
         text = text.replace(id+"[",str); // replaces just the first instance which is where we're at
     }
     text = text.replaceAll("]","</span>");
+    if(ops){
+        if(ops.click) text += "<div class='material-symbols-outlined click-bubble-indicator'>mouse</div>";
+    }
     return text;
 }
-function addBubbleAt(loc:BubbleLoc,text:string){
+function addBubbleAt(loc:BubbleLoc,text:string,dir?:string,ops?:any){
     let b = document.createElement("div");
-    b.innerHTML = formatBubbleText(text);
+    b.innerHTML = formatBubbleText(text,ops);
     g_bubbles_ov.appendChild(b);
 
     let data = {
         e:b,
         line:0,col:0,
         loc,
-        file:lesson.p.curFile
+        file:lesson.p.curFile,
+        ops
     } as Bubble;
     bubbles.push(data);
+
+    if(dir) b.classList.add("dir-"+dir);
+    if(ops) if(ops.click){
+        data.clickProm = new Promise<void>(async res2=>{
+            await new Promise<void>(resolve=>{
+                data.clickRes = resolve;
+            });
+            closeBubble(data);
+            res2();
+        });
+        b.onclick = function(){
+            data.clickRes();
+        };
+        b.classList.add("clickable");
+    }
 
     b.style.position = "absolute";
     b.classList.add("bubble");
@@ -1124,6 +1342,10 @@ function updateBubble(i:number){
         y = rect.y+rect.height+15 - 60;
         b.e.classList.add("dir-top2");
     }
+    else if(b.loc == BubbleLoc.xy){
+        x = b.ops.x;
+        y = b.ops.y - 60;
+    }
 
     b.e.style.left = x+"px";
     b.e.style.top = y+"px";
@@ -1135,13 +1357,15 @@ icon_refresh = document.querySelector(".icon-refresh") as HTMLElement;
 iframe = document.querySelector("iframe") as HTMLIFrameElement;
 // let _icRef_state = true;
 b_refresh.addEventListener("click",e=>{
-    // http://localhost:3000/lesson/claebcode@gmail.com/j0Il_K7cF6seBhkHAAAB/claebcode@gmail.com/tmp_lesson/
     let file1 = lesson.p.files.find(v=>v.name == "index.html");
     if(!file1){
         alert("No index.html file found! Please create a new file called index.html, this file will be used in the preview.");
         return;
     }
-    iframe.src = "http://localhost:3000/lesson/"+g_user.sanitized_email+"/"+socket.id+"/"+g_user.sanitized_email+"/tmp_lesson";
+    iframe.src = serverURL+"/lesson/"+g_user.sanitized_email+"/"+socket.id+"/"+g_user.sanitized_email+"/tmp_lesson";
+
+    icon_refresh.style.rotate = _icRef_state ? "360deg" : "0deg";
+    _icRef_state = !_icRef_state;
     
     resolveHook(listenHooks.refresh,null);
     
@@ -1219,7 +1443,6 @@ document.addEventListener("keydown",async e=>{
 
     if(e.ctrlKey){
         if(k == "r"){
-            console.log("ASD");
             e.preventDefault();
             await uploadLessonFiles(lesson);
             b_refresh.click();
@@ -1227,6 +1450,10 @@ document.addEventListener("keydown",async e=>{
         else if(k == "s"){
             uploadLessonFiles(lesson);
             e.preventDefault();
+        }
+        else if(k == "g"){
+            e.preventDefault();
+            d_currentTasks.classList.toggle("closed");
         }
     }
 });

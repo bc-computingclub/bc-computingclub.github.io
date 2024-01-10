@@ -43,3 +43,22 @@
 - creating new files with the same name as existing ones just switches to those
 - added animation to newly added sub tasks
 - probably some other things but I forgot
+
+### 1/9/24 - Claeb
+- added global server URL var
+- can open/close current tasks panel
+- new I'm Done panel in the header (with I'm Done, replay, and replay from last buttons)
+- added clickable bubbles
+- added click bubble when creating new files
+- changed text when you need to create file but you already have it it will switch to it
+- change tutor so when replaying and creating a file again it instead says let's go back and clicks on the file to change to instead of new file
+- added when replaying and the previous is in a different file, the tutor will first click on the old file to go to it then continue
+- added quick inline waitForHook
+- fixed refresh to remove bubble when click
+- added click bubble when adding code
+- fixed when replays go back to files it didn't remove the old changes
+- fixed prompts for new files if it's a replay going back and you already have it it won't tell you to switch back to it
+- added the ability to pause, move cursor left or right when adding code (in the middle of typing using \x05, \x01, \x02 respectively)
+- fixed when reopening files, the subtask doesn't forget which file it created
+- fixed the tutor switching to different files that curFile properly gets updated (starts typing in a file that isn't open)
+- probably more but I can't remember
