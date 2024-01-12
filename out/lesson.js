@@ -112,6 +112,7 @@ class Task {
     _prom;
     finalDelay = 0;
     requiresDoneConfirm = true;
+    preState;
     addToHook(hook) {
         addHook(hook, this);
     }
@@ -463,6 +464,17 @@ class ClickButtonTask extends Task {
         return await this.finish();
     }
 }
+class PonderBoardTask extends Task {
+    constructor(title) {
+        super(title);
+    }
+    async start() {
+        super.start();
+        let b = lesson.board;
+        b.show();
+        await this.finish();
+    }
+}
 class TmpTask extends Task {
     constructor() {
         super("");
@@ -653,6 +665,63 @@ class TextArea {
     }
     sects;
 }
+class LessonState {
+    constructor() {
+    }
+    tutFiles;
+}
+class BoardObj {
+    constructor(x, y) {
+        this.x = x;
+        this.y = y;
+    }
+    x = 0;
+    y = 0;
+}
+class BO_Text extends BoardObj {
+    constructor(x, y, text) {
+        super(x, y);
+        this.text = text;
+    }
+    text;
+    render(ctx) {
+    }
+}
+class Board {
+    constructor() {
+        this.objs = [];
+    }
+    isVisible = false;
+    can;
+    ctx;
+    objs;
+    init() {
+        this.can = document.createElement("canvas");
+        this.ctx = this.can.getContext("2d");
+    }
+    render() {
+        requestAnimationFrame(this.render);
+        if (!this.isVisible)
+            return;
+        console.log("render");
+    }
+    wipe() {
+        // tmp
+        this.objs = [];
+    }
+    show() {
+        this.isVisible = true;
+        let b = addBubbleAt(BubbleLoc.global, "");
+        let cont = document.createElement("div");
+        cont.className = "board-cont";
+        b.e.innerHTML = "";
+        b.e.appendChild(cont);
+        cont.appendChild(this.can);
+    }
+    hide() {
+        this.isVisible = false;
+    }
+}
 class Lesson {
     constructor(title, parent, tutParent) {
         this.p = new Project(title, parent);
@@ -673,13 +742,22 @@ class Lesson {
     currentSubTask;
     _hasShownMarkDoneReminder = true; //false
     _hasShownFollowAlong = false;
+    board;
+    getCurrentState() {
+        let state = new LessonState();
+        state.tutFiles = this.tut.files.map(v => new FileInstance(v.name, v.editor.getValue()));
+        // unfinished, not a priority right now, probably going to disable the go back system for now
+    }
     init() {
         addBannerBubble(this);
         addBannerPreviewBubble(this);
+        this.board = new Board();
+        this.board.init();
         this.p.init();
         this.tut.init();
     }
     async start() {
+        d_currentTasks.classList.toggle("closed");
         this._taskNum = 0;
         this.clearAllTasks();
         this.currentSubTask = null;
@@ -923,6 +1001,7 @@ async function initLessonPage() {
             "Hello!",
             "In order to do anything, we first need to create an HTML document."
         ], BubbleLoc.global, [
+            // new PonderBoardTask("HTML Structure"),
             new AddFileTask("index.html", false)
         ]),
         new LE_AddGBubble([

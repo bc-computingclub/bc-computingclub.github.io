@@ -62,3 +62,6 @@
 - fixed when reopening files, the subtask doesn't forget which file it created
 - fixed the tutor switching to different files that curFile properly gets updated (starts typing in a file that isn't open)
 - probably more but I can't remember
+
+### 1/11/24 - Claeb
+- 

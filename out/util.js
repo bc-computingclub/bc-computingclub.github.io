@@ -386,7 +386,7 @@ function genHeader(i, isCompact = true) {
                 <div>I'm Done</div>
             </button>
             <button class="b-replay"><div class="material-symbols-outlined">replay</div></button>
-            <button class="b-go-back-step"><div class="material-symbols-outlined">keyboard_double_arrow_left</div></button>
+            <button style="display:none" class="b-go-back-step"><div class="material-symbols-outlined">keyboard_double_arrow_left</div></button>
         </div>
         <div class="nav-links">
             <a href="/learn/lesson/index.html" class="nav-link">Learn <span class="material-symbols-outlined">Auto_stories</span></a>

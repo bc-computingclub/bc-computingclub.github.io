@@ -118,6 +118,8 @@ abstract class Task{
 
     requiresDoneConfirm = true;
 
+    preState:LessonState;
+
     addToHook(hook:Task[]){
         addHook(hook,this);
     }
@@ -487,6 +489,19 @@ class ClickButtonTask extends Task{
         return await this.finish();
     }
 }
+class PonderBoardTask extends Task{
+    constructor(title:string){
+        super(title)
+    }
+    async start(): Promise<string | void> {
+        super.start();
+
+        let b = lesson.board;
+        b.show();
+
+        await this.finish();
+    }
+}
 
 class TmpTask extends Task{
     constructor(){
@@ -687,7 +702,68 @@ class TextArea{
     }
     sects:TextSection[];
 }
+class LessonState{
+    constructor(){
 
+    }
+    tutFiles:FileInstance[];
+}
+abstract class BoardObj{
+    constructor(x:number,y:number){
+        this.x = x;
+        this.y = y;
+    }
+    x = 0;
+    y = 0;
+    abstract render(ctx:CanvasRenderingContext2D):void;
+}
+class BO_Text extends BoardObj{
+    constructor(x:number,y:number,text:string){
+        super(x,y);
+        this.text = text;
+    }
+    text:string;
+    render(ctx: CanvasRenderingContext2D): void {
+        
+    }
+}
+class Board{
+    constructor(){
+        this.objs = [];
+    }
+    isVisible = false;
+    
+    can:HTMLCanvasElement;
+    ctx:CanvasRenderingContext2D;
+
+    objs:BoardObj[]
+    init(){
+        this.can = document.createElement("canvas");
+        this.ctx = this.can.getContext("2d");
+    }
+    render(){
+        requestAnimationFrame(this.render);
+        if(!this.isVisible) return;
+
+        console.log("render");
+    }
+    wipe(){
+        // tmp
+        this.objs = [];
+    }
+    show(){
+        this.isVisible = true;
+        let b = addBubbleAt(BubbleLoc.global,"");
+        let cont = document.createElement("div");
+        cont.className = "board-cont";
+        b.e.innerHTML = "";
+        b.e.appendChild(cont);
+        cont.appendChild(this.can);
+    }
+    hide(){
+        this.isVisible = false;
+    }
+}
 class Lesson{
     constructor(title:string,parent:HTMLElement,tutParent:HTMLElement){
         this.p = new Project(title,parent);
@@ -713,14 +789,26 @@ class Lesson{
     _hasShownMarkDoneReminder = true; //false
     _hasShownFollowAlong = false;
 
+    board:Board;
+
+    getCurrentState(){
+        let state = new LessonState();
+        state.tutFiles = this.tut.files.map(v=>new FileInstance(v.name,v.editor.getValue()));
+        // unfinished, not a priority right now, probably going to disable the go back system for now
+    }
+
     init(){
         addBannerBubble(this);
         addBannerPreviewBubble(this);
+        this.board = new Board();
+        this.board.init();
 
         this.p.init();
         this.tut.init();
     }
     async start(){
+        d_currentTasks.classList.toggle("closed");
+        
         this._taskNum = 0;
         this.clearAllTasks();
         this.currentSubTask = null;
@@ -984,6 +1072,7 @@ async function initLessonPage(){
             "Hello!",
             "In order to do anything, we first need to create an HTML document."
         ],BubbleLoc.global,[
+            // new PonderBoardTask("HTML Structure"),
             new AddFileTask("index.html",false)
         ]),
         new LE_AddGBubble([
