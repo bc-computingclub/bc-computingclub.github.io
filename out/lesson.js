@@ -687,17 +687,35 @@ class BO_Text extends BoardObj {
     render(ctx) {
     }
 }
+class BO_Paint extends BoardObj {
+    constructor() {
+        super(0, 0);
+        this._can = document.createElement("canvas");
+        this._ctx = this._can.getContext("2d");
+    }
+    _can;
+    _ctx;
+    render(ctx) {
+        this._ctx.fillRect(20, 2, 40, 40);
+        ctx.drawImage(this._can, 0, 0);
+    }
+}
 class Board {
     constructor() {
         this.objs = [];
+        let paint = new BO_Paint();
+        this.objs.push(paint);
+        this.paint = paint;
     }
     isVisible = false;
     can;
     ctx;
+    paint;
     objs;
     init() {
         this.can = document.createElement("canvas");
         this.ctx = this.can.getContext("2d");
+        this.render();
     }
     render() {
         requestAnimationFrame(this.render);
@@ -1001,7 +1019,7 @@ async function initLessonPage() {
             "Hello!",
             "In order to do anything, we first need to create an HTML document."
         ], BubbleLoc.global, [
-            // new PonderBoardTask("HTML Structure"),
+            new PonderBoardTask("HTML Structure"),
             new AddFileTask("index.html", false)
         ]),
         new LE_AddGBubble([
@@ -1331,7 +1349,8 @@ b_refresh = document.querySelector(".b-refresh");
 icon_refresh = document.querySelector(".icon-refresh");
 iframe = document.querySelector("iframe");
 // let _icRef_state = true;
-b_refresh.addEventListener("click", e => {
+b_refresh.addEventListener("click", async (e) => {
+    await uploadLessonFiles(lesson);
     let file1 = lesson.p.files.find(v => v.name == "index.html");
     if (!file1) {
         alert("No index.html file found! Please create a new file called index.html, this file will be used in the preview.");
@@ -1404,7 +1423,6 @@ document.addEventListener("keydown", async (e) => {
     if (e.ctrlKey) {
         if (k == "r") {
             e.preventDefault();
-            await uploadLessonFiles(lesson);
             b_refresh.click();
         }
         else if (k == "s") {

@@ -64,4 +64,8 @@
 - probably more but I can't remember
 
 ### 1/11/24 - Claeb
-- 
+- started adding Ponder Board core classes
+
+### 1/12/24 - Claeb
+- added DO_Paint but not working at the moment
+
