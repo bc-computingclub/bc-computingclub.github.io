@@ -5,6 +5,12 @@ const d_lesson_confirm = document.querySelector(".d-lesson-confirm");
 const b_imDone = d_lesson_confirm.querySelector(".b-im-done");
 const b_replay = d_lesson_confirm.querySelector(".b-replay");
 const b_goBackStep = d_lesson_confirm.querySelector(".b-go-back-step");
+function getTypeSpeed(textLen) {
+    let speedScale = 1;
+    if (textLen < 5)
+        speedScale = 2;
+    return Math.ceil((30 + Math.random() * 100) * speedScale);
+}
 b_imDone.addEventListener("click", e => {
     if (lesson.currentSubTask) {
         lesson.currentSubTask._resFinish();
@@ -381,9 +387,6 @@ class AddTutorSideText extends Task {
         super.start();
         let editor = lesson.tut.getCurEditor();
         lesson.tut.curFile.blockPosChange = false;
-        let speedScale = 1;
-        if (this.text.length < 5)
-            speedScale = 2;
         let pos = editor.getPosition();
         await showTutMouse();
         await moveTutMouseTo(58 + pos.column * 7.7, 115 + pos.lineNumber * 16.5);
@@ -400,7 +403,7 @@ class AddTutorSideText extends Task {
                 text: this.text.substring(i, i + 1)
             });
             editor.updateOptions({ readOnly: true });
-            await wait(Math.ceil((30 + Math.random() * 100) * speedScale));
+            await wait(getTypeSpeed(this.text.length));
         }
         for (const c of list) {
             c.style.display = null;
@@ -470,6 +473,7 @@ class PonderBoardTask extends Task {
     }
     async start() {
         super.start();
+        lesson.board.init();
         let b = lesson.board;
         b.show();
         await this.finish();
@@ -581,6 +585,9 @@ class LE_AddGBubble extends LEvent {
             console.log("click");
             res();
         });
+        // TMP
+        b_confirm.click();
+        // 
         await prom;
         closeBubble(b);
         let tt = this;
@@ -670,58 +677,838 @@ class LessonState {
     }
     tutFiles;
 }
+class Rect {
+    constructor(x, y, w, h) {
+        this.x = x;
+        this.y = y;
+        this.w = w;
+        this.h = h;
+    }
+    x;
+    y;
+    w;
+    h;
+    get cx() {
+        return this.x + this.w / 2;
+    }
+    get cy() {
+        return this.y + this.h / 2;
+    }
+    get r() {
+        return this.x + this.w;
+    }
+    get b() {
+        return this.y + this.h;
+    }
+    /**
+     * old width, old height, new width, new height
+     */
+    changeUnits(w1, h1, w2, h2) {
+        this.x = this.x / w1 * w2;
+        this.y = this.y / h1 * h2;
+        this.w = this.w / w1 * w2;
+        this.h = this.h / h1 * h2;
+        return this;
+    }
+}
 class BoardObj {
     constructor(x, y) {
         this.x = x;
         this.y = y;
+        this._storeTags = [];
     }
     x = 0;
     y = 0;
+    opacity = 1;
+    _storeTags;
+    b;
+    hasTag(...tags) {
+        for (const t of tags) {
+            if (this._storeTags.includes(t))
+                return true;
+        }
+        return false;
+    }
+    addTag(tag) {
+        if (!this._storeTags.includes(tag)) {
+            this._storeTags.push(tag);
+            // let oldObj = this.b.objStore.get(tag);
+            // if(oldObj) oldObj.removeTag(tag);
+            // this.b.objStore.set(tag,this);
+        }
+    }
+    removeTag(tag) {
+        this._storeTags.splice(this._storeTags.indexOf(tag), 1);
+        // if(this.b.objStore.get(tag) == this) this.b.objStore.delete(tag);
+    }
+    transferTags(to) {
+        for (const t of this._storeTags) {
+            to.addTag(t);
+        }
+        this.removeAllTags();
+    }
+    removeAllTags() {
+        let list = [...this._storeTags];
+        for (const t of list) {
+            this.removeTag(t);
+        }
+    }
+    postRender(_ctx, b) { }
+    ;
+    async onAdd(b) { }
+    ;
+    getScreenPos() {
+        let b = this.b;
+        let x = this.x * b.can.width + b._rect.x;
+        let y = this.y * b.can.height + b._rect.y;
+        return { x, y };
+    }
+    getRect() {
+        let b = this.b;
+        let x = this.x * b.can.width + b._rect.x;
+        let y = this.y * b.can.height + b._rect.y;
+        let w = 0;
+        let h = 0;
+        return new Rect(x, y, w, h);
+    }
 }
-class BO_Text extends BoardObj {
-    constructor(x, y, text) {
+class AnchoredBoardObj extends BoardObj {
+    constructor(x, y, ha, va) {
         super(x, y);
+        this.ha = ha;
+        this.va = va;
+    }
+    ha;
+    va;
+    getAnchoredPos(w, h) {
+        let ctx = this.b.ctx;
+        let x = this.x * ctx.canvas.width;
+        let y = this.y * ctx.canvas.height;
+        if (this.ha == Anchor.CENTER)
+            x -= w / 2;
+        else if (this.ha == Anchor.END)
+            x -= w;
+        if (this.va == Anchor.CENTER)
+            y -= h / 2;
+        else if (this.va == Anchor.END)
+            y -= h;
+        return { x, y };
+    }
+}
+class BORef {
+    constructor(ref) {
+        this.ref = ref;
+    }
+    static fromObj(obj) {
+        let b = new BORef(null);
+        b.obj = obj;
+        return b;
+    }
+    obj;
+    ref;
+    unwrap(b) {
+        if (this.obj)
+            return this.obj;
+        // return b.objStore.get(this.ref);
+        return b.objs.find(v => v.hasTag(this.ref));
+    }
+}
+class MultiBORef {
+    constructor(...refs) {
+        this.refs = refs;
+    }
+    refs;
+    objs;
+    static fromObjs(objs) {
+        let d = new MultiBORef(null);
+        d.objs = objs;
+        return d;
+    }
+    unwrap(b) {
+        if (this.objs)
+            return this.objs;
+        // return this.refs.map(v=>b.objStore.get(v));
+        return b.objs.filter(v => v.hasTag(...this.refs));
+    }
+}
+var Anchor;
+(function (Anchor) {
+    Anchor[Anchor["START"] = 0] = "START";
+    Anchor[Anchor["CENTER"] = 1] = "CENTER";
+    Anchor[Anchor["END"] = 2] = "END";
+})(Anchor || (Anchor = {}));
+class BoardEvent {
+    constructor() { }
+    async finish(autoFinish = false) {
+        if (autoFinish)
+            this._resFinish();
+        await this._prom;
+    }
+    start() {
+        if (this._resFinish)
+            this._resFinish();
+        this._prom = new Promise(resolve => {
+            this._resFinish = resolve;
+        });
+    }
+    _resFinish;
+    _prom;
+    after(f) {
+        f(this);
+        return this;
+    }
+}
+class AnchoredBoardEvent extends BoardEvent {
+    constructor(ha, va) {
+        super();
+        this.ha = ha;
+        this.va = va;
+    }
+    ha;
+    va;
+}
+// TextColored
+class TC {
+    constructor(text, id) {
         this.text = text;
+        this.id = id;
     }
     text;
-    render(ctx) {
+    id;
+}
+const TC_Cols = {
+    0: "gray",
+    1: "royalblue",
+    2: "dodgerblue",
+    3: "white"
+};
+function getLenTC(tc) {
+    let l = 0;
+    for (const d of tc) {
+        l += d.text.length;
+    }
+    return l;
+}
+function getLongestLineLen(lines) {
+    let max = 0;
+    for (const l of lines) {
+        if (l.length > max)
+            max = l.length;
+    }
+    return max;
+}
+function getLongestLineLenSum(lines) {
+    let text = lines.join("");
+    lines = text.split("\n");
+    let max = 0;
+    for (const l of lines) {
+        if (l.length > max)
+            max = l.length;
+    }
+    return max;
+}
+function getLinesOffset(parts) {
+    let offset = 0;
+    for (const p of parts) {
+        offset += p.getOffset();
+    }
+    return offset;
+}
+function parseCodeStr(code, colIds, delimiter = "$", f) {
+    let parts = code.split(delimiter);
+    let ar = [];
+    let i = 0;
+    for (const p of parts) {
+        let obj = new TA_Text(p, colIds[i]);
+        ar.push(obj);
+        let i_cp = i;
+        if (f)
+            obj.onAfter = function () {
+                f(i_cp, obj);
+            };
+        i++;
+    }
+    return ar;
+}
+function emptyStr(len) {
+    let str = "";
+    for (let i = 0; i < len; i++) {
+        str += " ";
+    }
+    return str;
+}
+class TypeAnim {
+    constructor(tasks) {
+        this.tasks = tasks;
+    }
+    tasks;
+    async run() {
+        for (const t of this.tasks) {
+            await t.run();
+            if (t.onAfter)
+                t.onAfter();
+        }
+    }
+}
+class TA_Task {
+    constructor() {
+    }
+    partI;
+    b;
+    e;
+    obj;
+    getOffset() { return 0; }
+    getText() { return ""; }
+    onAfter;
+}
+class TA_ObjBubble extends TA_Task {
+    constructor(text, par) {
+        super();
+        this.text = text;
+        this.par = par;
+    }
+    text;
+    par;
+    async run() {
+        let { x, y } = this.par.getScreenPos();
+        let b = addBubbleAt(BubbleLoc.xy, this.text, null, {
+            x, y,
+            click: true
+        });
+        await b.clickProm;
+    }
+}
+class TA_Wait extends TA_Task {
+    constructor(delay) {
+        super();
+        this.delay = delay;
+    }
+    delay;
+    async run() {
+        await wait(this.delay);
+    }
+}
+class TA_Text extends TA_Task {
+    constructor(code, colId) {
+        super();
+        this.code = code;
+        this.colId = colId;
+        this.tc = new TC(code, colId);
+    }
+    code;
+    colId;
+    tc;
+    getOffset() {
+        return this.code.length;
+    }
+    getText() {
+        return this.code;
+    }
+    async run() {
+        // for(const d of oldOrder){
+        //     let obj = new BO_Text(d,x,y,Anchor.START,this.va);
+        //     b.objs.push(obj);
+        //     objList.push(obj);
+        //     x += amt * d.text.length;
+        // }
+        // for(const ind of this.newOrder){
+        //     await objList[ind].onAdd(b);
+        // }
+        let obj = new BO_Text(this.tc, this.e.tx, this.e.ty, Anchor.START, Anchor.CENTER);
+        this.obj = obj;
+        let b = this.b;
+        await b.addObj(obj);
+        let amt = b.baseFontScale * (b.can.height / b.can.width) * 0.55;
+        this.e.tx += amt * this.code.length;
+    }
+}
+class TA_ReplaceText extends TA_Text {
+    constructor(ref, code, colId) {
+        super(code, colId);
+        this.ref = ref;
+    }
+    ref;
+    async run() {
+        // let refObj = this.b.objStore.get(this.ref);
+        let refObj = this.b.getObjByTag(this.ref);
+        let obj = new BO_Text(this.tc, this.e.tx, this.e.ty, Anchor.START, Anchor.CENTER);
+        this.obj = obj;
+        let b = this.b;
+        await b.replaceObj(refObj, obj);
+        let amt = b.baseFontScale * (b.can.height / b.can.width) * 0.55;
+        this.e.tx += amt * this.code.length;
+    }
+    getOffset() {
+        return 0;
+    }
+}
+class TA_Move extends TA_Task {
+    constructor(amtX, amtY) {
+        super();
+        this.amtX = amtX;
+        this.amtY = amtY;
+    }
+    amtX;
+    amtY;
+    async run() {
+        let b = this.b;
+        let amt = b.baseFontScale * (b.can.height / b.can.width) * 0.55;
+        this.e.tx += amt * this.amtX;
+        this.e.ty += amt * this.amtY;
+    }
+}
+class BE_AddCode extends AnchoredBoardEvent {
+    constructor(comment, x, y, ha, va, anim) {
+        super(ha, va);
+        this.comment = comment;
+        this.x = x;
+        this.y = y;
+        this.anim = anim;
+        this.parts = [];
+        for (const t of anim.tasks) {
+            let text = t.getText();
+            if (text) {
+                t.partI = this.parts.length;
+                this.parts.push(text);
+            }
+        }
+    }
+    comment;
+    text;
+    delimiter;
+    x;
+    y;
+    anim;
+    parts;
+    tx;
+    ty;
+    async run(b) {
+        this.start();
+        await b.waitForBubble(this.comment, 0, 0);
+        let x = this.x;
+        let y = this.y;
+        // let len = getLongestLineLenSum(this.parts);
+        let len = getLinesOffset(this.anim.tasks.filter(v => v instanceof TA_Text));
+        let amt = b.baseFontScale * (b.can.height / b.can.width) * 0.55;
+        if (this.ha == Anchor.CENTER)
+            x -= amt * len / 2;
+        else if (this.ha == Anchor.END)
+            x -= amt * len;
+        this.tx = x;
+        this.ty = y;
+        await this.anim.run();
+        this._resFinish();
+        await this.finish();
+    }
+    finalize(b) {
+        for (const t of this.anim.tasks) {
+            t.b = b;
+            t.e = this;
+            // if(t.onAfter) t.onAfter();
+        }
+        return this;
+    }
+}
+class BE_AddText extends AnchoredBoardEvent {
+    constructor(comment, text, x, y, ha, va, newOrder) {
+        super(ha, va);
+        this.comment = comment;
+        this.text = text;
+        this.x = x;
+        this.y = y;
+        this.newOrder = newOrder;
+    }
+    comment;
+    text;
+    x;
+    y;
+    newOrder;
+    async run(b) {
+        this.start();
+        await b.waitForBubble(this.comment, 0, 0);
+        let x = this.x;
+        let y = this.y;
+        let len = getLenTC(this.text);
+        let amt = b.baseFontScale * (b.can.height / b.can.width) * 0.55;
+        if (this.ha == Anchor.CENTER)
+            x -= amt * len / 2;
+        else if (this.ha == Anchor.END)
+            x -= amt * len;
+        let order = [...this.text];
+        let oldOrder = order;
+        if (this.newOrder)
+            order = this.newOrder.map((v, i) => {
+                return order[v];
+            });
+        let objList = [];
+        for (const d of oldOrder) {
+            // await b.addObj(new BO_Text(this.text,this.x,this.y,this.ha,this.va));
+            // await b.addObj(new BO_Text(d,x,y,Anchor.START,this.va));
+            let obj = new BO_Text(d, x, y, Anchor.START, this.va);
+            b.objs.push(obj);
+            objList.push(obj);
+            x += amt * d.text.length;
+        }
+        for (const ind of this.newOrder) {
+            await objList[ind].onAdd(b);
+        }
+        this._resFinish();
+        await this.finish();
+    }
+}
+class BO_Text extends AnchoredBoardObj {
+    constructor(text, x, y, ha, va) {
+        super(x, y, ha, va);
+        this.d = text;
+        this.text = "";
+    }
+    d;
+    text;
+    col;
+    render(_ctx, b) {
+        b.font = "monospace";
+        b.applyFont();
+        _ctx.fillStyle = this.col;
+        let x = this.x * _ctx.canvas.width;
+        let y = this.y * _ctx.canvas.height;
+        _ctx.fillStyle = TC_Cols[this.d.id];
+        let r = _ctx.measureText(this.text);
+        let size = b.fontSize;
+        if (this.ha == Anchor.CENTER)
+            x -= r.width / 2;
+        else if (this.ha == Anchor.END)
+            x -= r.width;
+        if (this.va == Anchor.CENTER)
+            y -= size / 2;
+        else if (this.va == Anchor.END)
+            y -= size;
+        let debug = false;
+        // if(this.hasTag("tagName")) debug = true;
+        if (debug) {
+            let r2 = this.getRect(); // DEBUG SHOW OBJ HIT BOX (rect)
+            _ctx.fillStyle = "red";
+            _ctx.fillRect(r2.x, r2.y, r2.w, r2.h);
+            _ctx.fillStyle = TC_Cols[this.d.id];
+        }
+        _ctx.fillText(this.text, x, y);
+    }
+    async onAdd(b) {
+        for (const c of this.d.text) {
+            this.text += c;
+            let speed = getTypeSpeed(this.d.text.length);
+            if (c == " ")
+                speed /= 4;
+            await wait(speed);
+        }
+    }
+    getRect() {
+        let b = this.b;
+        let ctx = b.ctx;
+        // let w = b.paint._ctx.measureText(this.text).width;
+        // let w = ctx.measureText(this.text).width;
+        let amt = b.baseFontScale * (b.can.height / b.can.width) * 0.55 * b.can.width;
+        let w = this.text.length * amt;
+        let h = b.fontSize;
+        let { x, y } = this.getAnchoredPos(w, h);
+        y -= h * 0.75;
+        return new Rect(x, y, w, h);
+    }
+}
+class BoardRenderObj extends AnchoredBoardObj {
+    constructor(x, y, ha, va) {
+        super(x, y, ha, va);
+        this.can = document.createElement("canvas");
+        this.ctx = this.can.getContext("2d");
+    }
+    can;
+    ctx;
+    render(_ctx, b) {
+        // let r = this.getRect();
+        let { x, y } = this.getAnchoredPos(this.can.width, this.can.height);
+        _ctx.drawImage(this.can, x, y);
+    }
+}
+class BO_Circle extends BoardRenderObj {
+    constructor(r, padX, padY) {
+        super(r.x, r.y, Anchor.CENTER, Anchor.CENTER);
+        this.r = r;
+        this.padX = padX;
+        this.padY = padY;
+    }
+    r;
+    padX;
+    padY;
+    async onAdd(b) {
+        let can = this.can;
+        let ctx = this.ctx;
+        this.r = this.r.changeUnits(1, 1, b.can.width, b.can.height);
+        can.width = this.r.w;
+        can.height = this.r.w;
+        let r = this.getRect();
+        // ctx.fillStyle = "rgba(255,0,0,0.3)";
+        // ctx.fillRect(0,0,can.width,can.height);
+        ctx.beginPath();
+        ctx.lineWidth = b.fontSize / 4;
+        ctx.arc(can.width / 2, can.height / 2, r.w + this.padX, 0, Math.PI * 2);
+        ctx.strokeStyle = "white";
+        ctx.stroke();
+        ctx.strokeRect(can.width / 2, can.height / 2, 2, 2);
+        ctx.strokeRect(0, 0, can.width, can.height);
+    }
+    render(_ctx, b) {
+        // super.render(_ctx,b);
+        let { x, y } = this.getAnchoredPos(this.can.width, this.can.height);
+        _ctx.drawImage(this.can, x + this.r.w / 2, y + this.r.h / 2);
     }
 }
 class BO_Paint extends BoardObj {
     constructor() {
         super(0, 0);
         this._can = document.createElement("canvas");
+        this._can.width = 1280;
+        this._can.height = 720;
         this._ctx = this._can.getContext("2d");
+        this._ctx.fillStyle = "white";
+        this._ctx.strokeStyle = "white";
     }
     _can;
     _ctx;
-    render(ctx) {
-        this._ctx.fillRect(20, 2, 40, 40);
-        ctx.drawImage(this._can, 0, 0);
+    render(_ctx, b) {
+        let rect = b._rect;
+        // tmp
+        // this._can.width = b.can.width;
+        // this._can.height = b.can.height;
+        _ctx.drawImage(this._can, 0, 0, _ctx.canvas.width, _ctx.canvas.height);
     }
+    postRender(_ctx, b) {
+        // this._ctx.fillRect(20,2,40,40);
+        // _ctx.drawImage(this._can,0,0,_ctx.canvas.width,_ctx.canvas.height);
+    }
+}
+class BE_AddObj extends BoardEvent {
+    constructor(obj) {
+        super();
+        this.obj = obj;
+    }
+    obj;
+    async run(b) {
+        this.start();
+        await b.addObj(this.obj);
+        this._resFinish();
+        await this.finish();
+    }
+}
+class BE_Wait extends BoardEvent {
+    constructor(delay) {
+        super();
+        this.delay = delay;
+    }
+    delay;
+    async run(b) {
+        this.start();
+        await wait(this.delay);
+        this._resFinish();
+        await this.finish();
+    }
+}
+class BE_SetOpacity extends BoardEvent {
+    constructor(refs, opacity, animTime) {
+        super();
+        this.refs = refs;
+        this.opacity = opacity;
+        this.animTime = animTime;
+    }
+    refs;
+    opacity;
+    animTime;
+    async run(b) {
+        this.start();
+        let objs = this.refs.unwrap(b);
+        for (let i = 0; i < objs.length - 1; i++) {
+            animateVal(objs[i], "opacity", this.opacity, this.animTime);
+        }
+        await animateVal(objs.pop(), "opacity", this.opacity, this.animTime);
+        this._resFinish();
+        await this.finish();
+    }
+}
+class BE_GlobalBubble extends BoardEvent {
+    constructor(comment) {
+        super();
+        this.comment = comment;
+    }
+    comment;
+    async run(b) {
+        this.start();
+        await b.waitForBubble(this.comment, 0, -innerHeight / 5, true);
+        this._resFinish();
+        await this.finish();
+    }
+}
+class BE_CircleObj extends BoardEvent {
+    constructor(refs) {
+        super();
+        this.refs = refs;
+    }
+    refs;
+    async run(b) {
+        this.start();
+        let can = b.paint._can;
+        let ctx = b.paint._ctx;
+        let objs = this.refs.unwrap(b);
+        for (const o of objs) {
+            let r = o.getRect().changeUnits(b.can.width, b.can.height, 1, 1);
+            let pad = b.getCharWidthInPX();
+            await b.addObj(new BO_Circle(r, pad, pad));
+        }
+        if (false)
+            for (const o of objs) {
+                ctx.beginPath();
+                ctx.lineWidth = 10;
+                let r = o.getRect().changeUnits(b.can.width, b.can.height, can.width, can.height);
+                ctx.arc(r.cx, r.cy, r.w * 0.5 + b.fontSize * 2, 0, Math.PI * 2);
+                ctx.stroke();
+                ctx.fillRect(r.cx, r.cy, 2, 2);
+                ctx.lineWidth = 2;
+                ctx.strokeRect(r.x, r.y, r.w, r.h);
+            }
+        await this.finish(true);
+    }
+}
+async function animateVal(obj, key, newVal, animTime) {
+    let val = obj[key];
+    let dif = newVal - val;
+    let inc = dif / animTime;
+    if (inc > 0 && inc < 0.01)
+        inc = 0.01;
+    else if (inc < 0 && inc > -0.01)
+        inc = -0.01;
+    let gap = animTime / (Math.abs(dif) / Math.abs(inc));
+    let dir = (dif > 0);
+    for (let i = val; dir ? i <= newVal : i >= newVal; i += inc) {
+        obj[key] = i;
+        await wait(gap);
+    }
+    obj[key] = newVal;
 }
 class Board {
     constructor() {
         this.objs = [];
+        this.events = [];
         let paint = new BO_Paint();
         this.objs.push(paint);
         this.paint = paint;
+        // this.objStore = new Map();
     }
     isVisible = false;
     can;
     ctx;
     paint;
     objs;
-    init() {
+    _rect;
+    fontSize = 16;
+    baseFontScale = 1 / 16;
+    fontScale = 1;
+    font = "Arial";
+    applyFont() {
+        let can = this.can;
+        this.fontSize = can.height * this.baseFontScale * this.fontScale;
+        this.ctx.font = this.fontSize + "px " + this.font;
+    }
+    events;
+    /**
+     * Unit: percent
+     */
+    getCharWidth() {
+        let b = this;
+        return b.baseFontScale * (b.can.height / b.can.width) * 0.55;
+    }
+    getCharWidthInPX() {
+        let b = this;
+        return b.baseFontScale * (b.can.height / b.can.width) * 0.55 * this.can.width;
+    }
+    // objStore:Map<string,BoardObj>;
+    storeObj(ref, obj) {
+        obj.addTag(ref);
+        return obj;
+    }
+    getObjByTag(...tag) {
+        return this.objs.find(v => v.hasTag(...tag));
+    }
+    getAllObjsByTag(...tag) {
+        return this.objs.filter(v => v.hasTag(...tag));
+    }
+    async addObj(o) {
+        this.objs.push(o);
+        o.b = this;
+        await o.onAdd(this);
+    }
+    async replaceObj(from, to) {
+        this.objs.splice(this.objs.indexOf(from), 1);
+        this.objs.push(to);
+        to.b = this;
+        from.transferTags(to);
+        // if(from._storeTags.length){
+        //     to._storeTags = from._storeTags;
+        //     from._storeTags = [];
+        // }
+        await to.onAdd(this);
+    }
+    async waitForBubble(text, x, y, isCenter = true) {
+        let r = this._rect;
+        if (isCenter) {
+            x += r.width / 2;
+            y += r.height / 2;
+        }
+        x += r.x;
+        y += r.y;
+        let b = addBubbleAt(BubbleLoc.xy, text, null, {
+            x,
+            y,
+            click: true
+        });
+        if (isCenter)
+            b.e.classList.add("centered", "no-callout");
+        await b.clickProm;
+        return b;
+    }
+    async init() {
         this.can = document.createElement("canvas");
         this.ctx = this.can.getContext("2d");
         this.render();
+        await wait(1500);
+        for (const e of this.events) {
+            await e.run(this);
+            await wait(300);
+        }
     }
     render() {
-        requestAnimationFrame(this.render);
+        let t = this;
+        requestAnimationFrame(() => {
+            t.render();
+        });
         if (!this.isVisible)
             return;
-        console.log("render");
+        let ctx = this.ctx;
+        let can = ctx.canvas;
+        let rect = can.getBoundingClientRect();
+        this._rect = rect;
+        can.width = rect.width;
+        can.height = can.width * 0.5625;
+        ctx.fillStyle = "white";
+        ctx.strokeStyle = "white";
+        this.fontScale = 1;
+        this.font = "Arial";
+        this.applyFont();
+        for (const o of this.objs) {
+            ctx.globalAlpha = o.opacity;
+            o.render(ctx, this);
+        }
+        for (const o of this.objs) {
+            ctx.globalAlpha = o.opacity;
+            o.postRender(ctx, this);
+        }
+        ctx.globalAlpha = 1;
     }
     wipe() {
         // tmp
@@ -730,6 +1517,7 @@ class Board {
     show() {
         this.isVisible = true;
         let b = addBubbleAt(BubbleLoc.global, "");
+        b.e.classList.add("board-bubble");
         let cont = document.createElement("div");
         cont.className = "board-cont";
         b.e.innerHTML = "";
@@ -770,7 +1558,48 @@ class Lesson {
         addBannerBubble(this);
         addBannerPreviewBubble(this);
         this.board = new Board();
-        this.board.init();
+        this.board.events = [
+            new BE_AddCode("Let's take a closer look at this.", 0.5, 0.5, Anchor.CENTER, Anchor.CENTER, new TypeAnim([
+                ...parseCodeStr("<$buttonnamethisislong$>$         $<$/$but$>", [0, 2, 0, 3, 0, 3, 2, 0], "$", (i, t) => {
+                    t.obj.addTag([
+                        "<>",
+                        "tagName",
+                        "<>",
+                        "textContent",
+                        "<>",
+                        "closingTag",
+                        "tagName",
+                        "<>"
+                    ][i]);
+                }),
+                new TA_Wait(500),
+                // new TA_Move(-18,0),
+                new TA_Move(-15, 0),
+                new TA_ReplaceText("textContent", "Click Me!", 3)
+            ])).finalize(this.board),
+            new BE_GlobalBubble(`This line adds a button to the page with "Click Me!" as the button's text. Let's break down it's structure.`),
+            new BE_SetOpacity(new MultiBORef("textContent", "closingTag", "tagName"), 0.1, 500),
+            // new BE_Wait(500),
+            new BE_CircleObj(new MultiBORef("tagName"))
+        ];
+        if (false)
+            this.board.events = [
+                new BE_AddText("Hello there!", [
+                    // new TC("<button>Click Me!</button>",2),
+                    new TC("<", 0),
+                    new TC("button", 2),
+                    new TC(">", 0),
+                    new TC("Click Me!", 3),
+                    new TC("<", 0),
+                    new TC("/", 3),
+                    new TC("button", 2),
+                    new TC(">", 0),
+                ], 0.5, 0.5, Anchor.CENTER, Anchor.CENTER, [
+                    0, 1, 2,
+                    4, 5, 6, 7,
+                    3
+                ])
+            ];
         this.p.init();
         this.tut.init();
     }

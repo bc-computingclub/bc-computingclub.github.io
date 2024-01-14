@@ -404,7 +404,18 @@ hr{
 
 /* Board */
 .board-cont{
-    
+    width:75vw;
+}
+.bubble.global.board-bubble{
+    width:auto;
+    height:auto;
+    max-width:max-content;
+    max-height:max-content;
+    transform:translate(-50%,-50%);
+    top:calc(50vh - 60px) !important;
+    left:50vw !important;
+    background-color:#111;
+    box-shadow:0px 5px 30px 10px rgba(0,0,0,0.2);
 }
 .board-cont canvas{
     width:100%;

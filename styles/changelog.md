@@ -69,3 +69,5 @@
 ### 1/12/24 - Claeb
 - added DO_Paint but not working at the moment
 
+### 1/13/24 - Claeb
+- need to add stuff here from commit, I don't remember it all
