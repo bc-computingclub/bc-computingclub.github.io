@@ -46,3 +46,9 @@ body{
 .main{
     /* height:calc(100% - 60px); */
 }
+
+/*  */
+.editor-type-self{
+    filter:brightness(1.5);
+    --c:var(--cta-btn-col);
+}

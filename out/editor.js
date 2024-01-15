@@ -1,7 +1,7 @@
 // learn to code or something, it's really up to you, you have to put in the work
-d_files = document.querySelector(".d-open-files");
+// d_files = document.querySelector(".d-open-files");
 main = document.querySelector(".main");
-codeCont = document.querySelector(".cont-js");
+// codeCont = document.querySelector(".cont-js");
 pane_files = document.querySelector(".pane-files");
 pane_code = document.querySelector(".pane-code");
 pane_preview = document.querySelector(".pane-preview");
@@ -15,7 +15,9 @@ async function init() {
             resolve();
         });
     });
-    project = new Project("Test Project");
+    project = new Project("Test Project", pane_code);
+    setupEditor(pane_code, EditorType.self);
+    postSetupEditor(project);
     project.createFile("index.html", `<html>
     <head>
         <link rel="stylesheet" href="style.css">
@@ -53,49 +55,67 @@ onResize();
 b_refresh = document.querySelector(".b-refresh");
 icon_refresh = document.querySelector(".icon-refresh");
 iframe = document.querySelector("iframe");
-b_refresh.addEventListener("click", e => {
-    let newIF = document.createElement("iframe");
-    iframe.replaceWith(newIF);
-    iframe = newIF;
-    icon_refresh.style.rotate = _icRef_state ? "360deg" : "0deg";
-    _icRef_state = !_icRef_state;
-    let text = project.files[0].editor.getValue();
-    // let file = new File([new Uint8Array([...text].map((v,i)=>v.charCodeAt(i)))],"index.html");
-    // let bytes = new Uint8Array([...text].map((v,i)=>text.charCodeAt(i)));
-    // console.log(bytes);
-    // let file = new Blob([bytes]);
-    // let url = URL.createObjectURL(file);
-    // let a = document.createElement("a");
-    // a.href = url;
-    // a.download = "index.html";
-    // console.log(a.href);
-    // a.click();
-    let root = iframe.contentDocument;
-    root.open();
-    root.write(text);
-    let scripts = iframe.contentDocument.scripts;
-    let newScriptList = [];
-    for (const c of scripts) {
-        let div = document.createElement("div");
-        div.textContent = c.src;
-        c.replaceWith(div);
-        newScriptList.push(div);
-    }
-    for (const c of newScriptList) {
-        // if(!c.hasAttribute("src")) continue;
-        // let src = c.src.replace(location.ancestorOrigins[0]+"/editor","");
-        // c.innerHTML = project.files.find(v=>+"/"+v.name == src)?.editor.getValue();
-        let sc = document.createElement("script");
-        sc.innerHTML = project.files[2].editor.getValue();
-        c.replaceWith(sc);
-    }
-    let styles = iframe.contentDocument.querySelectorAll("link");
-    for (const c of styles) {
-        let st = document.createElement("style");
-        st.innerHTML = project.files[1].editor.getValue();
-        c.replaceWith(st);
-    }
-});
+// needs to be unified later
+if (false)
+    b_refresh.addEventListener("click", async (e) => {
+        await uploadLessonFiles(lesson);
+        let file1 = lesson.p.files.find(v => v.name == "index.html");
+        if (!file1) {
+            alert("No index.html file found! Please create a new file called index.html, this file will be used in the preview.");
+            return;
+        }
+        iframe.src = serverURL + "/lesson/" + g_user.sanitized_email + "/" + socket.id + "/" + g_user.sanitized_email + "/tmp_lesson";
+        icon_refresh.style.rotate = _icRef_state ? "360deg" : "0deg";
+        _icRef_state = !_icRef_state;
+        resolveHook(listenHooks.refresh, null);
+        return;
+    });
+else
+    b_refresh.addEventListener("click", e => {
+        if (!project.files[0])
+            return;
+        let newIF = document.createElement("iframe");
+        iframe.replaceWith(newIF);
+        iframe = newIF;
+        icon_refresh.style.rotate = _icRef_state ? "360deg" : "0deg";
+        _icRef_state = !_icRef_state;
+        let text = project.files[0].editor.getValue();
+        // let file = new File([new Uint8Array([...text].map((v,i)=>v.charCodeAt(i)))],"index.html");
+        // let bytes = new Uint8Array([...text].map((v,i)=>text.charCodeAt(i)));
+        // console.log(bytes);
+        // let file = new Blob([bytes]);
+        // let url = URL.createObjectURL(file);
+        // let a = document.createElement("a");
+        // a.href = url;
+        // a.download = "index.html";
+        // console.log(a.href);
+        // a.click();
+        let root = iframe.contentDocument;
+        root.open();
+        root.write(text);
+        let scripts = iframe.contentDocument.scripts;
+        let newScriptList = [];
+        for (const c of scripts) {
+            let div = document.createElement("div");
+            div.textContent = c.src;
+            c.replaceWith(div);
+            newScriptList.push(div);
+        }
+        for (const c of newScriptList) {
+            // if(!c.hasAttribute("src")) continue;
+            // let src = c.src.replace(location.ancestorOrigins[0]+"/editor","");
+            // c.innerHTML = project.files.find(v=>+"/"+v.name == src)?.editor.getValue();
+            let sc = document.createElement("script");
+            sc.innerHTML = project.files[2].editor.getValue();
+            c.replaceWith(sc);
+        }
+        let styles = iframe.contentDocument.querySelectorAll("link");
+        for (const c of styles) {
+            let st = document.createElement("style");
+            st.innerHTML = project.files[1].editor.getValue();
+            c.replaceWith(st);
+        }
+    });
 document.addEventListener("keydown", e => {
     if (!e.key)
         return;
@@ -128,4 +148,7 @@ s_loader.onload = function () {
 //         logUserIn();
 //     }
 // });
+// 
+// @ts-ignore
+function updateBubbles() { }
 //# sourceMappingURL=editor.js.map

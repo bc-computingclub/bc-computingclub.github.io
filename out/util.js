@@ -1,9 +1,14 @@
 let serverURL = "http://localhost:3000";
+let g_waitDelayScale = 1;
 function wait(delay) {
     return new Promise(resolve => {
+        if (g_waitDelayScale == 0) {
+            resolve();
+            return;
+        }
         setTimeout(() => {
             resolve();
-        }, delay);
+        }, delay * g_waitDelayScale);
     });
 }
 // callouts
@@ -369,6 +374,7 @@ function logUserIn(data, token) {
 // testMenu2.load();
 // testMenu.load();
 // Gen Header
+let d_lesson_confirm;
 function genHeader(i, isCompact = true) {
     let navCont = document.createElement("div");
     navCont.className = "nav-container";
@@ -379,7 +385,7 @@ function genHeader(i, isCompact = true) {
                 <!-- Insert placeholder logo here -->
             </a>
         </div>
-        <div class="d-lesson-confirm">
+        <div class="d-lesson-confirm none">
             <div>Press "I'm Done" to let the Tutor know when you're done with this step.</div>
             <button class="b-im-done icon-btn">
                 <div class="material-symbols-outlined">done</div>
@@ -405,6 +411,7 @@ function genHeader(i, isCompact = true) {
         "practice-page",
         "experiment-page"
     ][i]);
+    d_lesson_confirm = document.querySelector(".d-lesson-confirm");
 }
 // Add General Scripts
 function addScript(src, isAsync = false, call) {
@@ -674,4 +681,94 @@ let b_refresh;
 let icon_refresh;
 let iframe;
 let _icRef_state = true;
+// Lesson Hooks
+let listenHooks = {
+    addFile: [],
+    refresh: []
+};
+let _hookCount = 0;
+async function waitForQuickHook(hook) {
+    let t = new TmpTask();
+    t.start();
+    addHook(hook, t);
+    await t._prom;
+}
+function addHook(hook, task) {
+    hook.push(task);
+    console.log("...added hook");
+    _hookCount++;
+}
+function resolveHook(hook, data) {
+    let list = [...hook];
+    let result = 0;
+    for (let i = 0; i < list.length; i++) {
+        let f = list[i];
+        if (!f.check(data)) {
+            console.log("...hook resolve failed check; Unresolved: " + _hookCount);
+            if (f.preventContinueIfFail())
+                result = 1;
+            continue;
+        }
+        if (f._resFinish)
+            f._resFinish();
+        else {
+            console.warn("Weird, there wasn't a finish for the hook...?");
+        }
+        hook.splice(hook.indexOf(f), 1);
+        _hookCount--;
+        console.log("...resolved hook; Unresolved: " + _hookCount);
+    }
+    return result;
+}
+// Setup Editor
+var EditorType;
+(function (EditorType) {
+    EditorType[EditorType["none"] = 0] = "none";
+    EditorType[EditorType["self"] = 1] = "self";
+    EditorType[EditorType["tutor"] = 2] = "tutor";
+})(EditorType || (EditorType = {}));
+function setupEditor(parent, type) {
+    let d_files = document.createElement("div");
+    d_files.className = "d-open-files pane";
+    let contJs = document.createElement("div");
+    contJs.className = "cont-js cont pane";
+    parent.appendChild(d_files);
+    parent.appendChild(contJs);
+    let add_file = document.createElement("button");
+    add_file.className = "b-add-file";
+    add_file.innerHTML = "<div class='material-symbols-outlined'>add</div>";
+    d_files.appendChild(add_file);
+    if (type != EditorType.none) {
+        let label = document.createElement("div");
+        label.innerHTML = `<div class="material-symbols-outlined">menu</div><div>${(type == EditorType.tutor ? "TUTOR" : "YOU")}</div>`;
+        // label.textContent = (type == EditorType.tutor ? "Tutor's Code" : "Your Code");
+        label.className = (type == EditorType.tutor ? "editor-type-tutor" : "editor-type-self");
+        d_files.appendChild(label);
+    }
+}
+function postSetupEditor(project) {
+    let parent = project.parent;
+    project.d_files = parent.querySelector(".d-open-files");
+    project.codeCont = parent.querySelector(".cont-js");
+    console.log("completed post setup");
+    // project.createFile("test.html",`<p>Hello</p>`,"html");
+    // project.files[0].open();
+    // project.createFile("main.js",`console.log("hello");\nconsole.log("hello");\nconsole.log("hello");\nconsole.log("hello");`,"javascript");
+    // project.files[1].open();
+    let add_file = parent.querySelector(".b-add-file");
+    add_file.addEventListener("click", e => {
+        if (project.isTutor) {
+            alert("Sorry! You can't add files to the tutor's project!");
+            return;
+        }
+        let name = prompt("Enter file name:", "index.html");
+        if (!name)
+            return;
+        project.createFile(name, "");
+    });
+    // loadEditorTheme();
+    // project.files[0].d_files;
+    // project.files[0].codeCont;
+    // project.files[0].bubbles_ov;
+}
 //# sourceMappingURL=util.js.map

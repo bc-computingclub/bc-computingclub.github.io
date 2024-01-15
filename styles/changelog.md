@@ -71,3 +71,7 @@
 
 ### 1/13/24 - Claeb
 - need to add stuff here from commit, I don't remember it all
+
+### 1/14/24 - Claeb
+- major work done on Ponder Board, most of the essential core functionality is complete and some feature classes have been added but more to come later like underlining and object target bubbles
+- fixed editor page (still need to unify the rest of editor setup including refreshing, editor still only uses the simple frame system without the server)

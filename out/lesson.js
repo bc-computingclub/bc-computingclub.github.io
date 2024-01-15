@@ -1,10 +1,10 @@
 const d_currentTasks = document.querySelector(".d-current-tasks");
 const d_task = document.querySelector(".d-task");
 const d_subTasks = document.querySelector(".d-sub-tasks");
-const d_lesson_confirm = document.querySelector(".d-lesson-confirm");
 const b_imDone = d_lesson_confirm.querySelector(".b-im-done");
 const b_replay = d_lesson_confirm.querySelector(".b-replay");
 const b_goBackStep = d_lesson_confirm.querySelector(".b-go-back-step");
+d_lesson_confirm.classList.remove("none");
 function getTypeSpeed(textLen) {
     let speedScale = 1;
     if (textLen < 5)
@@ -470,13 +470,25 @@ class ClickButtonTask extends Task {
 class PonderBoardTask extends Task {
     constructor(title) {
         super(title);
+        this.requiresDoneConfirm = false;
     }
     async start() {
         super.start();
+        await wait(250);
+        let r2 = tutMouse.getBoundingClientRect();
+        let b2 = addBubbleAt(BubbleLoc.xy, this.title, "top", {
+            x: r2.x + r2.width / 2 + 17,
+            y: r2.y + r2.height / 2 - 22,
+            click: true
+        });
+        await b2.clickProm;
         lesson.board.init();
         let b = lesson.board;
         b.show();
         await this.finish();
+    }
+    cleanup() {
+        lesson.board.exit();
     }
 }
 class TmpTask extends Task {
@@ -497,44 +509,6 @@ class TmpTask extends Task {
         console.log(":::: has started");
         return await this.finish();
     }
-}
-let listenHooks = {
-    addFile: [],
-    refresh: []
-};
-let _hookCount = 0;
-async function waitForQuickHook(hook) {
-    let t = new TmpTask();
-    t.start();
-    addHook(hook, t);
-    await t._prom;
-}
-function addHook(hook, task) {
-    hook.push(task);
-    console.log("...added hook");
-    _hookCount++;
-}
-function resolveHook(hook, data) {
-    let list = [...hook];
-    let result = 0;
-    for (let i = 0; i < list.length; i++) {
-        let f = list[i];
-        if (!f.check(data)) {
-            console.log("...hook resolve failed check; Unresolved: " + _hookCount);
-            if (f.preventContinueIfFail())
-                result = 1;
-            continue;
-        }
-        if (f._resFinish)
-            f._resFinish();
-        else {
-            console.warn("Weird, there wasn't a finish for the hook...?");
-        }
-        hook.splice(hook.indexOf(f), 1);
-        _hookCount--;
-        console.log("...resolved hook; Unresolved: " + _hookCount);
-    }
-    return result;
 }
 class LEvent {
     constructor() { }
@@ -576,7 +550,8 @@ class LE_AddGBubble extends LEvent {
         let res;
         let prom = new Promise(resolve => { res = resolve; });
         let b_confirm = document.createElement("button");
-        b_confirm.textContent = "Next";
+        b_confirm.innerHTML = "<div>Next</div><div class='material-symbols-outlined'>mouse</div>";
+        b_confirm.classList.add("b-confirm");
         let b = addBubbleAt(this.loc, this.text);
         b.e.appendChild(document.createElement("br"));
         b.e.appendChild(document.createElement("br"));
@@ -586,7 +561,7 @@ class LE_AddGBubble extends LEvent {
             res();
         });
         // TMP
-        b_confirm.click();
+        // b_confirm.click();
         // 
         await prom;
         closeBubble(b);
@@ -722,6 +697,12 @@ class BoardObj {
     opacity = 1;
     _storeTags;
     b;
+    extraPad = {
+        l: 0,
+        r: 0,
+        t: 0,
+        b: 0
+    };
     hasTag(...tags) {
         for (const t of tags) {
             if (this._storeTags.includes(t))
@@ -731,14 +712,16 @@ class BoardObj {
     }
     addTag(tag) {
         if (!this._storeTags.includes(tag)) {
-            this._storeTags.push(tag);
+            this._storeTags.push(...tag.split(" "));
             // let oldObj = this.b.objStore.get(tag);
             // if(oldObj) oldObj.removeTag(tag);
             // this.b.objStore.set(tag,this);
         }
     }
-    removeTag(tag) {
-        this._storeTags.splice(this._storeTags.indexOf(tag), 1);
+    removeTag(...tags) {
+        for (const tag of tags) {
+            this._storeTags.splice(this._storeTags.indexOf(tag), 1);
+        }
         // if(this.b.objStore.get(tag) == this) this.b.objStore.delete(tag);
     }
     transferTags(to) {
@@ -819,16 +802,30 @@ class MultiBORef {
     }
     refs;
     objs;
+    _with;
     static fromObjs(objs) {
         let d = new MultiBORef(null);
         d.objs = objs;
         return d;
     }
     unwrap(b) {
-        if (this.objs)
-            return this.objs;
-        // return this.refs.map(v=>b.objStore.get(v));
-        return b.objs.filter(v => v.hasTag(...this.refs));
+        let i = 0;
+        if (!this.objs)
+            this.objs = b.objs.filter(v => {
+                let res = v.hasTag(...this.refs);
+                if (res) {
+                    if (this._with)
+                        this._with(v, i);
+                    i++;
+                    return true;
+                }
+                return false;
+            });
+        return this.objs;
+    }
+    with(f) {
+        this._with = f;
+        return this;
     }
 }
 var Anchor;
@@ -1084,7 +1081,8 @@ class BE_AddCode extends AnchoredBoardEvent {
     ty;
     async run(b) {
         this.start();
-        await b.waitForBubble(this.comment, 0, 0);
+        if (this.comment)
+            await b.waitForBubble(this.comment, 0, 0);
         let x = this.x;
         let y = this.y;
         // let len = getLongestLineLenSum(this.parts);
@@ -1203,13 +1201,17 @@ class BO_Text extends AnchoredBoardObj {
     }
     getRect() {
         let b = this.b;
-        let ctx = b.ctx;
+        // let ctx = b.ctx;
         // let w = b.paint._ctx.measureText(this.text).width;
         // let w = ctx.measureText(this.text).width;
         let amt = b.baseFontScale * (b.can.height / b.can.width) * 0.55 * b.can.width;
         let w = this.text.length * amt;
         let h = b.fontSize;
+        w += this.extraPad.l + this.extraPad.r;
+        h += this.extraPad.t + this.extraPad.b;
         let { x, y } = this.getAnchoredPos(w, h);
+        x -= this.extraPad.l;
+        y -= this.extraPad.t;
         y -= h * 0.75;
         return new Rect(x, y, w, h);
     }
@@ -1242,23 +1244,78 @@ class BO_Circle extends BoardRenderObj {
         let can = this.can;
         let ctx = this.ctx;
         this.r = this.r.changeUnits(1, 1, b.can.width, b.can.height);
-        can.width = this.r.w;
-        can.height = this.r.w;
-        let r = this.getRect();
+        let r = this.r;
+        can.width = this.r.w + this.padX * 4;
+        can.height = this.r.h + this.padY * 4;
+        // let r = this.getRect();
         // ctx.fillStyle = "rgba(255,0,0,0.3)";
         // ctx.fillRect(0,0,can.width,can.height);
-        ctx.beginPath();
-        ctx.lineWidth = b.fontSize / 4;
-        ctx.arc(can.width / 2, can.height / 2, r.w + this.padX, 0, Math.PI * 2);
+        ////// other
+        // ctx.beginPath();
+        // ctx.lineWidth = b.fontSize/4;
+        // ctx.arc(can.width/2,can.height/2,r.w+this.padX,0,Math.PI*2);
+        // ctx.strokeStyle = "white";
+        // ctx.stroke();
+        let cx = can.width / 2;
+        let cy = can.height / 2;
+        ctx.lineWidth = b.fontSize / 8;
         ctx.strokeStyle = "white";
-        ctx.stroke();
-        ctx.strokeRect(can.width / 2, can.height / 2, 2, 2);
-        ctx.strokeRect(0, 0, can.width, can.height);
+        let radX = r.w / 2 + this.padX;
+        let radY = r.h / 2 + this.padY;
+        radY *= 0.5;
+        radY += r.w / 8;
+        let lx = cx + radX;
+        let ly = cy;
+        let delay = 30;
+        function draw(x1, y1, x2, y2) {
+            ctx.beginPath();
+            ctx.lineCap = "round";
+            ctx.moveTo(x1, y1);
+            ctx.lineTo(x2, y2);
+            ctx.stroke();
+        }
+        for (let i = 0; i < Math.PI * 2; i += 0.1) {
+            let tx = cx + Math.cos(i) * radX;
+            let ty = cy + Math.sin(i) * radY;
+            // FAILED attempt at angle guided method
+            // let amt = 0.1;
+            // let tx = lx+Math.cos(i)*amt*radX - r.w/2;
+            // let ty = ly+Math.sin(i)*amt*radY - r.h/2;
+            // JITTER
+            // let scale = b.getCharWidthInPX();
+            // let randSX = scale*0.08;
+            // let randSY = scale*0.08;
+            // tx += Math.random()*randSX;
+            // ty += Math.random()*randSY;
+            if (lx == -1) {
+                lx = tx;
+                ly = ty;
+            }
+            draw(lx, ly, tx, ty);
+            lx = tx;
+            ly = ty;
+            delay *= 0.9;
+            await wait(delay);
+        }
+        draw(lx, ly, cx + radX, cy);
+        // ctx.strokeRect(can.width/2,can.height/2,2,2);
+        // ctx.strokeRect(0,0,can.width,can.height);
     }
     render(_ctx, b) {
-        // super.render(_ctx,b);
         let { x, y } = this.getAnchoredPos(this.can.width, this.can.height);
         _ctx.drawImage(this.can, x + this.r.w / 2, y + this.r.h / 2);
+        // let r = this.getRect();
+        // let r = this.r;
+        // let ctx = _ctx;
+        // let can = b.can;
+        // ctx.beginPath();
+        // ctx.lineWidth = b.fontSize/4;
+        // ctx.arc(r.cx,r.cy,r.w/2+this.padX,0,Math.PI*2);
+        // ctx.strokeStyle = "white";
+        // ctx.stroke();
+        // Debug
+        // ctx.strokeRect(r.cx-1,r.cy-1,2,2);
+        // ctx.strokeRect(r.x,r.y,r.w,r.h);
     }
 }
 class BO_Paint extends BoardObj {
@@ -1285,6 +1342,36 @@ class BO_Paint extends BoardObj {
         // _ctx.drawImage(this._can,0,0,_ctx.canvas.width,_ctx.canvas.height);
     }
 }
+class ObjRefBoardEvent extends BoardEvent {
+    constructor(refs) {
+        super();
+        this.refs = (refs instanceof MultiBORef ? refs : new MultiBORef(...refs));
+        this.objs = [];
+    }
+    refs;
+    objs;
+    _applyToObjs;
+    applyToObjs(f) {
+        this._applyToObjs = f;
+        return this;
+    }
+    // _onCreateObjs(){
+    //     if(this._applyToObjs) for(const o of this.objs){
+    //         this._applyToObjs(o);
+    //     }
+    // }
+    // async finish(autoFinish?: boolean): Promise<void> {
+    //     this._onCreateObjs();
+    //     if(autoFinish) this._resFinish();
+    //     await this._prom;
+    // }
+    async addObj(o, b) {
+        this.objs.push(o);
+        if (this._applyToObjs)
+            this._applyToObjs(o);
+        await b.addObj(o);
+    }
+}
 class BE_AddObj extends BoardEvent {
     constructor(obj) {
         super();
@@ -1294,8 +1381,7 @@ class BE_AddObj extends BoardEvent {
     async run(b) {
         this.start();
         await b.addObj(this.obj);
-        this._resFinish();
-        await this.finish();
+        await this.finish(true);
     }
 }
 class BE_Wait extends BoardEvent {
@@ -1307,18 +1393,15 @@ class BE_Wait extends BoardEvent {
     async run(b) {
         this.start();
         await wait(this.delay);
-        this._resFinish();
-        await this.finish();
+        await this.finish(true);
     }
 }
-class BE_SetOpacity extends BoardEvent {
-    constructor(refs, opacity, animTime) {
-        super();
-        this.refs = refs;
+class BE_SetOpacity extends ObjRefBoardEvent {
+    constructor(refs, opacity, animTime = 500) {
+        super(refs);
         this.opacity = opacity;
         this.animTime = animTime;
     }
-    refs;
     opacity;
     animTime;
     async run(b) {
@@ -1327,9 +1410,9 @@ class BE_SetOpacity extends BoardEvent {
         for (let i = 0; i < objs.length - 1; i++) {
             animateVal(objs[i], "opacity", this.opacity, this.animTime);
         }
-        await animateVal(objs.pop(), "opacity", this.opacity, this.animTime);
-        this._resFinish();
-        await this.finish();
+        if (objs[0])
+            await animateVal(objs.pop(), "opacity", this.opacity, this.animTime);
+        await this.finish(true);
     }
 }
 class BE_GlobalBubble extends BoardEvent {
@@ -1341,16 +1424,13 @@ class BE_GlobalBubble extends BoardEvent {
     async run(b) {
         this.start();
         await b.waitForBubble(this.comment, 0, -innerHeight / 5, true);
-        this._resFinish();
-        await this.finish();
+        await this.finish(true);
     }
 }
-class BE_CircleObj extends BoardEvent {
+class BE_CircleObj extends ObjRefBoardEvent {
     constructor(refs) {
-        super();
-        this.refs = refs;
+        super(refs);
     }
-    refs;
     async run(b) {
         this.start();
         let can = b.paint._can;
@@ -1358,8 +1438,8 @@ class BE_CircleObj extends BoardEvent {
         let objs = this.refs.unwrap(b);
         for (const o of objs) {
             let r = o.getRect().changeUnits(b.can.width, b.can.height, 1, 1);
-            let pad = b.getCharWidthInPX();
-            await b.addObj(new BO_Circle(r, pad, pad));
+            let pad = b.getCharWidthInPX() * 2;
+            await this.addObj(new BO_Circle(r, pad, pad), b);
         }
         if (false)
             for (const o of objs) {
@@ -1375,9 +1455,46 @@ class BE_CircleObj extends BoardEvent {
         await this.finish(true);
     }
 }
+class BE_RemoveObj extends ObjRefBoardEvent {
+    constructor(refs, fadeOut = true, fadeTime = 500) {
+        super(refs);
+        this.fadeOut = fadeOut;
+        this.fadeTime = fadeTime;
+    }
+    fadeOut;
+    fadeTime;
+    async run(b) {
+        this.start();
+        let objs = this.refs.unwrap(b);
+        for (let i = 0; i < objs.length - 1; i++) {
+            let o = objs[i];
+            if (this.fadeOut)
+                animateVal(o, "opacity", 0, this.fadeTime);
+        }
+        if (objs[0])
+            await animateVal(objs[objs.length - 1], "opacity", 0, this.fadeTime);
+        for (const o of objs) {
+            await b.removeObj(o);
+        }
+        await this.finish(true);
+    }
+}
+class BE_EndPonder extends BoardEvent {
+    async run(b) {
+        this.start();
+        await b.waitForBubble("Close Ponder Board...", 0, -b._rect.height / 2 + 36, true);
+        await b.exit();
+        await this.finish(true);
+        lesson.currentSubTask._resFinish();
+    }
+}
 async function animateVal(obj, key, newVal, animTime) {
     let val = obj[key];
     let dif = newVal - val;
+    if (dif == 0) {
+        obj[key] = newVal;
+        return;
+    }
     let inc = dif / animTime;
     if (inc > 0 && inc < 0.01)
         inc = 0.01;
@@ -1416,6 +1533,13 @@ class Board {
         this.ctx.font = this.fontSize + "px " + this.font;
     }
     events;
+    _pb;
+    async exit() {
+        if (!this._pb)
+            return;
+        closeBubble(this._pb); // ponder bubble
+        this._pb = null;
+    }
     /**
      * Unit: percent
      */
@@ -1442,6 +1566,10 @@ class Board {
         this.objs.push(o);
         o.b = this;
         await o.onAdd(this);
+    }
+    async removeObj(b) {
+        this.objs.splice(this.objs.indexOf(b), 1);
+        b.removeAllTags();
     }
     async replaceObj(from, to) {
         this.objs.splice(this.objs.indexOf(from), 1);
@@ -1523,6 +1651,7 @@ class Board {
         b.e.innerHTML = "";
         b.e.appendChild(cont);
         cont.appendChild(this.can);
+        this._pb = b;
     }
     hide() {
         this.isVisible = false;
@@ -1559,29 +1688,56 @@ class Lesson {
         addBannerPreviewBubble(this);
         this.board = new Board();
         this.board.events = [
-            new BE_AddCode("Let's take a closer look at this.", 0.5, 0.5, Anchor.CENTER, Anchor.CENTER, new TypeAnim([
-                ...parseCodeStr("<$buttonnamethisislong$>$         $<$/$but$>", [0, 2, 0, 3, 0, 3, 2, 0], "$", (i, t) => {
+            // "Let's take a closer look at this."
+            new BE_AddCode(null, 0.5, 0.5, Anchor.CENTER, Anchor.CENTER, new TypeAnim([
+                ...parseCodeStr("<$button$>$         $<$/$button$>", [0, 2, 0, 3, 0, 3, 2, 0], "$", (i, t) => {
                     t.obj.addTag([
                         "<>",
-                        "tagName",
+                        "tagName fullTag",
                         "<>",
                         "textContent",
                         "<>",
-                        "closingTag",
-                        "tagName",
+                        "closingTagMark fullTag",
+                        "tagName fullTag closingTagName",
                         "<>"
                     ][i]);
                 }),
                 new TA_Wait(500),
-                // new TA_Move(-18,0),
-                new TA_Move(-15, 0),
+                new TA_Move(-18, 0),
                 new TA_ReplaceText("textContent", "Click Me!", 3)
             ])).finalize(this.board),
-            new BE_GlobalBubble(`This line adds a button to the page with "Click Me!" as the button's text. Let's break down it's structure.`),
-            new BE_SetOpacity(new MultiBORef("textContent", "closingTag", "tagName"), 0.1, 500),
-            // new BE_Wait(500),
-            new BE_CircleObj(new MultiBORef("tagName"))
+            new BE_GlobalBubble(`This line adds a button to the page with "Click Me!" as the button's text.\nLet's break down it's structure.`),
+            new BE_SetOpacity(["textContent", "fullTag"], 0, 500),
+            new BE_Wait(300),
+            new BE_CircleObj(new MultiBORef("tagName").with((o, i) => {
+                if (i == 1)
+                    o.extraPad.l = this.board.getCharWidthInPX();
+            })).applyToObjs(o => {
+                console.log("AFTER APPLY", o);
+                o.addTag("<>_circle");
+            }),
+            new BE_GlobalBubble(`Notice, we have two groups here.\nTwo sets of "< >"\nThese symbols are called angle brackets.\n`),
+            new BE_GlobalBubble(`i[NOTE: This is similar to how you would call $$SB as square brackets, { } as curly braces, and ( ) as parenthesis.]\nAngle Brackets are just grouping symbols like: < some text >`),
+            new BE_GlobalBubble(`So what are they even grouping here?`),
+            new BE_RemoveObj(["<>_circle"]),
+            new BE_SetOpacity(new MultiBORef("fullTag"), 1),
+            new BE_GlobalBubble(`In HTML, we use angle brackets to specify what type of element we want in our page.\nFor example, a button!`),
+            // vvv - use underline target bubble?
+            new BE_GlobalBubble(`Did you notice something special about the second group of angle brackets?\nLet's hide the tag names.`),
+            new BE_SetOpacity(new MultiBORef("tagName"), 0),
+            new BE_Wait(500),
+            new BE_CircleObj(["closingTagMark"]).applyToObjs(o => o.addTag("circle")),
+            // new BE_GlobalBubble(`Most elements in HTML need an "opening tag" and a "closing tag".\nThe opening tag is just the tag name (button) surrounded by angle brackets.\nThe closing tag is the same thing but there's a / (slash) just before the tag name.`),
+            new BE_GlobalBubble(`Elements need an "opening" and "closing" tag.\nWe can use a / slash in the closing tag to say we're done creating the element.`),
+            new BE_RemoveObj(["circle"]),
+            new BE_SetOpacity(["tagName"], 1),
+            new BE_Wait(250),
+            new BE_GlobalBubble(`So what goes in the middle?`),
+            new BE_SetOpacity(["textContent"], 1),
+            // vvv - use underline target bubble?
+            new BE_GlobalBubble("Anything in between the opening and closing tag of the element will be used as text!")
         ];
+        this.board.events.push(new BE_EndPonder());
         if (false)
             this.board.events = [
                 new BE_AddText("Hello there!", [
@@ -1731,56 +1887,6 @@ async function fakeClickButton(e) {
     e.classList.remove("f-hover");
     await wait(150);
 }
-var EditorType;
-(function (EditorType) {
-    EditorType[EditorType["none"] = 0] = "none";
-    EditorType[EditorType["self"] = 1] = "self";
-    EditorType[EditorType["tutor"] = 2] = "tutor";
-})(EditorType || (EditorType = {}));
-function setupEditor(parent, type) {
-    let d_files = document.createElement("div");
-    d_files.className = "d-open-files pane";
-    let contJs = document.createElement("div");
-    contJs.className = "cont-js cont pane";
-    parent.appendChild(d_files);
-    parent.appendChild(contJs);
-    let add_file = document.createElement("button");
-    add_file.className = "b-add-file";
-    add_file.innerHTML = "<div class='material-symbols-outlined'>add</div>";
-    d_files.appendChild(add_file);
-    if (type != EditorType.none) {
-        let label = document.createElement("div");
-        label.innerHTML = `<div class="material-symbols-outlined">menu</div><div>${(type == EditorType.tutor ? "TUTOR" : "YOU")}</div>`;
-        // label.textContent = (type == EditorType.tutor ? "Tutor's Code" : "Your Code");
-        label.className = (type == EditorType.tutor ? "editor-type-tutor" : "editor-type-self");
-        d_files.appendChild(label);
-    }
-}
-function postSetupEditor(project) {
-    let parent = project.parent;
-    project.d_files = parent.querySelector(".d-open-files");
-    project.codeCont = parent.querySelector(".cont-js");
-    console.log("completed post setup");
-    // project.createFile("test.html",`<p>Hello</p>`,"html");
-    // project.files[0].open();
-    // project.createFile("main.js",`console.log("hello");\nconsole.log("hello");\nconsole.log("hello");\nconsole.log("hello");`,"javascript");
-    // project.files[1].open();
-    let add_file = parent.querySelector(".b-add-file");
-    add_file.addEventListener("click", e => {
-        if (project.isTutor) {
-            alert("Sorry! You can't add files to the tutor's project!");
-            return;
-        }
-        let name = prompt("Enter file name:", "index.html");
-        if (!name)
-            return;
-        project.createFile(name, "");
-    });
-    // loadEditorTheme();
-    // project.files[0].d_files;
-    // project.files[0].codeCont;
-    // project.files[0].bubbles_ov;
-}
 class PromptLoginMenu extends Menu {
     constructor() {
         super("You Are Not Logged In", "");
@@ -1848,7 +1954,6 @@ async function initLessonPage() {
             "Hello!",
             "In order to do anything, we first need to create an HTML document."
         ], BubbleLoc.global, [
-            new PonderBoardTask("HTML Structure"),
             new AddFileTask("index.html", false)
         ]),
         new LE_AddGBubble([
@@ -1864,6 +1969,7 @@ async function initLessonPage() {
             // new AddGenericCodeTask("<button>\x05\x05Click Me!\x05\x05</button>\x05\x01\x01\x05","html"),
             new AddGenericCodeTask("<button>Click Me!</button>", "html"),
             new DoRefreshTask("Refresh the preview to see how it looks.", "Refresh the preview"),
+            new PonderBoardTask("Alright, let's look a little closer at this."),
             new AddTutorSideText("\n\n", "Add some space"),
             new AddGenericCodeTask(`<button>Click</button>
 
@@ -1965,17 +2071,30 @@ var BubbleLoc;
     BubbleLoc[BubbleLoc["xy"] = 4] = "xy";
 })(BubbleLoc || (BubbleLoc = {}));
 function formatBubbleText(text, ops) {
+    // while(text.includes("[") && text[text.indexOf("[")-1] != "0"){
     while (text.includes("[")) {
         let ind = text.indexOf("[");
         let id = text[ind - 1];
         let str = `<span class="l-${id}">`;
+        if (id == "0")
+            str = "[]" + str;
         text = text.replace(id + "[", str); // replaces just the first instance which is where we're at
+        let cnt = 0;
+        for (let i = 0; i < text.length; i++) {
+            if (text[i] == "[")
+                if (text[i - 1] != "0")
+                    cnt++;
+        }
+        if (cnt == 0)
+            break;
     }
     text = text.replaceAll("]", "</span>");
     if (ops) {
         if (ops.click)
             text += "<div class='material-symbols-outlined click-bubble-indicator'>mouse</div>";
     }
+    text = text.replaceAll("\n", "<br><br>");
+    text = text.replaceAll("$$SB", "[ ]");
     return text;
 }
 function addBubbleAt(loc, text, dir, ops) {
@@ -2243,6 +2362,8 @@ document.addEventListener("keydown", async (e) => {
     if (!e.key)
         return;
     let k = e.key.toLowerCase();
+    if (e.shiftKey && e.ctrlKey)
+        g_waitDelayScale = 0;
     if (menusOpen.length) {
         if (k == "escape") {
             closeAllMenus();
@@ -2263,6 +2384,12 @@ document.addEventListener("keydown", async (e) => {
             d_currentTasks.classList.toggle("closed");
         }
     }
+});
+document.addEventListener("keyup", e => {
+    if (!e.key)
+        return;
+    let k = e.key.toLowerCase();
+    g_waitDelayScale = 1;
 });
 setTimeout(() => {
     iframe.addEventListener("keydown", e => {

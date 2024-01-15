@@ -1,8 +1,8 @@
 // learn to code or something, it's really up to you, you have to put in the work
 
-d_files = document.querySelector(".d-open-files");
+// d_files = document.querySelector(".d-open-files");
 main = document.querySelector(".main") as HTMLElement;
-codeCont = document.querySelector(".cont-js");
+// codeCont = document.querySelector(".cont-js");
 
 pane_files = document.querySelector(".pane-files") as HTMLElement;
 pane_code = document.querySelector(".pane-code") as HTMLElement;
@@ -20,7 +20,10 @@ async function init(){
         });
     });
 
-    project = new Project("Test Project");
+    project = new Project("Test Project",pane_code);
+    setupEditor(pane_code,EditorType.self);
+    postSetupEditor(project);
+
     project.createFile("index.html",`<html>
     <head>
         <link rel="stylesheet" href="style.css">
@@ -62,7 +65,28 @@ onResize();
 b_refresh = document.querySelector(".b-refresh") as HTMLButtonElement;
 icon_refresh = document.querySelector(".icon-refresh") as HTMLElement;
 iframe = document.querySelector("iframe") as HTMLIFrameElement;
-b_refresh.addEventListener("click",e=>{
+
+// needs to be unified later
+if(false) b_refresh.addEventListener("click",async e=>{
+    await uploadLessonFiles(lesson);
+    
+    let file1 = lesson.p.files.find(v=>v.name == "index.html");
+    if(!file1){
+        alert("No index.html file found! Please create a new file called index.html, this file will be used in the preview.");
+        return;
+    }
+    iframe.src = serverURL+"/lesson/"+g_user.sanitized_email+"/"+socket.id+"/"+g_user.sanitized_email+"/tmp_lesson";
+
+    icon_refresh.style.rotate = _icRef_state ? "360deg" : "0deg";
+    _icRef_state = !_icRef_state;
+    
+    resolveHook(listenHooks.refresh,null);
+    
+    return;
+});
+else b_refresh.addEventListener("click",e=>{
+    if(!project.files[0]) return;
+    
     let newIF = document.createElement("iframe");
     iframe.replaceWith(newIF);
     iframe = newIF;
@@ -149,3 +173,8 @@ s_loader.onload = function(){
 //         logUserIn();
 //     }
 // });
+
+// 
+
+// @ts-ignore
+function updateBubbles(){}
