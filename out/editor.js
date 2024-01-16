@@ -1,3 +1,4 @@
+PAGE_ID = PAGEID.editor;
 // learn to code or something, it's really up to you, you have to put in the work
 // d_files = document.querySelector(".d-open-files");
 main = document.querySelector(".main");
@@ -16,9 +17,16 @@ async function init() {
         });
     });
     project = new Project("Test Project", pane_code);
+    let pid = new URL(location.href).searchParams.get("pid");
+    project.pid = pid;
+    console.log("FOUND PID: ", pid);
     setupEditor(pane_code, EditorType.self);
     postSetupEditor(project);
-    project.createFile("index.html", `<html>
+    d_curProject.textContent = project.title;
+    await restoreProjectFiles(project);
+    if (project.files.length == 0) { // create boilerplate files
+        console.warn(":: no files found, loading boilerplate");
+        project.createFile("index.html", `<html>
     <head>
         <link rel="stylesheet" href="style.css">
     </head>
@@ -28,13 +36,17 @@ async function init() {
         <script src="script.js"></script>
     </body>
 </html>`, "html");
-    project.createFile("style.css", `body{
+        project.createFile("style.css", `body{
     color:royalblue;
 }`, "css");
-    project.createFile("script.js", `console.log("page loaded!");`, "javascript");
-    project.files[0].open();
-    project.files[1].open();
-    project.files[2].open();
+        project.createFile("script.js", `console.log("page loaded!");`, "javascript");
+        project.files[0].open();
+        project.files[1].open();
+        project.files[2].open();
+    }
+    else
+        project.hasSavedOnce = true;
+    project.files.forEach(v => v.setSaved(true));
     onResize(true);
 }
 onResize = function (isFirst = false, who) {
@@ -55,20 +67,49 @@ onResize();
 b_refresh = document.querySelector(".b-refresh");
 icon_refresh = document.querySelector(".icon-refresh");
 iframe = document.querySelector("iframe");
+let b_openInNew = document.querySelector(".b-open-in-new");
+b_openInNew.addEventListener("click", e => {
+    console.log(iframe.src);
+    // open(iframe.src,"_blank");
+});
 // needs to be unified later
-if (false)
-    b_refresh.addEventListener("click", async (e) => {
-        await uploadLessonFiles(lesson);
-        let file1 = lesson.p.files.find(v => v.name == "index.html");
-        if (!file1) {
-            alert("No index.html file found! Please create a new file called index.html, this file will be used in the preview.");
-            return;
-        }
-        iframe.src = serverURL + "/lesson/" + g_user.sanitized_email + "/" + socket.id + "/" + g_user.sanitized_email + "/tmp_lesson";
-        icon_refresh.style.rotate = _icRef_state ? "360deg" : "0deg";
-        _icRef_state = !_icRef_state;
-        resolveHook(listenHooks.refresh, null);
+async function refresh() {
+    // tmp
+    // if(project.files.some(v=>!v._saved)) await uploadProjectFiles(project);
+    if (project.files.some(v => !v._saved) || !project.hasSavedOnce)
+        await save(true);
+    let file1 = project.files.find(v => v.name == "index.html");
+    if (!file1) {
+        alert("No index.html file found! Please create a new file called index.html, this file will be used in the preview.");
         return;
+    }
+    // iframe.contentWindow.onloadstart = function(){
+    //     console.log(":: START");
+    // };
+    // iframe.contentWindow.onloadedmetadata = function(){
+    //     console.log(":: META");
+    // };
+    // iframe.contentWindow.onloadeddata = function(){
+    //     console.log(":: DATA");
+    // };
+    // iframe.contentWindow.onload = function(){
+    //     console.log(":: LOAD");
+    // };
+    iframe.src = serverURL + "/project/" + g_user.sanitized_email + "/" + socket.id + "/" + g_user.sanitized_email + "/" + project.pid;
+    // let cs = (iframe.contentWindow as any).console as Console;
+    // cs.log = function(...data:any[]){
+    //     console.log("BOB");
+    //     // console.log("(LOG)",...data);
+    //     // cs.log(...data);
+    // };
+    // console.log(cs);
+    icon_refresh.style.rotate = _icRef_state ? "360deg" : "0deg";
+    _icRef_state = !_icRef_state;
+    resolveHook(listenHooks.refresh, null);
+}
+if (true)
+    b_refresh.addEventListener("click", e => {
+        refresh();
     });
 else
     b_refresh.addEventListener("click", e => {
@@ -128,18 +169,19 @@ document.addEventListener("keydown", e => {
     }
     if (e.ctrlKey) {
         if (k == "r") {
-            // e.preventDefault();
-            // b_refresh.click();
+            e.preventDefault();
+            refresh();
         }
         else if (k == "s") {
             e.preventDefault();
-            b_refresh.click();
+            save();
         }
     }
 });
 let s_loader = document.getElementById("s-loader");
-s_loader.onload = function () {
+s_loader.onload = async function () {
     console.log("loaded loader");
+    await loginProm;
     init();
 };
 // document.addEventListener("DOMContentLoaded",async e=>{
@@ -151,4 +193,78 @@ s_loader.onload = function () {
 // 
 // @ts-ignore
 function updateBubbles() { }
+// Editor Dashboard
+class ProjectDashboard extends Menu {
+    constructor() {
+        super("Project Dashboard", "home");
+    }
+    load(priority) {
+        super.load(priority);
+        this.body.innerHTML = `
+            <div>Hi there!</div>
+        `;
+    }
+}
+let b_editorDashboard = document.querySelector(".b-editor-dashboard");
+let d_curProject = document.querySelector(".d-current-project");
+let b_save = document.querySelector(".b-save");
+let projDash = new ProjectDashboard();
+b_editorDashboard.addEventListener("click", e => {
+    projDash.load();
+});
+d_curProject.addEventListener("click", e => {
+    openCurProjSettings();
+});
+let _isSaving = false;
+async function save(isQuick = false) {
+    if (_isSaving)
+        return;
+    _isSaving = true;
+    b_save.children[0].textContent = "progress_activity";
+    b_save.children[0].classList.add("progress-anim");
+    let start = performance.now();
+    await uploadProjectFiles(project);
+    let time = performance.now() - start;
+    let delay = 0;
+    if (!isQuick) {
+        if (time < 50)
+            delay = 300;
+        await wait(delay);
+    }
+    b_save.children[0].textContent = "save";
+    b_save.children[0].classList.remove("progress-anim");
+    _isSaving = false;
+    project.hasSavedOnce = true;
+    project.files.forEach(v => v.setSaved(true));
+}
+b_save.addEventListener("click", e => {
+    save();
+});
+function openCurProjSettings() {
+    let div = document.createElement("div");
+    div.className = "proj-settings";
+    div.innerHTML = `
+        <div>
+            <div>Rename</div>
+            <input class="i-rename">
+        </div>
+        <div>
+            <div>Is public?</div>
+            <input type="checkbox">
+        </div>
+    `;
+    div.onmouseenter = function () {
+        isOverTmpMenu = true;
+    };
+    div.onmouseleave = function () {
+        isOverTmpMenu = false;
+    };
+    tmpMenus.push(div);
+    let rect = d_curProject.getBoundingClientRect();
+    div.style.left = (rect.x) + "px";
+    div.style.top = (rect.bottom + 3) + "px";
+    document.body.appendChild(div);
+    let i_rename = div.querySelector(".i-rename");
+    i_rename.value = project.title;
+}
 //# sourceMappingURL=editor.js.map

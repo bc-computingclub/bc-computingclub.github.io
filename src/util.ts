@@ -434,16 +434,32 @@ function logUserIn(data?:CredentialResData,token?:string){
 
 // Gen Header
 let d_lesson_confirm:HTMLElement;
-function genHeader(i:number,isCompact=true){
+function genHeader(i:number,isCompact=true,id:string){
     let navCont = document.createElement("div");
+    let noLogo = false;
+    if(id == "editor"){
+        noLogo = true;
+    }
     navCont.className = "nav-container";
     navCont.innerHTML = `
-        <div class="logo">
-            <a href="/index.html">
-                <img src="/images/error.png" alt="Code Challenge Logo" class="logo-thumbnail">
-                <!-- Insert placeholder logo here -->
-            </a>
+        ${!noLogo?`<div class="logo">
+        <a href="/index.html">
+            <img src="/images/error.png" alt="Code Challenge Logo" class="logo-thumbnail">
+            <!-- Insert placeholder logo here -->
+        </a>
+        </div>`:id=="editor"?`
+        <div class="editor-menu-bar">
+            <div class="b-editor-dashboard icon-div"><div class="material-symbols-outlined">home</div></div>
+            <!--<div>File</div>
+            <div>Edit</div>
+            <div>View</div>-->
         </div>
+        <div class="cur-project-controls">
+            <div class="d-current-project">New Project 1</div>
+            <div class="b-save icon-div"><div class="material-symbols-outlined">save</div></div>
+            <div class="icon-div hide"><div class="material-symbols-outlined">play_arrow</div></div>
+        </div>
+        `:""}
         <div class="d-lesson-confirm none">
             <div>Press "I'm Done" to let the Tutor know when you're done with this step.</div>
             <button class="b-im-done icon-btn">
@@ -513,6 +529,7 @@ class Project{
         this.readonly = settings.readonly || false;
         this.disableCopy = settings.disableCopy || false;
     }
+    pid:string;
     title:string;
     files:FFile[];
     openFiles:FFile[];
@@ -524,6 +541,8 @@ class Project{
 
     readonly = false;
     disableCopy = false;
+
+    hasSavedOnce = false;
 
     createFile(name:string,text:string,lang?:string){
         let res = resolveHook(listenHooks.addFile,name);
@@ -539,6 +558,7 @@ class Project{
         let f = new FFile(this,name,text,lang);
         this.files.push(f);
         f.open();
+        f.setSaved(true);
         return f;
     }
 
@@ -579,6 +599,7 @@ class FFile{
     name:string;
     text:string;
     lang:string;
+    path = "";
 
     link:HTMLElement;
     cont:HTMLElement;
@@ -598,6 +619,14 @@ class FFile{
     curI = 0;
     _mouseOver = false;
     blockPosChange = true;
+
+    _lastSavedText:string;
+    _saved = true;
+    setSaved(v:boolean,noChange=false){
+        this._saved = v;
+        this.link.textContent = this.name+(v?"":"*");
+        if(!noChange) this._lastSavedText = this.editor.getValue();
+    }
 
     type(lineno:number,colno:number,text:string){
         // let v = this.editor.getValue({lineEnding:"lf",preserveBOM:true});
@@ -654,6 +683,12 @@ class FFile{
                 contextmenu:!this.p.isTutor,
                 readOnly:this.p.isTutor
                 // cursorSmoothCaretAnimation:"on"
+            });
+            editor.onDidContentSizeChange(e=>{
+                if(!this._saved) return;
+                let v = editor.getValue();
+                if(this._lastSavedText != v) this.setSaved(false);
+                // else this.setSaved(true,true);
             });
             if(this.p.readonly){
                 editor.onDidFocusEditorText(e=>{
@@ -870,3 +905,25 @@ function postSetupEditor(project:Project){
     // project.files[0].codeCont;
     // project.files[0].bubbles_ov;
 }
+
+// PAGE ID
+enum PAGEID{
+    none,
+    editor,
+    lesson
+}
+let PAGE_ID = PAGEID.none;
+
+// 
+let tmpMenus:HTMLElement[] = [];
+let isOverTmpMenu = false;
+function closeTmpMenus(){
+    for(const c of tmpMenus){
+        c.parentElement.removeChild(c);
+    }
+    tmpMenus = [];
+    isOverTmpMenu = false;
+}
+document.addEventListener("mousedown",e=>{
+    if(!isOverTmpMenu) closeTmpMenus();
+});

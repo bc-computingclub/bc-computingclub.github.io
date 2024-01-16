@@ -117,8 +117,74 @@ connection_1.io.on("connection", socket => {
         let uid = user.sanitized_email;
         let path = "../lesson/" + uid + "/" + lessonId;
         if (!await access(path)) {
+            await mkdir(path);
+            // call(null);
+            // return;
+        }
+        let curFiles = await readdir(path);
+        let files = [];
+        for (const f of curFiles) {
+            files.push(new ULFile(f, await read(path + "/" + f, "utf8"), "", "utf8"));
+        }
+        call(files);
+    });
+    // editor
+    socket.on("uploadProjectFiles", async (pid, list, call) => {
+        if (!valVar(list, "object"))
+            return;
+        if (!valVar(pid, "string"))
+            return;
+        if (!valVar(call, "function"))
+            return;
+        let user = (0, connection_1.getUserBySock)(socket.id);
+        if (!user)
+            return;
+        // need to validate type integrity here
+        console.log("uploading...");
+        let uid = user.sanitized_email;
+        let path = "../project/" + uid + "/" + pid;
+        if (!await access(path))
+            await mkdir(path);
+        let curFiles = await readdir(path);
+        if (!curFiles)
+            return;
+        curFiles = curFiles.filter(v => !list.some(w => w.name == v));
+        for (const f of curFiles) {
+            console.log("...removing file:", path + "/" + f);
+            await removeFile(path + "/" + f);
+        }
+        for (const f of list) {
+            console.log("...writing file:", path + "/" + f.name, f.enc);
+            await write(path + "/" + f.name, f.val, f.enc);
+        }
+        // todo - cache file values so if they're the same then they don't need to be reuploaded, or do this on the client maybe to speed it up
+        console.log(":: done uploading");
+        call();
+    });
+    socket.on("restoreProjectFiles", async (pid, call) => {
+        if (!valVar(pid, "string")) {
+            console.log("Err: pid incorrect format");
             call(null);
             return;
+        }
+        if (!valVar(call, "function")) {
+            console.log("Err: call incorrect format");
+            call(null);
+            return;
+        }
+        let user = (0, connection_1.getUserBySock)(socket.id);
+        if (!user) {
+            console.log("Err: could not find user");
+            call(null);
+            return;
+        }
+        console.log("restoring... from PID: ", pid);
+        let uid = user.sanitized_email;
+        let path = "../project/" + uid + "/" + pid;
+        if (!await access(path)) {
+            await mkdir(path);
+            // call(null);
+            // return;
         }
         let curFiles = await readdir(path);
         let files = [];

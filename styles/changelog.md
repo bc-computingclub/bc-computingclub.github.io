@@ -75,3 +75,9 @@
 ### 1/14/24 - Claeb
 - major work done on Ponder Board, most of the essential core functionality is complete and some feature classes have been added but more to come later like underlining and object target bubbles
 - fixed editor page (still need to unify the rest of editor setup including refreshing, editor still only uses the simple frame system without the server)
+
+### 1/15/24
+- fixed Experiment editor's preview to use server hosted method
+    - need to make save indicator and keep track of when changes are made, that way refresh simply refreshes the iframe and doesn't have to reupload every time
+- fixed editor page so init waits until logged in
+- LOTS more added need to check commit, bug fixes, start of multi project and create project support on server side, changed header for editor, save button for editor, started adding rename menu to cur project editor, saving and refreshing somewhat indep now, refreshing causes a save when needed, editing files makes a star on them so when refresh with this it will save, added manual save button, probably more cant remember

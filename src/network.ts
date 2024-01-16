@@ -96,3 +96,31 @@ async function restoreLessonFiles(lesson:Lesson){
         lesson.p.createFile(f.name,f.val);
     }
 }
+// 
+function uploadProjectFiles(project:Project){ // for refresh
+    let list:ULFile[] = [];
+    for(const f of project.files){
+        list.push(new ULFile(f.name,f.editor.getValue(),"","utf8"));
+    }
+    return new Promise<void>(resolve=>{
+        socket.emit("uploadProjectFiles",project.pid||"tmp_project",list,(err:any)=>{
+            if(err) console.log("ERR while uploading files:",err);
+            resolve();
+        });
+    });
+}
+async function restoreProjectFiles(project:Project){
+    let files = await new Promise<ULFile[]>(resolve=>{
+        socket.emit("restoreProjectFiles",project.pid||"tmp_project",(files:ULFile[])=>{
+            if(!files){
+                console.log("ERR while restoring files");
+                resolve([]);
+                return;
+            }
+            resolve(files);
+        });
+    });
+    for(const f of files){
+        project.createFile(f.name,f.val);
+    }
+}

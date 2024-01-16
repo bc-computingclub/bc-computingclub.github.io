@@ -694,3 +694,11 @@ code{
 .editor-type-self{
     --c:var(--cta-btn-col);
 }
+
+/*  */
+
+.icon-div{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+}

@@ -88,4 +88,33 @@ async function restoreLessonFiles(lesson) {
         lesson.p.createFile(f.name, f.val);
     }
 }
+// 
+function uploadProjectFiles(project) {
+    let list = [];
+    for (const f of project.files) {
+        list.push(new ULFile(f.name, f.editor.getValue(), "", "utf8"));
+    }
+    return new Promise(resolve => {
+        socket.emit("uploadProjectFiles", project.pid || "tmp_project", list, (err) => {
+            if (err)
+                console.log("ERR while uploading files:", err);
+            resolve();
+        });
+    });
+}
+async function restoreProjectFiles(project) {
+    let files = await new Promise(resolve => {
+        socket.emit("restoreProjectFiles", project.pid || "tmp_project", (files) => {
+            if (!files) {
+                console.log("ERR while restoring files");
+                resolve([]);
+                return;
+            }
+            resolve(files);
+        });
+    });
+    for (const f of files) {
+        project.createFile(f.name, f.val);
+    }
+}
 //# sourceMappingURL=network.js.map

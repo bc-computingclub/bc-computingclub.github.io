@@ -52,3 +52,120 @@ body{
     filter:brightness(1.5);
     --c:var(--cta-btn-col);
 }
+
+.editor-menu-bar{
+    display:flex;
+    align-items:center;
+    gap:4px;
+}
+.editor-menu-bar > div{
+    padding:7px 12px;
+    font-size:14px;
+    user-select:none;
+    -webkit-user-select:none;
+    border-radius:3px;
+    filter:brightness(0.85);
+}
+.editor-menu-bar > div.icon-div,
+
+.cur-project-controls > div.icon-div{
+    padding:5px;
+    margin:0px 10px;
+    filter:none;
+}
+.editor-menu-bar > div:hover{
+    background-color:var(--darken);
+}
+div.b-editor-dashboard{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    background-color:var(--darken2);
+}
+div.b-editor-dashboard .material-symbols-outlined{
+    font-size:24px;
+}
+.d-current-project{
+    border:solid 1px var(--darken0);
+    background-color:var(--darken2);
+    /* margin-right:10px; */
+    cursor:pointer;
+}
+.cur-project-controls{
+    display:flex;
+    align-items:center;
+    /* margin-left:auto; */
+    height:100%;
+    gap:5px;
+}
+.cur-project-controls > div{
+    padding:7px 12px;
+    font-size:14px;
+    user-select:none;
+    -webkit-user-select:none;
+    border-radius:3px;
+    filter:brightness(0.85);
+}
+.cur-project-controls > div.icon-div{
+    padding:5px;
+    filter:none;
+}
+.cur-project-controls > div:hover{
+    background-color:var(--darken);
+    filter:none;
+}
+
+.nav-container{
+    display:flex;
+    justify-content:space-between;
+}
+
+/* Project Settings */
+.proj-settings{
+    position:absolute;
+    top:0px;
+    left:0px;
+    padding:10px;
+    background-color:black;
+    color:white;
+    z-index:6;
+    border:solid 1px var(--darken0);
+    border-radius:3px;
+    /* width:200px; */
+    font-size:14px;
+    filter:brightness(0.9);
+
+    display:flex;
+    flex-direction:column;
+    gap:5px;
+
+    animation:OpenProjSettings 0.15s ease-out;
+}
+.proj-settings > div{
+    display:flex;
+    align-items:center;
+    gap:10px;
+}
+@keyframes OpenProjSettings{
+    0%{
+        translate:0px -5px;
+        opacity:0;
+    }
+    100%{
+        translate:0px 0px;
+        opacity:1;
+    }
+}
+
+.progress-anim{
+    animation:ProgressAnim infinite 0.5s cubic-bezier(0.445, 0.05, 0.55, 0.95);
+    /* animation:ProgressAnim infinite 0.5s ease-in; */
+}
+@keyframes ProgressAnim {
+    0%{
+        rotate:0deg;
+    }
+    0%{
+        rotate:-360deg;
+    }
+}

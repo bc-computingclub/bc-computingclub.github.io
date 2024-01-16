@@ -54,6 +54,25 @@ function checkAuth(req:Request,res:Response,next:NextFunction){
     }
 }
 
+function genPID(){
+    return crypto.randomUUID();
+}
+class Project{
+    constructor(pid:string,name:string,ownerEmail:string){
+        this.pid = pid;
+        this.name = name;
+        this.ownerEmail = ownerEmail;
+    }
+    pid:string;
+    name:string;
+    ownerEmail:string;
+    _owner:User;
+    
+    getRefStr(){
+        return this.ownerEmail+":"+this.pid;
+    }
+}
+
 export interface CredentialResData{
     name:string;
     email:string;
@@ -85,6 +104,8 @@ export class User{
 
     private tokens:string[];
     private sockIds:string[];
+
+    projects:Project[];
 
     addToken(token:string){
         if(this.tokens.includes(token)) return;
@@ -144,9 +165,42 @@ export class User{
             if(err) console.log("Err while saving file: ",err);
         });
     }
+
+    // Projects
+    createProject(name:string){
+        let pid = genPID();
+        let p = new Project(pid,name,this.email);
+        p._owner = this;
+        this.projects.push(p);
+        loadProject(p);
+        return p;
+    }
 }
+class ProjRef{
+    constructor(email:string,pid:string){
+        this.email = email;
+        this.pid = pid;
+    }
+    email:string;
+    pid:string;
+    static parse(str:string){
+        let split = str.split(":");
+        let r = new ProjRef(split[0],split[1]);
+        return r;
+    }
+    getStr(){
+        return this.email+":"+this.pid;
+    }
+}
+
 export const users = new Map<string,User>();
 const socks = new Map<string,string>();
+const allProjects = new Map<string,Project>();
+
+// for indexing, need to make a deloadProject at some point
+function loadProject(p:Project){
+    allProjects.set(p.getRefStr(),p);
+}
 
 export function getUserBySock(sockId:string){
     let email = socks.get(sockId);
@@ -154,7 +208,7 @@ export function getUserBySock(sockId:string){
     return users.get(email);
 }
 
-app.use("/projects/:userId/:auth",(req,res,next)=>{
+app.use("/project/:userId/:auth",(req,res,next)=>{
     let p = req.params;
     if(!p) return;
     let user = users.get(p.userId);
@@ -163,13 +217,10 @@ app.use("/projects/:userId/:auth",(req,res,next)=>{
         res.send("User not found");
         return;
     }
-    if(!user.hasToken(p.auth)){
-        // console.log("Err: auth incorrect");
+    if(!user.getSocketIds().includes(p.auth)){
         res.send("Auth incorrect");
         return;
     }
-    // console.log("User: "+p.userId+" - successful");
-    // console.log("URL:",req.url,req.baseUrl,req.originalUrl);
     let arr = req.originalUrl.split("/");
     // console.log(arr,arr[4],p.userId);
     if(arr.at(4) != p.userId){
@@ -179,7 +230,7 @@ app.use("/projects/:userId/:auth",(req,res,next)=>{
     }
     next();
 
-},express.static("../projects/"));
+},express.static("../project/"));
 app.use("/lesson/:userId/:auth/",(req,res,next)=>{
     let p = req.params;
     if(!p) return;
@@ -205,5 +256,8 @@ app.use("/lesson/:userId/:auth/",(req,res,next)=>{
     next();
 
 },express.static("../lesson/"));
+
+// TEMPORARY FOR SAME ORIGIN STUFF
+app.use("/",express.static("../../"));
 
 export {Socket};

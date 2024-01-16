@@ -2369,6 +2369,7 @@ function addBannerPreviewBubble(lesson:Lesson){
 
 // addBubble(10,20);
 
+// @ts-ignore
 function updateBubbles(){
     for(let i = 0; i < bubbles.length; i++){
         updateBubble(i);
@@ -2517,7 +2518,7 @@ document.addEventListener("keydown",async e=>{
     }
 
     if(e.ctrlKey){
-        if(k == "r"){
+        if(k == "r" || "s"){
             e.preventDefault();
             b_refresh.click();
         }
@@ -2540,7 +2541,6 @@ document.addEventListener("keyup",e=>{
 
 setTimeout(()=>{
     iframe.addEventListener("keydown",e=>{
-        console.log("asd");
         e.preventDefault();
     });
 },3000);
