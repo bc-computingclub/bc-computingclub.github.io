@@ -5,8 +5,6 @@ const navLinkArr = Array.from(document.querySelectorAll<HTMLElement>(".link"));;
 let cardArray = getCardArray();
 let currentCard = cardArray[0];
 let isAnimating = false;
-let canCycle:boolean = true;
-let cardCycleDelay = 2000;
 
 function updateCurrentButton(targetButtonAttr:string) {
     let targetButton: HTMLElement;
@@ -30,7 +28,6 @@ function updateCurrentButton(targetButtonAttr:string) {
 
 let card : HTMLElement;
 cardContainer.addEventListener("click", (event) => {
-    canCycle = false;
     if(isAnimating) {
         return;
     }
@@ -60,40 +57,33 @@ function removeCard(card:HTMLElement) {
         cardContainer.append(tempCard);
         currentCard = cardArray[0];
         currentCard.classList.add("current-card");
-        toggleSwitching();
+        updateEventListeners();
         updateCurrentButton(currentCard.getAttribute("card-label"));
     });
 }
 
-let cycleTimeout; 
-
-function toggleSwitching() {
+let cycleTimeout;
+function updateEventListeners() {
     currentCard.addEventListener("mouseenter", () => {
-        canCycle = false;
-        clearTimeout(cycleTimeout); 
-        console.log("trying to stop the damn animation");
+        clearTimeout(cycleTimeout);
     });
-
     currentCard.addEventListener("mouseleave", () => {
-        canCycle = true;
-        cycleTimeout = setTimeout(cycleCards, 500); 
-        console.log("trying to start the damn animation");
+        clearTimeout(cycleTimeout);
+        cycleTimeout = setTimeout(cycleCards, 2000);
     });
 }
+
 
 function getCardArray() {
     return Array.from(document.querySelectorAll<HTMLElement>(".card"));
 }
 
 window.addEventListener("load", () => {
-    toggleSwitching();
-    cycleTimeout = setTimeout(cycleCards, 2000); 
+    updateEventListeners();
+    cycleTimeout = setTimeout(cycleCards, 2000);
 });
 
 function cycleCards() {
-    if (canCycle) {
-        removeCard(currentCard);
-        cardCycleDelay = 5000;
-        cycleTimeout = setTimeout(cycleCards, cardCycleDelay);
-    }
+    removeCard(currentCard);
+    cycleTimeout = setTimeout(cycleCards, 3000);
 }
