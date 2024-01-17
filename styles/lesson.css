@@ -263,11 +263,6 @@ hr{
     border-style:solid;
 }
 
-.nav-container{
-    display:flex;
-    justify-content:space-between;
-    align-items:center;
-}
 .b-confirm{
     margin-left:50%;
     transform:translateX(-50%);
@@ -296,6 +291,7 @@ hr{
     border-radius:3px;
     transition:opacity 0.5s ease-in;
     opacity:0;
+    margin-left:auto;
 }
 .b-im-done{
     margin-left:4px;
@@ -387,4 +383,12 @@ hr{
 .board-cont canvas{
     width:100%;
     border:solid 1px gray;
+}
+
+/* Current Project Controls - adjustments */
+.d-current-project{
+    display:none;
+}
+.cur-project-controls{
+    margin-left:0px;
 }

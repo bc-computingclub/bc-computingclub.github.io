@@ -702,3 +702,12 @@ code{
     align-items:center;
     justify-content:center;
 }
+
+input[type="text"]{
+    padding:4px;
+    font-size:13px;
+}
+input[type="checkbox"]{
+    width:18px;
+    height:18px;
+}

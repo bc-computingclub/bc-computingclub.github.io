@@ -32,7 +32,7 @@ connection_1.io.on("connection", socket => {
                 }
                 catch (e) { }
                 function newUser() {
-                    user = new connection_1.User(data.name, data.email, data.picture, data._joinDate, data._lastLoggedIn, socket.id);
+                    user = new connection_1.User(data.name, data.email, data.picture, data._joinDate, data._lastLoggedIn, socket.id, []);
                     user.joinDate = new Date().toISOString();
                     user.saveToFile();
                     wasNewUser = true;
@@ -49,7 +49,8 @@ connection_1.io.on("connection", socket => {
                         newUser();
                         return;
                     }
-                    user = new connection_1.User(fdata.name, fdata.email, fdata.picture, fdata._joinDate, fdata._lastLoggedIn, socket.id);
+                    user = new connection_1.User(fdata.name, fdata.email, fdata.picture, fdata._joinDate, fdata._lastLoggedIn, socket.id, fdata.pMeta);
+                    user.saveToFile();
                 }
                 connection_1.users.set(user.email, user);
             }
@@ -87,19 +88,19 @@ connection_1.io.on("connection", socket => {
         console.log("uploading...");
         let uid = user.sanitized_email;
         let path = "../lesson/" + uid + "/" + lessonId;
-        if (!await access(path))
-            await mkdir(path);
-        let curFiles = await readdir(path);
+        if (!await (0, connection_1.access)(path))
+            await (0, connection_1.mkdir)(path);
+        let curFiles = await (0, connection_1.readdir)(path);
         if (!curFiles)
             return;
         curFiles = curFiles.filter(v => !list.some(w => w.name == v));
         for (const f of curFiles) {
             console.log("...removing file:", path + "/" + f);
-            await removeFile(path + "/" + f);
+            await (0, connection_1.removeFile)(path + "/" + f);
         }
         for (const f of list) {
             console.log("...writing file:", path + "/" + f.name, f.enc);
-            await write(path + "/" + f.name, f.val, f.enc);
+            await (0, connection_1.write)(path + "/" + f.name, f.val, f.enc);
         }
         // todo - cache file values so if they're the same then they don't need to be reuploaded, or do this on the client maybe to speed it up
         console.log(":: done uploading");
@@ -116,15 +117,15 @@ connection_1.io.on("connection", socket => {
         console.log("restoring...");
         let uid = user.sanitized_email;
         let path = "../lesson/" + uid + "/" + lessonId;
-        if (!await access(path)) {
-            await mkdir(path);
+        if (!await (0, connection_1.access)(path)) {
+            await (0, connection_1.mkdir)(path);
             // call(null);
             // return;
         }
-        let curFiles = await readdir(path);
+        let curFiles = await (0, connection_1.readdir)(path);
         let files = [];
         for (const f of curFiles) {
-            files.push(new ULFile(f, await read(path + "/" + f, "utf8"), "", "utf8"));
+            files.push(new connection_1.ULFile(f, await (0, connection_1.read)(path + "/" + f, "utf8"), "", "utf8"));
         }
         call(files);
     });
@@ -143,19 +144,24 @@ connection_1.io.on("connection", socket => {
         console.log("uploading...");
         let uid = user.sanitized_email;
         let path = "../project/" + uid + "/" + pid;
-        if (!await access(path))
-            await mkdir(path);
-        let curFiles = await readdir(path);
+        if (!await (0, connection_1.access)(path))
+            await (0, connection_1.mkdir)(path);
+        let curFiles = await (0, connection_1.readdir)(path);
         if (!curFiles)
             return;
         curFiles = curFiles.filter(v => !list.some(w => w.name == v));
         for (const f of curFiles) {
             console.log("...removing file:", path + "/" + f);
-            await removeFile(path + "/" + f);
+            await (0, connection_1.removeFile)(path + "/" + f);
         }
         for (const f of list) {
             console.log("...writing file:", path + "/" + f.name, f.enc);
-            await write(path + "/" + f.name, f.val, f.enc);
+            await (0, connection_1.write)(path + "/" + f.name, f.val, f.enc);
+        }
+        let p = user.projects.find(v => v.pid == pid);
+        for (const f of list) {
+            let ff = p.files.find(v => v.name == f.name);
+            ff.val = f.val;
         }
         // todo - cache file values so if they're the same then they don't need to be reuploaded, or do this on the client maybe to speed it up
         console.log(":: done uploading");
@@ -179,105 +185,24 @@ connection_1.io.on("connection", socket => {
             return;
         }
         console.log("restoring... from PID: ", pid);
+        let p = await (0, connection_1.attemptToGetProject)(user, pid);
+        call(p?.files);
+        return;
         let uid = user.sanitized_email;
         let path = "../project/" + uid + "/" + pid;
-        if (!await access(path)) {
-            await mkdir(path);
-            // call(null);
-            // return;
+        if (!await (0, connection_1.access)(path)) {
+            // await mkdir(path);
+            call(null);
+            return;
         }
-        let curFiles = await readdir(path);
+        let curFiles = await (0, connection_1.readdir)(path);
         let files = [];
         for (const f of curFiles) {
-            files.push(new ULFile(f, await read(path + "/" + f, "utf8"), "", "utf8"));
+            files.push(new connection_1.ULFile(f, await (0, connection_1.read)(path + "/" + f, "utf8"), "", "utf8"));
         }
         call(files);
     });
 });
-function access(path) {
-    return new Promise(resolve => {
-        fs_1.default.access(path, err => {
-            if (err) {
-                console.log("err: ", err);
-                resolve(false);
-            }
-            else
-                resolve(true);
-        });
-    });
-}
-function write(path, data, encoding) {
-    return new Promise(resolve => {
-        fs_1.default.writeFile(path, data, { encoding }, err => {
-            if (err) {
-                console.log("err: ", err);
-                resolve(false);
-            }
-            else
-                resolve(true);
-        });
-    });
-}
-function read(path, encoding) {
-    return new Promise(resolve => {
-        fs_1.default.readFile(path, { encoding }, (err, data) => {
-            if (err) {
-                console.log("err: ", err);
-                resolve(null);
-            }
-            else
-                resolve(data);
-        });
-    });
-}
-function removeFile(path) {
-    return new Promise(resolve => {
-        fs_1.default.rm(path, err => {
-            if (err) {
-                console.log("err: ", err);
-                resolve(false);
-            }
-            else
-                resolve(true);
-        });
-    });
-}
-function mkdir(path, encoding) {
-    return new Promise(resolve => {
-        fs_1.default.mkdir(path, { recursive: true }, err => {
-            if (err) {
-                console.log("err: ", err);
-                resolve(false);
-            }
-            else
-                resolve(true);
-        });
-    });
-}
-function readdir(path) {
-    return new Promise(resolve => {
-        fs_1.default.readdir(path, (err, files) => {
-            if (err) {
-                console.log("err: ", err);
-                resolve(null);
-            }
-            else
-                resolve(files);
-        });
-    });
-}
-class ULFile {
-    constructor(name, val, path, enc) {
-        this.name = name;
-        this.val = val;
-        this.path = path;
-        this.enc = enc;
-    }
-    name;
-    val;
-    path;
-    enc;
-}
 connection_1.server.listen(3000, () => {
     console.log('listening on *:3000');
 });

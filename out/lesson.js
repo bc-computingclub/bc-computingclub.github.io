@@ -1,3 +1,4 @@
+PAGE_ID = PAGEID.lesson;
 const d_currentTasks = document.querySelector(".d-current-tasks");
 const d_task = document.querySelector(".d-task");
 const d_subTasks = document.querySelector(".d-sub-tasks");
@@ -1658,13 +1659,15 @@ class Board {
     }
 }
 class Lesson {
-    constructor(title, parent, tutParent) {
+    constructor(lid, title, parent, tutParent) {
+        this.lid = lid;
         this.p = new Project(title, parent);
         this.tut = new Project("tut_" + title, tutParent, {
             readonly: true,
             disableCopy: true
         });
     }
+    lid;
     events;
     p;
     tut;
@@ -1926,7 +1929,7 @@ async function initLessonPage() {
             resolve();
         });
     });
-    lesson = new Lesson("Lesson 01", pane_code, pane_tutor_code);
+    lesson = new Lesson("0001", "Lesson 01", pane_code, pane_tutor_code);
     lesson.bannerSection = new TextArea([
         new TextSection("What Will We Be Doing in This Lesson?", [
             "Want to start coding?",
@@ -2294,22 +2297,24 @@ function updateBubble(i) {
     b.e.style.top = y + "px";
 }
 // refresh system
-b_refresh = document.querySelector(".b-refresh");
+// b_refresh = document.querySelector(".b-refresh") as HTMLButtonElement;
 icon_refresh = document.querySelector(".icon-refresh");
 iframe = document.querySelector("iframe");
 // let _icRef_state = true;
-b_refresh.addEventListener("click", async (e) => {
-    await uploadLessonFiles(lesson);
-    let file1 = lesson.p.files.find(v => v.name == "index.html");
-    if (!file1) {
-        alert("No index.html file found! Please create a new file called index.html, this file will be used in the preview.");
-        return;
-    }
-    iframe.src = serverURL + "/lesson/" + g_user.sanitized_email + "/" + socket.id + "/" + g_user.sanitized_email + "/tmp_lesson";
-    icon_refresh.style.rotate = _icRef_state ? "360deg" : "0deg";
-    _icRef_state = !_icRef_state;
-    resolveHook(listenHooks.refresh, null);
-    return;
+// b_refresh.addEventListener("click",async e=>{
+function ___oldRefresh() {
+    // refreshLesson();
+    // await uploadLessonFiles(lesson);
+    // let file1 = lesson.p.files.find(v=>v.name == "index.html");
+    // if(!file1){
+    //     alert("No index.html file found! Please create a new file called index.html, this file will be used in the preview.");
+    //     return;
+    // }
+    // iframe.src = serverURL+"/lesson/"+g_user.sanitized_email+"/"+socket.id+"/"+g_user.sanitized_email+"/tmp_lesson";
+    // icon_refresh.style.rotate = _icRef_state ? "360deg" : "0deg";
+    // _icRef_state = !_icRef_state;
+    // resolveHook(listenHooks.refresh,null);
+    // return;    
     let newIF = document.createElement("iframe");
     iframe.replaceWith(newIF);
     iframe = newIF;
@@ -2357,7 +2362,9 @@ b_refresh.addEventListener("click", async (e) => {
         st.innerHTML = project.files[1].editor.getValue();
         c.replaceWith(st);
     }
-});
+    // });
+}
+;
 // key events
 document.addEventListener("keydown", async (e) => {
     if (!e.key)
@@ -2372,13 +2379,13 @@ document.addEventListener("keydown", async (e) => {
         return;
     }
     if (e.ctrlKey) {
-        if (k == "r" || "s") {
+        if (k == "r") {
             e.preventDefault();
-            b_refresh.click();
+            refreshLesson();
         }
         else if (k == "s") {
-            uploadLessonFiles(lesson);
             e.preventDefault();
+            saveLesson();
         }
         else if (k == "g") {
             e.preventDefault();

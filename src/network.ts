@@ -75,7 +75,7 @@ function uploadLessonFiles(lesson:Lesson){ // for refresh
         list.push(new ULFile(f.name,f.editor.getValue(),"","utf8"));
     }
     return new Promise<void>(resolve=>{
-        socket.emit("uploadLessonFiles","tmp_lesson",list,(err:any)=>{
+        socket.emit("uploadLessonFiles",lesson.lid,list,(err:any)=>{
             if(err) console.log("ERR while uploading files:",err);
             resolve();
         });
@@ -83,7 +83,7 @@ function uploadLessonFiles(lesson:Lesson){ // for refresh
 }
 async function restoreLessonFiles(lesson:Lesson){
     let files = await new Promise<ULFile[]>(resolve=>{
-        socket.emit("restoreLessonFiles","tmp_lesson",(files:ULFile[])=>{
+        socket.emit("restoreLessonFiles",lesson.lid,(files:ULFile[])=>{
             if(!files){
                 console.log("ERR while restoring files");
                 resolve([]);
@@ -95,6 +95,7 @@ async function restoreLessonFiles(lesson:Lesson){
     for(const f of files){
         lesson.p.createFile(f.name,f.val);
     }
+    if(files.length) lesson.p.hasSavedOnce = true;
 }
 // 
 function uploadProjectFiles(project:Project){ // for refresh
@@ -117,10 +118,12 @@ async function restoreProjectFiles(project:Project){
                 resolve([]);
                 return;
             }
+            console.log("FOUND FILES",files);
             resolve(files);
         });
     });
     for(const f of files){
         project.createFile(f.name,f.val);
     }
+    if(files.length) project.hasSavedOnce = true;
 }

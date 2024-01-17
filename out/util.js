@@ -1,4 +1,36 @@
 let serverURL = "http://localhost:3000";
+let settingsList = [];
+class Settings {
+    invertContrast = new Setting("invertContrast", false);
+}
+class Setting {
+    constructor(id, v) {
+        this.id = id;
+        this.v = v;
+        this.default = v;
+        this.v = this.get();
+        settingsList.push(this);
+    }
+    id;
+    v;
+    default;
+    save() {
+        localStorage.setItem("__CCSD-" + this.id, JSON.stringify(this.v));
+    }
+    get() {
+        let val = localStorage.getItem("__CCSD-" + this.id);
+        if (val != null)
+            val = JSON.parse(val);
+        if (val != null)
+            this.v = val;
+        return val || this.v;
+    }
+    set(v) {
+        this.v = v;
+        this.save();
+    }
+}
+let settings = new Settings();
 let g_waitDelayScale = 1;
 function wait(delay) {
     return new Promise(resolve => {
@@ -378,7 +410,8 @@ let d_lesson_confirm;
 function genHeader(i, isCompact = true, id) {
     let navCont = document.createElement("div");
     let noLogo = false;
-    if (id == "editor") {
+    console.log("...generating header with id: ", id);
+    if (id == "editor" || id == "lesson") {
         noLogo = true;
     }
     navCont.className = "nav-container";
@@ -388,7 +421,7 @@ function genHeader(i, isCompact = true, id) {
             <img src="/images/error.png" alt="Code Challenge Logo" class="logo-thumbnail">
             <!-- Insert placeholder logo here -->
         </a>
-        </div>` : id == "editor" ? `
+        </div>` : id == "editor" || id == "lesson" ? `
         <div class="editor-menu-bar">
             <div class="b-editor-dashboard icon-div"><div class="material-symbols-outlined">home</div></div>
             <!--<div>File</div>
@@ -477,6 +510,12 @@ class Project {
     readonly = false;
     disableCopy = false;
     hasSavedOnce = false;
+    getURL() {
+        if (PAGE_ID == PAGEID.editor)
+            return serverURL + "/project/" + g_user.sanitized_email + "/" + socket.id + "/" + g_user.sanitized_email + "/" + project.pid;
+        else if (PAGE_ID == PAGEID.lesson)
+            return serverURL + "/lesson/" + g_user.sanitized_email + "/" + socket.id + "/" + g_user.sanitized_email + "/" + lesson.lid;
+    }
     createFile(name, text, lang) {
         let res = resolveHook(listenHooks.addFile, name);
         if (res == 1) {
@@ -714,6 +753,7 @@ function escapeMarkup(dangerousInput) {
 }
 // refresh system
 let b_refresh;
+let b_save;
 let icon_refresh;
 let iframe;
 let _icRef_state = true;
@@ -829,4 +869,83 @@ document.addEventListener("mousedown", e => {
     if (!isOverTmpMenu)
         closeTmpMenus();
 });
+// SAVE / REFRESH
+async function refreshProject() {
+    if (project.files.some(v => !v._saved) || !project.hasSavedOnce)
+        await saveProject(true);
+    let file1 = project.files.find(v => v.name == "index.html");
+    if (!file1 || !project.hasSavedOnce) {
+        alert("No index.html file found! Please create a new file called index.html, this file will be used in the preview.");
+        return;
+    }
+    iframe.src = serverURL + "/project/" + g_user.sanitized_email + "/" + socket.id + "/" + g_user.sanitized_email + "/" + project.pid;
+    // let cs = (iframe.contentWindow as any).console as Console;
+    // cs.log = function(...data:any[]){
+    //     console.log("BOB");
+    //     // console.log("(LOG)",...data);
+    //     // cs.log(...data);
+    // };
+    // console.log(cs);
+    // ^^^ attempts at log injection
+    icon_refresh.style.rotate = _icRef_state ? "360deg" : "0deg";
+    _icRef_state = !_icRef_state;
+    resolveHook(listenHooks.refresh, null);
+}
+async function refreshLesson() {
+    let project = lesson.p;
+    if (project.files.some(v => !v._saved) || !project.hasSavedOnce)
+        await saveLesson(true);
+    let file1 = project.files.find(v => v.name == "index.html");
+    if (!file1 || !project.hasSavedOnce) {
+        alert("No index.html file found! Please create a new file called index.html, this file will be used in the preview.");
+        return;
+    }
+    iframe.src = serverURL + "/lesson/" + g_user.sanitized_email + "/" + socket.id + "/" + g_user.sanitized_email + "/" + lesson.lid;
+    icon_refresh.style.rotate = _icRef_state ? "360deg" : "0deg";
+    _icRef_state = !_icRef_state;
+    resolveHook(listenHooks.refresh, null);
+}
+let _isSaving = false;
+async function saveProject(isQuick = false) {
+    if (_isSaving)
+        return;
+    _isSaving = true;
+    b_save.children[0].textContent = "progress_activity";
+    b_save.children[0].classList.add("progress-anim");
+    let start = performance.now();
+    await uploadProjectFiles(project);
+    let time = performance.now() - start;
+    let delay = 0;
+    project.hasSavedOnce = true;
+    project.files.forEach(v => v.setSaved(true));
+    if (!isQuick) {
+        if (time < 50)
+            delay = 300;
+        await wait(delay);
+    }
+    b_save.children[0].textContent = "save";
+    b_save.children[0].classList.remove("progress-anim");
+    _isSaving = false;
+}
+async function saveLesson(isQuick = false) {
+    if (_isSaving)
+        return;
+    _isSaving = true;
+    b_save.children[0].textContent = "progress_activity";
+    b_save.children[0].classList.add("progress-anim");
+    let start = performance.now();
+    await uploadLessonFiles(lesson);
+    // let time = performance.now()-start;
+    // let delay = 0;
+    lesson.p.hasSavedOnce = true;
+    lesson.p.files.forEach(v => v.setSaved(true));
+    if (!isQuick) {
+        // if(time < 50) delay = 300;
+        // await wait(delay);
+        await wait(300);
+    }
+    b_save.children[0].textContent = "save";
+    b_save.children[0].classList.remove("progress-anim");
+    _isSaving = false;
+}
 //# sourceMappingURL=util.js.map

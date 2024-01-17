@@ -81,3 +81,18 @@
     - need to make save indicator and keep track of when changes are made, that way refresh simply refreshes the iframe and doesn't have to reupload every time
 - fixed editor page so init waits until logged in
 - LOTS more added need to check commit, bug fixes, start of multi project and create project support on server side, changed header for editor, save button for editor, started adding rename menu to cur project editor, saving and refreshing somewhat indep now, refreshing causes a save when needed, editing files makes a star on them so when refresh with this it will save, added manual save button, probably more cant remember
+
+### 1/16/24
+- fixed editor so if there's no PID, "tmp_project" is used -> this ultimately fixed the preview so it works on no PID (temporary) projects
+- added working contrast switch button to preview in editor
+- started adding dashboard and new header buttons to lesson
+- fixed ctrl r and ctrl s to work in lesson
+- fixed saving so that the actual saving doesn't wait on the animation, the anim will play even after it's done saving to help prevent spam
+- fixed open in new tab button to work before refresh has happened and on both pages
+- fixed in editor manually trying to open a new project with custom PID won't crash the server if it doesn't exist, it just makes a new boiler plate project
+- contrast switch saves state in localStorage and reloads with page reload in both Editor and Lesson
+- [SERVER-SIDE]
+- start of project caching system
+- project meta data stored on user
+- proper storing and retreiving of project data on server with corresponding meta data
+- getting the project again after the server has loaded it and then saving will save in ram and reread from ram instead of having to read from hard drive every time

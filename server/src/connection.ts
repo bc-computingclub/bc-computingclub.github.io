@@ -62,14 +62,39 @@ class Project{
         this.pid = pid;
         this.name = name;
         this.ownerEmail = ownerEmail;
+        
+        this.desc = "A project for experiments.";
+        this.isPublic = false;
     }
     pid:string;
     name:string;
     ownerEmail:string;
     _owner:User;
     
+    desc:string;
+    isPublic:boolean;
+    files:ULFile[];
+    
     getRefStr(){
         return this.ownerEmail+":"+this.pid;
+    }
+
+    serialize(){
+        return JSON.stringify({
+            pid:this.pid,
+            name:this.name,
+            ownerEmail:this.ownerEmail,
+
+            desc:this.desc,
+            isPublic:this.isPublic
+        });
+    }
+    static deserialize(str:string){
+        let o = JSON.parse(str);
+        let p = new Project(o.pid,o.name,o.ownerEmail);
+        p.desc = o.desc;
+        p.isPublic = o.isPublic;
+        return p;
     }
 }
 
@@ -83,8 +108,38 @@ export interface CredentialResData{
     _joinDate:string;
     _lastLoggedIn:string;
 }
+class ProjectMeta{
+    constructor(user:User,pid:string,name:string,desc:string,isPublic:boolean){
+        this.user = user;
+        this.pid = pid;
+        this.name = name;
+        this.desc = desc;
+        this.isPublic = isPublic;
+    }
+    user:User;
+    pid:string;
+    name:string;
+    desc:string;
+    isPublic:boolean;
+    
+    hasLoaded = false;
+    serialize(){
+        return JSON.stringify({
+            pid:this.pid,
+            name:this.name,
+            desc:this.desc,
+            isPublic:this.isPublic
+        });
+    }
+    static deserialize(user:User,str:string){
+        let o = JSON.parse(str);
+        let p = new ProjectMeta(user,o.pid,o.name,o.desc,o.isPublic);
+        // console.log("DESEL",o,p);
+        return p;
+    }
+}
 export class User{
-    constructor(name:string,email:string,picture:string,_joinDate:string,_lastLoggedIn:string,sockId:string){
+    constructor(name:string,email:string,picture:string,_joinDate:string,_lastLoggedIn:string,sockId:string,pMeta:any[]){
         this.name = name;
         this.email = email;
         this.sanitized_email = sanitizeEmail(email);
@@ -94,6 +149,10 @@ export class User{
         this.lastLoggedIn = _lastLoggedIn;
         this.tokens = [];
         this.sockIds = [];
+        console.log("loading pmeta obj",pMeta);
+        if(pMeta) this.pMeta = pMeta.map(v=>ProjectMeta.deserialize(this,v)).filter(v=>v.pid != null);
+        else this.pMeta = [];
+        this.projects = [];
     }
     name:string;
     email:string;
@@ -106,6 +165,7 @@ export class User{
     private sockIds:string[];
 
     projects:Project[];
+    pMeta:ProjectMeta[];
 
     addToken(token:string){
         if(this.tokens.includes(token)) return;
@@ -154,12 +214,18 @@ export class User{
     }
     saveToFile(){
         // if we don't save tokens this will require users to relog when there's a server restart maybe? do we need to save them?
+        // let projects:string[] = [];
+        // for(const p of this.projects){
+        //     projects.push(p.serialize());
+        // }
         let data = {
             name:this.name,
             email:this.email,
             picture:this.picture,
             joinDate:this.joinDate,
-            lastLoggedIn:this.lastLoggedIn
+            lastLoggedIn:this.lastLoggedIn,
+            // projects,
+            pMeta:this.pMeta.map(v=>v.serialize())
         };
         fs.writeFile(this.getPath(),JSON.stringify(data),{encoding:"utf8"},err=>{
             if(err) console.log("Err while saving file: ",err);
@@ -167,11 +233,15 @@ export class User{
     }
 
     // Projects
-    createProject(name:string){
-        let pid = genPID();
-        let p = new Project(pid,name,this.email);
+    createProject(meta:ProjectMeta,pid?:string){
+        if(pid == null) pid = genPID();
+        let p = new Project(pid,meta.name,this.email);
+        p.desc = meta.desc;
+        p.isPublic = meta.isPublic;
         p._owner = this;
         this.projects.push(p);
+        this.pMeta.push(meta);
+        this.saveToFile();
         loadProject(p);
         return p;
     }
@@ -196,10 +266,71 @@ class ProjRef{
 export const users = new Map<string,User>();
 const socks = new Map<string,string>();
 const allProjects = new Map<string,Project>();
+const hasntFoundProject:string[] = [];
 
 // for indexing, need to make a deloadProject at some point
 function loadProject(p:Project){
     allProjects.set(p.getRefStr(),p);
+}
+export function getProject(ref:string){
+    return allProjects.get(ref);
+}
+export async function attemptToGetProject(user:User,pid:string){
+    let ref = user.email+":"+pid;
+
+    if(hasntFoundProject.includes(ref)){
+        console.log("$ prevented, already stored that it couldn't find it");
+        return;
+    }
+    
+    let p = getProject(ref);
+    if(p){
+        console.log(" :: FOUND PROJECT: ",p.name);
+        return p;
+    }
+    else{
+        // console.log(" :: did not find project...",user.email,pid);
+        // attemptToGetProject(user,pid);
+        // return;
+    }
+
+    console.log("$ searching...");
+
+    let uid = user.sanitized_email;
+    let path = "../project/"+uid+"/"+pid;
+    if(!await access(path)){
+        // await mkdir(path);
+        // call(null);
+        hasntFoundProject.push(ref);
+        console.log("$ not found. stored new hasn't found project");
+        return;
+    }
+    let curFiles = await readdir(path);
+    let files:ULFile[] = [];
+    for(const f of curFiles){
+        files.push(new ULFile(f,await read(path+"/"+f,"utf8"),"","utf8"));
+    }
+    console.log("$ found files! fetching meta...");
+    let meta = user.pMeta.find(v=>v.pid == pid);
+    if(!meta){
+        meta = new ProjectMeta(user,pid,"New Project","A project description!",false);
+        console.log("$ couldn't find meta, making up some...");
+        console.log("$ loading meta!",meta.name,meta.desc);
+
+        let p1 = user.createProject(meta,pid);
+        p1._owner = user;
+        p1.files = files;
+        return p1;
+    }
+    console.log("$ found meta!",meta.name,meta.desc);
+    let p2 = new Project(meta.pid,meta.name,user.email);
+    p2.desc = meta.desc;
+    p2.isPublic = meta.isPublic;
+    p2._owner = user;
+    p2.files = files;
+    user.projects.push(p2);
+    loadProject(p2);
+    return p2;
 }
 
 export function getUserBySock(sockId:string){
@@ -261,3 +392,84 @@ app.use("/lesson/:userId/:auth/",(req,res,next)=>{
 app.use("/",express.static("../../"));
 
 export {Socket};
+
+// UTIL
+export class ULFile{
+    constructor(name:string,val:string,path:string,enc:BufferEncoding){
+        this.name = name;
+        this.val = val;
+        this.path = path;
+        this.enc = enc;
+    }
+    name:string;
+    val:string;
+    path:string;
+    enc:BufferEncoding;
+}
+
+export function access(path:string){
+    return new Promise<boolean>(resolve=>{
+        fs.access(path,err=>{
+            if(err){
+                console.log("err: ",err);
+                resolve(false);
+            }
+            else resolve(true);
+        });
+    });
+}
+export function write(path:string,data:any,encoding?:BufferEncoding){
+    return new Promise<boolean>(resolve=>{
+        fs.writeFile(path,data,{encoding},err=>{
+            if(err){
+                console.log("err: ",err);
+                resolve(false);
+            }
+            else resolve(true);
+        });
+    });
+}
+export function read(path:string,encoding?:BufferEncoding){
+    return new Promise<any>(resolve=>{
+        fs.readFile(path,{encoding},(err,data)=>{
+            if(err){
+                console.log("err: ",err);
+                resolve(null);
+            }
+            else resolve(data);
+        });
+    });
+}
+export function removeFile(path:string){
+    return new Promise<boolean>(resolve=>{
+        fs.rm(path,err=>{
+            if(err){
+                console.log("err: ",err);
+                resolve(false);
+            }
+            else resolve(true);
+        });
+    });
+}
+export function mkdir(path:string,encoding?:BufferEncoding){
+    return new Promise<boolean>(resolve=>{
+        fs.mkdir(path,{recursive:true},err=>{
+            if(err){
+                console.log("err: ",err);
+                resolve(false);
+            }
+            else resolve(true);
+        });
+    });
+}
+export function readdir(path:string){
+    return new Promise<string[]>(resolve=>{
+        fs.readdir(path,(err,files)=>{
+            if(err){
+                console.log("err: ",err);
+                resolve(null);
+            }
+            else resolve(files);
+        });
+    });
+}

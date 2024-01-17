@@ -26,7 +26,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.Socket = exports.getUserBySock = exports.users = exports.User = exports.sanitizeEmail = exports.io = exports.server = void 0;
+exports.readdir = exports.mkdir = exports.removeFile = exports.read = exports.write = exports.access = exports.ULFile = exports.Socket = exports.getUserBySock = exports.attemptToGetProject = exports.getProject = exports.users = exports.User = exports.sanitizeEmail = exports.io = exports.server = void 0;
 const http = __importStar(require("http"));
 const express_1 = __importDefault(require("express"));
 const socket_io_1 = require("socket.io");
@@ -85,17 +85,67 @@ class Project {
         this.pid = pid;
         this.name = name;
         this.ownerEmail = ownerEmail;
+        this.desc = "A project for experiments.";
+        this.isPublic = false;
     }
     pid;
     name;
     ownerEmail;
     _owner;
+    desc;
+    isPublic;
+    files;
     getRefStr() {
         return this.ownerEmail + ":" + this.pid;
     }
+    serialize() {
+        return JSON.stringify({
+            pid: this.pid,
+            name: this.name,
+            ownerEmail: this.ownerEmail,
+            desc: this.desc,
+            isPublic: this.isPublic
+        });
+    }
+    static deserialize(str) {
+        let o = JSON.parse(str);
+        let p = new Project(o.pid, o.name, o.ownerEmail);
+        p.desc = o.desc;
+        p.isPublic = o.isPublic;
+        return p;
+    }
+}
+class ProjectMeta {
+    constructor(user, pid, name, desc, isPublic) {
+        this.user = user;
+        this.pid = pid;
+        this.name = name;
+        this.desc = desc;
+        this.isPublic = isPublic;
+    }
+    user;
+    pid;
+    name;
+    desc;
+    isPublic;
+    hasLoaded = false;
+    serialize() {
+        return JSON.stringify({
+            pid: this.pid,
+            name: this.name,
+            desc: this.desc,
+            isPublic: this.isPublic
+        });
+    }
+    static deserialize(user, str) {
+        let o = JSON.parse(str);
+        let p = new ProjectMeta(user, o.pid, o.name, o.desc, o.isPublic);
+        // console.log("DESEL",o,p);
+        return p;
+    }
 }
 class User {
-    constructor(name, email, picture, _joinDate, _lastLoggedIn, sockId) {
+    constructor(name, email, picture, _joinDate, _lastLoggedIn, sockId, pMeta) {
         this.name = name;
         this.email = email;
         this.sanitized_email = sanitizeEmail(email);
@@ -104,6 +154,12 @@ class User {
         this.lastLoggedIn = _lastLoggedIn;
         this.tokens = [];
         this.sockIds = [];
+        console.log("loading pmeta obj", pMeta);
+        if (pMeta)
+            this.pMeta = pMeta.map(v => ProjectMeta.deserialize(this, v)).filter(v => v.pid != null);
+        else
+            this.pMeta = [];
+        this.projects = [];
     }
     name;
     email;
@@ -114,6 +170,7 @@ class User {
     tokens;
     sockIds;
     projects;
+    pMeta;
     addToken(token) {
         if (this.tokens.includes(token))
             return;
@@ -160,12 +217,18 @@ class User {
     }
     saveToFile() {
         // if we don't save tokens this will require users to relog when there's a server restart maybe? do we need to save them?
+        // let projects:string[] = [];
+        // for(const p of this.projects){
+        //     projects.push(p.serialize());
+        // }
         let data = {
             name: this.name,
             email: this.email,
             picture: this.picture,
             joinDate: this.joinDate,
-            lastLoggedIn: this.lastLoggedIn
+            lastLoggedIn: this.lastLoggedIn,
+            // projects,
+            pMeta: this.pMeta.map(v => v.serialize())
         };
         fs_1.default.writeFile(this.getPath(), JSON.stringify(data), { encoding: "utf8" }, err => {
             if (err)
@@ -173,11 +236,16 @@ class User {
         });
     }
     // Projects
-    createProject(name) {
-        let pid = genPID();
-        let p = new Project(pid, name, this.email);
+    createProject(meta, pid) {
+        if (pid == null)
+            pid = genPID();
+        let p = new Project(pid, meta.name, this.email);
+        p.desc = meta.desc;
+        p.isPublic = meta.isPublic;
         p._owner = this;
         this.projects.push(p);
+        this.pMeta.push(meta);
+        this.saveToFile();
         loadProject(p);
         return p;
     }
@@ -202,10 +270,68 @@ class ProjRef {
 exports.users = new Map();
 const socks = new Map();
 const allProjects = new Map();
+const hasntFoundProject = [];
 // for indexing, need to make a deloadProject at some point
 function loadProject(p) {
     allProjects.set(p.getRefStr(), p);
 }
+function getProject(ref) {
+    return allProjects.get(ref);
+}
+exports.getProject = getProject;
+async function attemptToGetProject(user, pid) {
+    let ref = user.email + ":" + pid;
+    if (hasntFoundProject.includes(ref)) {
+        console.log("$ prevented, already stored that it couldn't find it");
+        return;
+    }
+    let p = getProject(ref);
+    if (p) {
+        console.log(" :: FOUND PROJECT: ", p.name);
+        return p;
+    }
+    else {
+        // console.log(" :: did not find project...",user.email,pid);
+        // attemptToGetProject(user,pid);
+        // return;
+    }
+    console.log("$ searching...");
+    let uid = user.sanitized_email;
+    let path = "../project/" + uid + "/" + pid;
+    if (!await access(path)) {
+        // await mkdir(path);
+        // call(null);
+        hasntFoundProject.push(ref);
+        console.log("$ not found. stored new hasn't found project");
+        return;
+    }
+    let curFiles = await readdir(path);
+    let files = [];
+    for (const f of curFiles) {
+        files.push(new ULFile(f, await read(path + "/" + f, "utf8"), "", "utf8"));
+    }
+    console.log("$ found files! fetching meta...");
+    let meta = user.pMeta.find(v => v.pid == pid);
+    if (!meta) {
+        meta = new ProjectMeta(user, pid, "New Project", "A project description!", false);
+        console.log("$ couldn't find meta, making up some...");
+        console.log("$ loading meta!", meta.name, meta.desc);
+        let p1 = user.createProject(meta, pid);
+        p1._owner = user;
+        p1.files = files;
+        return p1;
+    }
+    console.log("$ found meta!", meta.name, meta.desc);
+    let p2 = new Project(meta.pid, meta.name, user.email);
+    p2.desc = meta.desc;
+    p2.isPublic = meta.isPublic;
+    p2._owner = user;
+    p2.files = files;
+    user.projects.push(p2);
+    loadProject(p2);
+    return p2;
+}
+exports.attemptToGetProject = attemptToGetProject;
 function getUserBySock(sockId) {
     let email = socks.get(sockId);
     if (!email)
@@ -263,3 +389,95 @@ app.use("/lesson/:userId/:auth/", (req, res, next) => {
 }, express_1.default.static("../lesson/"));
 // TEMPORARY FOR SAME ORIGIN STUFF
 app.use("/", express_1.default.static("../../"));
+// UTIL
+class ULFile {
+    constructor(name, val, path, enc) {
+        this.name = name;
+        this.val = val;
+        this.path = path;
+        this.enc = enc;
+    }
+    name;
+    val;
+    path;
+    enc;
+}
+exports.ULFile = ULFile;
+function access(path) {
+    return new Promise(resolve => {
+        fs_1.default.access(path, err => {
+            if (err) {
+                console.log("err: ", err);
+                resolve(false);
+            }
+            else
+                resolve(true);
+        });
+    });
+}
+exports.access = access;
+function write(path, data, encoding) {
+    return new Promise(resolve => {
+        fs_1.default.writeFile(path, data, { encoding }, err => {
+            if (err) {
+                console.log("err: ", err);
+                resolve(false);
+            }
+            else
+                resolve(true);
+        });
+    });
+}
+exports.write = write;
+function read(path, encoding) {
+    return new Promise(resolve => {
+        fs_1.default.readFile(path, { encoding }, (err, data) => {
+            if (err) {
+                console.log("err: ", err);
+                resolve(null);
+            }
+            else
+                resolve(data);
+        });
+    });
+}
+exports.read = read;
+function removeFile(path) {
+    return new Promise(resolve => {
+        fs_1.default.rm(path, err => {
+            if (err) {
+                console.log("err: ", err);
+                resolve(false);
+            }
+            else
+                resolve(true);
+        });
+    });
+}
+exports.removeFile = removeFile;
+function mkdir(path, encoding) {
+    return new Promise(resolve => {
+        fs_1.default.mkdir(path, { recursive: true }, err => {
+            if (err) {
+                console.log("err: ", err);
+                resolve(false);
+            }
+            else
+                resolve(true);
+        });
+    });
+}
+exports.mkdir = mkdir;
+function readdir(path) {
+    return new Promise(resolve => {
+        fs_1.default.readdir(path, (err, files) => {
+            if (err) {
+                console.log("err: ", err);
+                resolve(null);
+            }
+            else
+                resolve(files);
+        });
+    });
+}
+exports.readdir = readdir;

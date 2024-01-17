@@ -1,9 +1,9 @@
 body.themestyle-light{
     --bubble-bg:rgba(46, 70, 140, 0.7);
-
+/* 
     & pre.code{
         filter:invert(0);
-    }
+    } */
 }
 body.themestyle-dark{
     color-scheme:dark;
@@ -15,11 +15,65 @@ body.themestyle-dark{
     --lighten2:rgba(0,0,0,0.05);
 
     --bubble-bg:rgba(46, 70, 140, 0.7);
-
-    & pre.code{
-        filter:invert(1);
-    }
 }
+iframe{
+    transition:filter 0.1s ease-out;
+}
+iframe.invert{
+    filter:invert(1) hue-rotate(180deg) !important;
+}
+.b-invert-colors{
+    color:var(--col);
+    background-color:var(--bg);
+    border-radius:3px;
+    transition:all 0.3s ease-out;
+    position:relative;
+}
+.b-invert-colors.invert{
+    color:var(--bg);
+    background-color:var(--col);
+    /* width:52px; */
+    /* margin-right:4px; */
+    /* margin-right:28px; */
+}
+body.themestyle-dark .b-invert-colors{
+    filter:invert(1);
+}
+body.themestyle-dark .b-invert-colors::before{
+    filter:invert(1);
+}
+.b-invert-colors::before{
+    content:"LIGHT";
+    position:absolute;
+    top:5.5px;
+    left:-8px;
+    font-family:'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    font-weight:bold;
+    font-size:14px;
+    transform:translateX(-100%);
+    /* font-family:"Material Symbols Outlined"; */
+    color:var(--col);
+    opacity:0.9;
+}
+.b-invert-colors.invert::before{
+    content:"DARK";
+    position:absolute;
+    top:5.5px;
+    left:-8px;
+    font-family:'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    font-weight:bold;
+    font-size:14px;
+    transform:translateX(-100%);
+    /* font-family:"Material Symbols Outlined"; */
+}
+/* .b-invert-colors.invert::before{
+    content:"check";
+    position:absolute;
+    top:0px;
+    left:-28px;
+    font-family:"Material Symbols Outlined";
+    color:green;
+} */
 
 /* Themes */
 
@@ -85,11 +139,11 @@ body.theme-dark{
 
     --theme-inv-filter:invert(0);
 
-    & iframe {
-        filter: invert(1) hue-rotate(180deg);
+    /* & iframe { */
+        /* filter: invert(1) hue-rotate(180deg); */
         /*filter:brightness(0.9);*/
         /*background-color:var(--bg-col);*/
-    }
+    /* } */
 }
 body.theme-dark .menu .inp-cont{
     --c-bg:rgba(255,255,255,0.15);
