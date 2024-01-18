@@ -50,6 +50,7 @@ b_goBackStep.addEventListener("click",e=>{
 async function hideLessonConfirm(){
     await wait(50);
     d_lesson_confirm.style.opacity = "0";
+    d_lesson_confirm.style.pointerEvents = "none";
     await wait(1500);
 }
 async function showLessonConfirm(){
@@ -62,6 +63,7 @@ async function showLessonConfirm(){
         return;
     }
     d_lesson_confirm.style.opacity = "1";
+    d_lesson_confirm.style.pointerEvents = null;
     await wait(500);
 }
 
@@ -2525,7 +2527,7 @@ document.addEventListener("keydown",async e=>{
         return;
     }
 
-    if(e.ctrlKey){
+    if(e.ctrlKey || e.metaKey){
         if(k == "r"){
             e.preventDefault();
             refreshLesson();

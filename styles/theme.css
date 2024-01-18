@@ -1,5 +1,6 @@
 body.themestyle-light{
     --bubble-bg:rgba(46, 70, 140, 0.7);
+    /* --secondary-bg-col:rgb(255, 255, 255) !important;  just a placeholder */
 /* 
     & pre.code{
         filter:invert(0);
@@ -15,6 +16,12 @@ body.themestyle-dark{
     --lighten2:rgba(0,0,0,0.05);
 
     --bubble-bg:rgba(46, 70, 140, 0.7);
+
+    --secondary-bg-col:rgb(32, 32, 32) !important; /* just a placeholder */
+
+    --learn-col-alt: rgb(33, 43, 81); 
+    --experiment-col-alt: rgb(23, 54, 62); 
+    --practice-col-alt:rgb(56, 42, 77);  
 }
 iframe{
     transition:filter 0.1s ease-out;
@@ -126,6 +133,8 @@ body.theme-light{
     --theme-inv-filter:invert(1);
 }
 body.theme-dark{
+    --secondary-bg-col:rgb(22, 25, 40);
+
     --bg:#111;
     --col:whitesmoke;
     --secondary-col:lightgray;

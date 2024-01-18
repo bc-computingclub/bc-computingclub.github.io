@@ -1,0 +1,5 @@
+.challenge-home {
+    display: grid;
+    grid-template-rows: auto;
+    justify-content: center;
+}
