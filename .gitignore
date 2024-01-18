@@ -2,3 +2,4 @@
 node_modules
 *.json
 server/users
+.DS_Store

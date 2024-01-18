@@ -96,3 +96,9 @@
 - project meta data stored on user
 - proper storing and retreiving of project data on server with corresponding meta data
 - getting the project again after the server has loaded it and then saving will save in ram and reread from ram instead of having to read from hard drive every time
+
+### 1/18/24 - Paul
+- Started setup for "challenges" page
+- Created "in-progress" section to store challenges which the user is working on
+- "In-progress" section can be toggled open and closed.
+- Created "browse" section for user to browse through available challenges, and click "open preview" to learn more. (&see others' implementations?)
