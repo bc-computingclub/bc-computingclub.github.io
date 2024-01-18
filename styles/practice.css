@@ -1,5 +1,36 @@
 .challenge-home {
     display: grid;
     grid-template-rows: auto;
-    justify-content: center;
+    gap: 2em;
+    padding: 2em;
+}
+
+.c-outer-browse{
+    background-color: var(--secondary-bg-col);
+    padding: 20px;
+    border-radius: 4px;
+}
+
+.c-outer-in-progress{
+    padding: 20px;
+    border-radius: 4px;
+    background-color: var(--practice-col);
+}
+
+.c-section {
+    margin-block: 0.5em;
+}
+
+.c-in-progress-container {
+    display:grid;
+    grid-template-rows: auto auto;
+    gap: 1em;
+}
+
+.chall {
+    width: 250px;
+}
+
+.chall button {
+    cursor: pointer;
 }
