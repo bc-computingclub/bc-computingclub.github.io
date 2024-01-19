@@ -74,9 +74,16 @@
     }
 }
 
+.c-img-div {
+    border-radius: 3px;
+    max-width: 200px;
+    min-height: 200px;
+}
+
 .c-img {
-    height: 200px;
-    object-fit: cover;
+    /* aspect-ratio: 3/2; */
+    width: 100%;
+    height: 100%;
     border-radius: 3px;
 }
 
@@ -89,11 +96,11 @@
     transition: height 0.3s ease-out, padding-block 0.3s ease-out;
     padding: 10px;
     width: 300px;
-    height: 370px;
+    height: 390px;
 
     display: flex;
     flex-direction: column;
-    gap: 0.5em;
+    gap: 1em;
     background-color: #413b46;
     border-radius: 3px;
     position:relative;
@@ -105,8 +112,12 @@
     border: 2px solid rgba(49, 25, 79, 0.626);
 }
 
-.c-btn {
+.c-preview {
     cursor: pointer;
+}
+
+.c-popup {
+    
 }
 
 .c-submitted {
