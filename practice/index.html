@@ -13,26 +13,115 @@
     <script>genHeader(1);</script>
 
     <div class="challenge-home">
-        <h1>Challenges</h1>
-
-        <div class="c-outer-in-progress">
-            <h3 class="c-section">
-                In Progress
-            </h3>
-            <div class="c-in-progress-container c-container">
-                <!--Typescript will add challenges here-->
+        <div class="challenge-left">
+            <div class="c-filter-div">
+                <h3 style="display: flex; justify-content: center;">
+                    FILTERS
+                </h3>
+                <div class="filter-section">
+                    <h3 class="f-title">
+                        Difficulty
+                    </h3>
+                    <div class="f-options">
+                        <div class="f-option">
+                            <input type="checkbox" name="difficulty" id="easy" value="easy">
+                            <label for="easy">Easy</label>
+                        </div>
+                        <div class="f-option">
+                            <input type="checkbox" name="difficulty" id="medium" value="medium">
+                            <label for="medium">Medium</label>
+                        </div>
+                        <div class="f-option">
+                            <input type="checkbox" name="difficulty" id="hard" value="hard">
+                            <label for="hard">Hard</label>
+                        </div>
+                        <div class="f-option">
+                            <input type="checkbox" name="difficulty" id="code-wizard" value="Code Wizard">
+                            <label for="code-wizard">Code Wizard</label>
+                        </div>
+                </div>
+            </div>
+                <div class="filter-section">
+                    <h3 class="f-title">
+                        Difficulty
+                    </h3>
+                    <div class="f-options">
+                        <div class="f-option">
+                            <input type="checkbox" name="difficulty" id="easy" value="easy">
+                            <label for="easy">Easy</label>
+                        </div>
+                        <div class="f-option">
+                            <input type="checkbox" name="difficulty" id="medium" value="medium">
+                            <label for="medium">Medium</label>
+                        </div>
+                        <div class="f-option">
+                            <input type="checkbox" name="difficulty" id="hard" value="hard">
+                            <label for="hard">Hard</label>
+                        </div>
+                        <div class="f-option">
+                            <input type="checkbox" name="difficulty" id="code-wizard" value="Code Wizard">
+                            <label for="code-wizard">Code Wizard</label>
+                        </div>
+                </div>
+            </div>
+                <div class="filter-section">
+                    <h3 class="f-title">
+                        Difficulty
+                    </h3>
+                    <div class="f-options">
+                        <div class="f-option">
+                            <input type="checkbox" name="difficulty" id="easy" value="easy">
+                            <label for="easy">Easy</label>
+                        </div>
+                        <div class="f-option">
+                            <input type="checkbox" name="difficulty" id="medium" value="medium">
+                            <label for="medium">Medium</label>
+                        </div>
+                        <div class="f-option">
+                            <input type="checkbox" name="difficulty" id="hard" value="hard">
+                            <label for="hard">Hard</label>
+                        </div>
+                        <div class="f-option">
+                            <input type="checkbox" name="difficulty" id="code-wizard" value="Code Wizard">
+                            <label for="code-wizard">Code Wizard</label>
+                        </div>
+                </div>
             </div>
         </div>
+    </div>
 
-        <div class="c-outer-browse">
-            <h3 class="c-section">
-                Browse
-            </h3>
-            <div class="c-browse-container c-container">
-                <!--Typescript will add challenges here-->
+        <div class="challenge-right">
+            <div class="c-header">
+                <h1>Challenges</h1>
+                <div class="c-header-r">
+                    <div class="c-sort c-search">
+                        Sort By <span class="material-symbols-outlined">arrow_drop_down</span>
+                    </div>
+                    <form action="/search" method="get" class="c-search">
+                        <input type="text" id="search" name="q" placeholder="Search Challenges" class="c-search-inner c-search-bar">
+                        <input type="submit" value="Search" class="material-symbols-outlined c-search-inner c-bubble">
+                    </form>
+                </div>
+            </div>
+    
+            <div class="c-outer-in-progress c-outer">
+                <h3 class="c-section">
+                    In Progress
+                </h3>
+                <div class="c-in-progress-container c-container">
+                    <!--Typescript will add challenges here-->
+                </div>
+            </div>
+    
+            <div class="c-outer-browse c-outer">
+                <h3 class="c-section">
+                    Browse
+                </h3>
+                <div class="c-browse-container c-container">
+                    <!--Typescript will add challenges here-->
+                </div>
             </div>
         </div>
-
     </div>
 
     <script src="/out/socket.io.min.js"></script>

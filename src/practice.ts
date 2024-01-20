@@ -56,11 +56,9 @@ window.addEventListener("load", async () => {
 async function createChallengePopup(cID) {
     // get detailed challenge data from server using cID
     let cPopup = document.createElement("div") as HTMLElement;
-    cPopup.classList.add("c-popup");    
+    cPopup.classList.add("c-popup");
+    console.log("Creating Popup");    
     cPopup.innerHTML = `
-        <div class="">
-            
-        </div>
     `
 }
 

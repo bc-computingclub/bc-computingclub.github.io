@@ -1,5 +1,10 @@
 @import url(https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0);
 
+:root {
+    --purple-col: #8D679F;
+    --purple-col-alt: #503E6E;
+}
+
 .material-symbols-outlined{
     max-width:1em;
 }
@@ -12,6 +17,7 @@
     transform: rotate(0deg);
     transition-duration: 0.3s;
     transition-timing-function: ease-out;
+    color: var(--secondary-col);
 
     &.spin {
         transform: rotate(180deg);
@@ -20,59 +26,127 @@
 
 .challenge-home {
     display: grid;
-    grid-template-rows: auto;
+    grid-template-columns: 4fr 9fr;
     gap: 1em;
     padding: 1em;
 }
 
-.c-outer-browse{
+.challenge-left{
+    padding: 2em;
+    min-height: 100dvh;
     background-color: var(--secondary-bg-col);
-    padding: 20px;
-    padding-block: 0px;
-    border-radius: 4px;
+    border-radius: 3px;
+}
+
+.challenge-right {
+    display: grid;
+    grid-template-rows: auto auto auto;
+    gap: 1em;
+}
+
+.c-filter-div{
+    display: flex;
+    flex-direction: column;
+    gap: 1em;
+}
+
+.c-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.c-search {
+    display: flex;
+    align-items: center;
+    > * {
+        color: var(--col) !important;
+    }
+}
+
+.c-bubble {
+    padding: 5px;
+}
+
+.c-search-inner{
+    border: none;
+    border-radius: 3px;
+    color: var(--col);
+}
+
+.c-search-inner:focus {
+    outline: none;
+}
+
+.c-search-bar{
+    padding:10px 20px !important;
+    color: var(--col) !important;
+    margin-right: 10px;
+}
+
+.c-header-r {
+    display: flex;
+    gap: 1em;
+}
+
+.c-sort {
+    background-color: var(--secondary-bg-col);
+    padding-inline-start: 20px;
+    padding-inline-end: 10px;
+    padding-block: 5px;
+    border-radius: 3px;
+}
+
+.c-outer-browse{
+    background-color: var(--purple-col-alt);
+    border-radius: 3px;
+    position: relative;
 }
 
 .c-outer-in-progress{
-    padding: 20px;
-    padding-block: 0px;
     border-radius: 4px;
-    background-color: var(--practice-col);
+    background-color: var(--purple-col);
     display: grid;
     grid-template-rows: auto auto;
     align-content: center;
     position: relative;
+    overflow: hidden;    
+}
+
+.c-outer {
+   padding-inline: 1em;
+   padding-block-end: 1em;
 }
 
 .c-section {
     margin-block: 1em;
+    color: var(--secondary-col);
 }
 
 .c-container {
     display:grid;
     gap: 1em;
-    grid-template-columns: 1fr 1fr 1fr 1fr;
+    grid-template-columns: 1fr 1fr 1fr;
+    height: 390px;
 }
 
 .c-in-progress-container {
     display:grid;
-    grid-template-rows: auto auto;
-    gap: 1em;
-    overflow: hidden;
-    grid-template-columns: auto;
+    grid-template-rows: auto 1fr;
+    gap: 0em;
+    transition: all 0.3s ease-out;
 
     &:not(.empty){
         grid-template-columns: 1fr 1fr 1fr 1fr;
     }
-}
 
-.c-in-progress-container.collapse {
-    gap: 0em;
-    .c-card {
-        height: 0px;
-        padding-block: 0px;
-        border: none;
+    &.collapse {
+        .c-container {
+            height: 0px;
+        }
     }
 }
+
 
 .c-img-div {
     border-radius: 3px;
@@ -87,13 +161,20 @@
     border-radius: 3px;
 }
 
+.f-options {
+    margin-inline-start: 1em;
+    margin-block-start: 0.5em;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5em;
+}
+
 .c-text {
     height: 60px;
     align-items: center;
 }
 
 .c-card {
-    transition: height 0.3s ease-out, padding-block 0.3s ease-out;
     padding: 10px;
     width: 300px;
     height: 390px;
@@ -101,23 +182,17 @@
     display: flex;
     flex-direction: column;
     gap: 1em;
-    background-color: #413b46;
-    border-radius: 3px;
+    background-color: var(--secondary-bg-col);
+    border-radius: 4px;
     position:relative;
 
     box-shadow: -7px 10px 22px -5px rgba(0,0,0,0.52);
     -webkit-box-shadow: -7px 10px 22px -5px rgba(0,0,0,0.52);
     -moz-box-shadow: -7px 10px 22px -5px rgba(0,0,0,0.52);
-
-    border: 2px solid rgba(49, 25, 79, 0.626);
 }
 
 .c-preview {
     cursor: pointer;
-}
-
-.c-popup {
-    
 }
 
 .c-submitted {
@@ -131,4 +206,5 @@
     padding: 5px;
     backdrop-filter: blur(5px) brightness(0.2);
     border-radius: 2px;
+    color: var(--secondary-col);
 }
