@@ -248,7 +248,6 @@
 }
 
 .c-text {
-    height: 60px;
     align-items: center;
 }
 
@@ -256,6 +255,7 @@
     padding: 10px;
     width: 270px; /* can be 250px? */
     min-height: 0px;
+    overflow: hidden;
 
     display: flex;
     flex-direction: column;
