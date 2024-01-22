@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,44 +8,28 @@
     <link rel="stylesheet" href="/styles/home.css">
     <link rel="stylesheet" href="/styles/practice.css">
 </head>
-<body>
+
+<body class="body">
     <script src="/out/pre_init.js"></script>
     <script src="/out/util.js"></script>
     <script>genHeader(1);</script>
 
-    <div class="challenge-home">
+    <div class="c-home">
         <div class="challenge-left">
             <div class="c-filter-div">
                 <h3 style="display: flex; justify-content: center;">
                     FILTERS
                 </h3>
                 <div class="filter-section">
-                    <h3 class="f-title">
-                        Difficulty
-                    </h3>
-                    <div class="f-options">
-                        <div class="f-option">
-                            <input type="checkbox" name="difficulty" id="easy" value="easy">
-                            <label for="easy">Easy</label>
-                        </div>
-                        <div class="f-option">
-                            <input type="checkbox" name="difficulty" id="medium" value="medium">
-                            <label for="medium">Medium</label>
-                        </div>
-                        <div class="f-option">
-                            <input type="checkbox" name="difficulty" id="hard" value="hard">
-                            <label for="hard">Hard</label>
-                        </div>
-                        <div class="f-option">
-                            <input type="checkbox" name="difficulty" id="code-wizard" value="Code Wizard">
-                            <label for="code-wizard">Code Wizard</label>
-                        </div>
+                    <div class="clear-filters">
+                        Clear Filters
+                        <span class="material-symbols-outlined">cancel</span>
+                    </div>
                 </div>
-            </div>
                 <div class="filter-section">
-                    <h3 class="f-title">
-                        Difficulty
-                    </h3>
+                    <h4 class="f-title">
+                        DIFFICULTY
+                    </h4>
                     <div class="f-options">
                         <div class="f-option">
                             <input type="checkbox" name="difficulty" id="easy" value="easy">
@@ -62,61 +47,60 @@
                             <input type="checkbox" name="difficulty" id="code-wizard" value="Code Wizard">
                             <label for="code-wizard">Code Wizard</label>
                         </div>
+                    </div>
                 </div>
-            </div>
                 <div class="filter-section">
-                    <h3 class="f-title">
-                        Difficulty
-                    </h3>
+                    <h4 class="f-title">
+                        TYPE
+                    </h4>
                     <div class="f-options">
                         <div class="f-option">
-                            <input type="checkbox" name="difficulty" id="easy" value="easy">
-                            <label for="easy">Easy</label>
+                            <input type="checkbox" name="type" id="ongoing" value="ongoing">
+                            <label for="ongoing">Ongoing</label>
                         </div>
+                    </div>
+                    <div class="f-options">
                         <div class="f-option">
-                            <input type="checkbox" name="difficulty" id="medium" value="medium">
-                            <label for="medium">Medium</label>
+                            <input type="checkbox" name="type" id="otheroption" value="otheroption">
+                            <label for="otheroption">Other Option</label>
                         </div>
-                        <div class="f-option">
-                            <input type="checkbox" name="difficulty" id="hard" value="hard">
-                            <label for="hard">Hard</label>
-                        </div>
-                        <div class="f-option">
-                            <input type="checkbox" name="difficulty" id="code-wizard" value="Code Wizard">
-                            <label for="code-wizard">Code Wizard</label>
-                        </div>
+                    </div>
                 </div>
             </div>
         </div>
-    </div>
 
         <div class="challenge-right">
             <div class="c-header">
-                <h1>Challenges</h1>
+                <h1>CHALLENGES</h1>
                 <div class="c-header-r">
                     <div class="c-sort c-search">
                         Sort By <span class="material-symbols-outlined">arrow_drop_down</span>
                     </div>
                     <form action="/search" method="get" class="c-search">
-                        <input type="text" id="search" name="q" placeholder="Search Challenges" class="c-search-inner c-search-bar">
+                        <input type="text" id="search" name="q" placeholder="Search Challenges"
+                            class="c-search-inner c-search-bar">
                         <input type="submit" value="Search" class="material-symbols-outlined c-search-inner c-bubble">
                     </form>
                 </div>
             </div>
-    
+
             <div class="c-outer-in-progress c-outer">
-                <h3 class="c-section">
-                    In Progress
-                </h3>
+                <div class="c-ip-container-header">
+                    <h3 class="c-section">
+                        IN PROGRESS
+                    </h3>
+                </div>
                 <div class="c-in-progress-container c-container">
                     <!--Typescript will add challenges here-->
                 </div>
             </div>
-    
+
             <div class="c-outer-browse c-outer">
-                <h3 class="c-section">
-                    Browse
-                </h3>
+                <div class="c-browse-container-header">
+                    <h3 class="c-section">
+                        BROWSE
+                    </h3>
+                </div>
                 <div class="c-browse-container c-container">
                     <!--Typescript will add challenges here-->
                 </div>
@@ -128,4 +112,5 @@
     <script src="/out/network.js"></script>
     <script src="/out/practice.js"></script>
 </body>
+
 </html>

@@ -19,29 +19,73 @@
     transition-timing-function: ease-out;
     color: var(--secondary-col);
 
-    &.spin {
+    &.point-down {
         transform: rotate(180deg);
+    }
+
+    &.point-up {
+        transform: rotate(0deg);
     }
 }
 
-.challenge-home {
+.c-home {
     display: grid;
-    grid-template-columns: 4fr 9fr;
+    grid-template-columns: 1fr 3fr;
     gap: 1em;
-    padding: 1em;
+    padding-block: 1em;
+    padding-inline: 10em;
+    position: relative;
 }
 
 .challenge-left{
-    padding: 2em;
-    min-height: 100dvh;
+    padding-inline: 2em;
+    padding-block: 1em;
+    height: calc(100dvh - (2em + 60px));
     background-color: var(--secondary-bg-col);
     border-radius: 3px;
+    animation-name: intro-from-left;
+    animation-duration: 0.3s;
+    animation-timing-function: ease-out;
+    position: sticky;
+    top: 1em;
+
+    box-shadow: 0px 4px 4px 0px rgba(0, 0, 0, 0.25);
+    -webkit-box-shadow: 0px 4px 4px 0px rgba(0,0,0,0.25);
+    -moz-box-shadow: 0px 4px 4px 0px rgba(0,0,0,0.25);
+}
+
+@keyframes intro-from-left {
+    from {
+        transform: translateX(-20px);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0px);
+        opacity: 1;
+    }
+
+}
+
+@keyframes intro-up {
+    from {
+        transform: translateY(20px);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0px);
+        opacity: 1;
+    }
+
 }
 
 .challenge-right {
     display: grid;
     grid-template-rows: auto auto auto;
     gap: 1em;
+    align-content: start;
+    animation-name: intro-up;
+    animation-duration: 0.3s;
+    animation-timing-function: ease-out;
 }
 
 .c-filter-div{
@@ -66,6 +110,20 @@
 
 .c-bubble {
     padding: 5px;
+    cursor: pointer;
+    display: flex;
+    background-color: var(--secondary-bg-col) !important;
+}
+
+.c-ip-container-header, .c-browse-container-header{
+    display: flex;
+    align-items: center;
+    gap: 1em;
+}
+
+.c-in-progress-counter, .c-browse-counter{
+    color: var(--bg-col);
+    border-radius: 3px;
 }
 
 .c-search-inner{
@@ -89,33 +147,64 @@
     gap: 1em;
 }
 
+.clear-filters {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 0.5em;
+    border-radius: 3px;
+    color: var(--col);
+    background-color: var(--bg-col);
+    /* border: 2px solid rgba(118, 118, 118, 0.472); */
+    padding: 5px;
+    padding-inline: 10px;
+    cursor: pointer;
+    width: max-content;
+}
+
 .c-sort {
     background-color: var(--secondary-bg-col);
     padding-inline-start: 20px;
     padding-inline-end: 10px;
     padding-block: 5px;
     border-radius: 3px;
+    cursor: pointer;
 }
 
 .c-outer-browse{
     background-color: var(--purple-col-alt);
     border-radius: 3px;
     position: relative;
+    padding-block-end: 1em;
 }
 
 .c-outer-in-progress{
     border-radius: 4px;
     background-color: var(--purple-col);
     display: grid;
-    grid-template-rows: auto auto;
-    align-content: center;
+    grid-template-rows: auto 1fr;
+    align-content: start;
     position: relative;
-    overflow: hidden;    
+    overflow: hidden; 
+    padding-block-end: 1em;
+    transition: grid-template-rows 0.3s ease-out;
+
+    &.window-load {
+        transition-duration: 0s;
+    }
+    &.collapse {
+        grid-template-rows:auto 0fr;
+        padding-block-end: 0em;
+    }
 }
 
 .c-outer {
    padding-inline: 1em;
-   padding-block-end: 1em;
+   height: min-content;
+
+   box-shadow: 0px 4px 4px 0px rgba(0, 0, 0, 0.25);
+   -webkit-box-shadow: 0px 4px 4px 0px rgba(0,0,0,0.25);
+   -moz-box-shadow: 0px 4px 4px 0px rgba(0,0,0,0.25);
 }
 
 .c-section {
@@ -125,37 +214,26 @@
 
 .c-container {
     display:grid;
-    gap: 1em;
-    grid-template-columns: 1fr 1fr 1fr;
-    height: 390px;
+    &:not(.empty){
+        grid-template-columns: 1fr 1fr 1fr;
+        gap: 1em;
+    }
 }
 
 .c-in-progress-container {
     display:grid;
-    grid-template-rows: auto 1fr;
-    gap: 0em;
-    transition: all 0.3s ease-out;
-
-    &:not(.empty){
-        grid-template-columns: 1fr 1fr 1fr 1fr;
-    }
-
-    &.collapse {
-        .c-container {
-            height: 0px;
-        }
+    overflow: hidden;
+    &.empty {
+        color: var(--secondary-col);
     }
 }
-
 
 .c-img-div {
     border-radius: 3px;
-    max-width: 200px;
-    min-height: 200px;
 }
 
 .c-img {
-    /* aspect-ratio: 3/2; */
+    aspect-ratio: 4/3;
     width: 100%;
     height: 100%;
     border-radius: 3px;
@@ -176,8 +254,8 @@
 
 .c-card {
     padding: 10px;
-    width: 300px;
-    height: 390px;
+    width: 270px; /* can be 250px? */
+    min-height: 0px;
 
     display: flex;
     flex-direction: column;
@@ -186,13 +264,16 @@
     border-radius: 4px;
     position:relative;
 
-    box-shadow: -7px 10px 22px -5px rgba(0,0,0,0.52);
-    -webkit-box-shadow: -7px 10px 22px -5px rgba(0,0,0,0.52);
-    -moz-box-shadow: -7px 10px 22px -5px rgba(0,0,0,0.52);
+    box-shadow: 0px 4px 4px 0px rgba(0, 0, 0, 0.25);
+    -webkit-box-shadow: 0px 4px 4px 0px rgba(0,0,0,0.25);
+    -moz-box-shadow: 0px 4px 4px 0px rgba(0,0,0,0.25);
 }
 
 .c-preview {
     cursor: pointer;
+    &.disabled{
+        cursor: not-allowed;
+    }
 }
 
 .c-submitted {
@@ -207,4 +288,109 @@
     backdrop-filter: blur(5px) brightness(0.2);
     border-radius: 2px;
     color: var(--secondary-col);
+}
+
+.c-popup-cont {
+    position: absolute;
+    top: 0px;
+    left: 0px;
+    width: 100dvw;
+    height: 100dvh;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    backdrop-filter: blur(3px);
+    background-color: rgba(0,0,0,0.3);
+    pointer-events: none;
+}
+
+.c-popup {
+    position: absolute;
+    right: 10em;
+;   color: var(--secondary-col);
+    width: calc(100dvw - 20em);
+    height: calc(100dvh - (60px + 6em));
+    background-color: var(--purple-col);
+    backdrop-filter: blur(2px);
+
+    animation:AddBubble forwards 0.35s ease-out;
+    border-radius: 3px;
+
+    display: grid;
+    grid-template-columns: 7fr 3fr;
+    gap: 1em;
+    padding: 1em;
+}
+
+.c-popup-left {
+    display: grid;
+    grid-template-rows: auto auto;
+    align-content: start;
+    gap: 1em;
+}
+
+.c-popup-right {
+    display: grid;
+    grid-template-rows: auto auto auto auto;
+    align-content: start;
+    gap: 1em;
+}
+
+.c-popup-img-div {
+    display: flex;
+    flex-direction: column;
+    border-radius: 3px;
+    min-height: 250px;
+    gap: .5em;
+}
+
+.c-popup-img {
+    aspect-ratio: 16/9;
+    width: 100%;
+    height: 100%;
+    border-radius: 3px;
+}
+
+.c-popup-img-text{
+    align-self: flex-end;
+}
+
+.c-popup-implementations {
+    display: grid;
+    grid-template-rows: auto auto;
+    gap: .5em;
+}
+
+.c-popup-header{
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.c-popup-body {
+    padding: 1em;
+    background-color: var(--bg-col);
+    border-radius: 3px;
+    display: grid;
+    grid-template-rows:auto auto;
+    gap: 1em;
+    align-content: start;
+}
+
+.c-popup-close {
+    justify-self: end;
+    cursor: pointer;
+}
+
+@keyframes AddBubble{
+    0%{
+        scale:0.8;
+    }
+    40%{
+        scale:1.01;
+    }
+    100%{
+        scale:1;
+    }
 }
