@@ -184,8 +184,81 @@ class ProjectDashboard extends Menu{
     load(priority?: number): void {
         super.load(priority);
         this.body.innerHTML = `
-            <div>Hi there!</div>
+            <div class="flx edb-body">
+                <div class="edb-nav">
+                    <div class="edb-nav-cont">
+                        <button class="icon-btn regular">
+                            <div class="material-symbols-outlined">face</div>
+                            <div>Personal</div>
+                        </button>
+                        <button class="icon-btn regular">
+                            <div class="material-symbols-outlined">schedule</div>
+                            <div>Recent</div>
+                        </button>
+                        <button class="icon-btn regular">
+                            <div class="material-symbols-outlined">star_rate</div>
+                            <div>Saved</div>
+                        </button>
+                    </div>
+                    <div class="edb-nav-cont">
+                        <button class="b-new-project icon-btn accent">
+                            <div class="material-symbols-outlined">add</div>
+                            <div>New Project</div>
+                        </button>
+                    </div>
+                </div>
+                <div class="edb-content">
+                    <div class="edb-content-list"></div>
+                </div>
+            </div>
         `;
+        let b_newProject = this.body.querySelector(".b-new-project") as HTMLButtonElement;
+        let navCont = this.body.querySelector(".edb-nav-cont");
+        let content = this.body.querySelector(".edb-content-list");
+        for(let i = 0; i < navCont.children.length; i++){
+            let b = navCont.children[i];
+            b.addEventListener("click",e=>{
+                loadSection(i);
+            });
+        }
+        async function loadSection(i:number){
+            content.textContent = "";
+            let raw = await new Promise<string[]>(resolve=>{
+                socket.emit("user-getProjectList",i,(data:string[])=>{
+                    resolve(data || []);
+                });
+            });
+            let list = raw.map(v=>JSON.parse(v) as ProjectMeta);
+            for(const c of list){
+                loadItem(c);
+            }
+        }
+        function loadItem(meta:ProjectMeta){
+            let div = document.createElement("div");
+            div.className = "project-item";
+            div.innerHTML = `
+                <div class="project-info">
+                    <div class="l-project-name">${meta.name}</div>
+                    <div class="l-project-desc">${meta.desc}</div>
+                </div>
+                <div>
+                    <button class="icon-btn accent smaller 
+                    b-open-project">
+                        <div class="material-symbols-outlined">edit</div>
+                        <div>Tinker</div>
+                    </button>
+                </div>
+            `;
+            content.appendChild(div);
+            let b_openProject = div.querySelector(".b-open-project");
+            b_openProject.addEventListener("click",e=>{
+
+            });
+            div.addEventListener("click",e=>{
+
+            });
+        }
+        loadSection(0);
     }
 }
 

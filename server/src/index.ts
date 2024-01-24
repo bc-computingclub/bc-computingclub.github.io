@@ -1,4 +1,4 @@
-import { io, server, CredentialResData, User, users, getUserBySock, sanitizeEmail, getProject, attemptToGetProject, access, readdir, read, mkdir, removeFile, write, ULFile } from "./connection";
+import { io, server, CredentialResData, User, users, getUserBySock, sanitizeEmail, getProject, attemptToGetProject, access, readdir, read, mkdir, removeFile, write, ULFile, ProjectMeta } from "./connection";
 import fs from "fs";
 
 function valVar(v:any,type:string){
@@ -209,7 +209,30 @@ io.on("connection",socket=>{
         }
         call(files);
     });
+
+    // User get stuff
+    socket.on("user-getProjectList",(section:ProjectGroup,f:(d:any)=>void)=>{
+        let user = getUserBySock(socket.id);
+        if(!user){
+            f(null);
+            return;
+        }
+        let data:any;
+        switch(section){
+            case ProjectGroup.personal:{
+                data = user.projects.map(v=>v.serialize().serialize());
+            } break;
+        }
+        
+        f(data);
+    });
 });
+enum ProjectGroup{
+    personal,
+    recent,
+    saved,
+    custom
+}
 
 server.listen(3000,()=>{
     console.log('listening on *:3000');

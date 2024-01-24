@@ -96,6 +96,7 @@ class Menu{
         
         let menu = document.createElement("div");
         menu.className = "menu";
+        menu.classList.add("menu-"+this.title.replaceAll(" ","-").toLowerCase());
         this.menu = menu;
         menuCont.appendChild(menu);
 
@@ -1055,3 +1056,10 @@ async function saveLesson(isQuick=false){
     b_save.children[0].classList.remove("progress-anim");
     _isSaving = false;
 }
+
+type ProjectMeta = {
+    pid:string,
+    name:string,
+    desc:string,
+    isPublic:boolean
+};

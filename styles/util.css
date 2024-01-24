@@ -28,6 +28,15 @@
     font-size:20px;
 }
 
+.icon-btn.accent{
+    background-color:var(--cta-btn-col);
+    color:whitesmoke;
+}
+.icon-btn.regular{
+    background-color:var(--menu-btn-bg);
+    color:whitesmoke;
+}
+
 button.icon-btn-single{
     /* width:min-content !important; */
     padding:4px 6px !important;
@@ -65,6 +74,8 @@ button.icon-btn-single:hover{
 
     width:44px !important;
     overflow:hidden;
+
+    white-space:nowrap;
 
     --op:0;
 }
@@ -110,6 +121,10 @@ button.icon-btn-single:hover{
     box-shadow:0px 4px 5px 2px rgba(0,0,0,0.1);
     position:relative;
     /* border-top:solid 8px var(--cta-btn-col); */
+
+    display:flex;
+    flex-direction:column;
+    justify-content:stretch;
 
     & input{
         background-color:var(--c-bg);
@@ -184,6 +199,7 @@ button.icon-btn-single:hover{
     display:grid;
     grid-template-columns:1fr;
     gap:20px;
+    height:100%;
 }
 
 .inp-cont{

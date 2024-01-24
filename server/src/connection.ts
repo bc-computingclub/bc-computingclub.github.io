@@ -74,20 +74,24 @@ class Project{
     desc:string;
     isPublic:boolean;
     files:ULFile[];
+
+    // meta:ProjectMeta; // might need this at some point
     
     getRefStr(){
         return this.ownerEmail+":"+this.pid;
     }
 
     serialize(){
-        return JSON.stringify({
-            pid:this.pid,
-            name:this.name,
-            ownerEmail:this.ownerEmail,
+        // return this.meta;
+        return new ProjectMeta(this._owner,this.pid,this.name,this.desc,this.isPublic);
+        // return JSON.stringify({
+        //     pid:this.pid,
+        //     name:this.name,
+        //     ownerEmail:this.ownerEmail,
 
-            desc:this.desc,
-            isPublic:this.isPublic
-        });
+        //     desc:this.desc,
+        //     isPublic:this.isPublic
+        // });
     }
     static deserialize(str:string){
         let o = JSON.parse(str);
@@ -108,7 +112,7 @@ export interface CredentialResData{
     _joinDate:string;
     _lastLoggedIn:string;
 }
-class ProjectMeta{
+export class ProjectMeta{
     constructor(user:User,pid:string,name:string,desc:string,isPublic:boolean){
         this.user = user;
         this.pid = pid;
