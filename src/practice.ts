@@ -1,22 +1,25 @@
 const inProgressDiv = document.querySelector(".c-in-progress-container") as HTMLElement;
 const outerInProgressDiv = document.querySelector(".c-outer-in-progress") as HTMLElement;
 const browseDiv = document.querySelector(".c-browse-container") as HTMLElement;
-const inProgressTracker = document.querySelector(".c-in-progress-counter") as HTMLElement;
 const inProgressHeader = document.querySelector(".c-ip-container-header") as HTMLElement;
+const inProgressTracker = document.querySelector(".c-in-progress-counter") as HTMLElement;
 const browseTracker = document.querySelector(".c-browse-counter") as HTMLElement;
 const browseHeader = document.querySelector(".c-browse-container-header") as HTMLElement;
 const cHome = document.querySelector(".c-home") as HTMLElement;
+const clearFiltersButton = document.querySelector(".clear-filters") as HTMLElement;
+const sortBtn = document.querySelector(".c-sort") as HTMLElement;
+let cToggle;
+let displayedChallenges: Challenge[] = [];
 
 const checkboxes = document.querySelectorAll('input[type="checkbox"]');
 
 const lsUID = "BCC-01";
 
-let challengeInProgress = false;
 let bCounter = 0;
 let ipCounter = 0;
 
 class Challenge {
-    constructor(cID: string, name: string, desc: string, inProgress: boolean, imgURL: string, pid: string, submitted: boolean, difficulty: string) {
+    constructor(cID: string, name: string, desc: string, inProgress: boolean, imgURL: string, pid: string, submitted: boolean, difficulty: string, ongoing: boolean, submission_count:string) {
         this.name = name;
         this.desc = desc;
         this.inProgress = inProgress;
@@ -25,8 +28,9 @@ class Challenge {
         this.submitted = submitted;
         this.cID = cID;
         this.difficulty = difficulty;
+        this.ongoing = ongoing;
     }
-    
+
     name: string;
     desc: string;
     inProgress: boolean;
@@ -35,65 +39,59 @@ class Challenge {
     submitted: boolean;
     cID: string;
     difficulty: string;
+    ongoing: boolean;
 }
 
 class DetailedChallenge extends Challenge {
-    constructor(cID: string, name: string, desc: string, inProgress: boolean, imgURL: string, pid: string, submitted: boolean, difficulty: string) {
-        super(cID, name, desc, inProgress, imgURL, pid, submitted, difficulty);
+    constructor(cID: string, name: string, desc: string, inProgress: boolean, imgURL: string, pid: string, submitted: boolean, difficulty: string, ongoing:boolean, submission_count:string, submissions) {
+        super(cID, name, desc, inProgress, imgURL, pid, submitted, difficulty, ongoing, submission_count);
+        this.submissions = submissions;
     }
+
+    submissions;
 }
 
-let test1 = new Challenge("01", "Color Wheel", "Create a circular wheel which selects different colors depending on user mouse input", false, "/images/colorwheel.png", "", false, "Easy");
-let test2 = new Challenge("02", "Combination Lock", "Cxreate a combination lock which reveals a secret message when the correct combination is entered.", true, "/images/fillerthumbnail.png", "", true, "Medium");
-let test3 = new Challenge("03", "To-Do List", "Create a to-do list, to which you can add and remove items as desired.", false, "/images/fillerthumbnail.png", "", false, "Hard");
-let test4 = new Challenge("04", "Water Wheel", "Design a button which can be dragged around a circle, controlling the water level in a cup.", false, "/images/water-level.png", "", false, "Code Wizard");
-
-let detailedTest = new DetailedChallenge("04", "Water Wheel", "Design a button which can be dragged around a circle, controlling the water level in a cup.", false, "/images/water-level.png", "", false, "Easy -> Expert");
+let test1 = new Challenge("01", "Color Wheel", "Create a circular wheel which selects different colors depending on user mouse input", true, "/images/colorwheel.png", "", false, "easy",false,"1");
+let test2 = new Challenge("02", "Combination Lock", "Create a combination lock which reveals a secret message when the correct combination is entered.", false, "/images/fillerthumbnail.png", "", true, "medium",false,"3");
+let test3 = new Challenge("03", "To-Do List", "Create a to-do list, to which you can add and remove items as desired.", false, "/images/fillerthumbnail.png", "", false, "easy",false,"10");
+let test4 = new Challenge("04", "Water Wheel", "Design a button which can be dragged around a circle, controlling the water level in a cup.", false, "/images/water-level.png", "", false, "code-wizard",true,"2");
 
 let challengeArray = [test1, test2, test3, test4];
 
-console.log(challengeArray);
+// console.log(challengeArray);
 
 async function getChallenges() {
     // challengeArray = await (code goes here)
-    await wait(0);
+    return challengeArray
 }
 
 let isOpen: boolean;
 window.addEventListener("load", async () => {
-    await getChallenges();
-    showChallenges();
-    const cToggle = document.querySelector(".c-toggle") as HTMLElement;
-    
+    let temp = await getChallenges();
+    showChallenges(temp);
+    cToggle = document.querySelector(".c-toggle") as HTMLElement;
+
     let toggleState = localStorage.getItem(`${lsUID}toggleState`) || "open";
     isOpen = toggleState == "open" ? true : false;
-    
+
     if (isOpen == false) {
-        console.log("loading, and it's closed in localStorage - collapsing")
+        console.log("LocalStorage claims section should be closed. Collapsing")
         cToggle.classList.remove("point-up");
         cToggle.classList.add("point-down");
         outerInProgressDiv.classList.add("collapse", "window-load");
     }
-    
+
     if (cToggle) {
         cToggle.addEventListener("click", () => {
-            outerInProgressDiv.classList.remove("window-load");
             if (isOpen) {
-                isOpen = false;
-                localStorage.setItem(`${lsUID}toggleState`, "closed");
-                cToggle.classList.remove("point-up");
-                cToggle.classList.add("point-down");
-                outerInProgressDiv.classList.add("collapse");
+                toggleInProgressDiv(cToggle, false);
             } else {
-                isOpen = true;
-                localStorage.setItem(`${lsUID}toggleState`, "open");
-                cToggle.classList.remove("point-down");
-                cToggle.classList.add("point-up");
-                outerInProgressDiv.classList.remove("collapse");
+                toggleInProgressDiv(cToggle, true);
             }
             console.log(localStorage.getItem(`${lsUID}toggleState`));
         });
-    }
+    } else console.log("Error: cToggle is null")
+
     const cPreview = document.querySelectorAll(".c-preview") as NodeListOf<HTMLElement>;
     cPreview.forEach((e: HTMLElement) => {
         e.addEventListener("click", async () => {
@@ -102,89 +100,155 @@ window.addEventListener("load", async () => {
     });
 });
 
+function toggleInProgressDiv(btn: HTMLElement, opening: boolean) {
+    outerInProgressDiv.classList.remove("window-load");
+    if (opening) {
+        isOpen = true;
+        localStorage.setItem(`${lsUID}toggleState`, "open");
+        btn.classList.remove("point-down");
+        btn.classList.add("point-up");
+        outerInProgressDiv.classList.remove("collapse");
+    } else {
+        isOpen = false;
+        localStorage.setItem(`${lsUID}toggleState`, "closed");
+        btn.classList.remove("point-up");
+        btn.classList.add("point-down");
+        outerInProgressDiv.classList.add("collapse");
+    }
+}
+
 class ChallengeMenu extends Menu {
     constructor() {
         super("help");
     }
-    
+
     load() {
         super.load();
         let head = this.menu.children[0];
-        head.innerHTML = "...";
-        
-        this.body.innerHTML = "...";
+        head.innerHTML = "i do not know what I am doing";
+
+        this.body.innerHTML = "i am overriding every css class and i think i'm messing this up";
     }
 }
 
 async function createChallengePopup(cID) {
     // get detailed challenge data from server using cID
-    let cDetailed = detailedTest;
-    let attempted = cDetailed.submitted ? "Completed" : "Not Attempted";
+    new ChallengeMenu().load();
 }
 
-function showChallenges() {
-    for (let challenge of challengeArray) {
-        if (challenge.inProgress) { challenge.submitted = false; } // IMPORTANT: WHEN SUBMISSIONS ARE IMPLEMENTED, REMOVE THIS LINE. PROGRESS ON A CHALLENGE IS RESET IF A USER RE-SUBMITS
-        let tempElm = document.createElement("div") as HTMLElement;
-        tempElm.classList.add("c-card");
-        setChallengeHTML(tempElm, challenge);
-        
+function showChallenges(cArr: Challenge[]) {
+    for (let challenge of cArr) {
+        let cardElm = setChallengeHTML(challenge);
+
         if (!challenge.inProgress) {
-            browseDiv.appendChild(tempElm);
+            browseDiv.appendChild(cardElm);
             bCounter++;
         } else {
-            inProgressDiv.appendChild(tempElm);
+            inProgressDiv.appendChild(cardElm);
             ipCounter++;
-            challengeInProgress = true;
         }
     }
-    if (challengeInProgress == false) {
+    if (ipCounter == 0) {
         inProgressDiv.classList.add("empty");
         inProgressDiv.innerHTML = "<i>Start working on a challenge, and it'll show up here!</i>";
     } else {
         inProgressDiv.classList.remove("empty");
         inProgressDiv.innerHTML += `<span class="material-symbols-outlined c-toggle">expand_less</span>` // Toggle button is added if there are challenges in progress to show/hide
-        inProgressHeader.innerHTML += `<h3 class="c-in-progress-counter">(${ipCounter})</h3>`;
-        browseHeader.innerHTML += `<h3 class="c-browse-counter">(${bCounter})</h3>`;
     }
+    if(bCounter == 0) {
+        browseDiv.classList.add("empty");
+        browseDiv.innerHTML = "<i>No challenges match your search. Try another filter option!</i>";
+    } else browseDiv.classList.remove("empty");
+    
+    inProgressTracker.innerHTML = `(${ipCounter})`;
+    browseTracker.innerHTML = `(${bCounter})`;
 }
 
-function setChallengeHTML(elm: HTMLElement, c: Challenge) {
-    elm.innerHTML = `
+function setChallengeHTML(c: Challenge) {
+    let tempCard = document.createElement("div") as HTMLElement;
+    tempCard.classList.add("c-card");
+    tempCard.innerHTML = `
     <div class="c-img-div">
-    <img class="c-img" src="${c.imgURL}" alt="challenge image">
+        <img class="c-img" src="${c.imgURL}" alt="challenge image">
     </div>
     <h3 class="c-name">
-    ${c.name}
+        ${c.name}
     </h3>
     <span class="c-text">${c.desc}</span>
     <button class="c-preview" c-id="${c.cID}">Open Preview</button>
     `;
     if (c.submitted) {
-        elm.innerHTML += `<span class="c-submitted"><span class="material-symbols-outlined">select_check_box</span> Submitted</span>`;
+        tempCard.innerHTML += `<span class="c-submitted"><span class="material-symbols-outlined">select_check_box</span> Submitted</span>`;
     }
+    return tempCard;
 }
 
+const selectedFilters = {};
 checkboxes.forEach((checkbox) => {
     checkbox.addEventListener('change', (event) => {
+        if(outerInProgressDiv.classList.contains("collapse")) { toggleInProgressDiv(cToggle, true);}
         const checkboxValue = (event.target as HTMLInputElement).value;
         const isChecked = (event.target as HTMLInputElement).checked;
+        const filterType = (event.target as HTMLInputElement).name;
 
         if (isChecked) {
-            console.log(`Checkbox ${checkboxValue} is checked.`);
-            filterChallenges(checkboxValue,true);
+            if (!selectedFilters[filterType]) {
+                selectedFilters[filterType] = [];
+            }
+            selectedFilters[filterType].push(checkboxValue);
         } else {
-            console.log(`Checkbox ${checkboxValue} is unchecked.`);
-            filterChallenges(checkboxValue,false);
+            const index = selectedFilters[filterType].indexOf(checkboxValue);
+            if (index > -1) {
+                selectedFilters[filterType].splice(index, 1);
+            }
+            if (selectedFilters[filterType].length === 0) {
+                delete selectedFilters[filterType];
+            }
         }
+
+        filterChallenges();
     });
 });
 
-function filterChallenges (value:string, checked:boolean) {
-    challengeArray.forEach((challenge) => {
-
+function filterChallenges() { 
+    displayedChallenges = challengeArray.filter(challenge => {
+        return Object.keys(selectedFilters).every(filterType => {
+            switch (filterType) {
+                case "difficulty":
+                    return selectedFilters[filterType].includes(challenge.difficulty);
+                case "ongoing":
+                        return challenge.ongoing === true;
+                case "in-progress":
+                        return challenge.inProgress === true;
+                default:
+                    return true;
+            }
+        });
     });
+
+    clearChallenges();
+    showChallenges(displayedChallenges);
 }
+
+function clearChallenges() { // resets challenge containers and counters
+    browseDiv.innerHTML = "";
+    inProgressDiv.innerHTML = "";
+    bCounter = 0;
+    ipCounter = 0;
+    inProgressTracker.innerHTML = "";
+    browseTracker.innerHTML = "";
+}
+
+clearFiltersButton.addEventListener('click', () => {
+    Object.keys(selectedFilters).forEach(filterType => {
+        delete selectedFilters[filterType];
+    });
+    checkboxes.forEach((checkbox:HTMLInputElement) => {
+        checkbox.checked = false;
+    });
+
+    filterChallenges();
+});
 
 // Caleb, if you're reading this - this is the stuff I made for my menu
 

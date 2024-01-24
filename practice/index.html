@@ -21,10 +21,10 @@
                     FILTERS
                 </h3>
                 <div class="filter-section">
-                    <div class="clear-filters">
+                    <button class="clear-filters">
                         Clear Filters
-                        <span class="material-symbols-outlined">cancel</span>
-                    </div>
+                        <!-- <span class="material-symbols-outlined">refresh</span> -->
+                    </button>
                 </div>
                 <div class="filter-section">
                     <h4 class="f-title">
@@ -44,7 +44,7 @@
                             <label for="hard">Hard</label>
                         </div>
                         <div class="f-option">
-                            <input type="checkbox" name="difficulty" id="code-wizard" value="Code Wizard">
+                            <input type="checkbox" name="difficulty" id="code-wizard" value="code-wizard">
                             <label for="code-wizard">Code Wizard</label>
                         </div>
                     </div>
@@ -55,14 +55,14 @@
                     </h4>
                     <div class="f-options">
                         <div class="f-option">
-                            <input type="checkbox" name="type" id="ongoing" value="ongoing">
-                            <label for="ongoing">Ongoing</label>
+                            <input type="checkbox" name="ongoing" id="ongoing" value="ongoing">
+                            <label for="ongoing">Ongoing (Computing Club)</label>
                         </div>
                     </div>
                     <div class="f-options">
                         <div class="f-option">
-                            <input type="checkbox" name="type" id="otheroption" value="otheroption">
-                            <label for="otheroption">Other Option</label>
+                            <input type="checkbox" name="in-progress" id="in-progress" value="in-progress">
+                            <label for="in-progress">In Progress</label>
                         </div>
                     </div>
                 </div>
@@ -73,9 +73,9 @@
             <div class="c-header">
                 <h1>CHALLENGES</h1>
                 <div class="c-header-r">
-                    <div class="c-sort c-search">
+                    <button class="c-sort c-search">
                         Sort By <span class="material-symbols-outlined">arrow_drop_down</span>
-                    </div>
+                    </button>
                     <form action="/search" method="get" class="c-search">
                         <input type="text" id="search" name="q" placeholder="Search Challenges" class="c-search-inner c-search-bar">
                         <input type="submit" value="Search" class="material-symbols-outlined c-search-inner c-bubble">
@@ -88,6 +88,9 @@
                     <h3 class="c-section">
                         IN PROGRESS
                     </h3>
+                    <h3 class="c-in-progress-counter">
+                        0
+                    </h3>
                 </div>
                 <div class="c-in-progress-container c-container">
                     <!--Typescript will add challenges here-->
@@ -98,6 +101,9 @@
                 <div class="c-browse-container-header">
                     <h3 class="c-section">
                         BROWSE
+                    </h3>
+                    <h3 class="c-browse-counter">
+                        0
                     </h3>
                 </div>
                 <div class="c-browse-container c-container">

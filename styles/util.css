@@ -706,8 +706,14 @@ code{
 input[type="text"]{
     padding:4px;
     font-size:13px;
+    font-family: var(--font);
+
+    &.c-search-inner{
+        color: var(--bg) !important;
+    }
 }
 input[type="checkbox"]{
     width:18px;
     height:18px;
+    font-family: var(--font);
 }
