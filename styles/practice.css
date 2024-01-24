@@ -5,6 +5,10 @@
     --purple-col-alt: #503E6E;
 }
 
+*{
+    min-width: 0;
+}
+
 .material-symbols-outlined{
     max-width:1em;
 }

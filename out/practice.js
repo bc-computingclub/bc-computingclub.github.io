@@ -36,6 +36,13 @@ class Challenge {
     difficulty;
     ongoing;
 }
+class DetailedChallenge extends Challenge {
+    constructor(cID, name, desc, inProgress, imgURL, pid, submitted, difficulty, ongoing, submission_count, submissions) {
+        super(cID, name, desc, inProgress, imgURL, pid, submitted, difficulty, ongoing, submission_count);
+        this.submissions = submissions;
+    }
+    submissions;
+}
 let test1 = new Challenge("01", "Color Wheel", "Create a circular wheel which selects different colors depending on user mouse input", true, "/images/colorwheel.png", "", false, "easy", false, "1");
 let test2 = new Challenge("02", "Combination Lock", "Create a combination lock which reveals a secret message when the correct combination is entered.", false, "/images/fillerthumbnail.png", "", true, "medium", false, "3");
 let test3 = new Challenge("03", "To-Do List", "Create a to-do list, to which you can add and remove items as desired.", false, "/images/fillerthumbnail.png", "", false, "easy", false, "10");
@@ -50,28 +57,13 @@ let isOpen;
 window.addEventListener("load", async () => {
     let temp = await getChallenges();
     showChallenges(temp);
-    cToggle = document.querySelector(".c-toggle");
     let toggleState = localStorage.getItem(`${lsUID}toggleState`) || "open";
     isOpen = toggleState == "open" ? true : false;
     if (isOpen == false) {
         console.log("LocalStorage claims section should be closed. Collapsing");
-        cToggle.classList.remove("point-up");
-        cToggle.classList.add("point-down");
-        outerInProgressDiv.classList.add("collapse", "window-load");
+        toggleInProgressDiv(cToggle, false);
+        outerInProgressDiv.classList.add("window-load");
     }
-    if (cToggle) {
-        cToggle.addEventListener("click", () => {
-            if (isOpen) {
-                toggleInProgressDiv(cToggle, false);
-            }
-            else {
-                toggleInProgressDiv(cToggle, true);
-            }
-            console.log(localStorage.getItem(`${lsUID}toggleState`));
-        });
-    }
-    else
-        console.log("Error: cToggle is null");
     const cPreview = document.querySelectorAll(".c-preview");
     cPreview.forEach((e) => {
         e.addEventListener("click", async () => {
@@ -130,6 +122,16 @@ function showChallenges(cArr) {
     else {
         inProgressDiv.classList.remove("empty");
         inProgressDiv.innerHTML += `<span class="material-symbols-outlined c-toggle">expand_less</span>`; // Toggle button is added if there are challenges in progress to show/hide
+        cToggle = document.querySelector(".c-toggle");
+        cToggle.addEventListener("click", () => {
+            if (isOpen) {
+                toggleInProgressDiv(cToggle, false);
+            }
+            else {
+                toggleInProgressDiv(cToggle, true);
+            }
+            console.log(localStorage.getItem(`${lsUID}toggleState`));
+        });
     }
     if (bCounter == 0) {
         browseDiv.classList.add("empty");
@@ -193,8 +195,6 @@ function filterChallenges() {
                     return selectedFilters[filterType].includes(challenge.difficulty);
                 case "ongoing":
                     return challenge.ongoing === true;
-                case "in-progress":
-                    return challenge.inProgress === true;
                 default:
                     return true;
             }

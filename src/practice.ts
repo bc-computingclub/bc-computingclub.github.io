@@ -69,28 +69,14 @@ let isOpen: boolean;
 window.addEventListener("load", async () => {
     let temp = await getChallenges();
     showChallenges(temp);
-    cToggle = document.querySelector(".c-toggle") as HTMLElement;
-
     let toggleState = localStorage.getItem(`${lsUID}toggleState`) || "open";
     isOpen = toggleState == "open" ? true : false;
 
     if (isOpen == false) {
         console.log("LocalStorage claims section should be closed. Collapsing")
-        cToggle.classList.remove("point-up");
-        cToggle.classList.add("point-down");
-        outerInProgressDiv.classList.add("collapse", "window-load");
+        toggleInProgressDiv(cToggle, false);
+        outerInProgressDiv.classList.add("window-load");
     }
-
-    if (cToggle) {
-        cToggle.addEventListener("click", () => {
-            if (isOpen) {
-                toggleInProgressDiv(cToggle, false);
-            } else {
-                toggleInProgressDiv(cToggle, true);
-            }
-            console.log(localStorage.getItem(`${lsUID}toggleState`));
-        });
-    } else console.log("Error: cToggle is null")
 
     const cPreview = document.querySelectorAll(".c-preview") as NodeListOf<HTMLElement>;
     cPreview.forEach((e: HTMLElement) => {
@@ -154,6 +140,15 @@ function showChallenges(cArr: Challenge[]) {
     } else {
         inProgressDiv.classList.remove("empty");
         inProgressDiv.innerHTML += `<span class="material-symbols-outlined c-toggle">expand_less</span>` // Toggle button is added if there are challenges in progress to show/hide
+        cToggle = document.querySelector(".c-toggle") as HTMLElement;
+        cToggle.addEventListener("click", () => {
+            if (isOpen) {
+                toggleInProgressDiv(cToggle, false);
+            } else {
+                toggleInProgressDiv(cToggle, true);
+            }
+            console.log(localStorage.getItem(`${lsUID}toggleState`));
+        });
     }
     if(bCounter == 0) {
         browseDiv.classList.add("empty");
@@ -218,8 +213,6 @@ function filterChallenges() {
                     return selectedFilters[filterType].includes(challenge.difficulty);
                 case "ongoing":
                         return challenge.ongoing === true;
-                case "in-progress":
-                        return challenge.inProgress === true;
                 default:
                     return true;
             }
