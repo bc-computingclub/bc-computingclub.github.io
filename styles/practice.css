@@ -5,10 +5,6 @@
     --purple-col-alt: #503E6E;
 }
 
-*{
-    min-width: 0;
-}
-
 .material-symbols-outlined{
     max-width:1em;
 }
@@ -113,7 +109,9 @@
 }
 
 .c-bubble {
-    padding: 5px;
+    margin: 0 auto;
+    padding: 6px;
+    max-width: max-content;
     cursor: pointer;
     background-color: var(--secondary-bg-col) !important;
 }
@@ -168,15 +166,75 @@
     cursor: pointer;
 }
 
-.c-sort {
+.c-sort-div {
+    position: relative;
+    overflow: hidden;
+
+    &.collapse {
+        overflow: visible;
+    }
+}
+
+.c-sort-btn {
     background-color: var(--secondary-bg-col);
     color: var(--col);
     font-family: var(--font) !important;
     padding-inline-start: 20px;
     padding-inline-end: 10px;
-    padding-block: 5px;
     border-radius: 3px;
+    cursor: pointer; 
+}
+
+.c-sort-options {
+    display: grid;
+    grid-template-rows: repeat(4,1fr);
     cursor: pointer;
+    position: absolute;
+    right: 0px;
+    border-radius: 3px;
+    height: max-content;
+    background-color: var(--secondary-bg-col);
+    overflow: hidden;
+    z-index: 99;
+    width: max-content;
+
+    box-shadow: 0px 4px 4px 0px rgba(0, 0, 0, 0.25);
+    -webkit-box-shadow: 0px 4px 4px 0px rgba(0,0,0,0.25);
+    -moz-box-shadow: 0px 4px 4px 0px rgba(0,0,0,0.25);
+}
+
+.c-sort-option {
+    display: flex;
+    flex-wrap: nowrap;
+    align-items: center;
+    gap: .5em;
+    justify-content: flex-end;
+    padding: 1em;
+    border-radius: 3px;
+    color: var(--col);
+    width: 100%;
+    background-color: var(--secondary-bg-col);
+    overflow-y: hidden;
+    font-size: 14px;
+    
+    &:hover {
+        background-color: var(--darken0);
+    } 
+
+}
+
+.c-sort-toggle {
+    transform: rotate(0deg);
+    transition-duration: 0.3s;
+    transition-timing-function: ease-out;
+
+    &.point-down {
+        transform: rotate(180deg);
+    }
+
+    &.point-up {
+        transform: rotate(0deg);
+    }
 }
 
 .c-outer-browse{
@@ -318,12 +376,10 @@
 
 .c-popup {
     position: absolute;
-    right: 10em;
-;   color: var(--secondary-col);
+    color: var(--secondary-col);
     width: calc(100dvw - 20em);
-    height: calc(100dvh - (60px + 6em));
+    height: calc(100dvh - (60px + 12em));
     background-color: var(--purple-col);
-    backdrop-filter: blur(2px);
 
     animation:AddBubble forwards 0.35s ease-out;
     border-radius: 3px;
@@ -336,15 +392,18 @@
 
 .c-popup-left {
     display: grid;
-    grid-template-rows: auto auto;
-    align-content: start;
+    grid-template-rows: 60px 1fr;
+    align-content: space-between;
     gap: 1em;
+}
+
+.c-popup-title, .c-attempted {
+    text-transform: uppercase;
 }
 
 .c-popup-right {
     display: grid;
-    grid-template-rows: auto auto auto auto;
-    align-content: start;
+    grid-template-rows: 60px auto auto auto;
     gap: 1em;
 }
 
@@ -365,12 +424,57 @@
 
 .c-popup-img-text{
     align-self: flex-end;
+    text-transform: uppercase;
+}
+
+.c-popup-implementations-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
 }
 
 .c-popup-implementations {
     display: grid;
     grid-template-rows: auto auto;
+    gap: 1em;
+}
+
+.c-implementations{
+    display: grid;
+    grid-template-columns: auto auto auto;
+    gap: 1em;
+
+}
+
+.c-implementation {
+    display: grid;
+    grid-template-rows: auto auto;
     gap: .5em;
+    padding: .5em;
+    background-color: var(--bg-col);
+    cursor: pointer;
+}
+
+.c-implementation-img {
+    aspect-ratio: 4/3;
+    width: 100%;
+    height: 100%;
+    border-radius: 3px;
+}
+
+.c-implementation-preview {
+    border-radius: 3px;
+    width: fit-content;
+    gap: .5em;
+}
+
+.c-view-all {
+    cursor:pointer;
+}
+
+.c-implementation-credit {
+    display: flex;
+    justify-content: flex-start;
 }
 
 .c-popup-header{
@@ -381,17 +485,47 @@
 
 .c-popup-body {
     padding: 1em;
-    background-color: var(--bg-col);
+    background-color: var(--secondary-bg-col);
     border-radius: 3px;
     display: grid;
     grid-template-rows:auto auto;
+    align-content: space-between;
+    color: var(--col);
+}
+
+.c-popup-task {
+    display: grid;
+    grid-template-rows: auto auto;
     gap: 1em;
-    align-content: start;
 }
 
 .c-popup-close {
+    display: flex;
+    align-items: center;
     justify-self: end;
     cursor: pointer;
+}
+
+.c-difficulty{
+    margin-block:auto;
+    text-transform: uppercase;
+}
+
+.c-start {
+    padding-block: 1em;
+    padding-inline: 2em;
+    width: 100%;
+    text-transform: uppercase;
+    display: flex;
+    gap: .5em;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font: var(--font);
+}
+
+.c-start-arrow {
+    font-size: inherit;
 }
 
 @keyframes AddBubble{

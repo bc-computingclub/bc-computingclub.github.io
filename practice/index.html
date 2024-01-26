@@ -59,12 +59,12 @@
                             <label for="ongoing">Ongoing (Computing Club)</label>
                         </div>
                     </div>
-                    <!-- <div class="f-options"> Replace with an actual filter option
+                    <div class="f-options">
                         <div class="f-option">
-                            <input type="checkbox" name="in-progress" id="in-progress" value="in-progress">
-                            <label for="in-progress">In Progress</label>
+                            <input type="checkbox" name="completed" id="completed" value="completed">
+                            <label for="completed">Completed</label>
                         </div>
-                    </div> -->
+                    </div>
                 </div>
             </div>
         </div>
@@ -73,9 +73,17 @@
             <div class="c-header">
                 <h1>CHALLENGES</h1>
                 <div class="c-header-r">
-                    <button class="c-sort c-search">
-                        Sort By <span class="material-symbols-outlined">arrow_drop_down</span>
-                    </button>
+                    <div class="c-sort-div">
+                        <button class="c-sort-btn c-search">
+                            Sort By <span class="material-symbols-outlined c-sort-toggle">arrow_drop_down</span>
+                        </button>
+                        <div class="c-sort-options">
+                            <div class="c-sort-option popularity" onclick="sortChallenges('popularity',true)">Popularity <span class="material-symbols-outlined" style="font-size: inherit;">keyboard_double_arrow_down</span></div>
+                            <div class="c-sort-option popularity" onclick="sortChallenges('popularity',false)">Popularity <span class="material-symbols-outlined" style="font-size: inherit;">keyboard_double_arrow_up</span></div>
+                            <div class="c-sort-option alphabetical" onclick="sortChallenges('alphabetical',true)">Alphabetical (A-Z)</div>
+                            <div class="c-sort-option alphabetical" onclick="sortChallenges('alphabetical',false)">Alphabetical (Z-A)</div>
+                        </div>
+                    </div>
                     <form action="/search" method="get" class="c-search">
                         <input type="text" id="search" name="q" placeholder="Search Challenges" class="c-search-inner c-search-bar">
                         <input type="submit" value="Search" class="material-symbols-outlined c-search-inner c-bubble">
@@ -93,7 +101,7 @@
                     </h3>
                 </div>
                 <div class="c-in-progress-container c-container">
-                    <!--Typescript will add challenges here-->
+                    <!--Typescript adds in progress challenges here-->
                 </div>
             </div>
 
@@ -107,7 +115,7 @@
                     </h3>
                 </div>
                 <div class="c-browse-container c-container">
-                    <!--Typescript will add challenges here-->
+                    <!--Typescript adds challenges which match selected filters (and which aren't in progress) here-->
                 </div>
             </div>
         </div>

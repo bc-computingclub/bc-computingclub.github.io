@@ -87,6 +87,7 @@ class Menu {
         let t = this;
         let menu = document.createElement("div");
         menu.className = "menu";
+        menu.classList.add("menu-" + this.title.replaceAll(" ", "-").toLowerCase());
         this.menu = menu;
         menuCont.appendChild(menu);
         if (isHidden)

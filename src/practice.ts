@@ -7,7 +7,9 @@ const browseTracker = document.querySelector(".c-browse-counter") as HTMLElement
 const browseHeader = document.querySelector(".c-browse-container-header") as HTMLElement;
 const cHome = document.querySelector(".c-home") as HTMLElement;
 const clearFiltersButton = document.querySelector(".clear-filters") as HTMLElement;
-const sortBtn = document.querySelector(".c-sort") as HTMLElement;
+const cSortDiv = document.querySelector(".c-sort-div") as HTMLElement;
+const cSort = document.querySelector(".c-sort-btn") as HTMLElement;
+
 let cToggle;
 let displayedChallenges: Challenge[] = [];
 
@@ -16,7 +18,7 @@ const checkboxes = document.querySelectorAll('input[type="checkbox"]');
 const lsUID = "BCC-01";
 
 let bCounter = 0;
-let ipCounter = 0;
+let ipCounter = 0;``
 
 class Challenge {
     constructor(cID: string, name: string, desc: string, inProgress: boolean, imgURL: string, pid: string, submitted: boolean, difficulty: string, ongoing: boolean, submission_count:string) {
@@ -29,6 +31,7 @@ class Challenge {
         this.cID = cID;
         this.difficulty = difficulty;
         this.ongoing = ongoing;
+        this.submission_count = submission_count;
     }
 
     name: string;
@@ -40,6 +43,7 @@ class Challenge {
     cID: string;
     difficulty: string;
     ongoing: boolean;
+    submission_count: string;
 }
 
 class DetailedChallenge extends Challenge {
@@ -51,18 +55,31 @@ class DetailedChallenge extends Challenge {
     submissions;
 }
 
+class Submission {
+    constructor(previewURL: string, sentBy:string) {
+        this.previewURL = previewURL;
+        this.sentBy = sentBy;
+    }
+    previewURL:string;
+    sentBy:string;
+}
+
 let test1 = new Challenge("01", "Color Wheel", "Create a circular wheel which selects different colors depending on user mouse input", true, "/images/colorwheel.png", "", false, "easy",false,"1");
 let test2 = new Challenge("02", "Combination Lock", "Create a combination lock which reveals a secret message when the correct combination is entered.", false, "/images/fillerthumbnail.png", "", true, "medium",false,"3");
 let test3 = new Challenge("03", "To-Do List", "Create a to-do list, to which you can add and remove items as desired.", false, "/images/fillerthumbnail.png", "", false, "easy",false,"10");
 let test4 = new Challenge("04", "Water Wheel", "Design a button which can be dragged around a circle, controlling the water level in a cup.", false, "/images/water-level.png", "", false, "code-wizard",true,"2");
-
 let challengeArray = [test1, test2, test3, test4];
 
-// console.log(challengeArray);
+let testDetailed = new DetailedChallenge("04", "Water Wheel", "Design a button which can be dragged around a circle, controlling the water level in a cup.", false, "/images/water-level.png", "", false, "code-wizard",true,"2",[]);
+
+let sub1 = new Submission("/images/fillerthumbnail.png", "Paul Bauer");
+let sub2 = new Submission("/images/fillerthumbnail.png", "Claeb Claeb");
+let sub3 = new Submission("/images/fillerthumbnail.png", "Butler Test");
+let submissionArray = [sub1, sub2, sub3];
 
 async function getChallenges() {
     // challengeArray = await (code goes here)
-    return challengeArray
+    return challengeArray;
 }
 
 let isOpen: boolean;
@@ -73,17 +90,11 @@ window.addEventListener("load", async () => {
     isOpen = toggleState == "open" ? true : false;
 
     if (isOpen == false) {
-        console.log("LocalStorage claims section should be closed. Collapsing")
-        toggleInProgressDiv(cToggle, false);
+        if(challengeArray.filter(c => c.inProgress).length > 0) {
+            toggleInProgressDiv(cToggle, false);
+        }
         outerInProgressDiv.classList.add("window-load");
     }
-
-    const cPreview = document.querySelectorAll(".c-preview") as NodeListOf<HTMLElement>;
-    cPreview.forEach((e: HTMLElement) => {
-        e.addEventListener("click", async () => {
-            await createChallengePopup(e.getAttribute("c-id"));
-        });
-    });
 });
 
 function toggleInProgressDiv(btn: HTMLElement, opening: boolean) {
@@ -104,28 +115,94 @@ function toggleInProgressDiv(btn: HTMLElement, opening: boolean) {
 }
 
 class ChallengeMenu extends Menu {
-    constructor() {
-        super("help");
+    constructor(c:DetailedChallenge,submissions:Submission[]) {
+        super("Challenge Menu");
+        this.c = c;
+        this.submissions = submissions;
     }
+
+    c: DetailedChallenge;
+    submissions: Submission[];
 
     load() {
         super.load();
-        let head = this.menu.children[0];
-        head.innerHTML = "i do not know what I am doing";
-
-        this.body.innerHTML = "i am overriding every css class and i think i'm messing this up";
+        this.menu.innerHTML = `
+            <div class="c-popup">
+                <div class ="c-popup-left">
+                    <div class="c-popup-header">
+                        <h2 class="c-popup-title">${this.c.name}</h2>
+                        <div class="c-attempted"> ${this.c.submitted ? "Attempted" : "Not Attempted"}</div>
+                    </div>
+                    <div class="c-popup-body">
+                        <div class ="c-popup-task">
+                            <h4 class="c-popup-sub-title">Task</h4>
+                            <span class="c-popup-task-text">${this.c.desc}</span>
+                        </div>
+                        <div class ="c-popup-implementations">
+                            <div class="c-popup-implementations-header">
+                                <h4 class="c-popup-sub-title">Implementations</h4>
+                                <button class="c-view-all">
+                                    View All (${this.c.submission_count})
+                                </button>
+                            </div>
+                            <div class="c-implementations">
+                                <div class="c-implementation">
+                                    <div class="c-implementation-preview">
+                                        <img class="c-implementation-img" src="${this.submissions[0].previewURL}" alt="challenge image">
+                                    </div>
+                                    <div class="c-implementation-credit">${this.submissions[0].sentBy}</div>
+                                </div>
+                                <div class="c-implementation">
+                                    <div class="c-implementation-preview">
+                                        <img class="c-implementation-img" src="${this.submissions[1].previewURL}" alt="challenge image">
+                                    </div>
+                                    <div class="c-implementation-credit">${this.submissions[1].sentBy}</div>
+                                </div>
+                                <div class="c-implementation">
+                                    <div class="c-implementation-preview">
+                                        <img class="c-implementation-img" src="${this.submissions[2].previewURL}" alt="challenge image">
+                                    </div>
+                                    <div class="c-implementation-credit">${this.submissions[2].sentBy}</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="c-popup-right">
+                    <div class="c-popup-close material-symbols-outlined">
+                        close
+                    </div>
+                    <div class="c-popup-img-div">
+                        <img class="c-popup-img" src="${this.c.imgURL}" alt="challenge image">
+                        <i class="c-popup-img-text">Sketch Mockup</i>
+                    </div>
+                    <div class="c-difficulty">
+                        <span class="c-difficulty-text">Difficulty: <span class="c-difficulty-number">${this.c.difficulty}</span></span>
+                    </div>
+                    <button class="c-start" onclick="alert("starting challenge");"><h3>Start Challenge</h3><span class="material-symbols-outlined c-start-arrow">arrow_forward_ios<span/></button>
+                </div>
+            </div>
+        `;
+        this.menu.style.width = (document.querySelector(".c-popup") as HTMLElement).getBoundingClientRect().width + "px";
+        this.menu.style.right = "0px";
+        let cBtn = document.querySelector(".c-popup-close") as HTMLElement;
+        cBtn.onclick = () => {
+            this.close();
+        }
     }
 }
 
 async function createChallengePopup(cID) {
     // get detailed challenge data from server using cID
-    new ChallengeMenu().load();
+    console.log("Creating Challenge");
+    let cDetailed = testDetailed;
+    let cSubmissions = submissionArray;
+    new ChallengeMenu(cDetailed,cSubmissions).load();
 }
 
 function showChallenges(cArr: Challenge[]) {
     for (let challenge of cArr) {
         let cardElm = setChallengeHTML(challenge);
-
         if (!challenge.inProgress) {
             browseDiv.appendChild(cardElm);
             bCounter++;
@@ -141,6 +218,7 @@ function showChallenges(cArr: Challenge[]) {
         inProgressDiv.classList.remove("empty");
         inProgressDiv.innerHTML += `<span class="material-symbols-outlined c-toggle">expand_less</span>` // Toggle button is added if there are challenges in progress to show/hide
         cToggle = document.querySelector(".c-toggle") as HTMLElement;
+        cToggle.classList.add(localStorage.getItem(`${lsUID}toggleState`) == "closed" ? "point-down" : "point-up");
         cToggle.addEventListener("click", () => {
             if (isOpen) {
                 toggleInProgressDiv(cToggle, false);
@@ -163,19 +241,25 @@ function setChallengeHTML(c: Challenge) {
     let tempCard = document.createElement("div") as HTMLElement;
     tempCard.classList.add("c-card");
     tempCard.innerHTML = `
-    <div class="c-img-div">
-        <img class="c-img" src="${c.imgURL}" alt="challenge image">
-    </div>
-    <h3 class="c-name">
-        ${c.name}
-    </h3>
-    <span class="c-text">${c.desc}</span>
-    <button class="c-preview" c-id="${c.cID}">Open Preview</button>
+        <div class="c-img-div">
+            <img class="c-img" src="${c.imgURL}" alt="challenge image">
+        </div>
+        <h3 class="c-name">
+            ${c.name}
+        </h3>
+        <span class="c-text">${c.desc}</span>
+        <button class="c-preview" onclick="setupButton(${c.cID});">
+            Open Preview
+        </button>
     `;
     if (c.submitted) {
         tempCard.innerHTML += `<span class="c-submitted"><span class="material-symbols-outlined">select_check_box</span> Submitted</span>`;
     }
     return tempCard;
+}
+
+async function setupButton(cID:Challenge["cID"]) {
+    await createChallengePopup(cID);
 }
 
 const selectedFilters = {};
@@ -205,6 +289,23 @@ checkboxes.forEach((checkbox) => {
     });
 });
 
+let loadingDiv:HTMLElement;
+async function showLoadingAnim(elm:HTMLElement) {
+    loadingDiv = document.createElement("div") as HTMLElement;
+    loadingDiv.classList.add("loading-div");
+    loadingDiv.innerHTML = `
+        <div class="loading-elm material-symbols-outlined">
+            progress_activity
+        </div>
+        <span class ="loading-text">Loading...</span>
+    `;
+    elm.appendChild(loadingDiv);
+}
+
+async function hideLoadingAnim() {
+    loadingDiv.remove();
+}
+
 function filterChallenges() { 
     displayedChallenges = challengeArray.filter(challenge => {
         return Object.keys(selectedFilters).every(filterType => {
@@ -213,6 +314,8 @@ function filterChallenges() {
                     return selectedFilters[filterType].includes(challenge.difficulty);
                 case "ongoing":
                         return challenge.ongoing === true;
+                case "completed":
+                        return challenge.submitted === true;
                 default:
                     return true;
             }
@@ -243,65 +346,37 @@ clearFiltersButton.addEventListener('click', () => {
     filterChallenges();
 });
 
-// Caleb, if you're reading this - this is the stuff I made for my menu
+cSortDiv.addEventListener('click', () => {
+    toggleSortMenu();
+});
 
-// <div class ="c-popup">
-// <div class ="c-popup-left">
-//     <div class="c-popup-header">
-//         <h2 class="c-popup-title">${cDetailed.name}</h2>
-//         <div class="c-attempted">${attempted}</div>
-//     </div>
-//     <div class="c-popup-body">
-//         <div class ="c-popup-task">
-//             <h4 class="c-popup-sub-title">Task</h4>
-//             <span class="c-popup-task-text">${cDetailed.desc}</span>
-//         </div>
-//         <div class ="c-popup-implementations">
-//             <h4 class="c-popup-sub-title">Implementations</h4>
-//             <div class="c-implementations">
-//                 <div class="c-implementation">
-//                     <div class="c-implementation-preview">
-//                         <img class="c-implementation-img" src="images/error.png" alt="challenge image">
-//                     </div>
-//                     <div class="c-implementation-credit"></div>
-//                 </div>
-//             </div>
-//         </div>
-//     </div>
-// </div>
-// <div class="c-popup-right">
-//     <div class="c-popup-close material-symbols-outlined">
-//         close
-//     </div>
-//     <div class="c-popup-img-div">
-//         <img class="c-popup-img" src="${cDetailed.imgURL}" alt="challenge image">
-//         <span class="c-popup-img-text">Sketch Mockup</span>
-//     </div>
-//     <div class="c-difficulty">
-//         <span class="c-difficulty-text">Difficulty: <span class="c-difficulty-number">${cDetailed.difficulty}</span></span>
-//     </div>
-// </div>
-// </div>
+function sortChallenges(option:string,descending:boolean) {
+    clearChallenges();
+    displayedChallenges = challengeArray.sort((a,b) => {
+        switch(option) {
+            case "popularity":
+                if(descending) {
+                    return parseInt(b.submission_count) - parseInt(a.submission_count);
+                } else return parseInt(a.submission_count) - parseInt(b.submission_count);
+            case "alphabetical":
+                if(descending) {
+                    return a.name.localeCompare(b.name);
+                } return b.name.localeCompare(a.name);
+        }
+    });
+    if(challengeArray.filter(c => c.inProgress).length == 1) {toggleInProgressDiv(cToggle, false); } // if there's 1 challenge in progress, close it
 
-// let cPopup = document.createElement("div") as HTMLElement;
-// body.style.overflow = "hidden";
-// cHome.appendChild(cPopup);
-// cPopup.className = "c-popup-cont";
-// console.log("Creating Popup");
-// popupExists = true;
-// const previewBtnArr = document.querySelectorAll(".c-preview") as NodeListOf<HTMLElement>;
-// previewBtnArr.forEach((btn: HTMLElement) => {
-//     btn.classList.toggle("disabled");
-// });
-// cPopup.style.top = window.scrollY + 10 + "px";
-// cPopup.addEventListener("click", (e) => {
-//     const targetElement = e.target as HTMLElement;
-//     if (targetElement.classList.contains("c-popup-close")) {
-//         cPopup.remove();
-//         body.style.overflow = "auto";
-//         popupExists = false;
-//         previewBtnArr.forEach((btn: HTMLElement) => {
-//             btn.classList.toggle("disabled");
-//         });
-//     }
-// });
+    showChallenges(displayedChallenges);
+}
+
+function toggleSortMenu() {
+    if(cSortDiv.classList.contains("collapse")) {
+        cSortDiv.classList.remove("collapse");
+        cSort.classList.add("point-up");
+        cSort.classList.remove("point-down");
+    } else {
+        cSortDiv.classList.add("collapse");
+        cSort.classList.remove("point-up");
+        cSort.classList.add("point-down");
+    }
+}

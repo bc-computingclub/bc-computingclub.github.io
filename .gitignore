@@ -3,3 +3,6 @@ node_modules
 *.json
 server/users
 .DS_Store
+out/editor.js
+out/editor.js.map
+out/util.js.map
