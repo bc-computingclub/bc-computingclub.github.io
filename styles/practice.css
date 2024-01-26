@@ -40,7 +40,7 @@
 .challenge-left{
     padding-inline: 2em;
     padding-block: 1em;
-    height: calc(100dvh - (2em + 60px));
+    height: calc(100dvh - (2em + 3em));
     background-color: var(--secondary-bg-col);
     border-radius: 3px;
     animation-name: intro-from-left;
@@ -296,7 +296,6 @@
 
 .c-img-div {
     border-radius: 3px;
-
     background-color: var(--bg-col);
 }
 
@@ -377,41 +376,49 @@
 .c-popup {
     position: absolute;
     color: var(--secondary-col);
-    width: calc(100dvw - 20em);
-    height: calc(100dvh - (60px + 12em));
+    width: calc(100dvw - 34em);
+    height: calc(100dvh - (3em + 16em));
     background-color: var(--purple-col);
 
     animation:AddBubble forwards 0.35s ease-out;
     border-radius: 3px;
 
     display: grid;
-    grid-template-columns: 7fr 3fr;
+    grid-template-columns: 7fr 2fr;
     gap: 1em;
     padding: 1em;
 }
 
 .c-popup-left {
     display: grid;
-    grid-template-rows: 60px 1fr;
+    grid-template-rows: 3em 1fr;
     align-content: space-between;
     gap: 1em;
 }
 
-.c-popup-title, .c-attempted {
+.c-popup-title, .c-attempted, .c-popup-sub-title {
     text-transform: uppercase;
+}
+
+.c-attempted {
+    padding-block: 1em;
+    padding-inline:2em;
+    background-color: var(--secondary-bg-col);
+    border-radius: 3px;
+    color:var(--col);
 }
 
 .c-popup-right {
     display: grid;
-    grid-template-rows: 60px auto auto auto;
+    grid-template-rows: 3em 2fr 1fr 1fr;
     gap: 1em;
+    align-content: space-between;
 }
 
 .c-popup-img-div {
     display: flex;
     flex-direction: column;
     border-radius: 3px;
-    min-height: 250px;
     gap: .5em;
 }
 
@@ -441,9 +448,14 @@
 
 .c-implementations{
     display: grid;
-    grid-template-columns: auto auto auto;
+    grid-template-columns: repeat(3, 1fr);
     gap: 1em;
 
+    &.empty {
+        grid-template-columns: 1fr;
+        height: 6em;
+        align-items: start;
+    }
 }
 
 .c-implementation {
@@ -470,6 +482,10 @@
 
 .c-view-all {
     cursor:pointer;
+
+    &.empty{
+        cursor: not-allowed;
+    }
 }
 
 .c-implementation-credit {
@@ -512,9 +528,9 @@
 }
 
 .c-start {
-    padding-block: 1em;
-    padding-inline: 2em;
+    padding-block: 1.5em;
     width: 100%;
+    height: max-content;
     text-transform: uppercase;
     display: flex;
     gap: .5em;
@@ -522,10 +538,24 @@
     justify-content: center;
     cursor: pointer;
     font: var(--font);
+    align-self: self-end;
+}
+
+.c-back {
+    display: flex;
+    align-items: center;
+    gap: .5em;
+    justify-content: center;
+}
+
+.c-back-arrow {
+    font-size: inherit;
+    font-weight: 700;
 }
 
 .c-start-arrow {
     font-size: inherit;
+    font-weight: 700;
 }
 
 @keyframes AddBubble{

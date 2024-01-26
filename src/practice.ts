@@ -75,7 +75,7 @@ let testDetailed = new DetailedChallenge("04", "Water Wheel", "Design a button w
 let sub1 = new Submission("/images/fillerthumbnail.png", "Paul Bauer");
 let sub2 = new Submission("/images/fillerthumbnail.png", "Claeb Claeb");
 let sub3 = new Submission("/images/fillerthumbnail.png", "Butler Test");
-let submissionArray = [sub1, sub2, sub3];
+let submissionArray = [sub1, sub2];
 
 async function getChallenges() {
     // challengeArray = await (code goes here)
@@ -131,7 +131,7 @@ class ChallengeMenu extends Menu {
                 <div class ="c-popup-left">
                     <div class="c-popup-header">
                         <h2 class="c-popup-title">${this.c.name}</h2>
-                        <div class="c-attempted"> ${this.c.submitted ? "Attempted" : "Not Attempted"}</div>
+                        <i class="c-attempted"> ${this.c.submitted ? "Attempted" : "Not Attempted"}</i>
                     </div>
                     <div class="c-popup-body">
                         <div class ="c-popup-task">
@@ -146,24 +146,6 @@ class ChallengeMenu extends Menu {
                                 </button>
                             </div>
                             <div class="c-implementations">
-                                <div class="c-implementation">
-                                    <div class="c-implementation-preview">
-                                        <img class="c-implementation-img" src="${this.submissions[0].previewURL}" alt="challenge image">
-                                    </div>
-                                    <div class="c-implementation-credit">${this.submissions[0].sentBy}</div>
-                                </div>
-                                <div class="c-implementation">
-                                    <div class="c-implementation-preview">
-                                        <img class="c-implementation-img" src="${this.submissions[1].previewURL}" alt="challenge image">
-                                    </div>
-                                    <div class="c-implementation-credit">${this.submissions[1].sentBy}</div>
-                                </div>
-                                <div class="c-implementation">
-                                    <div class="c-implementation-preview">
-                                        <img class="c-implementation-img" src="${this.submissions[2].previewURL}" alt="challenge image">
-                                    </div>
-                                    <div class="c-implementation-credit">${this.submissions[2].sentBy}</div>
-                                </div>
                             </div>
                         </div>
                     </div>
@@ -179,18 +161,59 @@ class ChallengeMenu extends Menu {
                     <div class="c-difficulty">
                         <span class="c-difficulty-text">Difficulty: <span class="c-difficulty-number">${this.c.difficulty}</span></span>
                     </div>
-                    <button class="c-start" onclick="alert("starting challenge");"><h3>Start Challenge</h3><span class="material-symbols-outlined c-start-arrow">arrow_forward_ios<span/></button>
+                    <button class="c-start" onclick="alert("starting challenge");"><h3>${this.c.inProgress ? "Continue" : "Start"}</h3><span class="material-symbols-outlined c-start-arrow">arrow_forward_ios<span/></button>
                 </div>
             </div>
         `;
+        if(this.submissions != null){
+            for(let i = 0; i < this.submissions.length; i++) {
+                document.querySelector(".c-implementations").innerHTML += `
+                    <div class="c-implementation">
+                        <div class="c-implementation-preview">
+                            <img class="c-implementation-img" src="${this.submissions[i].previewURL}" alt="challenge image">
+                        </div>
+                        <div class="c-implementation-credit">${this.submissions[i].sentBy}</div>
+                    </div>
+                `
+            }
+        } else {
+            document.querySelector(".c-implementations").innerHTML = "<i>There are currently no submissions to this challenge. Upload one to be featured here!</i>";
+            document.querySelector(".c-implementations").classList.add("empty");
+            document.querySelector(".c-view-all").classList.add("empty");
+            console.log("No submissions found for this challenge.");
+        }
+
         this.menu.style.width = (document.querySelector(".c-popup") as HTMLElement).getBoundingClientRect().width + "px";
         this.menu.style.right = "0px";
+        
         let cBtn = document.querySelector(".c-popup-close") as HTMLElement;
         cBtn.onclick = () => {
             this.close();
         }
+
+        let viewAllBtn = document.querySelector(".c-view-all") as HTMLElement;
+        viewAllBtn.onclick = () => {
+            let temp = document.querySelector(".c-popup-body").innerHTML;
+            document.querySelector(".c-popup-body").innerHTML = `
+            <div class ="c-popup-implementations">
+                <div class="c-popup-implementations-header">
+                    <h4 class="c-popup-sub-title">Implementations</h4>
+                    <button class="c-back">
+                        Back <span class="material-symbols-outlined c-back-arrow">arrow_back_ios</span>
+                    </button>
+                </div>
+                <div class="c-implementations">
+                </div>
+            </div>
+            `;
+            document.querySelector(".c-back").addEventListener("click", () => {
+                document.querySelector(".c-popup-body").innerHTML = temp;
+                this.load(); // this is big time broken but it's late and i need sleep lol 
+            });
+        }
     }
 }
+
 
 async function createChallengePopup(cID) {
     // get detailed challenge data from server using cID
