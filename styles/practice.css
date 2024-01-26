@@ -384,7 +384,7 @@
     border-radius: 3px;
 
     display: grid;
-    grid-template-columns: 7fr 2fr;
+    grid-template-columns: 7fr 3fr;
     gap: 1em;
     padding: 1em;
 }
@@ -410,7 +410,7 @@
 
 .c-popup-right {
     display: grid;
-    grid-template-rows: 3em 2fr 1fr 1fr;
+    grid-template-rows: 3em 3fr 1fr 1fr;
     gap: 1em;
     align-content: space-between;
 }
@@ -432,6 +432,7 @@
 .c-popup-img-text{
     align-self: flex-end;
     text-transform: uppercase;
+    font-size: 13px;
 }
 
 .c-popup-implementations-header {
@@ -482,6 +483,7 @@
 
 .c-view-all {
     cursor:pointer;
+    text-transform: uppercase;
 
     &.empty{
         cursor: not-allowed;
@@ -525,6 +527,14 @@
 .c-difficulty{
     margin-block:auto;
     text-transform: uppercase;
+    background-color: var(--secondary-bg-col);
+    color: var(--col);
+    display: flex;
+    align-self: flex-end;
+    justify-content: space-between;
+    border-radius: 3px;
+    padding: 1em;
+    font-size: 13px;
 }
 
 .c-start {
@@ -546,6 +556,8 @@
     align-items: center;
     gap: .5em;
     justify-content: center;
+    text-transform: uppercase;
+    cursor: pointer;
 }
 
 .c-back-arrow {

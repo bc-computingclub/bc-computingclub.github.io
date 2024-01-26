@@ -52,7 +52,7 @@ class DetailedChallenge extends Challenge {
         this.submissions = submissions;
     }
 
-    submissions;
+    submissions; // max size of 3
 }
 
 class Submission {
@@ -70,16 +70,16 @@ let test3 = new Challenge("03", "To-Do List", "Create a to-do list, to which you
 let test4 = new Challenge("04", "Water Wheel", "Design a button which can be dragged around a circle, controlling the water level in a cup.", false, "/images/water-level.png", "", false, "code-wizard",true,"2");
 let challengeArray = [test1, test2, test3, test4];
 
-let testDetailed = new DetailedChallenge("04", "Water Wheel", "Design a button which can be dragged around a circle, controlling the water level in a cup.", false, "/images/water-level.png", "", false, "code-wizard",true,"2",[]);
-
 let sub1 = new Submission("/images/fillerthumbnail.png", "Paul Bauer");
 let sub2 = new Submission("/images/fillerthumbnail.png", "Claeb Claeb");
 let sub3 = new Submission("/images/fillerthumbnail.png", "Butler Test");
 let submissionArray = [sub1, sub2];
 
+let testDetailed = new DetailedChallenge("04", "Water Wheel", "Design a button which can be dragged around a circle, controlling the water level in a cup.", false, "/images/water-level.png", "", false, "code-wizard",true,"2",submissionArray);
+
 async function getChallenges() {
     // challengeArray = await (code goes here)
-    return challengeArray;
+    return challengeArray; // delete once we have server code
 }
 
 let isOpen: boolean;
@@ -115,14 +115,12 @@ function toggleInProgressDiv(btn: HTMLElement, opening: boolean) {
 }
 
 class ChallengeMenu extends Menu {
-    constructor(c:DetailedChallenge,submissions:Submission[]) {
+    constructor(c:DetailedChallenge) {
         super("Challenge Menu");
         this.c = c;
-        this.submissions = submissions;
     }
 
     c: DetailedChallenge;
-    submissions: Submission[];
 
     load() {
         super.load();
@@ -141,7 +139,7 @@ class ChallengeMenu extends Menu {
                         <div class ="c-popup-implementations">
                             <div class="c-popup-implementations-header">
                                 <h4 class="c-popup-sub-title">Implementations</h4>
-                                <button class="c-view-all">
+                                <button class="c-view-all" onclick="createViewAllPopup(${this.c.cID})">
                                     View All (${this.c.submission_count})
                                 </button>
                             </div>
@@ -159,20 +157,20 @@ class ChallengeMenu extends Menu {
                         <i class="c-popup-img-text">Sketch Mockup</i>
                     </div>
                     <div class="c-difficulty">
-                        <span class="c-difficulty-text">Difficulty: <span class="c-difficulty-number">${this.c.difficulty}</span></span>
+                        <span class="c-difficulty-text">Difficulty:</span><span class="c-difficulty-number">${this.c.difficulty}</span>
                     </div>
                     <button class="c-start" onclick="alert("starting challenge");"><h3>${this.c.inProgress ? "Continue" : "Start"}</h3><span class="material-symbols-outlined c-start-arrow">arrow_forward_ios<span/></button>
                 </div>
             </div>
         `;
-        if(this.submissions != null){
-            for(let i = 0; i < this.submissions.length; i++) {
+        if(this.c.submissions != null){
+            for(let i = 0; i < this.c.submissions.length; i++) {
                 document.querySelector(".c-implementations").innerHTML += `
                     <div class="c-implementation">
                         <div class="c-implementation-preview">
-                            <img class="c-implementation-img" src="${this.submissions[i].previewURL}" alt="challenge image">
+                            <img class="c-implementation-img" src="${this.c.submissions[i].previewURL}" alt="challenge image">
                         </div>
-                        <div class="c-implementation-credit">${this.submissions[i].sentBy}</div>
+                        <div class="c-implementation-credit">${this.c.submissions[i].sentBy}</div>
                     </div>
                 `
             }
@@ -190,37 +188,48 @@ class ChallengeMenu extends Menu {
         cBtn.onclick = () => {
             this.close();
         }
-
-        let viewAllBtn = document.querySelector(".c-view-all") as HTMLElement;
-        viewAllBtn.onclick = () => {
-            let temp = document.querySelector(".c-popup-body").innerHTML;
-            document.querySelector(".c-popup-body").innerHTML = `
-            <div class ="c-popup-implementations">
-                <div class="c-popup-implementations-header">
-                    <h4 class="c-popup-sub-title">Implementations</h4>
-                    <button class="c-back">
-                        Back <span class="material-symbols-outlined c-back-arrow">arrow_back_ios</span>
-                    </button>
-                </div>
-                <div class="c-implementations">
-                </div>
-            </div>
-            `;
-            document.querySelector(".c-back").addEventListener("click", () => {
-                document.querySelector(".c-popup-body").innerHTML = temp;
-                this.load(); // this is big time broken but it's late and i need sleep lol 
-            });
-        }
     }
 }
 
+function createViewAllPopup(cID:string) {
+    // add code to get array of all submissions from server using cID
+    let tempSubArr = submissionArray; // delete once we have server code
+
+    let temp = document.querySelector(".c-popup-body").innerHTML;
+    document.querySelector(".c-popup-body").innerHTML = `
+    <div class ="c-popup-implementations">
+        <div class="c-popup-implementations-header">
+            <h4 class="c-popup-sub-title">Implementations</h4>
+            <button class="c-back">
+                Back <span class="material-symbols-outlined c-back-arrow">arrow_back_ios</span>
+            </button>
+        </div>
+        <div class="c-implementations">
+        </div>
+    </div>
+    `;
+    for(let i = 0; i < tempSubArr.length; i++) {
+        let impDiv = document.querySelector(".c-implementations") as HTMLElement;
+        impDiv.innerHTML += `
+            <div class="c-implementation">
+                <div class="c-implementation-preview">
+                    <img class="c-implementation-img" src="${tempSubArr[i].previewURL}" alt="challenge image">
+                </div>
+                <div class="c-implementation-credit">${tempSubArr[i].sentBy}</div>
+            </div>
+        `
+    }
+    document.querySelector(".c-back").addEventListener("click", () => {
+        document.querySelector(".c-popup-body").innerHTML = temp;
+    });
+}
 
 async function createChallengePopup(cID) {
     // get detailed challenge data from server using cID
+    let cDetailed = testDetailed; // delete once we have server code 
+    
     console.log("Creating Challenge");
-    let cDetailed = testDetailed;
-    let cSubmissions = submissionArray;
-    new ChallengeMenu(cDetailed,cSubmissions).load();
+    new ChallengeMenu(cDetailed).load();
 }
 
 function showChallenges(cArr: Challenge[]) {
