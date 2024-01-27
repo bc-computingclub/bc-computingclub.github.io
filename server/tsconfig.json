@@ -4,7 +4,8 @@
         "moduleResolution": "Node16",
         "target": "ES2022",
         "rootDir": "src",
-        "outDir": "out"
+        "outDir": "out",
+        "strict": true
     },
     "exclude": [
         "node_modules"

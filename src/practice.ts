@@ -18,7 +18,7 @@ const checkboxes = document.querySelectorAll('input[type="checkbox"]');
 const lsUID = "BCC-01";
 
 let bCounter = 0;
-let ipCounter = 0;``
+let ipCounter = 0;
 
 class Challenge {
     constructor(cID: string, name: string, desc: string, inProgress: boolean, imgURL: string, pid: string, submitted: boolean, difficulty: string, ongoing: boolean, submission_count:string) {

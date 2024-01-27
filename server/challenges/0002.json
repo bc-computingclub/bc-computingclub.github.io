@@ -1,0 +1,6 @@
+{
+    "name":"Combination Lock",
+    "desc":"Create a combination lock which reveals a secret message when the correct combination is entered.",
+    "imgUrl":"/images/fillerthumbnail.png",
+    "difficulty":"medium"
+}

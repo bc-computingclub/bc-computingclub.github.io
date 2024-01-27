@@ -1,0 +1,6 @@
+{
+    "name":"Color Wheel",
+    "desc":"Create a circular wheel which selects different colors depending on user mouse input",
+    "imgUrl":"/images/colorwheel.png",
+    "difficulty":"easy"
+}

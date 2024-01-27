@@ -1,0 +1,6 @@
+{
+    "name":"Water Wheel",
+    "desc":"Design a button which can be dragged around a circle, controlling the water level in a cup.",
+    "imgUrl":"/images/water-level.png",
+    "difficulty":"code-wizard"
+}

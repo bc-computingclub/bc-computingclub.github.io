@@ -102,3 +102,6 @@
 - Created "in-progress" section to store challenges which the user is working on
 - "In-progress" section can be toggled open and closed.
 - Created "browse" section for user to browse through available challenges, and click "open preview" to learn more. (&see others' implementations?)
+
+### 1/26/24 - Claeb
+- some backend stuff for Challenges

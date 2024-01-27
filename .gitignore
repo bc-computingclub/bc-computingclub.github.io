@@ -1,6 +1,5 @@
 *.map
 node_modules
-*.json
 server/users
 .DS_Store
 out/editor.js

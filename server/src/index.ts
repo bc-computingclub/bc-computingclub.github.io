@@ -1,5 +1,7 @@
 import { io, server, CredentialResData, User, users, getUserBySock, sanitizeEmail, getProject, attemptToGetProject, access, readdir, read, mkdir, removeFile, write, ULFile, ProjectMeta } from "./connection";
+import { Challenge, challenges } from "./s_challenges";
 import fs from "fs";
+import { ReadLine,Interface,createInterface } from "readline";
 
 function valVar(v:any,type:string){
     if(v == null) return false;
@@ -20,11 +22,11 @@ io.on("connection",socket=>{
             if(!users.has(data.email)){
                 let san = sanitizeEmail(data.email);
                 // try to read from file first
-                let fdataStr:string;
-                try{
+                let fdataStr:string|null;
+                // try{
                     fdataStr = fs.readFileSync("../users/"+san+".json",{encoding:"utf8"});
-                }
-                catch(e){}
+                // }
+                // catch(e){}
 
                 function newUser(){
                     user = new User(data.name,data.email,data.picture,data._joinDate,data._lastLoggedIn,socket.id,[]);
@@ -47,9 +49,10 @@ io.on("connection",socket=>{
                     user = new User(fdata.name,fdata.email,fdata.picture,fdata._joinDate,fdata._lastLoggedIn,socket.id,fdata.pMeta);
                     user.saveToFile();
                 }
-                users.set(user.email,user);
+                if(user) users.set(user.email,user);
             }
         }
+        if(!user) return;
         user.lastLoggedIn = new Date().toISOString();
 
         // login
@@ -122,6 +125,10 @@ io.on("connection",socket=>{
             // return;
         }
         let curFiles = await readdir(path);
+        if(!curFiles){
+            console.log("Err: failed to find project curFiles");
+            return;
+        }
         let files:ULFile[] = [];
         for(const f of curFiles){
             files.push(new ULFile(f,await read(path+"/"+f,"utf8"),"","utf8"));
@@ -158,10 +165,12 @@ io.on("connection",socket=>{
         }
 
         let p = user.projects.find(v=>v.pid == pid);
-        for(const f of list){
+        if(p) for(const f of list){
             let ff = p.files.find(v=>v.name == f.name);
-            ff.val = f.val;
+            if(ff) ff.val = f.val;
+            else console.log("Err: null file in project files list");
         }
+        else console.log("Err: couldn't find project while uploading files");
 
         // todo - cache file values so if they're the same then they don't need to be reuploaded, or do this on the client maybe to speed it up
 
@@ -195,19 +204,19 @@ io.on("connection",socket=>{
 
         return;
         
-        let uid = user.sanitized_email;
-        let path = "../project/"+uid+"/"+pid;
-        if(!await access(path)){
-            // await mkdir(path);
-            call(null);
-            return;
-        }
-        let curFiles = await readdir(path);
-        let files:ULFile[] = [];
-        for(const f of curFiles){
-            files.push(new ULFile(f,await read(path+"/"+f,"utf8"),"","utf8"));
-        }
-        call(files);
+        // let uid = user.sanitized_email;
+        // let path = "../project/"+uid+"/"+pid;
+        // if(!await access(path)){
+        //     // await mkdir(path);
+        //     call(null);
+        //     return;
+        // }
+        // let curFiles = await readdir(path);
+        // let files:ULFile[] = [];
+        // for(const f of curFiles){
+        //     files.push(new ULFile(f,await read(path+"/"+f,"utf8"),"","utf8"));
+        // }
+        // call(files);
     });
 
     // User get stuff
@@ -220,7 +229,7 @@ io.on("connection",socket=>{
         let data:any;
         switch(section){
             case ProjectGroup.personal:{
-                data = user.projects.map(v=>v.serialize().serialize());
+                data = user.projects.map(v=>v.serialize()?.serialize());
             } break;
         }
         
@@ -236,4 +245,11 @@ enum ProjectGroup{
 
 server.listen(3000,()=>{
     console.log('listening on *:3000');
+});
+
+let rl = createInterface(process.stdin,process.stdout);
+rl.on("line",(line)=>{
+    if(line == "challenges"){
+        console.log(challenges);
+    }
 });

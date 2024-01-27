@@ -65,11 +65,14 @@ class Project{
         
         this.desc = "A project for experiments.";
         this.isPublic = false;
+
+        this._owner = null;
+        this.files = [];
     }
     pid:string;
     name:string;
     ownerEmail:string;
-    _owner:User;
+    _owner:User|null;
     
     desc:string;
     isPublic:boolean;
@@ -82,6 +85,10 @@ class Project{
     }
 
     serialize(){
+        if(!this._owner){
+            console.log("Err: while trying to serialize project, no owner found");
+            return;
+        }
         // return this.meta;
         return new ProjectMeta(this._owner,this.pid,this.name,this.desc,this.isPublic);
         // return JSON.stringify({
@@ -310,6 +317,10 @@ export async function attemptToGetProject(user:User,pid:string){
         return;
     }
     let curFiles = await readdir(path);
+    if(!curFiles){
+        console.log("Err: failed to find project files");
+        return;
+    }
     let files:ULFile[] = [];
     for(const f of curFiles){
         files.push(new ULFile(f,await read(path+"/"+f,"utf8"),"","utf8"));
@@ -467,7 +478,7 @@ export function mkdir(path:string,encoding?:BufferEncoding){
     });
 }
 export function readdir(path:string){
-    return new Promise<string[]>(resolve=>{
+    return new Promise<string[]|null>(resolve=>{
         fs.readdir(path,(err,files)=>{
             if(err){
                 console.log("err: ",err);

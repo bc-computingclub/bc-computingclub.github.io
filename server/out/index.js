@@ -4,7 +4,9 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const connection_1 = require("./connection");
+const s_challenges_1 = require("./s_challenges");
 const fs_1 = __importDefault(require("fs"));
+const readline_1 = require("readline");
 function valVar(v, type) {
     if (v == null)
         return false;
@@ -27,10 +29,10 @@ connection_1.io.on("connection", socket => {
                 let san = (0, connection_1.sanitizeEmail)(data.email);
                 // try to read from file first
                 let fdataStr;
-                try {
-                    fdataStr = fs_1.default.readFileSync("../users/" + san + ".json", { encoding: "utf8" });
-                }
-                catch (e) { }
+                // try{
+                fdataStr = fs_1.default.readFileSync("../users/" + san + ".json", { encoding: "utf8" });
+                // }
+                // catch(e){}
                 function newUser() {
                     user = new connection_1.User(data.name, data.email, data.picture, data._joinDate, data._lastLoggedIn, socket.id, []);
                     user.joinDate = new Date().toISOString();
@@ -52,9 +54,12 @@ connection_1.io.on("connection", socket => {
                     user = new connection_1.User(fdata.name, fdata.email, fdata.picture, fdata._joinDate, fdata._lastLoggedIn, socket.id, fdata.pMeta);
                     user.saveToFile();
                 }
-                connection_1.users.set(user.email, user);
+                if (user)
+                    connection_1.users.set(user.email, user);
             }
         }
+        if (!user)
+            return;
         user.lastLoggedIn = new Date().toISOString();
         // login
         let _prevToken = user.getFirstToken();
@@ -123,6 +128,10 @@ connection_1.io.on("connection", socket => {
             // return;
         }
         let curFiles = await (0, connection_1.readdir)(path);
+        if (!curFiles) {
+            console.log("Err: failed to find project curFiles");
+            return;
+        }
         let files = [];
         for (const f of curFiles) {
             files.push(new connection_1.ULFile(f, await (0, connection_1.read)(path + "/" + f, "utf8"), "", "utf8"));
@@ -159,10 +168,16 @@ connection_1.io.on("connection", socket => {
             await (0, connection_1.write)(path + "/" + f.name, f.val, f.enc);
         }
         let p = user.projects.find(v => v.pid == pid);
-        for (const f of list) {
-            let ff = p.files.find(v => v.name == f.name);
-            ff.val = f.val;
-        }
+        if (p)
+            for (const f of list) {
+                let ff = p.files.find(v => v.name == f.name);
+                if (ff)
+                    ff.val = f.val;
+                else
+                    console.log("Err: null file in project files list");
+            }
+        else
+            console.log("Err: couldn't find project while uploading files");
         // todo - cache file values so if they're the same then they don't need to be reuploaded, or do this on the client maybe to speed it up
         console.log(":: done uploading");
         call();
@@ -188,21 +203,51 @@ connection_1.io.on("connection", socket => {
         let p = await (0, connection_1.attemptToGetProject)(user, pid);
         call(p?.files);
         return;
-        let uid = user.sanitized_email;
-        let path = "../project/" + uid + "/" + pid;
-        if (!await (0, connection_1.access)(path)) {
-            // await mkdir(path);
-            call(null);
+        // let uid = user.sanitized_email;
+        // let path = "../project/"+uid+"/"+pid;
+        // if(!await access(path)){
+        //     // await mkdir(path);
+        //     call(null);
+        //     return;
+        // }
+        // let curFiles = await readdir(path);
+        // let files:ULFile[] = [];
+        // for(const f of curFiles){
+        //     files.push(new ULFile(f,await read(path+"/"+f,"utf8"),"","utf8"));
+        // }
+        // call(files);
+    });
+    // User get stuff
+    socket.on("user-getProjectList", (section, f) => {
+        let user = (0, connection_1.getUserBySock)(socket.id);
+        if (!user) {
+            f(null);
             return;
         }
-        let curFiles = await (0, connection_1.readdir)(path);
-        let files = [];
-        for (const f of curFiles) {
-            files.push(new connection_1.ULFile(f, await (0, connection_1.read)(path + "/" + f, "utf8"), "", "utf8"));
+        let data;
+        switch (section) {
+            case ProjectGroup.personal:
+                {
+                    data = user.projects.map(v => v.serialize()?.serialize());
+                }
+                break;
         }
-        call(files);
+        f(data);
     });
 });
+var ProjectGroup;
+(function (ProjectGroup) {
+    ProjectGroup[ProjectGroup["personal"] = 0] = "personal";
+    ProjectGroup[ProjectGroup["recent"] = 1] = "recent";
+    ProjectGroup[ProjectGroup["saved"] = 2] = "saved";
+    ProjectGroup[ProjectGroup["custom"] = 3] = "custom";
+})(ProjectGroup || (ProjectGroup = {}));
 connection_1.server.listen(3000, () => {
     console.log('listening on *:3000');
+});
+let rl = (0, readline_1.createInterface)(process.stdin, process.stdout);
+rl.on("line", (line) => {
+    if (line == "challenges") {
+        console.log(s_challenges_1.challenges);
+    }
 });

@@ -26,7 +26,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.readdir = exports.mkdir = exports.removeFile = exports.read = exports.write = exports.access = exports.ULFile = exports.Socket = exports.getUserBySock = exports.attemptToGetProject = exports.getProject = exports.users = exports.User = exports.sanitizeEmail = exports.io = exports.server = void 0;
+exports.readdir = exports.mkdir = exports.removeFile = exports.read = exports.write = exports.access = exports.ULFile = exports.Socket = exports.getUserBySock = exports.attemptToGetProject = exports.getProject = exports.users = exports.User = exports.ProjectMeta = exports.sanitizeEmail = exports.io = exports.server = void 0;
 const http = __importStar(require("http"));
 const express_1 = __importDefault(require("express"));
 const socket_io_1 = require("socket.io");
@@ -87,6 +87,8 @@ class Project {
         this.ownerEmail = ownerEmail;
         this.desc = "A project for experiments.";
         this.isPublic = false;
+        this._owner = null;
+        this.files = [];
     }
     pid;
     name;
@@ -95,17 +97,24 @@ class Project {
     desc;
     isPublic;
     files;
+    // meta:ProjectMeta; // might need this at some point
     getRefStr() {
         return this.ownerEmail + ":" + this.pid;
     }
     serialize() {
-        return JSON.stringify({
-            pid: this.pid,
-            name: this.name,
-            ownerEmail: this.ownerEmail,
-            desc: this.desc,
-            isPublic: this.isPublic
-        });
+        if (!this._owner) {
+            console.log("Err: while trying to serialize project, no owner found");
+            return;
+        }
+        // return this.meta;
+        return new ProjectMeta(this._owner, this.pid, this.name, this.desc, this.isPublic);
+        // return JSON.stringify({
+        //     pid:this.pid,
+        //     name:this.name,
+        //     ownerEmail:this.ownerEmail,
+        //     desc:this.desc,
+        //     isPublic:this.isPublic
+        // });
     }
     static deserialize(str) {
         let o = JSON.parse(str);
@@ -144,6 +153,7 @@ class ProjectMeta {
         return p;
     }
 }
+exports.ProjectMeta = ProjectMeta;
 class User {
     constructor(name, email, picture, _joinDate, _lastLoggedIn, sockId, pMeta) {
         this.name = name;
@@ -306,6 +316,10 @@ async function attemptToGetProject(user, pid) {
         return;
     }
     let curFiles = await readdir(path);
+    if (!curFiles) {
+        console.log("Err: failed to find project files");
+        return;
+    }
     let files = [];
     for (const f of curFiles) {
         files.push(new ULFile(f, await read(path + "/" + f, "utf8"), "", "utf8"));
