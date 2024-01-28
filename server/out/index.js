@@ -12,6 +12,15 @@ function valVar(v, type) {
         return false;
     return (typeof v == type);
 }
+function valVar2(v, type, f) {
+    if (typeof f != "function")
+        return false;
+    if (v == null) {
+        f();
+        return false;
+    }
+    return (typeof v == type);
+}
 connection_1.io.on("connection", socket => {
     socket.on("login", (data, token, call) => {
         if (!valVar(data, "object"))
@@ -234,6 +243,68 @@ connection_1.io.on("connection", socket => {
         }
         f(data);
     });
+    // Request stuff
+    socket.on("getChallengeDetails", async (cid, f) => {
+        if (!valVar2(cid, "string", f))
+            return;
+        // let c = challenges.get(cid);
+        let data = await s_challenges_1.ChallengeData.fromCID(cid);
+        f(data?.serializeGet());
+    });
+    socket.on("getChallenges", (perPage, pageI, filter, f) => {
+        if (!valVar2(perPage, "number", f))
+            return;
+        if (!valVar2(pageI, "number", f))
+            return;
+        if (!valVar2(filter, "object", f))
+            return;
+        let list = [];
+        // my optimized method
+        let i = 0;
+        let skip = pageI * perPage;
+        for (const [k, v] of s_challenges_1.challenges) {
+            if (filter.difficulty?.length) {
+                if (!filter.difficulty.includes(v.difficulty))
+                    continue;
+            }
+            // else continue; // comment this so if no boxes are checked to default to all checked
+            let ongoing = v.ongoing;
+            if (filter.ongoing?.length)
+                if (!ongoing)
+                    continue;
+            // if(filter.ongoing?.length ? !ongoing : ongoing) continue;
+            if (i >= skip)
+                list.push(v.serializeGet());
+            if (list.length >= perPage)
+                break;
+            i++;
+        }
+        // partly chatgpt from Paul
+        if (false) {
+            let challengeList = [];
+            for (const [k, v] of s_challenges_1.challenges) {
+                list.push(v);
+            }
+            list = challengeList.filter(challenge => {
+                Object.keys(filter).every(filterType => {
+                    switch (filterType) {
+                        case "difficulty":
+                            return filter[filterType].includes(challenge.difficulty);
+                        // case "ongoing":
+                        // return challenge.ongoing === true;
+                        // case "completed":
+                        // return challenge.submitted === true;
+                        default:
+                            return true;
+                    }
+                });
+            });
+        }
+        f(list);
+    });
+    socket.on("startChallenge", (cid, f) => {
+        console.log("starting challenge...", cid);
+    });
 });
 var ProjectGroup;
 (function (ProjectGroup) {
@@ -247,7 +318,15 @@ connection_1.server.listen(3000, () => {
 });
 let rl = (0, readline_1.createInterface)(process.stdin, process.stdout);
 rl.on("line", (line) => {
+    let s = line.split(" ");
     if (line == "challenges") {
         console.log(s_challenges_1.challenges);
+    }
+    else if (line == "stop") {
+        process.exit();
+    }
+    else if (s[0] == "cdata") {
+        let c = s_challenges_1.challenges.get(s[1]);
+        console.log(c);
     }
 });

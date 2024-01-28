@@ -1,10 +1,18 @@
 import { io, server, CredentialResData, User, users, getUserBySock, sanitizeEmail, getProject, attemptToGetProject, access, readdir, read, mkdir, removeFile, write, ULFile, ProjectMeta } from "./connection";
-import { Challenge, challenges } from "./s_challenges";
+import { Challenge, ChallengeData, ChallengeGet, challenges } from "./s_challenges";
 import fs from "fs";
-import { ReadLine,Interface,createInterface } from "readline";
+import { createInterface } from "readline";
 
 function valVar(v:any,type:string){
     if(v == null) return false;
+    return (typeof v == type);
+}
+function valVar2(v:any,type:string,f:any){
+    if(typeof f != "function") return false;
+    if(v == null){
+        f();
+        return false;
+    }
     return (typeof v == type);
 }
 
@@ -235,6 +243,67 @@ io.on("connection",socket=>{
         
         f(data);
     });
+
+    // Request stuff
+    socket.on("getChallengeDetails",async (cid:string,f:(data:any)=>void)=>{
+        if(!valVar2(cid,"string",f)) return;
+        
+        // let c = challenges.get(cid);
+        let data = await ChallengeData.fromCID(cid);
+        f(data?.serializeGet());
+    });
+    socket.on("getChallenges",(perPage:number,pageI:number,filter:FilterType,f:(data:any)=>void)=>{
+        if(!valVar2(perPage,"number",f)) return;
+        if(!valVar2(pageI,"number",f)) return;
+        if(!valVar2(filter,"object",f)) return;
+
+        
+        let list:ChallengeGet[] = [];
+
+        // my optimized method
+        let i = 0;
+        let skip = pageI*perPage;
+        for(const [k,v] of challenges){
+            if(filter.difficulty?.length){
+                if(!filter.difficulty.includes(v.difficulty)) continue;
+            }
+            // else continue; // comment this so if no boxes are checked to default to all checked
+            let ongoing = v.ongoing;
+            if(filter.ongoing?.length) if(!ongoing) continue;
+            // if(filter.ongoing?.length ? !ongoing : ongoing) continue;
+            
+            if(i >= skip) list.push(v.serializeGet());
+
+            if(list.length >= perPage) break;
+            i++;
+        }
+        // partly chatgpt from Paul
+        if(false){
+            let challengeList:Challenge[] = [];
+            for(const [k,v] of challenges){
+                list.push(v);
+            }
+            list = challengeList.filter(challenge=>{
+                Object.keys(filter).every(filterType => {
+                    switch (filterType) {
+                        case "difficulty":
+                            return filter[filterType].includes(challenge.difficulty);
+                        // case "ongoing":
+                                // return challenge.ongoing === true;
+                        // case "completed":
+                                // return challenge.submitted === true;
+                        default:
+                            return true;
+                    }
+                });
+            });
+        }
+
+        f(list);
+    });
+    socket.on("startChallenge",(cid:string,f:(data:any)=>void)=>{
+        console.log("starting challenge...",cid);
+    });
 });
 enum ProjectGroup{
     personal,
@@ -242,6 +311,11 @@ enum ProjectGroup{
     saved,
     custom
 }
+type FilterType = {
+    difficulty:string[];
+    ongoing:string[];
+    completed:string[];
+};
 
 server.listen(3000,()=>{
     console.log('listening on *:3000');
@@ -249,7 +323,15 @@ server.listen(3000,()=>{
 
 let rl = createInterface(process.stdin,process.stdout);
 rl.on("line",(line)=>{
+    let s = line.split(" ");
     if(line == "challenges"){
         console.log(challenges);
+    }
+    else if(line == "stop"){
+        process.exit();
+    }
+    else if(s[0] == "cdata"){
+        let c = challenges.get(s[1]);
+        console.log(c);
     }
 });

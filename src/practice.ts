@@ -21,7 +21,19 @@ let bCounter = 0;
 let ipCounter = 0;
 
 class Challenge {
-    constructor(cID: string, name: string, desc: string, inProgress: boolean, imgURL: string, pid: string, submitted: boolean, difficulty: string, ongoing: boolean, submission_count:string) {
+    // constructor(cID: string, name: string, desc: string, inProgress: boolean, imgURL: string, pid: string, submitted: boolean, difficulty: string, ongoing: boolean, submission_count:string) {
+    //     this.name = name;
+    //     this.desc = desc;
+    //     this.inProgress = inProgress;
+    //     this.imgURL = imgURL;
+    //     this.pid = pid;
+    //     this.submitted = submitted;
+    //     this.cID = cID;
+    //     this.difficulty = difficulty;
+    //     this.ongoing = ongoing;
+    //     this.submission_count = submission_count;
+    // }
+    constructor(cID: string, name: string, desc: string, inProgress: boolean, imgURL: string, pid: string, submitted: boolean, difficulty: string, ongoing:boolean, submission_count:string) {
         this.name = name;
         this.desc = desc;
         this.inProgress = inProgress;
@@ -32,6 +44,7 @@ class Challenge {
         this.difficulty = difficulty;
         this.ongoing = ongoing;
         this.submission_count = submission_count;
+        this.sub_highlights = [];
     }
 
     name: string;
@@ -44,15 +57,29 @@ class Challenge {
     difficulty: string;
     ongoing: boolean;
     submission_count: string;
+    timespan:{start:string,end:string};
+    sub_highlights:Submission[];
+
+    static from(data:any){
+        let c = new Challenge(data.id,data.name,data.desc,false,data.imgUrl,null,false,data.difficulty,data.ongoing,"0");
+        c.timespan = data.timespan;
+        c.sub_highlights = data.hl.map((v:any)=>new Submission(v.url,v.who));
+        return c;
+    }
 }
 
 class DetailedChallenge extends Challenge {
-    constructor(cID: string, name: string, desc: string, inProgress: boolean, imgURL: string, pid: string, submitted: boolean, difficulty: string, ongoing:boolean, submission_count:string, submissions) {
+    constructor(cID: string, name: string, desc: string, inProgress: boolean, imgURL: string, pid: string, submitted: boolean, difficulty: string, ongoing:boolean, submission_count:string, submissions:Submission[]) {
         super(cID, name, desc, inProgress, imgURL, pid, submitted, difficulty, ongoing, submission_count);
         this.submissions = submissions;
     }
 
-    submissions; // max size of 3
+    submissions:Submission[]; // max size of 3 // (Claeb: I'm going to move this to Challenge)
+
+    static fromDetails(c:Challenge,data:any){
+        let dc = new DetailedChallenge(c.cID,c.name,c.desc,c.inProgress,c.imgURL,c.pid,c.submitted,c.difficulty,c.ongoing,c.submission_count,data.submissions);
+        return dc;
+    }
 }
 
 class Submission {
@@ -64,11 +91,12 @@ class Submission {
     sentBy:string;
 }
 
-let test1 = new Challenge("01", "Color Wheel", "Create a circular wheel which selects different colors depending on user mouse input", true, "/images/colorwheel.png", "", false, "easy",false,"1");
-let test2 = new Challenge("02", "Combination Lock", "Create a combination lock which reveals a secret message when the correct combination is entered.", false, "/images/fillerthumbnail.png", "", true, "medium",false,"3");
-let test3 = new Challenge("03", "To-Do List", "Create a to-do list, to which you can add and remove items as desired.", false, "/images/fillerthumbnail.png", "", false, "easy",false,"10");
-let test4 = new Challenge("04", "Water Wheel", "Design a button which can be dragged around a circle, controlling the water level in a cup.", false, "/images/water-level.png", "", false, "code-wizard",true,"2");
-let challengeArray = [test1, test2, test3, test4];
+// let test1 = new Challenge("01", "Color Wheel", "Create a circular wheel which selects different colors depending on user mouse input", true, "/images/colorwheel.png", "", false, "easy",false,"1");
+// let test2 = new Challenge("02", "Combination Lock", "Create a combination lock which reveals a secret message when the correct combination is entered.", false, "/images/fillerthumbnail.png", "", true, "medium",false,"3");
+// let test3 = new Challenge("03", "To-Do List", "Create a to-do list, to which you can add and remove items as desired.", false, "/images/fillerthumbnail.png", "", false, "easy",false,"10");
+// let test4 = new Challenge("04", "Water Wheel", "Design a button which can be dragged around a circle, controlling the water level in a cup.", false, "/images/water-level.png", "", false, "code-wizard",true,"2");
+// let challengeArray = [test1, test2, test3, test4];
+let challengeArray:Challenge[] = [];
 
 let sub1 = new Submission("/images/fillerthumbnail.png", "Paul Bauer");
 let sub2 = new Submission("/images/fillerthumbnail.png", "Claeb Claeb");
@@ -79,13 +107,15 @@ let testDetailed = new DetailedChallenge("04", "Water Wheel", "Design a button w
 
 async function getChallenges() {
     // challengeArray = await (code goes here)
-    return challengeArray; // delete once we have server code
+    // return challengeArray; // delete once we have server code
+
+    challengeArray = await getServerChallenges();
 }
 
 let isOpen: boolean;
 window.addEventListener("load", async () => {
-    let temp = await getChallenges();
-    showChallenges(temp);
+    await getChallenges();
+    showChallenges(challengeArray);
     let toggleState = localStorage.getItem(`${lsUID}toggleState`) || "open";
     isOpen = toggleState == "open" ? true : false;
 
@@ -115,15 +145,18 @@ function toggleInProgressDiv(btn: HTMLElement, opening: boolean) {
 }
 
 class ChallengeMenu extends Menu {
-    constructor(c:DetailedChallenge) {
+    constructor(c:Challenge) {
         super("Challenge Menu");
         this.c = c;
     }
 
-    c: DetailedChallenge;
+    // c: DetailedChallenge; (Claeb: I'm changing this to Challenge which will hold the 3 highlights, and then the whole list when get requested on demand)
+    c: Challenge;
 
     load() {
         super.load();
+        this.menu.style.width = "auto";
+        this.menu.style.height = "auto";
         this.menu.innerHTML = `
             <div class="c-popup">
                 <div class ="c-popup-left">
@@ -159,18 +192,18 @@ class ChallengeMenu extends Menu {
                     <div class="c-difficulty">
                         <span class="c-difficulty-text">Difficulty:</span><span class="c-difficulty-number">${this.c.difficulty}</span>
                     </div>
-                    <button class="c-start" onclick="alert("starting challenge");"><h3>${this.c.inProgress ? "Continue" : "Start"}</h3><span class="material-symbols-outlined c-start-arrow">arrow_forward_ios<span/></button>
+                    <button class="c-start" onclick="alert('starting challenge');"><h3>${this.c.inProgress ? "Continue" : "Start"}</h3><span class="material-symbols-outlined c-start-arrow">arrow_forward_ios<span/></button>
                 </div>
             </div>
         `;
-        if(this.c.submissions != null){
-            for(let i = 0; i < this.c.submissions.length; i++) {
+        if(this.c.sub_highlights?.length){ // (Claeb: I removed "!= null" here because the highlights could be an empty array [], which is not null, but it's still empty)
+            for(let i = 0; i < this.c.sub_highlights.length; i++) {
                 document.querySelector(".c-implementations").innerHTML += `
                     <div class="c-implementation">
                         <div class="c-implementation-preview">
-                            <img class="c-implementation-img" src="${this.c.submissions[i].previewURL}" alt="challenge image">
+                            <img class="c-implementation-img" src="${this.c.sub_highlights[i].previewURL}" alt="challenge image">
                         </div>
-                        <div class="c-implementation-credit">${this.c.submissions[i].sentBy}</div>
+                        <div class="c-implementation-credit">${this.c.sub_highlights[i].sentBy}</div>
                     </div>
                 `
             }
@@ -224,12 +257,16 @@ function createViewAllPopup(cID:string) {
     });
 }
 
-async function createChallengePopup(cID) {
+let curChallengeMenu:ChallengeMenu;
+async function createChallengePopup(c:Challenge) {
     // get detailed challenge data from server using cID
-    let cDetailed = testDetailed; // delete once we have server code 
+    // let cDetailed = testDetailed; // delete once we have server code 
     
     console.log("Creating Challenge");
-    new ChallengeMenu(cDetailed).load();
+    if(curChallengeMenu) curChallengeMenu.close();
+    // curChallengeMenu = new ChallengeMenu(cDetailed);
+    curChallengeMenu = new ChallengeMenu(c);
+    curChallengeMenu.load();
 }
 
 function showChallenges(cArr: Challenge[]) {
@@ -291,7 +328,7 @@ function setChallengeHTML(c: Challenge) {
 }
 
 async function setupButton(cID:Challenge["cID"]) {
-    await createChallengePopup(cID);
+    await createChallengePopup(challengeArray.find(v=>v.cID == cID));
 }
 
 const selectedFilters = {};
@@ -338,8 +375,10 @@ async function hideLoadingAnim() {
     loadingDiv.remove();
 }
 
-function filterChallenges() { 
-    displayedChallenges = challengeArray.filter(challenge => {
+async function filterChallenges() {
+    await getChallenges();
+
+    if(false) displayedChallenges = challengeArray.filter(challenge => {
         return Object.keys(selectedFilters).every(filterType => {
             switch (filterType) {
                 case "difficulty":
@@ -353,6 +392,7 @@ function filterChallenges() {
             }
         });
     });
+    else displayedChallenges = challengeArray;
 
     clearChallenges();
     showChallenges(displayedChallenges);

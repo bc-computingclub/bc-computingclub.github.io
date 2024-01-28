@@ -116,7 +116,7 @@ class Menu {
         menusOpen.push(this);
     }
     close() {
-        if (this.menu.parentElement) {
+        if (this.menu?.parentElement) {
             this.menu.parentElement.removeChild(this.menu);
             this.reset();
             menusOpen.splice(menusOpen.indexOf(this), 1);
@@ -948,5 +948,12 @@ async function saveLesson(isQuick = false) {
     b_save.children[0].textContent = "save";
     b_save.children[0].classList.remove("progress-anim");
     _isSaving = false;
+}
+// screenshot util
+function screenshot() {
+    // @ts-ignore
+    html2canvas(document.body.children[5]).then(canvas => {
+        document.body.appendChild(canvas);
+    });
 }
 //# sourceMappingURL=util.js.map

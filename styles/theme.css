@@ -1,5 +1,8 @@
 body.themestyle-light{
     --bubble-bg:rgba(46, 70, 140, 0.7);
+    --third-bg-col:#f2f2f2;
+    --fourth-bg-col:#e3e3e3;
+
     /* --secondary-bg-col:rgb(255, 255, 255) !important;  just a placeholder */
 /* 
     & pre.code{

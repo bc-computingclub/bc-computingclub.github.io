@@ -122,4 +122,22 @@ async function restoreProjectFiles(project) {
     if (files.length)
         project.hasSavedOnce = true;
 }
+// Challenge
+async function getServerChallenges() {
+    let list = await new Promise(resolve => {
+        socket.emit("getChallenges", 20, 0, selectedFilters, (list) => {
+            resolve(list);
+        });
+    });
+    if (list)
+        list = list.map(v => Challenge.from(v));
+    return list || [];
+}
+async function getChallengeData(cid) {
+    return await new Promise(resolve => {
+        socket.emit("getChallengeDetails", cid, (data) => {
+            resolve(data);
+        });
+    });
+}
 //# sourceMappingURL=network.js.map

@@ -36,6 +36,8 @@
     --secondary-bg-col:#000;
     --col:whitesmoke;
     --secondary-col:lightgray;
+    --third-bg-col:#303030;
+    --fourth-bg-col:#606060;
     --font: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     --faded-col:rgb(150, 157, 184);
 
@@ -83,6 +85,9 @@ body {
     font-family: var(--font);
     background-color: var(--bg-col);
     color: var(--col);
+
+    --purple-col:var(--third-bg-col);
+    --purple-col-alt:var(--fourth-bg-col);
 }
 
 a {

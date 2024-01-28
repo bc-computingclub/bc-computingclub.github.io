@@ -127,3 +127,21 @@ async function restoreProjectFiles(project:Project){
     }
     if(files.length) project.hasSavedOnce = true;
 }
+
+// Challenge
+async function getServerChallenges(){
+    let list = await new Promise<Challenge[]>(resolve=>{
+        socket.emit("getChallenges",20,0,selectedFilters,(list:any[])=>{
+            resolve(list);
+        });
+    });
+    if(list) list = list.map(v=>Challenge.from(v));
+    return list || [];
+}
+async function getChallengeData(cid:string){
+    return await new Promise<DetailedChallenge>(resolve=>{
+        socket.emit("getChallengeDetails",cid,(data:any)=>{
+            resolve(data);
+        });
+    });
+}

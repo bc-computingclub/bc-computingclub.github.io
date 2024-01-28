@@ -91,7 +91,7 @@
 - fixed open in new tab button to work before refresh has happened and on both pages
 - fixed in editor manually trying to open a new project with custom PID won't crash the server if it doesn't exist, it just makes a new boiler plate project
 - contrast switch saves state in localStorage and reloads with page reload in both Editor and Lesson
-- [SERVER-SIDE]
+- [BACK-END]
 - start of project caching system
 - project meta data stored on user
 - proper storing and retreiving of project data on server with corresponding meta data
@@ -105,3 +105,17 @@
 
 ### 1/26/24 - Claeb
 - some backend stuff for Challenges
+
+### 1/27/24 - Claeb
+- changed colors to be darker on Practice page
+- fixed menus_cont to be position:fixed instead of absolute
+- fixed ChallengeMenu to use menu styling with black background
+- fixed ChallengeMenu to show corresponding Challenge info that was clicked
+- fixed aspect-ratio of mockup image shown in Challenge preview
+- added html2canvas lib for future stuff
+- [BACK-END]
+- more backend stuff for Challenges
+- added support for start and end data (ongoing) calculation for challenges
+- added submission highlights support for challenges
+- changed filter algorithm to be server-side and more optimized (only supports difficulty & ongoing right now)
+- *changed server tsconfig to strict mode to be safer and avoid crashes

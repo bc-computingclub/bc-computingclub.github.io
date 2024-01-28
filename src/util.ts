@@ -128,7 +128,7 @@ class Menu{
     }
 
     close(){
-        if(this.menu.parentElement){
+        if(this.menu?.parentElement){
             this.menu.parentElement.removeChild(this.menu);
             this.reset();
 
@@ -1063,3 +1063,11 @@ type ProjectMeta = {
     desc:string,
     isPublic:boolean
 };
+
+// screenshot util
+function screenshot(){
+    // @ts-ignore
+    html2canvas(document.body.children[5]).then(canvas=>{
+        document.body.appendChild(canvas);
+    });
+}

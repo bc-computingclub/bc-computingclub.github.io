@@ -1,8 +1,12 @@
 @import url(https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0);
 
-:root {
-    --purple-col: #8D679F;
-    --purple-col-alt: #503E6E;
+body{
+    /* --purple-col:var(--darken); */
+    /* --purple-col-alt:var(--darken2); */
+    --purple-col: #503E6E;
+    --purple-col-alt: rgb(56, 42, 77);
+    /* --purple-col: #8D679F; */
+    /* --purple-col-alt: #503E6E; */
 }
 
 .material-symbols-outlined{
@@ -129,7 +133,9 @@
 }
 
 .c-in-progress-counter, .c-browse-counter{
-    color: var(--bg-col);
+    color:var(--secondary-col);
+    /* color:var(--col); */
+    opacity:0.75;
     border-radius: 3px;
 }
 
@@ -264,7 +270,7 @@
     }
 }
 
-.c-outer {
+.c-outer {    
    padding-inline: 1em;
    height: min-content;
 
@@ -276,6 +282,7 @@
 .c-section {
     margin-block: 1em;
     color: var(--secondary-col);
+    /* color:var(--col); */
 }
 
 .c-container {
@@ -291,6 +298,7 @@
     overflow: hidden;
     &.empty {
         color: var(--secondary-col);
+        /* color:var(--col); */
     }
 }
 
@@ -373,14 +381,20 @@
     pointer-events: none;
 }
 
+.menu-challenge-menu{
+    width: calc(100dvw - 34em) !important;
+    height: calc(100dvh - (3em + 16em)) !important;
+    animation:AddBubble forwards 0.35s ease-out;
+}
 .c-popup {
     position: absolute;
     color: var(--secondary-col);
-    width: calc(100dvw - 34em);
-    height: calc(100dvh - (3em + 16em));
-    background-color: var(--purple-col);
+    /* background-color: var(--purple-col); */
+    background-color:var(--bg-col);
 
-    animation:AddBubble forwards 0.35s ease-out;
+    width:100%;
+    height:100%;
+
     border-radius: 3px;
 
     display: grid;
@@ -423,10 +437,13 @@
 }
 
 .c-popup-img {
-    aspect-ratio: 16/9;
-    width: 100%;
-    height: 100%;
+    /* aspect-ratio: 16/9; */
+    max-width: 100%;
+    max-height:311px;
+    /* height: 100%; */
     border-radius: 3px;
+    margin:auto;
+    margin-top:0px;
 }
 
 .c-popup-img-text{
