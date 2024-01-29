@@ -390,7 +390,15 @@ clearFiltersButton.addEventListener('click', () => {
 cSortDiv.addEventListener('click', () => {
     toggleSortMenu();
 });
-function sortChallenges(option, descending) {
+let searchOption = "popularity";
+let searchDesc = true;
+async function sortChallenges(option, descending) {
+    clearChallenges();
+    searchOption = option;
+    searchDesc = descending;
+    await getChallenges();
+    showChallenges(challengeArray);
+    return; // vvv - Claeb: moved this to server side
     clearChallenges();
     displayedChallenges = challengeArray.sort((a, b) => {
         switch (option) {

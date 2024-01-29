@@ -125,7 +125,7 @@ async function restoreProjectFiles(project) {
 // Challenge
 async function getServerChallenges() {
     let list = await new Promise(resolve => {
-        socket.emit("getChallenges", 20, 0, selectedFilters, (list) => {
+        socket.emit("getChallenges", 20, 0, selectedFilters, searchOption, searchDesc, (list) => {
             resolve(list);
         });
     });

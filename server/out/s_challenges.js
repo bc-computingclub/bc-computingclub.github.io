@@ -11,6 +11,7 @@ class Challenge {
         this.difficulty = difficulty;
         this.timespan = null;
         this.hl = [];
+        this.cnt = 0;
     }
     name;
     desc;
@@ -19,6 +20,7 @@ class Challenge {
     id;
     timespan;
     hl;
+    cnt; // submission count
     static from(id, data) {
         let d = new Challenge(id, data.name, data.desc, data.imgUrl, data.difficulty);
         let ok = Object.keys(data);
@@ -45,7 +47,8 @@ class Challenge {
             difficulty: this.difficulty,
             timespan: this.timespan,
             ongoing: this.ongoing,
-            hl: this.hl
+            hl: this.hl,
+            submission_count: this.cnt
         };
     }
 }

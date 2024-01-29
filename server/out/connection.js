@@ -26,7 +26,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.readdir = exports.mkdir = exports.removeFile = exports.read = exports.write = exports.access = exports.ULFile = exports.Socket = exports.getUserBySock = exports.attemptToGetProject = exports.getProject = exports.users = exports.User = exports.ProjectMeta = exports.sanitizeEmail = exports.io = exports.server = void 0;
+exports.readdir = exports.mkdir = exports.removeFile = exports.read = exports.write = exports.access = exports.ULFile = exports.Socket = exports.getUserBySock = exports.attemptToGetProject = exports.getProject = exports.allProjects = exports.users = exports.User = exports.UserChallengeData = exports.ProjectMeta = exports.sanitizeEmail = exports.io = exports.server = void 0;
 const http = __importStar(require("http"));
 const express_1 = __importDefault(require("express"));
 const socket_io_1 = require("socket.io");
@@ -154,6 +154,15 @@ class ProjectMeta {
     }
 }
 exports.ProjectMeta = ProjectMeta;
+class UserChallengeData {
+    constructor(i, cid) {
+        this.i = i;
+        this.cid = cid;
+    }
+    i;
+    cid;
+}
+exports.UserChallengeData = UserChallengeData;
 class User {
     constructor(name, email, picture, _joinDate, _lastLoggedIn, sockId, pMeta) {
         this.name = name;
@@ -170,6 +179,7 @@ class User {
         else
             this.pMeta = [];
         this.projects = [];
+        this.challenges = [];
     }
     name;
     email;
@@ -181,6 +191,7 @@ class User {
     sockIds;
     projects;
     pMeta;
+    challenges;
     addToken(token) {
         if (this.tokens.includes(token))
             return;
@@ -279,14 +290,14 @@ class ProjRef {
 }
 exports.users = new Map();
 const socks = new Map();
-const allProjects = new Map();
+exports.allProjects = new Map();
 const hasntFoundProject = [];
 // for indexing, need to make a deloadProject at some point
 function loadProject(p) {
-    allProjects.set(p.getRefStr(), p);
+    exports.allProjects.set(p.getRefStr(), p);
 }
 function getProject(ref) {
-    return allProjects.get(ref);
+    return exports.allProjects.get(ref);
 }
 exports.getProject = getProject;
 async function attemptToGetProject(user, pid) {

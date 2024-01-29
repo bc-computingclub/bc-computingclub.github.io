@@ -404,7 +404,17 @@ cSortDiv.addEventListener('click', () => {
     toggleSortMenu();
 });
 
-function sortChallenges(option:string,descending:boolean) {
+let searchOption:string = "popularity";
+let searchDesc:boolean = true;
+async function sortChallenges(option:string,descending:boolean) {
+    clearChallenges();
+    
+    searchOption = option;
+    searchDesc = descending;
+    await getChallenges();
+    showChallenges(challengeArray);
+    return; // vvv - Claeb: moved this to server side
+    
     clearChallenges();
     displayedChallenges = challengeArray.sort((a,b) => {
         switch(option) {

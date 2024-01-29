@@ -251,18 +251,46 @@ connection_1.io.on("connection", socket => {
         let data = await s_challenges_1.ChallengeData.fromCID(cid);
         f(data?.serializeGet());
     });
-    socket.on("getChallenges", (perPage, pageI, filter, f) => {
+    socket.on("getChallenges", (perPage, pageI, filter, option, desc, f) => {
+        if (!option)
+            option = "popularity";
+        if (desc == null)
+            desc = true;
         if (!valVar2(perPage, "number", f))
             return;
         if (!valVar2(pageI, "number", f))
             return;
         if (!valVar2(filter, "object", f))
             return;
+        if (!valVar2(option, "string", f))
+            return;
+        if (!valVar2(desc, "boolean", f))
+            return;
         let list = [];
+        let clist = [];
+        for (const [k, v] of s_challenges_1.challenges) {
+            clist.push(v);
+        }
+        clist = clist.sort((a, b) => {
+            switch (option) {
+                case "popularity":
+                    if (desc) {
+                        return b.cnt - a.cnt;
+                    }
+                    return a.cnt - b.cnt;
+                case "alphabetical":
+                    if (desc) {
+                        return a.name.localeCompare(b.name);
+                    }
+                    return b.name.localeCompare(a.name);
+                default:
+                    return 0;
+            }
+        });
         // my optimized method
         let i = 0;
         let skip = pageI * perPage;
-        for (const [k, v] of s_challenges_1.challenges) {
+        for (const v of clist) {
             if (filter.difficulty?.length) {
                 if (!filter.difficulty.includes(v.difficulty))
                     continue;
@@ -302,10 +330,36 @@ connection_1.io.on("connection", socket => {
         }
         f(list);
     });
-    socket.on("startChallenge", (cid, f) => {
+    socket.on("startChallenge", async (cid, f) => {
+        if (!valVar2(cid, "string", f))
+            return;
         console.log("starting challenge...", cid);
+        let user = (0, connection_1.getUserBySock)(socket.id);
+        if (!user)
+            return;
+        let p = await createChallengeProject(user, cid);
+        if (typeof p == "number") {
+            console.log("Err: failed starting challenge with error code: " + p);
+            return;
+        }
+        f(null);
+        console.log(">> created challenge project");
+    });
+    // 
+    socket.on("createProject", () => {
     });
 });
+async function createChallengeProject(user, cid) {
+    let path = "../lesson/" + user.email + "/" + cid;
+    if (await (0, connection_1.access)(path))
+        return 1; // already exists
+    let res = await (0, connection_1.mkdir)(path);
+    if (!res)
+        return 2; // failed to create
+    // user.
+}
+function createProject(name) {
+}
 var ProjectGroup;
 (function (ProjectGroup) {
     ProjectGroup[ProjectGroup["personal"] = 0] = "personal";
@@ -328,5 +382,12 @@ rl.on("line", (line) => {
     else if (s[0] == "cdata") {
         let c = s_challenges_1.challenges.get(s[1]);
         console.log(c);
+    }
+    else if (s[0] == "users") {
+        console.log(connection_1.users);
+    }
+    else if (s[0] == "udata") {
+        let u = connection_1.users.get(s[1]);
+        console.log(u);
     }
 });

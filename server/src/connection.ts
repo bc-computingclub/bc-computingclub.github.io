@@ -149,6 +149,14 @@ export class ProjectMeta{
         return p;
     }
 }
+export class UserChallengeData{
+    constructor(i:number,cid:string){
+        this.i = i;
+        this.cid = cid;
+    }
+    i:number;
+    cid:string;
+}
 export class User{
     constructor(name:string,email:string,picture:string,_joinDate:string,_lastLoggedIn:string,sockId:string,pMeta:any[]){
         this.name = name;
@@ -164,6 +172,7 @@ export class User{
         if(pMeta) this.pMeta = pMeta.map(v=>ProjectMeta.deserialize(this,v)).filter(v=>v.pid != null);
         else this.pMeta = [];
         this.projects = [];
+        this.challenges = [];
     }
     name:string;
     email:string;
@@ -177,6 +186,7 @@ export class User{
 
     projects:Project[];
     pMeta:ProjectMeta[];
+    challenges:UserChallengeData[];
 
     addToken(token:string){
         if(this.tokens.includes(token)) return;
@@ -276,7 +286,7 @@ class ProjRef{
 
 export const users = new Map<string,User>();
 const socks = new Map<string,string>();
-const allProjects = new Map<string,Project>();
+export const allProjects = new Map<string,Project>();
 const hasntFoundProject:string[] = [];
 
 // for indexing, need to make a deloadProject at some point

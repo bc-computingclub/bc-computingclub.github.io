@@ -9,6 +9,7 @@ export class Challenge{
         this.difficulty = difficulty;
         this.timespan = null;
         this.hl = [];
+        this.cnt = 0;
     }
     name:string;
     desc:string;
@@ -17,6 +18,7 @@ export class Challenge{
     id:string;
     timespan:Timespan|null;
     hl:any[];
+    cnt:number; // submission count
 
     [key:string]:any;
     static from(id:string,data:any){
@@ -46,7 +48,8 @@ export class Challenge{
             difficulty:this.difficulty,
             timespan:this.timespan,
             ongoing:this.ongoing,
-            hl:this.hl
+            hl:this.hl,
+            submission_count:this.cnt
         } as ChallengeGet;
     }
 }

@@ -119,3 +119,7 @@
 - added submission highlights support for challenges
 - changed filter algorithm to be server-side and more optimized (only supports difficulty & ongoing right now)
 - *changed server tsconfig to strict mode to be safer and avoid crashes
+
+### 1/28/24 - Claeb
+- couple more back end things for challenges, start of setup for starting a challenge
+- sorting through server side

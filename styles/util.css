@@ -267,6 +267,9 @@ button{
     border-radius:3px;
     position:relative;
 }
+button.accent:active{
+    outline:solid 2px var(--col);
+}
 button:disabled{
     opacity:0.4;
     /* cursor:not-allowed; */

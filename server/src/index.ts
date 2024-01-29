@@ -1,4 +1,4 @@
-import { io, server, CredentialResData, User, users, getUserBySock, sanitizeEmail, getProject, attemptToGetProject, access, readdir, read, mkdir, removeFile, write, ULFile, ProjectMeta } from "./connection";
+import { io, server, CredentialResData, User, users, getUserBySock, sanitizeEmail, getProject, attemptToGetProject, access, readdir, read, mkdir, removeFile, write, ULFile, ProjectMeta, allProjects } from "./connection";
 import { Challenge, ChallengeData, ChallengeGet, challenges } from "./s_challenges";
 import fs from "fs";
 import { createInterface } from "readline";
@@ -252,18 +252,42 @@ io.on("connection",socket=>{
         let data = await ChallengeData.fromCID(cid);
         f(data?.serializeGet());
     });
-    socket.on("getChallenges",(perPage:number,pageI:number,filter:FilterType,f:(data:any)=>void)=>{
+    socket.on("getChallenges",(perPage:number,pageI:number,filter:FilterType,option:string,desc:boolean,f:(data:any)=>void)=>{
+        if(!option) option = "popularity";
+        if(desc == null) desc = true;
+        
         if(!valVar2(perPage,"number",f)) return;
         if(!valVar2(pageI,"number",f)) return;
         if(!valVar2(filter,"object",f)) return;
-
+        if(!valVar2(option,"string",f)) return;
+        if(!valVar2(desc,"boolean",f)) return;
         
         let list:ChallengeGet[] = [];
+        let clist:Challenge[] = [];
+        for(const [k,v] of challenges){
+            clist.push(v);
+        }
+        clist = clist.sort((a,b)=>{
+            switch(option) {
+                case "popularity":
+                    if(desc) {
+                        return b.cnt - a.cnt;
+                    }
+                    return a.cnt - b.cnt;
+                case "alphabetical":
+                    if(desc) {
+                        return a.name.localeCompare(b.name);
+                    }
+                    return b.name.localeCompare(a.name);
+                default:
+                    return 0;
+            }
+        });
 
         // my optimized method
         let i = 0;
         let skip = pageI*perPage;
-        for(const [k,v] of challenges){
+        for(const v of clist){
             if(filter.difficulty?.length){
                 if(!filter.difficulty.includes(v.difficulty)) continue;
             }
@@ -301,10 +325,39 @@ io.on("connection",socket=>{
 
         f(list);
     });
-    socket.on("startChallenge",(cid:string,f:(data:any)=>void)=>{
+    socket.on("startChallenge",async (cid:string,f:(data:any)=>void)=>{
+        if(!valVar2(cid,"string",f)) return;
         console.log("starting challenge...",cid);
+
+        let user = getUserBySock(socket.id);
+        if(!user) return;
+
+        let p = await createChallengeProject(user,cid);
+        if(typeof p == "number"){
+            console.log("Err: failed starting challenge with error code: "+p);
+            return;
+        }
+        
+
+        f(null);
+        console.log(">> created challenge project");
+    });
+
+    // 
+    socket.on("createProject",()=>{
+
     });
 });
+async function createChallengeProject(user:User,cid:string){
+    let path = "../lesson/"+user.email+"/"+cid;
+    if(await access(path)) return 1; // already exists
+    let res = await mkdir(path);
+    if(!res) return 2; // failed to create
+    // user.
+}
+function createProject(name:string){
+    
+}
 enum ProjectGroup{
     personal,
     recent,
@@ -333,5 +386,12 @@ rl.on("line",(line)=>{
     else if(s[0] == "cdata"){
         let c = challenges.get(s[1]);
         console.log(c);
+    }
+    else if(s[0] == "users"){
+        console.log(users);
+    }
+    else if(s[0] == "udata"){
+        let u = users.get(s[1]);
+        console.log(u);
     }
 });
