@@ -366,24 +366,9 @@ body{
     color: var(--secondary-col);
 }
 
-.c-popup-cont {
-    position: absolute;
-    top: 0px;
-    left: 0px;
-    width: 100dvw;
-    height: 100dvh;
-
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    backdrop-filter: blur(3px);
-    background-color: rgba(0,0,0,0.3);
-    pointer-events: none;
-}
-
 .menu-challenge-menu{
-    width: calc(100dvw - 34em) !important;
-    height: calc(100dvh - (3em + 16em)) !important;
+    width: calc(100dvw - 30em) !important;
+    height: calc(100dvh - (14em)) !important;
     animation:AddBubble forwards 0.35s ease-out;
 }
 .c-popup {
@@ -488,7 +473,7 @@ body{
 .c-implementation-img {
     aspect-ratio: 4/3;
     width: 100%;
-    height: 100%;
+    /* height: 100%; */
     border-radius: 3px;
 }
 
@@ -523,9 +508,10 @@ body{
     background-color: var(--secondary-bg-col);
     border-radius: 3px;
     display: grid;
-    grid-template-rows:auto auto;
+    grid-template-rows: auto auto;
     align-content: space-between;
     color: var(--col);
+    overflow: scroll;
 }
 
 .c-popup-task {
@@ -596,5 +582,38 @@ body{
     }
     100%{
         scale:1;
+    }
+}
+
+/* Large screens */
+@media (min-width: 1600px) {
+    .c-home {
+        padding-inline: 20em;
+    }
+    .c-popup {
+        height: 100%;
+    }
+    .menu-challenge-menu{
+        width: 55dvw !important;
+        height: 65dvh !important;
+    }
+}
+
+/* Ultrawide screens */
+@media (min-width: 2560px) {
+    .c-home {
+        padding-inline: 40em;
+    }
+    .c-container {
+        &:not(.empty){
+            grid-template-columns: repeat(5,1fr);
+        }
+    }
+    .c-popup {
+        height: 100%;
+    }
+    .menu-challenge-menu{
+        width: calc(40dvw) !important;
+        height: calc(100dvh - (3em + 60em)) !important;
     }
 }

@@ -21,18 +21,6 @@ let bCounter = 0;
 let ipCounter = 0;
 
 class Challenge {
-    // constructor(cID: string, name: string, desc: string, inProgress: boolean, imgURL: string, pid: string, submitted: boolean, difficulty: string, ongoing: boolean, submission_count:string) {
-    //     this.name = name;
-    //     this.desc = desc;
-    //     this.inProgress = inProgress;
-    //     this.imgURL = imgURL;
-    //     this.pid = pid;
-    //     this.submitted = submitted;
-    //     this.cID = cID;
-    //     this.difficulty = difficulty;
-    //     this.ongoing = ongoing;
-    //     this.submission_count = submission_count;
-    // }
     constructor(cID: string, name: string, desc: string, inProgress: boolean, imgURL: string, pid: string, submitted: boolean, difficulty: string, ongoing:boolean, submission_count:string) {
         this.name = name;
         this.desc = desc;
@@ -89,6 +77,7 @@ class Submission {
     }
     previewURL:string;
     sentBy:string;
+    //feel free to add more fields here
 }
 
 // let test1 = new Challenge("01", "Color Wheel", "Create a circular wheel which selects different colors depending on user mouse input", true, "/images/colorwheel.png", "", false, "easy",false,"1");
@@ -106,9 +95,6 @@ let submissionArray = [sub1, sub2];
 let testDetailed = new DetailedChallenge("04", "Water Wheel", "Design a button which can be dragged around a circle, controlling the water level in a cup.", false, "/images/water-level.png", "", false, "code-wizard",true,"2",submissionArray);
 
 async function getChallenges() {
-    // challengeArray = await (code goes here)
-    // return challengeArray; // delete once we have server code
-
     challengeArray = await getServerChallenges();
 }
 
@@ -150,7 +136,6 @@ class ChallengeMenu extends Menu {
         this.c = c;
     }
 
-    // c: DetailedChallenge; (Claeb: I'm changing this to Challenge which will hold the 3 highlights, and then the whole list when get requested on demand)
     c: Challenge;
 
     load() {
@@ -172,7 +157,7 @@ class ChallengeMenu extends Menu {
                         <div class ="c-popup-implementations">
                             <div class="c-popup-implementations-header">
                                 <h4 class="c-popup-sub-title">Implementations</h4>
-                                <button class="c-view-all" onclick="createViewAllPopup(${this.c.cID})">
+                                <button class="c-view-all" onclick="showImplementations(${this.c.cID})">
                                     View All (${this.c.submission_count})
                                 </button>
                             </div>
@@ -196,7 +181,7 @@ class ChallengeMenu extends Menu {
                 </div>
             </div>
         `;
-        if(this.c.sub_highlights?.length){ // (Claeb: I removed "!= null" here because the highlights could be an empty array [], which is not null, but it's still empty)
+        if(this.c.sub_highlights?.length){
             for(let i = 0; i < this.c.sub_highlights.length; i++) {
                 document.querySelector(".c-implementations").innerHTML += `
                     <div class="c-implementation">
@@ -224,7 +209,7 @@ class ChallengeMenu extends Menu {
     }
 }
 
-function createViewAllPopup(cID:string) {
+function showImplementations(cID:string) {
     // add code to get array of all submissions from server using cID
     let tempSubArr = submissionArray; // delete once we have server code
 
@@ -259,12 +244,8 @@ function createViewAllPopup(cID:string) {
 
 let curChallengeMenu:ChallengeMenu;
 async function createChallengePopup(c:Challenge) {
-    // get detailed challenge data from server using cID
-    // let cDetailed = testDetailed; // delete once we have server code 
-    
     console.log("Creating Challenge");
     if(curChallengeMenu) curChallengeMenu.close();
-    // curChallengeMenu = new ChallengeMenu(cDetailed);
     curChallengeMenu = new ChallengeMenu(c);
     curChallengeMenu.load();
 }
@@ -358,6 +339,7 @@ checkboxes.forEach((checkbox) => {
     });
 });
 
+// Loading Animation, currently does nothing, just brainstorming ideas
 let loadingDiv:HTMLElement;
 async function showLoadingAnim(elm:HTMLElement) {
     loadingDiv = document.createElement("div") as HTMLElement;
@@ -436,19 +418,11 @@ function sortChallenges(option:string,descending:boolean) {
                 } return b.name.localeCompare(a.name);
         }
     });
-    if(challengeArray.filter(c => c.inProgress).length == 1) {toggleInProgressDiv(cToggle, false); } // if there's 1 challenge in progress, close it
+    if(challengeArray.filter(c => c.inProgress).length == 1) {toggleInProgressDiv(cToggle, false); } // if there's 1 challenge in progress, close section, since sorting it would be pointless
 
     showChallenges(displayedChallenges);
 }
 
 function toggleSortMenu() {
-    if(cSortDiv.classList.contains("collapse")) {
-        cSortDiv.classList.remove("collapse");
-        cSort.classList.add("point-up");
-        cSort.classList.remove("point-down");
-    } else {
-        cSortDiv.classList.add("collapse");
-        cSort.classList.remove("point-up");
-        cSort.classList.add("point-down");
-    }
+    cSortDiv.classList.toggle("open");
 }
