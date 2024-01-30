@@ -10,11 +10,13 @@ const clearFiltersButton = document.querySelector(".clear-filters") as HTMLEleme
 const cSortDiv = document.querySelector(".c-sort-div") as HTMLElement;
 const cSort = document.querySelector(".c-sort-btn") as HTMLElement;
 
-let cToggle;
+let cLeft:HTMLElement;
+let challengePopupBody:HTMLElement;
+let tempPopupBody:HTMLElement;
+let cToggle:HTMLElement;
 let displayedChallenges: Challenge[] = [];
 
 const checkboxes = document.querySelectorAll('input[type="checkbox"]');
-
 const lsUID = "BCC-01";
 
 let bCounter = 0;
@@ -98,15 +100,14 @@ let testDetailed = new DetailedChallenge("04", "Water Wheel", "Design a button w
 
 async function getChallenges() {
     challengeArray = await getServerChallenges();
-    // challengeArray[0].inProgress = true;
 }
 
 let isOpen: boolean;
 window.addEventListener("load", async () => {
-    await loginProm; // <-- sometimes if you refresh, you might start loading challenges before the user gets logged in, meaning the server can't fetch challenges for you, this makes it wait till the user is logged in
+    await loginProm; // Ensures user is logged in before challenges are fetched.
     
     await getChallenges();
-    showChallenges(challengeArray);
+    showChallenges(challengeArray,true);
     let toggleState = localStorage.getItem(`${lsUID}toggleState`) || "open";
     isOpen = toggleState == "open" ? true : false;
 
@@ -206,7 +207,8 @@ class ChallengeMenu extends Menu {
 
         this.menu.style.width = (document.querySelector(".c-popup") as HTMLElement).getBoundingClientRect().width + "px";
         this.menu.style.right = "0px";
-        
+        cLeft = document.querySelector(".c-popup-left") as HTMLElement;
+
         let cBtn = document.querySelector(".c-popup-close") as HTMLElement;
         cBtn.onclick = () => {
             this.close();
@@ -217,35 +219,46 @@ class ChallengeMenu extends Menu {
 
 function showImplementations(cID:string) {
     // add code to get array of all submissions from server using cID
-    let tempSubArr = submissionArray; // delete once we have server code
-
-    let temp = document.querySelector(".c-popup-body").innerHTML;
-    document.querySelector(".c-popup-body").innerHTML = `
-    <div class ="c-popup-implementations">
-        <div class="c-popup-implementations-header">
-            <h4 class="c-popup-sub-title">Implementations</h4>
-            <button class="c-back">
-                Back <span class="material-symbols-outlined c-back-arrow">arrow_back_ios</span>
-            </button>
-        </div>
-        <div class="c-implementations">
-        </div>
-    </div>
-    `;
-    for(let i = 0; i < tempSubArr.length; i++) {
-        let impDiv = document.querySelector(".c-implementations") as HTMLElement;
-        impDiv.innerHTML += `
+    let subArr = submissionArray; // delete once we have server code
+    
+    challengePopupBody = document.querySelector(".c-popup-body") as HTMLElement;
+    tempPopupBody = challengePopupBody.cloneNode(true) as HTMLElement;
+    while(challengePopupBody.firstChild) challengePopupBody.removeChild(challengePopupBody.firstChild); // clear body
+    challengePopupBody.append(getImplementationsHTML());
+    for(let i = 0; i < subArr.length; i++) {
+        let implementationsCont = document.querySelector(".c-implementations") as HTMLElement;
+        implementationsCont.innerHTML += `
             <div class="c-implementation">
                 <div class="c-implementation-preview">
-                    <img class="c-implementation-img" src="${tempSubArr[i].previewURL}" alt="challenge image">
+                    <img class="c-implementation-img" src="${subArr[i].previewURL}" alt="challenge image">
                 </div>
-                <div class="c-implementation-credit">${tempSubArr[i].sentBy}</div>
+                <div class="c-implementation-credit">${subArr[i].sentBy}</div>
             </div>
         `
     }
-    document.querySelector(".c-back").addEventListener("click", () => {
-        document.querySelector(".c-popup-body").innerHTML = temp;
-    });
+}
+
+function getImplementationsHTML() {
+    let temp = document.createElement("div") as HTMLElement;
+    temp.classList.add("c-popup-implementations");
+    temp.innerHTML = `
+        <div class="c-popup-implementations-header">
+            <h4 class="c-popup-sub-title">Implementations</h4>
+            <button class="c-back" onclick="resetChallengeBody();">
+            Back <span class="material-symbols-outlined c-back-arrow">arrow_back_ios</span>
+        </button>
+        </div>
+        <div class="c-implementations">
+        </div>
+    `;
+    return temp;
+}
+
+function resetChallengeBody() {
+    challengePopupBody.remove();
+    console.log("Attempting to reset body of challenge popup");
+    cLeft.append(tempPopupBody);
+    tempPopupBody = challengePopupBody.cloneNode(true) as HTMLElement;
 }
 
 async function startChallenge(cid:string){
@@ -276,35 +289,22 @@ async function createChallengePopup(c:Challenge) {
     curChallengeMenu.load();
 }
 
-function showChallenges(cArr: Challenge[]) {
+async function showChallenges(cArr: Challenge[], showAnim?:boolean) {
+    if(showAnim) await showLoadingAnim("500"); // feel free to change delay
     for (let challenge of cArr) {
-        let cardElm = setChallengeHTML(challenge);
-        // if (!challenge.inProgress) {
-        //     browseDiv.appendChild(cardElm);
-        //     bCounter++;
-        // } else {
-        //     inProgressDiv.appendChild(cardElm);
-        //     ipCounter++;
-        // }
+        setChallengeHTML(challenge);
     }
-    if (ipCounter == 0) {
-        inProgressDiv.classList.add("empty"); // ohhh your right your right I didn't notice that hmm
-        inProgressDiv.innerHTML = "<i>Start working on a challenge, and it'll show up here!</i>"; // if it was added by the line 261, would this clear something?
+    await hideLoadingAnim();
+    if (ipCounter <= 0) {
+        inProgressDiv.classList.add("empty");
+        inProgressDiv.innerHTML = "<i>Start working on a challenge, and it'll show up here!</i>";
     } else {   
-        inProgressDiv.classList.remove("empty"); // i did only just rewrite this temptoggle stuff to see if it was interfering but nope still broken
-        let tempToggle = document.createElement("span") as HTMLElement;
-        tempToggle.classList.add("material-symbols-outlined","c-toggle"); // oh it's var args, just separate the tags by c
-        inProgressDiv.appendChild(tempToggle);
-        cToggle = document.querySelector(".c-toggle") as HTMLElement;
+        inProgressDiv.classList.remove("empty");
+        cToggle = document.createElement("span") as HTMLElement;
+        cToggle.classList.add("material-symbols-outlined","c-toggle");
+        cToggle.innerHTML = "expand_less";
         cToggle.classList.add(localStorage.getItem(`${lsUID}toggleState`) == "closed" ? "point-down" : "point-up");
-        cToggle.addEventListener("click", () => {
-            if (isOpen) {
-                toggleInProgressDiv(cToggle, false);
-            } else {
-                toggleInProgressDiv(cToggle, true);
-            }
-            console.log(localStorage.getItem(`${lsUID}toggleState`));
-        });
+        inProgressHeader.append(cToggle);
     }
     if(bCounter == 0) {
         browseDiv.classList.add("empty");
@@ -313,11 +313,25 @@ function showChallenges(cArr: Challenge[]) {
     
     inProgressTracker.innerHTML = `(${ipCounter})`;
     browseTracker.innerHTML = `(${bCounter})`;
+    addClickEventListener(cToggle);
+}
+
+function addClickEventListener(cToggle:HTMLElement) {
+    if(cToggle) {
+        cToggle.addEventListener("click", () => {
+        if (isOpen) {
+            toggleInProgressDiv(cToggle, false);
+        } else {
+            toggleInProgressDiv(cToggle, true);
+        }
+        console.log(localStorage.getItem(`${lsUID}toggleState`));
+        });
+    }
 }
 
 function setChallengeHTML(c: Challenge) {
     let tempCard = document.createElement("div") as HTMLElement;
-    tempCard.classList.add("c-card"); //xD let's see
+    tempCard.classList.add("c-card");
 
     if (!c.inProgress) {
         browseDiv.appendChild(tempCard);
@@ -413,15 +427,14 @@ function confirmProgressDeletion(cID:Challenge["cID"]) {
 }
 
 function cancelProgressDeletion() {
-    console.log("Canceling Deletion");
     if (document.querySelector(".c-delete-div")) document.querySelector(".c-delete-div").remove();
     if (document.querySelector(".c-confirm-div")) document.querySelector(".c-confirm-div").remove();
 }
 
 async function deleteProgress(cID:Challenge["cID"]) {
-    console.log("Removing progress on challenge: " + cID);
-    // make challenge inProgress property false
-    // delete any Project associated with it
+    console.log("Deleting progress on challenge: " + cID);
+    // Challenge["cID"].inProgress = false; ... and then send this to the server? or does it need to be a query of its own?
+    // delete any Project on the server which is associated with this challenge
     // i'm going to need your help here Caleb lol
 }
 
@@ -456,22 +469,25 @@ checkboxes.forEach((checkbox) => {
     });
 });
 
-//Potential loading animation, currently does nothing, just brainstorming ideas
+// Potential loading animation, if you don't like it feel free to change! CSS obtained from loading.io
+// Important: This only triggers on page load for now. I added a delay property if you want to shorten it and add it to sorting?
 let loadingDiv:HTMLElement;
-async function showLoadingAnim(elm:HTMLElement) {
+async function showLoadingAnim(delay:string) {
     loadingDiv = document.createElement("div") as HTMLElement;
     loadingDiv.classList.add("loading-div");
     loadingDiv.innerHTML = `
-        <div class="loading-elm material-symbols-outlined">
-            progress_activity
-        </div>
+        <div class="lds-cont"><div></div><div></div><div></div></div>
         <span class ="loading-text">Loading...</span>
     `;
-    elm.appendChild(loadingDiv);
+    let temp = loadingDiv
+    browseDiv.appendChild(loadingDiv);
+    inProgressDiv.appendChild(loadingDiv.cloneNode(true));
+    await wait(parseInt(delay));
 }
 
 async function hideLoadingAnim() {
-    loadingDiv.remove();
+    let loadingDivs = document.querySelectorAll(".loading-div") as NodeListOf<HTMLElement>;
+    loadingDivs.forEach((div:HTMLElement) => { div.remove(); });
 }
 
 async function filterChallenges() {
@@ -524,12 +540,15 @@ cSortDiv.addEventListener('click', () => {
 let searchOption:string = "popularity";
 let searchDesc:boolean = true;
 async function sortChallenges(option:string,descending:boolean) {
+    // showLoadingAnim("500"); // change delay as you see fit, i can't tell what looks good or bad
     clearChallenges();
     
     searchOption = option;
     searchDesc = descending;
     await getChallenges();
+    if(challengeArray.filter(c => c.inProgress).length == 1) {toggleInProgressDiv(cToggle, false); } // if there's 1 challenge in progress, close section, since sorting it would be pointless
     showChallenges(challengeArray);
+    // hideLoadingAnim();
     return; // vvv - Claeb: moved this to server side
     
     clearChallenges();
@@ -545,7 +564,6 @@ async function sortChallenges(option:string,descending:boolean) {
                 } return b.name.localeCompare(a.name);
         }
     });
-    if(challengeArray.filter(c => c.inProgress).length == 1) {toggleInProgressDiv(cToggle, false); } // if there's 1 challenge in progress, close section, since sorting it would be pointless
 
     showChallenges(displayedChallenges);
 }

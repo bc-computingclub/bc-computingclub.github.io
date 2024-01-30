@@ -421,6 +421,7 @@ function genHeader(i, isCompact = true, id) {
         noLogo = true;
     }
     navCont.className = "nav-container";
+    navCont.role = "navigation";
     navCont.innerHTML = `
         ${!noLogo ? `<div class="logo">
         <a href="/index.html">

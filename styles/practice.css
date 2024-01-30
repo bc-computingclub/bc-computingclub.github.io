@@ -347,9 +347,9 @@ body{
 
 .c-preview {
     cursor: pointer;
-    padding-block: 1em;
-    text-transform: uppercase;
-    font-weight: bold;
+    /* padding-block: 1em; */
+    /* text-transform: uppercase; */
+    /* font-weight: bold; */
 }
 
 .c-submitted {
@@ -377,7 +377,7 @@ body{
     background-color:var(--bg-col);
 
     width:100%;
-    height:100%;
+    height:100% !important;
 
     border-radius: 3px;
 
@@ -421,10 +421,8 @@ body{
 }
 
 .c-popup-img {
-    /* aspect-ratio: 16/9; */
-    max-width: 100%;
-    max-height:311px;
-    /* height: 100%; */
+    aspect-ratio: 4/3;
+    max-width: 100%;;
     border-radius: 3px;
     margin:auto;
     margin-top:0px;
@@ -607,6 +605,62 @@ body{
 
     button {
         width: 40%;
+    }
+}
+
+.loading-div {
+    padding: 1em;
+    text-transform: uppercase;
+    color: var(--secondary-col);
+    display: flex;
+    align-items: center;
+    gap: 1em;
+}
+
+.lds-cont {
+    display: inline-block;
+    position: relative;
+    width: 40px;
+    height: 40px;
+}
+.lds-cont div {
+    display: inline-block;
+    position: absolute;
+    left: 4px;
+    width: 6px;
+    background: #fff;
+    animation: lds-cont 1s cubic-bezier(0, 0.5, 0.5, 1) infinite;
+    border-radius: 1px;
+}
+.lds-cont div:nth-child(1) {
+    left: 4px;
+    animation-delay: -0.24s;
+}
+.lds-cont div:nth-child(2) {
+    left: 16px;
+    animation-delay: -0.12s;
+}
+.lds-cont div:nth-child(3) {
+    left: 28px;
+    animation-delay: 0;
+}
+@keyframes lds-cont {
+    0% {
+        top: 4px; 
+        height: 32px;
+    }
+    50%, 100% {
+        top: 12px;
+        height: 16px;
+    }
+}  
+
+@keyframes rotate {
+    from {
+        transform: rotate(0deg);
+    }
+    to {
+        transform: rotate(360deg);
     }
 }
 
