@@ -45,6 +45,8 @@ class Challenge {
         let c = new Challenge(data.id, data.name, data.desc, false, data.imgUrl, null, false, data.difficulty, data.ongoing, "0");
         c.timespan = data.timespan;
         c.sub_highlights = data.hl.map((v) => new Submission(v.url, v.who));
+        c.inProgress = data.inProgress;
+        // c.completed = data.completed;
         return c;
     }
 }
@@ -80,10 +82,11 @@ let submissionArray = [sub1, sub2];
 let testDetailed = new DetailedChallenge("04", "Water Wheel", "Design a button which can be dragged around a circle, controlling the water level in a cup.", false, "/images/water-level.png", "", false, "code-wizard", true, "2", submissionArray);
 async function getChallenges() {
     challengeArray = await getServerChallenges();
-    challengeArray[0].inProgress = true;
+    // challengeArray[0].inProgress = true;
 }
 let isOpen;
 window.addEventListener("load", async () => {
+    await loginProm; // <-- sometimes if you refresh, you might start loading challenges before the user gets logged in, meaning the server can't fetch challenges for you, this makes it wait till the user is logged in
     await getChallenges();
     showChallenges(challengeArray);
     let toggleState = localStorage.getItem(`${lsUID}toggleState`) || "open";
@@ -157,7 +160,7 @@ class ChallengeMenu extends Menu {
                     <div class="c-difficulty">
                         <span class="c-difficulty-text">Difficulty:</span><span class="c-difficulty-number">${this.c.difficulty}</span>
                     </div>
-                    <button class="c-start" onclick="startChallenge('${this.c.cID}')"><h3>${this.c.inProgress ? "Continue" : "Start"}</h3><span class="material-symbols-outlined c-start-arrow">arrow_forward_ios<span/></button>
+                    <button class="c-start" onclick="${!this.c.inProgress ? `startChallenge('${this.c.cID}')` : `continueChallenge('${this.c.cID}')`}"><h3>${this.c.inProgress ? "Continue" : "Start"}</h3><span class="material-symbols-outlined c-start-arrow">arrow_forward_ios<span/></button>
                 </div>
             </div>
         `;
@@ -225,8 +228,19 @@ async function startChallenge(cid) {
             alert("Error while trying to start challenge, error code:" + data);
             return;
         }
-        alert("Successfully started challenge with pid: " + data);
+        // alert("Successfully started challenge with pid: "+data);
+        goToProject(data);
     });
+}
+async function continueChallenge(cid) {
+    let pid = await new Promise(resolve => {
+        socket.emit("continueChallenge", cid, (pid) => {
+            resolve(pid);
+        });
+    });
+    if (pid == null)
+        return;
+    goToProject(pid);
 }
 let curChallengeMenu;
 async function createChallengePopup(c) {
@@ -500,6 +514,6 @@ async function sortChallenges(option, descending) {
     showChallenges(displayedChallenges);
 }
 function toggleSortMenu() {
-    cSortDiv.classList.toggle("open");
+    cSortDiv.classList.toggle("collapse");
 }
 //# sourceMappingURL=practice.js.map

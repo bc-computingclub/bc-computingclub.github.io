@@ -29,6 +29,12 @@ body{
     height:100vh;
     overflow:hidden;
 }
+body.is-challenge{
+    --cta-btn-col:var(--practice-col) !important;
+}
+/* a.nav-link:nth-child(2){
+    
+} */
 
 .pane-files{
     width:200px;
@@ -239,7 +245,7 @@ div.b-editor-dashboard .material-symbols-outlined{
 }
 .edb-content-list{
     display:flex;
-    flex-direction:column;
+    flex-direction:column-reverse;
     gap:10px;
     padding:10px;
 }
@@ -261,4 +267,23 @@ div.b-editor-dashboard .material-symbols-outlined{
 }
 .project-item .l-project-desc{
     opacity:0.9;
+}
+
+/*  */
+
+.menu-project-dashboard{
+    &{
+        .b-new-project{
+            background-color:var(--experiment-col);
+        }
+        .b-open-project{
+            background-color:var(--experiment-col);
+        }
+        .b-open-project.challenge{
+            background-color:var(--practice-col);
+        }
+    }
+    /* &::after{
+        background-color:var(--experiment-col);
+    } */ /* this tints the project dashboard to be green instead of purple, do we want this? */
 }

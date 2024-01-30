@@ -77,6 +77,7 @@ export class Project{
     desc:string;
     isPublic:boolean;
     files:ULFile[];
+    cid?:string;
 
     // meta:ProjectMeta; // might need this at some point
     
@@ -84,13 +85,29 @@ export class Project{
         return this.ownerEmail+":"+this.pid;
     }
 
+    serializeGet(){
+        if(!this._owner) return;
+        // let meta = this._owner.pMeta.find(v=>v.pid == this.pid);
+        // let challenge = this._owner.challenges.find(v=>v.pid == this.pid);
+        return {
+            owner:this.ownerEmail,
+            name:this.name,
+            desc:this.desc,
+            isPublic:this.isPublic,
+            pid:this.pid,
+            files:this.files,
+            cid:this.cid
+        };
+    }
     serialize(){
         if(!this._owner){
             console.log("Err: while trying to serialize project, no owner found");
             return;
         }
         // return this.meta;
-        return new ProjectMeta(this._owner,this.pid,this.name,this.desc,this.isPublic);
+        let m = new ProjectMeta(this._owner,this.pid,this.name,this.desc,this.isPublic);
+        m.cid = this.cid;
+        return m;
         // return JSON.stringify({
         //     pid:this.pid,
         //     name:this.name,
@@ -132,19 +149,25 @@ export class ProjectMeta{
     name:string;
     desc:string;
     isPublic:boolean;
+
+    cid?:string;
     
     hasLoaded = false;
     serialize(){
+        // let challenge = this.user.challenges.find(v=>v.pid == this.pid);
         return JSON.stringify({
             pid:this.pid,
             name:this.name,
             desc:this.desc,
-            isPublic:this.isPublic
+            isPublic:this.isPublic,
+            // cid:challenge?.cid
+            cid:this.cid
         });
     }
     static deserialize(user:User,str:string){
         let o = JSON.parse(str);
         let p = new ProjectMeta(user,o.pid,o.name,o.desc,o.isPublic);
+        p.cid = o.cid;
         // console.log("DESEL",o,p);
         return p;
     }
@@ -298,13 +321,16 @@ function loadProject(p:Project){
 export function getProject(ref:string){
     return allProjects.get(ref);
 }
+export function getProject2(email:string,pid:string){
+    return allProjects.get(email+":"+pid);
+}
 export async function attemptToGetProject(user:User,pid:string){
     let ref = user.email+":"+pid;
 
-    if(hasntFoundProject.includes(ref)){
-        console.log("$ prevented, already stored that it couldn't find it");
-        return;
-    }
+    // if(hasntFoundProject.includes(ref)){
+    //     console.log("$ prevented, already stored that it couldn't find it");
+    //     return;
+    // }
     
     let p = getProject(ref);
     if(p){
@@ -355,6 +381,7 @@ export async function attemptToGetProject(user:User,pid:string){
     p2.isPublic = meta.isPublic;
     p2._owner = user;
     p2.files = files;
+    p2.cid = meta.cid;
     user.projects.push(p2);
     loadProject(p2);
     return p2;

@@ -1,4 +1,4 @@
-import { read, readdir } from "./connection";
+import { User, read, readdir } from "./connection";
 
 export class Challenge{
     constructor(id:string,name:string,desc:string,imgUrl:string,difficulty:string){
@@ -20,6 +20,13 @@ export class Challenge{
     hl:any[];
     cnt:number; // submission count
 
+    isCompleted(){
+        return false;
+    }
+    isInProgress(user:User){
+        return user.challenges.some(v=>v.cid == this.id);
+    }
+
     [key:string]:any;
     static from(id:string,data:any){
         let d = new Challenge(id,data.name,data.desc,data.imgUrl,data.difficulty);
@@ -39,7 +46,7 @@ export class Challenge{
         return ongoing;
     }
 
-    serializeGet(){
+    serializeGet(user:User){
         return {
             id:this.id,
             name:this.name,
@@ -49,7 +56,9 @@ export class Challenge{
             timespan:this.timespan,
             ongoing:this.ongoing,
             hl:this.hl,
-            submission_count:this.cnt
+            submission_count:this.cnt,
+            completed:this.isCompleted(),
+            inProgress:this.isInProgress(user)
         } as ChallengeGet;
     }
 }

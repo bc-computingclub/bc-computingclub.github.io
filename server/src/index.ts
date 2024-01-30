@@ -1,4 +1,4 @@
-import { io, server, CredentialResData, User, users, getUserBySock, sanitizeEmail, getProject, attemptToGetProject, access, readdir, read, mkdir, removeFile, write, ULFile, ProjectMeta, allProjects, UserChallengeData, Project } from "./connection";
+import { io, server, CredentialResData, User, users, getUserBySock, sanitizeEmail, getProject, attemptToGetProject, access, readdir, read, mkdir, removeFile, write, ULFile, ProjectMeta, allProjects, UserChallengeData, Project, getProject2 } from "./connection";
 import { Challenge, ChallengeData, ChallengeGet, challenges } from "./s_challenges";
 import fs from "fs";
 import { createInterface } from "readline";
@@ -156,6 +156,12 @@ io.on("connection",socket=>{
         let user = getUserBySock(socket.id);
         if(!user) return;
         // need to validate type integrity here
+
+        let p = user.projects.find(v=>v.pid == pid);
+        if(!p){
+            console.log("Warn: project not found while uploading");
+            return;
+        }
         
         console.log("uploading...");
         let uid = user.sanitized_email;
@@ -174,15 +180,22 @@ io.on("connection",socket=>{
         for(const f of list){
             console.log("...writing file:",path+"/"+f.name,f.enc);
             await write(path+"/"+f.name,f.val,f.enc);
+            if(!p.files.find(v=>v.name == f.name)){
+                p.files.push(f);
+            }
         }
 
-        let p = user.projects.find(v=>v.pid == pid);
         if(p) for(const f of list){
             let ff = p.files.find(v=>v.name == f.name);
             if(ff) ff.val = f.val;
             else console.log("Err: null file in project files list");
         }
-        else console.log("Err: couldn't find project while uploading files");
+        else{
+            console.log("Err: couldn't find project while uploading files: "+pid,"$ attempting to search");
+            p = await attemptToGetProject(user,pid);
+            if(p) console.log("$ found");
+            else console.log("$ still failed to find project");
+        }
 
         // todo - cache file values so if they're the same then they don't need to be reuploaded, or do this on the client maybe to speed it up
 
@@ -211,8 +224,9 @@ io.on("connection",socket=>{
         console.log("restoring... from PID: ",pid);
 
         let p = await attemptToGetProject(user,pid);
+        // let p = getProject2(user.email,pid);
         
-        call(p?.files);
+        call(p?.serializeGet());
 
         return;
         
@@ -241,7 +255,8 @@ io.on("connection",socket=>{
         let data:any;
         switch(section){
             case ProjectGroup.personal:{
-                data = user.projects.map(v=>v.serialize()?.serialize());
+                // data = user.projects.map(v=>v.serialize()?.serialize());
+                data = user.pMeta.map(v=>v.serialize());
             } break;
         }
         
@@ -257,6 +272,9 @@ io.on("connection",socket=>{
         f(data?.serializeGet());
     });
     socket.on("getChallenges",(perPage:number,pageI:number,filter:FilterType,option:string,desc:boolean,f:(data:any)=>void)=>{
+        let user = getUserBySock(socket.id);
+        if(!user) return;
+        
         if(!option) option = "popularity";
         if(desc == null) desc = true;
         
@@ -299,8 +317,10 @@ io.on("connection",socket=>{
             let ongoing = v.ongoing;
             if(filter.ongoing?.length) if(!ongoing) continue;
             // if(filter.ongoing?.length ? !ongoing : ongoing) continue;
+
+            // if(filter.completed?.length) if(!v.isCompleted(user)) continue;
             
-            if(i >= skip) list.push(v.serializeGet());
+            if(i >= skip) list.push(v.serializeGet(user));
 
             if(list.length >= perPage) break;
             i++;
@@ -346,10 +366,29 @@ io.on("connection",socket=>{
         f(p.pid);
         console.log(">> created challenge project");
     });
+    socket.on("continueChallenge",async (cid:string,f:(data:any)=>void)=>{
+        if(!valVar2(cid,"string",f)) return;
+        
+        let user = getUserBySock(socket.id);
+        if(!user) return;
+
+        let m = user.challenges.find(v=>v.cid == cid);
+        if(!m){
+            f(null);
+            return;
+        }
+        f(m.pid);
+    });
 
     // 
-    socket.on("createProject",()=>{
+    socket.on("createProject",async (name:string,desc:string,f:(data:any)=>void)=>{
+        if(!valVar2(name,"string",f)) return;
+        if(!valVar2(desc,"string",f)) return;
 
+        let user = getUserBySock(socket.id);
+        if(!user) return;
+        let p = await createProject(user,name,desc,false);
+        f(p.pid);
     });
 });
 function genPID(){
@@ -371,10 +410,23 @@ async function createChallengeProject(user:User,cid:string):Promise<Project|numb
     // setup/create project
     let p = new Project(pid,c.name,user.email);
     allProjects.set(pid,p);
+    p.cid = cid;
+    // let m = user.pMeta.find(v=>v.pid == pid);
+    // if(m) m.cid = cid;
+    // else console.log(">> Err: couldn't find meta when starting challenge");
+    let m = new ProjectMeta(user,pid,p.name,p.desc,p.isPublic);
+    m.cid = p.cid;
+    user.pMeta.push(m);
+    user.saveToFile();
     return p;
 }
-function createProject(name:string){
-    
+async function createProject(user:User,name:string,desc:string,isPublic=false){
+    let pid = crypto.randomUUID();
+    let meta = new ProjectMeta(user,pid,name,desc,isPublic);
+    let p = user.createProject(meta,pid);
+    let path = "../project/"+user.email+"/"+p.pid;
+    await mkdir(path);
+    return p;
 }
 enum ProjectGroup{
     personal,

@@ -1910,6 +1910,7 @@ class PromptLoginMenu extends Menu {
             closeAllMenus();
             new LogInMenu().load();
         };
+        return this;
     }
 }
 async function initLessonPage() {
@@ -2168,6 +2169,7 @@ class BannerMenu extends Menu {
         };
         setTimeout(() => { if (dev.skipGetStarted)
             b_gettingStarted.click(); }, 20);
+        return this;
     }
 }
 function loadIFrameSimpleMode(iframe, inst) {
@@ -2222,6 +2224,7 @@ class BannerPreviewMenu extends Menu {
         `;
         let iframe = this.body.querySelector("iframe");
         loadIFrameSimpleMode(iframe, this.lesson.finalInstance);
+        return this;
     }
 }
 class TextSection {

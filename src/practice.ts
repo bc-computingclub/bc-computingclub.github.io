@@ -52,6 +52,8 @@ class Challenge {
         let c = new Challenge(data.id,data.name,data.desc,false,data.imgUrl,null,false,data.difficulty,data.ongoing,"0");
         c.timespan = data.timespan;
         c.sub_highlights = data.hl.map((v:any)=>new Submission(v.url,v.who));
+        c.inProgress = data.inProgress;
+        // c.completed = data.completed;
         return c;
     }
 }
@@ -96,11 +98,13 @@ let testDetailed = new DetailedChallenge("04", "Water Wheel", "Design a button w
 
 async function getChallenges() {
     challengeArray = await getServerChallenges();
-    challengeArray[0].inProgress = true;
+    // challengeArray[0].inProgress = true;
 }
 
 let isOpen: boolean;
 window.addEventListener("load", async () => {
+    await loginProm; // <-- sometimes if you refresh, you might start loading challenges before the user gets logged in, meaning the server can't fetch challenges for you, this makes it wait till the user is logged in
+    
     await getChallenges();
     showChallenges(challengeArray);
     let toggleState = localStorage.getItem(`${lsUID}toggleState`) || "open";
@@ -178,7 +182,7 @@ class ChallengeMenu extends Menu {
                     <div class="c-difficulty">
                         <span class="c-difficulty-text">Difficulty:</span><span class="c-difficulty-number">${this.c.difficulty}</span>
                     </div>
-                    <button class="c-start" onclick="startChallenge('${this.c.cID}')"><h3>${this.c.inProgress ? "Continue" : "Start"}</h3><span class="material-symbols-outlined c-start-arrow">arrow_forward_ios<span/></button>
+                    <button class="c-start" onclick="${!this.c.inProgress ? `startChallenge('${this.c.cID}')` : `continueChallenge('${this.c.cID}')`}"><h3>${this.c.inProgress ? "Continue" : "Start"}</h3><span class="material-symbols-outlined c-start-arrow">arrow_forward_ios<span/></button>
                 </div>
             </div>
         `;
@@ -250,8 +254,18 @@ async function startChallenge(cid:string){
             alert("Error while trying to start challenge, error code:"+data);
             return;
         }
-        alert("Successfully started challenge with pid: "+data);
+        // alert("Successfully started challenge with pid: "+data);
+        goToProject(data);
     });
+}
+async function continueChallenge(cid:string){
+    let pid = await new Promise<string>(resolve=>{
+        socket.emit("continueChallenge",cid,(pid:any)=>{
+            resolve(pid);
+        });
+    });
+    if(pid == null) return;
+    goToProject(pid);
 }
 
 let curChallengeMenu:ChallengeMenu;
@@ -537,5 +551,5 @@ async function sortChallenges(option:string,descending:boolean) {
 }
 
 function toggleSortMenu() {
-    cSortDiv.classList.toggle("open");
+    cSortDiv.classList.toggle("collapse");
 }

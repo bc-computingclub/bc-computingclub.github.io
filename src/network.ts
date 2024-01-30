@@ -110,7 +110,7 @@ function uploadProjectFiles(project:Project){ // for refresh
         });
     });
 }
-async function restoreProjectFiles(project:Project){
+async function _restoreProjectFiles(project:Project){
     let files = await new Promise<ULFile[]>(resolve=>{
         socket.emit("restoreProjectFiles",project.pid||"tmp_project",(files:ULFile[])=>{
             if(!files){
@@ -126,6 +126,20 @@ async function restoreProjectFiles(project:Project){
         project.createFile(f.name,f.val);
     }
     if(files.length) project.hasSavedOnce = true;
+}
+async function restoreProjectFiles(pid:string){
+    let meta = await new Promise<ProjectMeta>(resolve=>{
+        socket.emit("restoreProjectFiles",pid||"tmp_project",(meta:ProjectMeta)=>{
+            if(meta == null){
+                console.log("ERR while restoring files");
+                resolve(null);
+                return;
+            }
+            console.log("FOUND META",meta);
+            resolve(meta);
+        });
+    });
+    return meta;
 }
 
 // Challenge

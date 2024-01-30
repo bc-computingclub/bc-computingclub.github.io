@@ -26,7 +26,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.readdir = exports.mkdir = exports.removeFile = exports.read = exports.write = exports.access = exports.ULFile = exports.Socket = exports.getUserBySock = exports.attemptToGetProject = exports.getProject = exports.allProjects = exports.users = exports.User = exports.UserChallengeData = exports.ProjectMeta = exports.Project = exports.sanitizeEmail = exports.io = exports.server = void 0;
+exports.readdir = exports.mkdir = exports.removeFile = exports.read = exports.write = exports.access = exports.ULFile = exports.Socket = exports.getUserBySock = exports.attemptToGetProject = exports.getProject2 = exports.getProject = exports.allProjects = exports.users = exports.User = exports.UserChallengeData = exports.ProjectMeta = exports.Project = exports.sanitizeEmail = exports.io = exports.server = void 0;
 const http = __importStar(require("http"));
 const express_1 = __importDefault(require("express"));
 const socket_io_1 = require("socket.io");
@@ -97,9 +97,25 @@ class Project {
     desc;
     isPublic;
     files;
+    cid;
     // meta:ProjectMeta; // might need this at some point
     getRefStr() {
         return this.ownerEmail + ":" + this.pid;
+    }
+    serializeGet() {
+        if (!this._owner)
+            return;
+        // let meta = this._owner.pMeta.find(v=>v.pid == this.pid);
+        // let challenge = this._owner.challenges.find(v=>v.pid == this.pid);
+        return {
+            owner: this.ownerEmail,
+            name: this.name,
+            desc: this.desc,
+            isPublic: this.isPublic,
+            pid: this.pid,
+            files: this.files,
+            cid: this.cid
+        };
     }
     serialize() {
         if (!this._owner) {
@@ -107,7 +123,9 @@ class Project {
             return;
         }
         // return this.meta;
-        return new ProjectMeta(this._owner, this.pid, this.name, this.desc, this.isPublic);
+        let m = new ProjectMeta(this._owner, this.pid, this.name, this.desc, this.isPublic);
+        m.cid = this.cid;
+        return m;
         // return JSON.stringify({
         //     pid:this.pid,
         //     name:this.name,
@@ -138,18 +156,23 @@ class ProjectMeta {
     name;
     desc;
     isPublic;
+    cid;
     hasLoaded = false;
     serialize() {
+        // let challenge = this.user.challenges.find(v=>v.pid == this.pid);
         return JSON.stringify({
             pid: this.pid,
             name: this.name,
             desc: this.desc,
-            isPublic: this.isPublic
+            isPublic: this.isPublic,
+            // cid:challenge?.cid
+            cid: this.cid
         });
     }
     static deserialize(user, str) {
         let o = JSON.parse(str);
         let p = new ProjectMeta(user, o.pid, o.name, o.desc, o.isPublic);
+        p.cid = o.cid;
         // console.log("DESEL",o,p);
         return p;
     }
@@ -303,12 +326,16 @@ function getProject(ref) {
     return exports.allProjects.get(ref);
 }
 exports.getProject = getProject;
+function getProject2(email, pid) {
+    return exports.allProjects.get(email + ":" + pid);
+}
+exports.getProject2 = getProject2;
 async function attemptToGetProject(user, pid) {
     let ref = user.email + ":" + pid;
-    if (hasntFoundProject.includes(ref)) {
-        console.log("$ prevented, already stored that it couldn't find it");
-        return;
-    }
+    // if(hasntFoundProject.includes(ref)){
+    //     console.log("$ prevented, already stored that it couldn't find it");
+    //     return;
+    // }
     let p = getProject(ref);
     if (p) {
         console.log(" :: FOUND PROJECT: ", p.name);
@@ -355,6 +382,7 @@ async function attemptToGetProject(user, pid) {
     p2.isPublic = meta.isPublic;
     p2._owner = user;
     p2.files = files;
+    p2.cid = meta.cid;
     user.projects.push(p2);
     loadProject(p2);
     return p2;

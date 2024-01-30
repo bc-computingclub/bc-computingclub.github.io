@@ -435,7 +435,7 @@ function genHeader(i, isCompact = true, id) {
             <div>View</div>-->
         </div>
         <div class="cur-project-controls">
-            <div class="d-current-project">New Project 1</div>
+            <div class="d-current-project">. . .</div>
             <div class="b-save icon-div"><div class="material-symbols-outlined">save</div></div>
             <div class="icon-div hide"><div class="material-symbols-outlined">play_arrow</div></div>
         </div>
@@ -510,6 +510,8 @@ class Project {
     files;
     openFiles;
     curFile;
+    desc;
+    isPublic;
     parent;
     d_files;
     codeCont;
@@ -877,6 +879,8 @@ document.addEventListener("mousedown", e => {
 });
 // SAVE / REFRESH
 async function refreshProject() {
+    if (!project)
+        return;
     if (project.files.some(v => !v._saved) || !project.hasSavedOnce)
         await saveProject(true);
     let file1 = project.files.find(v => v.name == "index.html");
@@ -898,6 +902,8 @@ async function refreshProject() {
     resolveHook(listenHooks.refresh, null);
 }
 async function refreshLesson() {
+    if (!lesson)
+        return;
     let project = lesson.p;
     if (project.files.some(v => !v._saved) || !project.hasSavedOnce)
         await saveLesson(true);
@@ -913,6 +919,8 @@ async function refreshLesson() {
 }
 let _isSaving = false;
 async function saveProject(isQuick = false) {
+    if (!project)
+        return;
     if (_isSaving)
         return;
     _isSaving = true;
@@ -934,6 +942,8 @@ async function saveProject(isQuick = false) {
     _isSaving = false;
 }
 async function saveLesson(isQuick = false) {
+    if (!lesson)
+        return;
     if (_isSaving)
         return;
     _isSaving = true;
@@ -960,5 +970,13 @@ function screenshot() {
     html2canvas(document.body.children[5]).then(canvas => {
         document.body.appendChild(canvas);
     });
+}
+function goToProject(pid) {
+    // location.pathname = "/editor/index.html?pid="+pid;
+    let url = new URL(location.href);
+    url.pathname = "/editor/index.html";
+    url.searchParams.set("pid", pid);
+    history.pushState(null, null, url);
+    location.reload();
 }
 //# sourceMappingURL=util.js.map

@@ -7,26 +7,47 @@ pane_files = document.querySelector(".pane-files");
 pane_code = document.querySelector(".pane-code");
 pane_preview = document.querySelector(".pane-preview");
 let project;
-async function init() {
-    // @ts-ignore
-    require.config({ paths: { vs: "/lib/monaco/min/vs" } });
-    await new Promise(resolve => {
-        // @ts-ignore
-        require(['vs/editor/editor.main'], function () {
-            resolve();
-        });
-    });
-    project = new Project("Test Project", pane_code);
-    let pid = new URL(location.href).searchParams.get("pid");
+async function loadProject(pid) {
+    project = null;
+    let meta = await restoreProjectFiles(pid);
+    if (!meta) {
+        console.warn(`selected project ${pid}: doesn't exist`);
+        new ProjectDashboard().load();
+        return;
+    }
+    let url = new URL(location.href);
+    if (url.searchParams.get("pid") != pid) {
+        url.searchParams.set("pid", pid);
+        history.replaceState(null, null, url);
+    }
+    project = new Project(meta.name, pane_code);
     project.pid = pid;
+    project.desc = meta.desc;
+    project.isPublic = meta.isPublic;
     console.log("FOUND PID: ", pid);
     if (!pid)
         project.pid = "tmp_project";
     setupEditor(pane_code, EditorType.self);
     postSetupEditor(project);
     d_curProject.textContent = project.title;
-    await restoreProjectFiles(project);
+    if (meta.cid != null) {
+        console.log("** found Challenge Project");
+        document.body.classList.add("is-challenge");
+        let nav = document.querySelector("a.nav-link:nth-child(2)");
+        if (nav) {
+            nav.classList.add("active");
+            nav.nextElementSibling.classList.remove("active");
+        }
+    }
+    console.log("project meta:", meta);
+    for (const f of meta.files) {
+        project.createFile(f.name, f.val);
+    }
+    if (meta.files.length)
+        project.hasSavedOnce = true;
     if (project.files.length == 0) { // create boilerplate files
+        console.warn(":: no files found");
+        return;
         console.warn(":: no files found, loading boilerplate");
         project.createFile("index.html", `<html>
     <head>
@@ -49,6 +70,18 @@ async function init() {
     else
         project.hasSavedOnce = true;
     project.files.forEach(v => v.setSaved(true));
+}
+async function init() {
+    // @ts-ignore
+    require.config({ paths: { vs: "/lib/monaco/min/vs" } });
+    await new Promise(resolve => {
+        // @ts-ignore
+        require(['vs/editor/editor.main'], function () {
+            resolve();
+        });
+    });
+    let pid = new URL(location.href).searchParams.get("pid");
+    await loadProject(pid);
     onResize(true);
 }
 onResize = function (isFirst = false, who) {
@@ -187,6 +220,12 @@ class ProjectDashboard extends Menu {
             </div>
         `;
         let b_newProject = this.body.querySelector(".b-new-project");
+        b_newProject.addEventListener("click", e => {
+            let name = prompt("Enter project name:", "New Project");
+            if (!name)
+                return;
+            createNewProject(name);
+        });
         let navCont = this.body.querySelector(".edb-nav-cont");
         let content = this.body.querySelector(".edb-content-list");
         for (let i = 0; i < navCont.children.length; i++) {
@@ -216,8 +255,7 @@ class ProjectDashboard extends Menu {
                     <div class="l-project-desc">${meta.desc}</div>
                 </div>
                 <div>
-                    <button class="icon-btn accent smaller 
-                    b-open-project">
+                    <button class="icon-btn accent smaller b-open-project">
                         <div class="material-symbols-outlined">edit</div>
                         <div>Tinker</div>
                     </button>
@@ -226,12 +264,43 @@ class ProjectDashboard extends Menu {
             content.appendChild(div);
             let b_openProject = div.querySelector(".b-open-project");
             b_openProject.addEventListener("click", e => {
+                openProjectSuper(meta.pid);
             });
-            div.addEventListener("click", e => {
-            });
+            if (meta.cid != null) {
+                b_openProject.classList.add("challenge");
+                b_openProject.children[1].textContent = "Practice";
+            }
+            // div.addEventListener("click",e=>{
+            // });
         }
         loadSection(0);
+        return this;
     }
+}
+async function createNewProject(name, desc = "A default project description.") {
+    let pid = await new Promise(resolve => {
+        console.log("...creating project");
+        socket.emit("createProject", name, desc, (pid) => {
+            if (pid == null) {
+                alert("Error creating project");
+                resolve(null);
+                return;
+            }
+            console.log(":: successfully created project: ", name);
+            resolve(pid);
+        });
+    });
+    if (pid == null)
+        return;
+    console.log("succesfully created");
+    await openProjectSuper(pid);
+}
+async function openProjectSuper(pid) {
+    if (!project)
+        await loadProject(pid);
+    else
+        goToProject(pid);
+    closeAllMenus();
 }
 let b_editorDashboard = document.querySelector(".b-editor-dashboard");
 let d_curProject = document.querySelector(".d-current-project");
@@ -243,6 +312,8 @@ d_curProject.addEventListener("click", e => {
     openCurProjSettings();
 });
 function openCurProjSettings() {
+    if (!project)
+        return;
     let div = document.createElement("div");
     div.className = "proj-settings";
     div.innerHTML = `

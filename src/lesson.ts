@@ -1216,7 +1216,6 @@ class BO_Text extends AnchoredBoardObj{
         b.applyFont();
         _ctx.fillStyle = this.col;
         
-
         let x = this.x*_ctx.canvas.width;
         let y = this.y*_ctx.canvas.height;
 
@@ -1763,8 +1762,6 @@ class Lesson{
         // unfinished, not a priority right now, probably going to disable the go back system for now
     }
 
-
-
     init(){
         addBannerBubble(this);
         addBannerPreviewBubble(this);
@@ -1984,7 +1981,7 @@ class PromptLoginMenu extends Menu{
     constructor(){
         super("You Are Not Logged In","");
     }
-    load(): void {
+    load(){
         super.load(5);
         this.body.innerHTML = `
             <div class="flx-v">
@@ -1998,6 +1995,7 @@ class PromptLoginMenu extends Menu{
             closeAllMenus();
             new LogInMenu().load();
         };
+        return this;
     }
 }
 async function initLessonPage(){
@@ -2264,7 +2262,7 @@ class BannerMenu extends Menu{
     canClose(): boolean {
         return false;
     }
-    load(): void {
+    load(){
         super.load();
         this.menu.classList.add("menu-lesson-banner");
         this.menu.style.width = "90%";
@@ -2283,6 +2281,7 @@ class BannerMenu extends Menu{
         };
 
         setTimeout(()=>{if(dev.skipGetStarted) b_gettingStarted.click();},20);
+        return this;
     }
 }
 
@@ -2337,7 +2336,7 @@ class BannerPreviewMenu extends Menu{
     }
     lesson:Lesson;
 
-    load(): void {
+    load(){
         super.load();
         this.menu.classList.add("menu-banner-preview");
         this.body.innerHTML = `
@@ -2345,6 +2344,7 @@ class BannerPreviewMenu extends Menu{
         `;
         let iframe = this.body.querySelector("iframe");
         loadIFrameSimpleMode(iframe,this.lesson.finalInstance);
+        return this;
     }
 }
 

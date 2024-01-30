@@ -21,6 +21,12 @@ class Challenge {
     timespan;
     hl;
     cnt; // submission count
+    isCompleted() {
+        return false;
+    }
+    isInProgress(user) {
+        return user.challenges.some(v => v.cid == this.id);
+    }
     static from(id, data) {
         let d = new Challenge(id, data.name, data.desc, data.imgUrl, data.difficulty);
         let ok = Object.keys(data);
@@ -38,7 +44,7 @@ class Challenge {
         }
         return ongoing;
     }
-    serializeGet() {
+    serializeGet(user) {
         return {
             id: this.id,
             name: this.name,
@@ -48,7 +54,9 @@ class Challenge {
             timespan: this.timespan,
             ongoing: this.ongoing,
             hl: this.hl,
-            submission_count: this.cnt
+            submission_count: this.cnt,
+            completed: this.isCompleted(),
+            inProgress: this.isInProgress(user)
         };
     }
 }

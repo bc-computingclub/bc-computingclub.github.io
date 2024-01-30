@@ -124,3 +124,18 @@
 - couple more back end things for challenges, start of setup for starting a challenge
 - sorting through server side
 - some other back end setup
+
+### 1/29/24 - Claeb
+- bug fixes
+- fixed new account creation causing crash
+- majorly overhauled project system
+- took away boilerplate for now
+- no project found in editor opens the dashboard
+- you can now go to projects from the dashboard
+- challenge projects are supported in the dashboard and change the editors color and shift it to "Practice" instead of "Experiment" on the nav bar
+- fixed bug with saving wouldn't save if there was more files created since last server start
+- added starting new challenge which creates a new challenge project
+- added resuming challenge projects
+- added inProgress flag to challenges that are currently in progress
+- fixed project meta so in the editor the project settings dropdown displays the correct name for the project
+- probably some other things but forgot
