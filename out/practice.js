@@ -86,36 +86,39 @@ let testDetailed = new DetailedChallenge("04", "Water Wheel", "Design a button w
 async function getChallenges() {
     challengeArray = await getServerChallenges();
 }
-let isOpen;
+let shouldBeOpen;
 window.addEventListener("load", async () => {
     await loginProm; // Ensures user is logged in before challenges are fetched.
     await getChallenges();
-    showChallenges(challengeArray, true);
+    await showChallenges(challengeArray, true);
     let toggleState = localStorage.getItem(`${lsUID}toggleState`) || "open";
-    isOpen = toggleState == "open" ? true : false;
-    if (isOpen == false) {
-        if (challengeArray.filter(c => c.inProgress).length > 0) {
-            toggleInProgressDiv(cToggle, false);
-        }
-        outerInProgressDiv.classList.add("window-load");
+    shouldBeOpen = toggleState == "open" ? true : false;
+    outerInProgressDiv.classList.add("window-load");
+    if (shouldBeOpen == false) {
+        console.log("Should be closed, closing (no animation)");
+        outerInProgressDiv.classList.add("collapse");
+        cToggle.classList.remove("point-up");
+        cToggle.classList.add("point-down");
     }
+    else
+        console.log("Should be open, no toggling");
 });
 function toggleInProgressDiv(btn, opening) {
-    outerInProgressDiv.classList.remove("window-load");
-    if (opening) {
-        isOpen = true;
+    if (opening == true) {
         localStorage.setItem(`${lsUID}toggleState`, "open");
+        shouldBeOpen = true;
         btn.classList.remove("point-down");
         btn.classList.add("point-up");
         outerInProgressDiv.classList.remove("collapse");
     }
-    else {
-        isOpen = false;
+    else if (opening == false) {
         localStorage.setItem(`${lsUID}toggleState`, "closed");
+        shouldBeOpen = false;
         btn.classList.remove("point-up");
         btn.classList.add("point-down");
         outerInProgressDiv.classList.add("collapse");
     }
+    outerInProgressDiv.classList.remove("window-load");
 }
 class ChallengeMenu extends Menu {
     constructor(c) {
@@ -265,7 +268,7 @@ async function createChallengePopup(c) {
 }
 async function showChallenges(cArr, showAnim) {
     if (showAnim)
-        await showLoadingAnim("500"); // feel free to change delay
+        await showLoadingAnim("400"); // feel free to change delay
     for (let challenge of cArr) {
         setChallengeHTML(challenge);
     }
@@ -273,14 +276,13 @@ async function showChallenges(cArr, showAnim) {
     if (ipCounter <= 0) {
         inProgressDiv.classList.add("empty");
         inProgressDiv.innerHTML = "<i>Start working on a challenge, and it'll show up here!</i>";
+        if (cToggle)
+            cToggle.remove();
     }
     else {
         inProgressDiv.classList.remove("empty");
-        cToggle = document.createElement("span");
-        cToggle.classList.add("material-symbols-outlined", "c-toggle");
-        cToggle.innerHTML = "expand_less";
-        cToggle.classList.add(localStorage.getItem(`${lsUID}toggleState`) == "closed" ? "point-down" : "point-up");
-        inProgressHeader.append(cToggle);
+        if (!cToggle)
+            createCToggle();
     }
     if (bCounter == 0) {
         browseDiv.classList.add("empty");
@@ -292,10 +294,16 @@ async function showChallenges(cArr, showAnim) {
     browseTracker.innerHTML = `(${bCounter})`;
     addClickEventListener(cToggle);
 }
+function createCToggle() {
+    cToggle = document.createElement("span");
+    cToggle.classList.add("material-symbols-outlined", "c-toggle");
+    cToggle.innerHTML = "expand_less";
+    inProgressHeader.append(cToggle);
+}
 function addClickEventListener(cToggle) {
     if (cToggle) {
         cToggle.addEventListener("click", () => {
-            if (isOpen) {
+            if (shouldBeOpen) {
                 toggleInProgressDiv(cToggle, false);
             }
             else {
@@ -439,16 +447,15 @@ checkboxes.forEach((checkbox) => {
     });
 });
 // Potential loading animation, if you don't like it feel free to change! CSS obtained from loading.io
-// Important: This only triggers on page load for now. I added a delay property if you want to shorten it and add it to sorting?
+// Important: This only triggers on page load for now. I added a delay property if you want to shorten it and add it elsewhere
 let loadingDiv;
 async function showLoadingAnim(delay) {
     loadingDiv = document.createElement("div");
     loadingDiv.classList.add("loading-div");
     loadingDiv.innerHTML = `
-        <div class="lds-cont"><div></div><div></div><div></div></div>
-        <span class ="loading-text">Loading...</span>
+        <div class="lds-ellipsis"><div></div><div></div><div></div><div></div></div>
+        <i class ="loading-text">Loading...</i>
     `;
-    let temp = loadingDiv;
     browseDiv.appendChild(loadingDiv);
     inProgressDiv.appendChild(loadingDiv.cloneNode(true));
     await wait(parseInt(delay));
