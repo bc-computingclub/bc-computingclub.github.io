@@ -125,11 +125,14 @@ class Menu{
 
         if(!menusOpen.length) menuCont.classList.add("show");
         menusOpen.push(this);
+
+        return this;
     }
 
     close(){
         if(this.menu?.parentElement){
             this.menu.parentElement.removeChild(this.menu);
+            this.onClose();
             this.reset();
 
             menusOpen.splice(menusOpen.indexOf(this),1);
@@ -147,6 +150,7 @@ class Menu{
             if(!menusOpen.length) menuCont.classList.remove("show");
         }
     }
+    onClose(){}
 
     // 
 
@@ -207,7 +211,7 @@ class SignUpMenu extends Menu{
     constructor(){
         super("Sign Up","person_add");
     }
-    load(): void {
+    load(priority?:number){
         super.load();
         this.body.innerHTML = `
             <div class="i-email"></div>
@@ -250,13 +254,14 @@ class SignUpMenu extends Menu{
                 
             }
         });
+        return this;
     }
 }
 class LogInMenu extends Menu{
     constructor(){
         super("Log In","login");
     }
-    load(): void {
+    load(priority?:number) {
         super.load();
 
         // this.body.innerHTML = `
@@ -344,6 +349,8 @@ class LogInMenu extends Menu{
                 promptSignIn();
             });
         }
+
+        return this;
     }
 }
 

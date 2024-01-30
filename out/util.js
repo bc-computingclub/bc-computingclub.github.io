@@ -114,10 +114,12 @@ class Menu {
         if (!menusOpen.length)
             menuCont.classList.add("show");
         menusOpen.push(this);
+        return this;
     }
     close() {
         if (this.menu?.parentElement) {
             this.menu.parentElement.removeChild(this.menu);
+            this.onClose();
             this.reset();
             menusOpen.splice(menusOpen.indexOf(this), 1);
             // restore other menus
@@ -132,6 +134,7 @@ class Menu {
                 menuCont.classList.remove("show");
         }
     }
+    onClose() { }
     // 
     setupTextInput(query, ops = {}) {
         let div = this.body.querySelector(query);
@@ -179,7 +182,7 @@ class SignUpMenu extends Menu {
     constructor() {
         super("Sign Up", "person_add");
     }
-    load() {
+    load(priority) {
         super.load();
         this.body.innerHTML = `
             <div class="i-email"></div>
@@ -220,13 +223,14 @@ class SignUpMenu extends Menu {
             onClick() {
             }
         });
+        return this;
     }
 }
 class LogInMenu extends Menu {
     constructor() {
         super("Log In", "login");
     }
-    load() {
+    load(priority) {
         super.load();
         // this.body.innerHTML = `
         //     <div class="i-username"></div>
@@ -310,6 +314,7 @@ class LogInMenu extends Menu {
                 promptSignIn();
             });
         }
+        return this;
     }
 }
 function decodeJwtResponse(token) {

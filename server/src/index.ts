@@ -18,7 +18,7 @@ function valVar2(v:any,type:string,f:any){
 }
 
 io.on("connection",socket=>{
-    socket.on("login",(data:CredentialResData,token:string,call:(data:CredentialResData)=>void)=>{
+    socket.on("login",async (data:CredentialResData,token:string,call:(data:CredentialResData)=>void)=>{
         if(!valVar(data,"object")) return;
         if(!valVar(data.email,"string")) return;
         if(!valVar(token,"string")) return;
@@ -31,11 +31,13 @@ io.on("connection",socket=>{
             if(!users.has(data.email)){
                 let san = sanitizeEmail(data.email);
                 // try to read from file first
-                let fdataStr:string|null;
-                // try{
-                    fdataStr = fs.readFileSync("../users/"+san+".json",{encoding:"utf8"});
-                // }
-                // catch(e){}
+                let fdataStr:string|null = null;
+                try{
+                    fdataStr = await read("../users/"+san+".json","utf8");
+                }
+                catch(e){
+                    console.log("aaaaaaaa");
+                }
 
                 function newUser(){
                     user = new User(data.name,data.email,data.picture,data._joinDate,data._lastLoggedIn,socket.id,[]);

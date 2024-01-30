@@ -80,6 +80,7 @@ let submissionArray = [sub1, sub2];
 let testDetailed = new DetailedChallenge("04", "Water Wheel", "Design a button which can be dragged around a circle, controlling the water level in a cup.", false, "/images/water-level.png", "", false, "code-wizard", true, "2", submissionArray);
 async function getChallenges() {
     challengeArray = await getServerChallenges();
+    challengeArray[0].inProgress = true;
 }
 let isOpen;
 window.addEventListener("load", async () => {
@@ -184,6 +185,7 @@ class ChallengeMenu extends Menu {
         cBtn.onclick = () => {
             this.close();
         };
+        return this;
     }
 }
 function showImplementations(cID) {
@@ -237,22 +239,23 @@ async function createChallengePopup(c) {
 function showChallenges(cArr) {
     for (let challenge of cArr) {
         let cardElm = setChallengeHTML(challenge);
-        if (!challenge.inProgress) {
-            browseDiv.appendChild(cardElm);
-            bCounter++;
-        }
-        else {
-            inProgressDiv.appendChild(cardElm);
-            ipCounter++;
-        }
+        // if (!challenge.inProgress) {
+        //     browseDiv.appendChild(cardElm);
+        //     bCounter++;
+        // } else {
+        //     inProgressDiv.appendChild(cardElm);
+        //     ipCounter++;
+        // }
     }
     if (ipCounter == 0) {
-        inProgressDiv.classList.add("empty");
-        inProgressDiv.innerHTML = "<i>Start working on a challenge, and it'll show up here!</i>";
+        inProgressDiv.classList.add("empty"); // ohhh your right your right I didn't notice that hmm
+        inProgressDiv.innerHTML = "<i>Start working on a challenge, and it'll show up here!</i>"; // if it was added by the line 261, would this clear something?
     }
     else {
-        inProgressDiv.classList.remove("empty");
-        inProgressDiv.innerHTML += `<span class="material-symbols-outlined c-toggle">expand_less</span>`; // Toggle button is added if there are challenges in progress to show/hide
+        inProgressDiv.classList.remove("empty"); // i did only just rewrite this temptoggle stuff to see if it was interfering but nope still broken
+        let tempToggle = document.createElement("span");
+        tempToggle.classList.add("material-symbols-outlined", "c-toggle"); // oh it's var args, just separate the tags by c
+        inProgressDiv.appendChild(tempToggle);
         cToggle = document.querySelector(".c-toggle");
         cToggle.classList.add(localStorage.getItem(`${lsUID}toggleState`) == "closed" ? "point-down" : "point-up");
         cToggle.addEventListener("click", () => {
@@ -276,7 +279,15 @@ function showChallenges(cArr) {
 }
 function setChallengeHTML(c) {
     let tempCard = document.createElement("div");
-    tempCard.classList.add("c-card");
+    tempCard.classList.add("c-card"); //xD let's see
+    if (!c.inProgress) {
+        browseDiv.appendChild(tempCard);
+        bCounter++;
+    }
+    else {
+        inProgressDiv.appendChild(tempCard);
+        ipCounter++;
+    }
     tempCard.innerHTML = `
         <div class="c-img-div">
             <img class="c-img" src="${c.imgURL}" alt="challenge image">
@@ -289,10 +300,86 @@ function setChallengeHTML(c) {
             Open Preview
         </button>
     `;
+    if (c.inProgress) {
+        let tempSpan = document.createElement("span");
+        tempSpan.className = "c-details material-symbols-outlined";
+        tempSpan.innerHTML = "more_horiz";
+        tempSpan.addEventListener("click", () => createRemoveBtn(c.cID, tempCard));
+        tempCard.appendChild(tempSpan);
+    }
     if (c.submitted) {
-        tempCard.innerHTML += `<span class="c-submitted"><span class="material-symbols-outlined">select_check_box</span> Submitted</span>`;
+        let submittedSpan = document.createElement("span");
+        submittedSpan.className = "c-submitted";
+        submittedSpan.innerHTML = `<span class="material-symbols-outlined">select_check_box</span>Submitted`;
+        tempCard.appendChild(submittedSpan);
     }
     return tempCard;
+}
+function createRemoveBtn(cID, elm) {
+    console.log("Creating Remove Button");
+    let deleteDiv = document.createElement("div");
+    deleteDiv.classList.add("c-delete-div");
+    deleteDiv.innerHTML = `
+        <button class="c-delete-btn" onclick="confirmProgressDeletion('${cID}');">
+            Delete progress
+            <span class="material-symbols-outlined">delete</span>
+        </button>
+    `;
+    elm.appendChild(deleteDiv);
+}
+class DeleteMenu extends Menu {
+    constructor(cID) {
+        super("Delete Progress", "delete");
+        this.cID = cID;
+    }
+    cID;
+    load(priority) {
+        super.load();
+        this.body.innerHTML = `
+            <div class="c-confirm-div">
+                <span class="c-confirm-text">Are you sure you want to delete your progress towards this challenge? You won't be able to get it back...</span>
+                <div class="c-confirm-options">
+                    <button class="c-confirm-btn">
+                        Yes
+                    </button>
+                    <button class="c-cancel-btn">
+                        No (Cancel)
+                    </button>
+                </div>
+            </div>
+        `;
+        document.querySelector(".c-cancel-btn").addEventListener("click", () => {
+            cancelProgressDeletion();
+            this.close();
+        });
+        document.querySelector(".c-confirm-btn").addEventListener("click", () => {
+            deleteProgress(this.cID);
+            this.close();
+        });
+        return this;
+    }
+    onClose() {
+        cancelProgressDeletion();
+    }
+}
+let deleteMenu;
+function confirmProgressDeletion(cID) {
+    if (deleteMenu)
+        deleteMenu.close();
+    deleteMenu = new DeleteMenu(cID).load();
+}
+function cancelProgressDeletion() {
+    console.log("Canceling Deletion");
+    if (document.querySelector(".c-delete-div"))
+        document.querySelector(".c-delete-div").remove();
+    if (document.querySelector(".c-confirm-div"))
+        document.querySelector(".c-confirm-div").remove();
+}
+async function deleteProgress(cID) {
+    console.log("Removing progress on challenge: " + cID);
+    // make challenge inProgress property false
+    // delete any Project associated with it
+    // i'm going to need your help here Caleb lol
 }
 async function setupButton(cID) {
     await createChallengePopup(challengeArray.find(v => v.cID == cID));
@@ -324,7 +411,7 @@ checkboxes.forEach((checkbox) => {
         filterChallenges();
     });
 });
-// Loading Animation, currently does nothing, just brainstorming ideas
+//Potential loading animation, currently does nothing, just brainstorming ideas
 let loadingDiv;
 async function showLoadingAnim(elm) {
     loadingDiv = document.createElement("div");

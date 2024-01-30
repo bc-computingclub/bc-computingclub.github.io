@@ -1,11 +1,7 @@
 "use strict";
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
 Object.defineProperty(exports, "__esModule", { value: true });
 const connection_1 = require("./connection");
 const s_challenges_1 = require("./s_challenges");
-const fs_1 = __importDefault(require("fs"));
 const readline_1 = require("readline");
 const crypto_1 = __importDefault(require("crypto"));
 function valVar(v, type) {
@@ -23,7 +19,7 @@ function valVar2(v, type, f) {
     return (typeof v == type);
 }
 connection_1.io.on("connection", socket => {
-    socket.on("login", (data, token, call) => {
+    socket.on("login", async (data, token, call) => {
         if (!valVar(data, "object"))
             return;
         if (!valVar(data.email, "string"))
@@ -38,11 +34,13 @@ connection_1.io.on("connection", socket => {
             if (!connection_1.users.has(data.email)) {
                 let san = (0, connection_1.sanitizeEmail)(data.email);
                 // try to read from file first
-                let fdataStr;
-                // try{
-                fdataStr = fs_1.default.readFileSync("../users/" + san + ".json", { encoding: "utf8" });
-                // }
-                // catch(e){}
+                let fdataStr = null;
+                try {
+                    fdataStr = await (0, connection_1.read)("../users/" + san + ".json", "utf8");
+                }
+                catch (e) {
+                    console.log("aaaaaaaa");
+                }
                 function newUser() {
                     user = new connection_1.User(data.name, data.email, data.picture, data._joinDate, data._lastLoggedIn, socket.id, []);
                     user.joinDate = new Date().toISOString();

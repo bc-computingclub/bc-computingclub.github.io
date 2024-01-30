@@ -347,9 +347,9 @@ body{
 
 .c-preview {
     cursor: pointer;
-    &.disabled{
-        cursor: not-allowed;
-    }
+    padding-block: 1em;
+    text-transform: uppercase;
+    font-weight: bold;
 }
 
 .c-submitted {
@@ -367,14 +367,13 @@ body{
 }
 
 .menu-challenge-menu{
-    width: calc(100dvw - 30em) !important;
+    width: calc(100dvw - 26em) !important;
     height: calc(100dvh - (14em)) !important;
     animation:AddBubble forwards 0.35s ease-out;
 }
 .c-popup {
     position: absolute;
-    color: var(--secondary-col);
-    /* background-color: var(--purple-col); */
+    color: var(--col);
     background-color:var(--bg-col);
 
     width:100%;
@@ -486,10 +485,6 @@ body{
 .c-view-all {
     cursor:pointer;
     text-transform: uppercase;
-
-    &.empty{
-        cursor: not-allowed;
-    }
 }
 
 .c-implementation-credit {
@@ -511,7 +506,6 @@ body{
     grid-template-rows: auto auto;
     align-content: space-between;
     color: var(--col);
-    overflow: scroll;
 }
 
 .c-popup-task {
@@ -573,6 +567,49 @@ body{
     font-weight: 700;
 }
 
+.c-details {
+    position: absolute;
+    top: .5em;
+    right: .5em;
+    cursor: pointer;
+    color: black;
+}
+
+.c-delete-div {
+    position: absolute;
+    top: .5em;
+    right:.5em;
+}
+
+.c-delete-btn {
+    display: flex;
+    align-items: center;
+    gap: .5em;
+    cursor: pointer;
+    background-color: rgb(138, 24, 24);
+    color: white;
+}
+
+.c-confirm-div {
+    width: 15em;
+    gap: .5em;
+    display: grid;
+    grid-template-rows: auto auto;
+    border-radius: 3px;
+    background-color: var(--bg-col);
+    padding: 1em;
+    width: 100%;
+}
+
+.c-confirm-options {
+    display: flex;
+    justify-content: space-between;
+
+    button {
+        width: 40%;
+    }
+}
+
 @keyframes AddBubble{
     0%{
         scale:0.8;
@@ -594,15 +631,15 @@ body{
         height: 100%;
     }
     .menu-challenge-menu{
-        width: 55dvw !important;
-        height: 65dvh !important;
+        width: 55em !important;
+        height: 35em !important;   
     }
 }
 
 /* Ultrawide screens */
 @media (min-width: 2560px) {
     .c-home {
-        padding-inline: 40em;
+        padding-inline: 30em;
     }
     .c-container {
         &:not(.empty){
@@ -611,9 +648,5 @@ body{
     }
     .c-popup {
         height: 100%;
-    }
-    .menu-challenge-menu{
-        width: calc(40dvw) !important;
-        height: calc(100dvh - (3em + 60em)) !important;
     }
 }
