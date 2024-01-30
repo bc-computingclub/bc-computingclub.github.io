@@ -26,7 +26,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.readdir = exports.mkdir = exports.removeFile = exports.read = exports.write = exports.access = exports.ULFile = exports.Socket = exports.getUserBySock = exports.attemptToGetProject = exports.getProject = exports.allProjects = exports.users = exports.User = exports.UserChallengeData = exports.ProjectMeta = exports.sanitizeEmail = exports.io = exports.server = void 0;
+exports.readdir = exports.mkdir = exports.removeFile = exports.read = exports.write = exports.access = exports.ULFile = exports.Socket = exports.getUserBySock = exports.attemptToGetProject = exports.getProject = exports.allProjects = exports.users = exports.User = exports.UserChallengeData = exports.ProjectMeta = exports.Project = exports.sanitizeEmail = exports.io = exports.server = void 0;
 const http = __importStar(require("http"));
 const express_1 = __importDefault(require("express"));
 const socket_io_1 = require("socket.io");
@@ -124,6 +124,7 @@ class Project {
         return p;
     }
 }
+exports.Project = Project;
 class ProjectMeta {
     constructor(user, pid, name, desc, isPublic) {
         this.user = user;
@@ -155,12 +156,14 @@ class ProjectMeta {
 }
 exports.ProjectMeta = ProjectMeta;
 class UserChallengeData {
-    constructor(i, cid) {
+    constructor(i, cid, pid) {
         this.i = i;
         this.cid = cid;
+        this.pid = pid;
     }
     i;
     cid;
+    pid;
 }
 exports.UserChallengeData = UserChallengeData;
 class User {
@@ -236,7 +239,7 @@ class User {
     getPath() {
         return "../users/" + this.sanitized_email + ".json";
     }
-    saveToFile() {
+    async saveToFile() {
         // if we don't save tokens this will require users to relog when there's a server restart maybe? do we need to save them?
         // let projects:string[] = [];
         // for(const p of this.projects){
@@ -249,12 +252,12 @@ class User {
             joinDate: this.joinDate,
             lastLoggedIn: this.lastLoggedIn,
             // projects,
-            pMeta: this.pMeta.map(v => v.serialize())
+            pMeta: this.pMeta.map(v => v.serialize()),
+            challenges: this.challenges
         };
-        fs_1.default.writeFile(this.getPath(), JSON.stringify(data), { encoding: "utf8" }, err => {
-            if (err)
-                console.log("Err while saving file: ", err);
-        });
+        let res = await write(this.getPath(), JSON.stringify(data), "utf8");
+        if (!res)
+            console.log("Err: failed to save user to file");
     }
     // Projects
     createProject(meta, pid) {

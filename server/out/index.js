@@ -7,6 +7,7 @@ const connection_1 = require("./connection");
 const s_challenges_1 = require("./s_challenges");
 const fs_1 = __importDefault(require("fs"));
 const readline_1 = require("readline");
+const crypto_1 = __importDefault(require("crypto"));
 function valVar(v, type) {
     if (v == null)
         return false;
@@ -61,6 +62,7 @@ connection_1.io.on("connection", socket => {
                         return;
                     }
                     user = new connection_1.User(fdata.name, fdata.email, fdata.picture, fdata._joinDate, fdata._lastLoggedIn, socket.id, fdata.pMeta);
+                    user.challenges = (fdata.challenges || []).map(v => new connection_1.UserChallengeData(v.i, v.cid, v.pid));
                     user.saveToFile();
                 }
                 if (user)
@@ -340,23 +342,37 @@ connection_1.io.on("connection", socket => {
         let p = await createChallengeProject(user, cid);
         if (typeof p == "number") {
             console.log("Err: failed starting challenge with error code: " + p);
+            f(p);
             return;
         }
-        f(null);
+        f(p.pid);
         console.log(">> created challenge project");
     });
     // 
     socket.on("createProject", () => {
     });
 });
+function genPID() {
+    return crypto_1.default.randomUUID();
+}
 async function createChallengeProject(user, cid) {
-    let path = "../lesson/" + user.email + "/" + cid;
-    if (await (0, connection_1.access)(path))
+    let c = s_challenges_1.challenges.get(cid);
+    if (!c)
+        return 3; // couldn't find challenge
+    let pid = genPID();
+    if (user.challenges.some(v => v.cid == cid))
         return 1; // already exists
+    let path = "../project/" + user.email + "/" + pid; //__c- prefix (THIS WILL BE INCLUDED ON CHALLENGES DATA EVENTUALLY)
+    // if(await access(path)) return 1; // already exists
     let res = await (0, connection_1.mkdir)(path);
     if (!res)
         return 2; // failed to create
-    // user.
+    user.challenges.push(new connection_1.UserChallengeData(0, cid, pid));
+    await user.saveToFile();
+    // setup/create project
+    let p = new connection_1.Project(pid, c.name, user.email);
+    connection_1.allProjects.set(pid, p);
+    return p;
 }
 function createProject(name) {
 }

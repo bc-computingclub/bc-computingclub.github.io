@@ -1,7 +1,8 @@
-import { io, server, CredentialResData, User, users, getUserBySock, sanitizeEmail, getProject, attemptToGetProject, access, readdir, read, mkdir, removeFile, write, ULFile, ProjectMeta, allProjects } from "./connection";
+import { io, server, CredentialResData, User, users, getUserBySock, sanitizeEmail, getProject, attemptToGetProject, access, readdir, read, mkdir, removeFile, write, ULFile, ProjectMeta, allProjects, UserChallengeData, Project } from "./connection";
 import { Challenge, ChallengeData, ChallengeGet, challenges } from "./s_challenges";
 import fs from "fs";
 import { createInterface } from "readline";
+import crypto from "crypto";
 
 function valVar(v:any,type:string){
     if(v == null) return false;
@@ -55,6 +56,7 @@ io.on("connection",socket=>{
                         return;
                     }
                     user = new User(fdata.name,fdata.email,fdata.picture,fdata._joinDate,fdata._lastLoggedIn,socket.id,fdata.pMeta);
+                    user.challenges = (fdata.challenges as any[]||[]).map(v=>new UserChallengeData(v.i,v.cid,v.pid));
                     user.saveToFile();
                 }
                 if(user) users.set(user.email,user);
@@ -335,11 +337,11 @@ io.on("connection",socket=>{
         let p = await createChallengeProject(user,cid);
         if(typeof p == "number"){
             console.log("Err: failed starting challenge with error code: "+p);
+            f(p);
             return;
         }
-        
 
-        f(null);
+        f(p.pid);
         console.log(">> created challenge project");
     });
 
@@ -348,12 +350,26 @@ io.on("connection",socket=>{
 
     });
 });
-async function createChallengeProject(user:User,cid:string){
-    let path = "../lesson/"+user.email+"/"+cid;
-    if(await access(path)) return 1; // already exists
+function genPID(){
+    return crypto.randomUUID();
+}
+async function createChallengeProject(user:User,cid:string):Promise<Project|number>{
+    let c = challenges.get(cid);
+    if(!c) return 3; // couldn't find challenge
+    let pid = genPID();
+    
+    if(user.challenges.some(v=>v.cid == cid)) return 1; // already exists
+    let path = "../project/"+user.email+"/"+pid; //__c- prefix (THIS WILL BE INCLUDED ON CHALLENGES DATA EVENTUALLY)
+    // if(await access(path)) return 1; // already exists
     let res = await mkdir(path);
     if(!res) return 2; // failed to create
-    // user.
+    user.challenges.push(new UserChallengeData(0,cid,pid));
+    await user.saveToFile();
+
+    // setup/create project
+    let p = new Project(pid,c.name,user.email);
+    allProjects.set(pid,p);
+    return p;
 }
 function createProject(name:string){
     

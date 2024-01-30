@@ -177,7 +177,7 @@ class ChallengeMenu extends Menu {
                     <div class="c-difficulty">
                         <span class="c-difficulty-text">Difficulty:</span><span class="c-difficulty-number">${this.c.difficulty}</span>
                     </div>
-                    <button class="c-start" onclick="alert('starting challenge');"><h3>${this.c.inProgress ? "Continue" : "Start"}</h3><span class="material-symbols-outlined c-start-arrow">arrow_forward_ios<span/></button>
+                    <button class="c-start" onclick="startChallenge('${this.c.cID}')"><h3>${this.c.inProgress ? "Continue" : "Start"}</h3><span class="material-symbols-outlined c-start-arrow">arrow_forward_ios<span/></button>
                 </div>
             </div>
         `;
@@ -239,6 +239,16 @@ function showImplementations(cID:string) {
     }
     document.querySelector(".c-back").addEventListener("click", () => {
         document.querySelector(".c-popup-body").innerHTML = temp;
+    });
+}
+
+async function startChallenge(cid:string){
+    socket.emit("startChallenge",cid,(data:number|string)=>{
+        if(typeof data == "number"){
+            alert("Error while trying to start challenge, error code:"+data);
+            return;
+        }
+        alert("Successfully started challenge with pid: "+data);
     });
 }
 

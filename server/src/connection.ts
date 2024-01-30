@@ -57,7 +57,7 @@ function checkAuth(req:Request,res:Response,next:NextFunction){
 function genPID(){
     return crypto.randomUUID();
 }
-class Project{
+export class Project{
     constructor(pid:string,name:string,ownerEmail:string){
         this.pid = pid;
         this.name = name;
@@ -150,12 +150,14 @@ export class ProjectMeta{
     }
 }
 export class UserChallengeData{
-    constructor(i:number,cid:string){
+    constructor(i:number,cid:string,pid:string){
         this.i = i;
         this.cid = cid;
+        this.pid = pid;
     }
     i:number;
     cid:string;
+    pid:string;
 }
 export class User{
     constructor(name:string,email:string,picture:string,_joinDate:string,_lastLoggedIn:string,sockId:string,pMeta:any[]){
@@ -233,7 +235,7 @@ export class User{
     getPath(){
         return "../users/"+this.sanitized_email+".json";
     }
-    saveToFile(){
+    async saveToFile(){
         // if we don't save tokens this will require users to relog when there's a server restart maybe? do we need to save them?
         // let projects:string[] = [];
         // for(const p of this.projects){
@@ -246,11 +248,11 @@ export class User{
             joinDate:this.joinDate,
             lastLoggedIn:this.lastLoggedIn,
             // projects,
-            pMeta:this.pMeta.map(v=>v.serialize())
+            pMeta:this.pMeta.map(v=>v.serialize()),
+            challenges:this.challenges
         };
-        fs.writeFile(this.getPath(),JSON.stringify(data),{encoding:"utf8"},err=>{
-            if(err) console.log("Err while saving file: ",err);
-        });
+        let res = await write(this.getPath(),JSON.stringify(data),"utf8");
+        if(!res) console.log("Err: failed to save user to file");
     }
 
     // Projects
