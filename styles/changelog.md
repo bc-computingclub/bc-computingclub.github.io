@@ -139,3 +139,11 @@
 - added inProgress flag to challenges that are currently in progress
 - fixed project meta so in the editor the project settings dropdown displays the correct name for the project
 - probably some other things but forgot
+
+### 1/30/24 - Claeb
+- added indicator in project dashboard to which section you have selected
+- [big-feature] added folder support to projects
+- redid the files panel to work with all the files and folders in the project
+- you can create folders and files anywhere and they save and work across sessions
+- if the open files list overflows then it's scrollable
+- fixed some bugs with internal stuff and things related to not saving and reloading correctly

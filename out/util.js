@@ -500,6 +500,7 @@ let pane_preview;
 class Project {
     constructor(title, parent, settings = {}) {
         this.title = title;
+        this.items = [];
         this.files = [];
         this.openFiles = [];
         this.parent = parent;
@@ -508,9 +509,11 @@ class Project {
     }
     pid;
     title;
+    items;
     files;
     openFiles;
     curFile;
+    lastFolder;
     desc;
     isPublic;
     parent;
@@ -519,27 +522,57 @@ class Project {
     readonly = false;
     disableCopy = false;
     hasSavedOnce = false;
+    needsSave = false;
     getURL() {
         if (PAGE_ID == PAGEID.editor)
             return serverURL + "/project/" + g_user.sanitized_email + "/" + socket.id + "/" + g_user.sanitized_email + "/" + project.pid;
         else if (PAGE_ID == PAGEID.lesson)
             return serverURL + "/lesson/" + g_user.sanitized_email + "/" + socket.id + "/" + g_user.sanitized_email + "/" + lesson.lid;
     }
-    createFile(name, text, lang) {
+    findFile(name) {
+        return this.files.find(v => v.name == name);
+    }
+    createFile(name, text, lang, folder) {
         let res = resolveHook(listenHooks.addFile, name);
         if (res == 1) {
             console.warn("Failed creation prevented from hook");
             return;
         }
-        let q = this.files.find(v => v.name == name);
+        let q = this.findFile(name);
         if (q) {
             q.open();
             return q;
         }
-        let f = new FFile(this, name, text, lang);
+        let f = new FFile(this, name, text, folder, lang);
         this.files.push(f);
+        if (folder)
+            folder.items.push(f);
+        else
+            this.items.push(f);
+        if (PAGE_ID == PAGEID.editor) {
+            createFileListItem(f);
+        }
         f.open();
-        f.setSaved(true);
+        // isFromStart = true;
+        // if(isFromStart) f.setSaved(true);
+        if (PAGE_ID == PAGEID.lesson)
+            f.setSaved(true);
+        return f;
+    }
+    createFolder(name, folder) {
+        if (name.includes(".")) {
+            alert("Folder names cannot have '.' characters in them");
+            return;
+        }
+        let f = new FFolder(this, name, folder);
+        if (folder)
+            folder.items.push(f);
+        else
+            this.items.push(f);
+        if (PAGE_ID == PAGEID.editor) {
+            createFolderListItem(f);
+        }
+        this.needsSave = true;
         return f;
     }
     hasEditor() {
@@ -555,8 +588,80 @@ class Project {
         return this.disableCopy;
     }
 }
-class FFile {
-    constructor(p, name, text, lang) {
+let fileList;
+function createFileListItem(f) {
+    if (!fileList) {
+        fileList = document.querySelector(".file-list");
+        if (!fileList)
+            return;
+    }
+    let div = document.createElement("div");
+    div.className = "file-item";
+    div.textContent = f.name;
+    if (f.folder)
+        f.folder._fiList.appendChild(div);
+    else
+        fileList.appendChild(div);
+    f._fi = div;
+    div.addEventListener("mousedown", e => {
+        f.open();
+    });
+}
+function createFolderListItem(f) {
+    if (!fileList) {
+        fileList = document.querySelector(".file-list");
+        if (!fileList)
+            return;
+    }
+    let div = document.createElement("div");
+    div.className = "folder-item";
+    div.innerHTML = `
+        <div class=fi-label>
+            <div class="material-symbols-outlined b-expand">expand_more</div>
+            <div>${f.name}</div>
+        </div>
+        <div class="fi-list"></div>
+    `;
+    if (f.folder)
+        f.folder._fiList.appendChild(div);
+    else
+        fileList.appendChild(div);
+    f._fiLabel = div.querySelector(".fi-label");
+    f._fiList = div.querySelector(".fi-list");
+    f._fiLabel.addEventListener("click", e => {
+        div.classList.toggle("close");
+        // let sels = document.querySelectorAll(".folder-item.sel");
+        // for(const c of sels){
+        //     c.classList.remove("sel");
+        // }
+        if (f.p.lastFolder)
+            f.p.lastFolder._fiLabel.parentElement.classList.remove("sel");
+        div.classList.add("sel");
+        f.p.lastFolder = f;
+    });
+}
+class FItem {
+    constructor(p, name, folder) {
+        this.p = p;
+        this.name = name;
+        this.folder = folder;
+    }
+    p;
+    name;
+    folder;
+}
+class FFolder extends FItem {
+    constructor(p, name, folder) {
+        super(p, name, folder);
+        this.items = [];
+    }
+    items;
+    _fiList;
+    _fiLabel;
+}
+class FFile extends FItem {
+    constructor(p, name, text, folder, lang) {
+        super(p, name, folder);
         if (!lang) {
             let ext = name.split(".").pop();
             let map = {
@@ -566,13 +671,10 @@ class FFile {
             };
             lang = map[ext] || "text";
         }
-        this.p = p;
-        this.name = name;
         this.text = text;
         this.lang = lang;
     }
-    p;
-    name;
+    _fi;
     text;
     lang;
     path = "";
@@ -726,6 +828,37 @@ class FFile {
         this.p.codeCont.appendChild(this.cont);
         this.editor.layout();
         loadEditorTheme();
+        this.p.curFile = this;
+        if (this.p.lastFolder) {
+            this.p.lastFolder._fiLabel.parentElement.classList.remove("sel");
+            this.p.lastFolder = null;
+        }
+        let allFI = document.querySelectorAll(".file-item.sel");
+        for (const c of allFI) {
+            c.classList.remove("sel");
+        }
+        if (this._fi) {
+            this._fi.classList.add("sel");
+            function check(folder) {
+                if (!folder)
+                    return;
+                if (folder._fiLabel.parentElement.classList.contains("close")) {
+                    folder._fiLabel.click();
+                    folder.p.lastFolder = null;
+                    folder._fiLabel.parentElement.classList.remove("sel");
+                }
+                if (folder.folder)
+                    check(folder.folder);
+            }
+            check(this.folder);
+            // if(this.p.lastFolder){
+            //     let sels = document.querySelectorAll(".folder-item.sel");
+            //     for(const c of sels){
+            //         c.classList.remove("sel");
+            //     }
+            //     this.p.lastFolder = null;
+            // }
+        }
     }
 }
 function cursorLoop() {
@@ -835,6 +968,15 @@ function postSetupEditor(project) {
     let parent = project.parent;
     project.d_files = parent.querySelector(".d-open-files");
     project.codeCont = parent.querySelector(".cont-js");
+    project.d_files.addEventListener("wheel", e => {
+        e.preventDefault();
+        let m = (Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY);
+        project.d_files.scrollBy({
+            left: m / 2,
+            top: 0,
+            behavior: "instant"
+        });
+    });
     console.log("completed post setup");
     // project.createFile("test.html",`<p>Hello</p>`,"html");
     // project.files[0].open();
@@ -849,7 +991,7 @@ function postSetupEditor(project) {
         let name = prompt("Enter file name:", "index.html");
         if (!name)
             return;
-        project.createFile(name, "");
+        project.createFile(name, "", null, project.lastFolder ?? project.curFile?.folder);
     });
     // loadEditorTheme();
     // project.files[0].d_files;
@@ -878,12 +1020,22 @@ document.addEventListener("mousedown", e => {
     if (!isOverTmpMenu)
         closeTmpMenus();
 });
+// document.addEventListener("mouseup",e=>{
+//     requestAnimationFrame(()=>{
+//         if(project.lastFolder){
+//             project.lastFolder._fiLabel.parentElement.classList.remove("sel");
+//             project.lastFolder = null;
+//         }
+//     });
+// });
 // SAVE / REFRESH
 async function refreshProject() {
     if (!project)
         return;
-    if (project.files.some(v => !v._saved) || !project.hasSavedOnce)
+    if (project.needsSave || project.files.some(v => !v._saved) || !project.hasSavedOnce) {
         await saveProject(true);
+        project.needsSave = false;
+    }
     let file1 = project.files.find(v => v.name == "index.html");
     if (!file1 || !project.hasSavedOnce) {
         alert("No index.html file found! Please create a new file called index.html, this file will be used in the preview.");

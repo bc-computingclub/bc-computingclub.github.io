@@ -1,4 +1,4 @@
-import { io, server, CredentialResData, User, users, getUserBySock, sanitizeEmail, getProject, attemptToGetProject, access, readdir, read, mkdir, removeFile, write, ULFile, ProjectMeta, allProjects, UserChallengeData, Project, getProject2 } from "./connection";
+import { io, server, CredentialResData, User, users, getUserBySock, sanitizeEmail, getProject, attemptToGetProject, access, readdir, read, mkdir, removeFile, write, ULFile, ProjectMeta, allProjects, UserChallengeData, Project, getProject2, ULItem, ULFolder } from "./connection";
 import { Challenge, ChallengeData, ChallengeGet, challenges } from "./s_challenges";
 import fs from "fs";
 import { createInterface } from "readline";
@@ -148,14 +148,15 @@ io.on("connection",socket=>{
         call(files);
     });
     // editor
-    socket.on("uploadProjectFiles",async (pid:string,list:ULFile[],call:()=>void)=>{
-        if(!valVar(list,"object")) return;
+    socket.on("uploadProjectFiles",async (pid:string,listData:any[],call:()=>void)=>{
+        if(!valVar(listData,"object")) return;
         if(!valVar(pid,"string")) return;
         if(!valVar(call,"function")) return;
         
         let user = getUserBySock(socket.id);
         if(!user) return;
-        // need to validate type integrity here
+
+        let list = listData.map(v=>ULItem.from(v));
 
         let p = user.projects.find(v=>v.pid == pid);
         if(!p){
@@ -172,23 +173,54 @@ io.on("connection",socket=>{
         let curFiles = await readdir(path);
         if(!curFiles) return;
 
-        curFiles = curFiles.filter(v=>!list.some(w=>w.name == v));
-        for(const f of curFiles){
-            console.log("...removing file:",path+"/"+f);
-            await removeFile(path+"/"+f);
-        }
-        for(const f of list){
-            console.log("...writing file:",path+"/"+f.name,f.enc);
-            await write(path+"/"+f.name,f.val,f.enc);
-            if(!p.files.find(v=>v.name == f.name)){
-                p.files.push(f);
+        // curFiles = curFiles.filter(v=>!list.some(w=>w.name == v));
+        // for(const f of curFiles){
+        //     console.log("...removing file:",path+"/"+f);
+        //     await removeFile(path+"/"+f);
+        // }
+        // for(const f of list){
+        //     console.log("...writing file:",path+"/"+f.name,f.enc);
+        //     await write(path+"/"+f.name,f.val,f.enc);
+        //     if(!p.files.find(v=>v.name == f.name)){
+        //         p.files.push(f);
+        //     }
+        // }
+
+        async function _write(l:ULItem[],pth:string,ffL:ULItem[]){
+            let i = 0;
+            for(const item of l){
+                let ff:ULItem|null = null;
+                if(ffL){
+                    ff = ffL[i];
+                    if(!ff) ffL.splice(i,0,item);
+                }
+                if(item instanceof ULFile){
+                    await write(path+"/"+pth+"/"+item.name,item.val,item.enc);
+                    if(ff){
+                        if(ff instanceof ULFile){
+                            ff.name = item.name;
+                            ff.val = item.val;
+                        }
+                        else console.log("$ err: ff wasn't a file..?",ff.name,item.name);
+                    }
+                    else console.log("$ err: no ff ref found");
+                }
+                else if(item instanceof ULFolder){
+                    await mkdir(path+"/"+pth+"/"+item.name);
+                    await _write(item.items,pth+"/"+item.name,(ff as ULFolder)?.items);
+                    if(ff) if(ff instanceof ULFolder){
+                        ff.name = item.name;
+                    }
+                }
+                i++;
             }
         }
+        await _write(list,"",p.items);
 
         if(p) for(const f of list){
-            let ff = p.files.find(v=>v.name == f.name);
-            if(ff) ff.val = f.val;
-            else console.log("Err: null file in project files list");
+            // let ff = p.files.find(v=>v.name == f.name);
+            // if(ff) ff.val = f.val;
+            // else console.log("Err: null file in project files list");
         }
         else{
             console.log("Err: couldn't find project while uploading files: "+pid,"$ attempting to search");
@@ -446,9 +478,11 @@ server.listen(3000,()=>{
 
 let rl = createInterface(process.stdin,process.stdout);
 rl.on("line",(line)=>{
+    line = line.trim();
     let s = line.split(" ");
     if(line == "challenges"){
         console.log(challenges);
+        return;
     }
     else if(line == "stop"){
         process.exit();
@@ -456,12 +490,49 @@ rl.on("line",(line)=>{
     else if(s[0] == "cdata"){
         let c = challenges.get(s[1]);
         console.log(c);
+        return;
     }
     else if(s[0] == "users"){
         console.log(users);
+        return;
     }
     else if(s[0] == "udata"){
         let u = users.get(s[1]);
         console.log(u);
+        return;
     }
+    else if(s[0] == "pitems"){
+        let u = users.get(s[1]);
+        if(!u){
+            console.log("couldn't find user.");
+            return;
+        }
+        let p = u.projects.find(v=>v.pid == s[2]);
+        if(!p){
+            console.log("couldn't find project.");
+            return;
+        }
+        let cur = p.items;
+        for(let i = 3; i < s.length; i++){
+            let res = cur[parseInt(s[i])];
+            if(!res){
+                console.log("Cannot find.");
+                return;
+            }
+            if(res instanceof ULFile){
+                console.log("FILE: ",res);
+                return;
+            }
+            cur = (res as ULFolder).items;
+        }
+        console.log(cur);
+        // pitems gyhar.ce@gmail.com e8bc2db5-9443-4c8d-a894-7d8a1deea591
+        return;
+    }
+    else if(s[0] == "cls" || s[0] == "clear"){
+        process.stdout.cursorTo(0,0);
+        process.stdout.clearScreenDown();
+        return;
+    }
+    console.log("Unknown command: ",s[0]);
 });

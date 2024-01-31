@@ -48,14 +48,26 @@ h_profile.addEventListener("click", e => {
     new LogInMenu().load();
 });
 // lesson
-class ULFile {
-    constructor(name, val, path, enc) {
+class ULItem {
+    constructor(name) {
         this.name = name;
+    }
+    name;
+}
+class ULFolder extends ULItem {
+    constructor(name, items = []) {
+        super(name);
+        this.items = items;
+    }
+    items;
+}
+class ULFile extends ULItem {
+    constructor(name, val, path, enc) {
+        super(name);
         this.val = val;
         this.path = path;
         this.enc = enc;
     }
-    name;
     val;
     path;
     enc;
@@ -91,11 +103,32 @@ async function restoreLessonFiles(lesson) {
         lesson.p.hasSavedOnce = true;
 }
 // 
-function uploadProjectFiles(project) {
+function old_uploadProjectFiles(project) {
     let list = [];
     for (const f of project.files) {
         list.push(new ULFile(f.name, f.editor.getValue(), "", "utf8"));
     }
+    return new Promise(resolve => {
+        socket.emit("uploadProjectFiles", project.pid || "tmp_project", list, (err) => {
+            if (err)
+                console.log("ERR while uploading files:", err);
+            resolve();
+        });
+    });
+}
+function uploadProjectFiles(project) {
+    let list = [];
+    function sant(l) {
+        let ll = [];
+        for (const f of l) {
+            if (f instanceof FFile)
+                ll.push(new ULFile(f.name, f.editor.getValue(), "", "utf8"));
+            else if (f instanceof FFolder)
+                ll.push(new ULFolder(f.name, sant(f.items)));
+        }
+        return ll;
+    }
+    list = sant(project.items);
     return new Promise(resolve => {
         socket.emit("uploadProjectFiles", project.pid || "tmp_project", list, (err) => {
             if (err)

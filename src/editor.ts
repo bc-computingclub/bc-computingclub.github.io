@@ -10,6 +10,21 @@ pane_files = document.querySelector(".pane-files") as HTMLElement;
 pane_code = document.querySelector(".pane-code") as HTMLElement;
 pane_preview = document.querySelector(".pane-preview") as HTMLElement;
 
+const b_newFolder = document.querySelector(".b-new-folder") as HTMLButtonElement;
+const b_newFile = document.querySelector(".b-new-file") as HTMLButtonElement;
+b_newFolder.addEventListener("click",e=>{
+    if(!project) return;
+    let name = prompt("Enter folder name:");
+    if(!name) return;
+    project.createFolder(name,project.lastFolder ?? project.curFile?.folder);
+});
+b_newFile.addEventListener("click",e=>{
+    if(!project) return;
+    let name = prompt("Enter file name:");
+    if(!name) return;
+    project.createFile(name,"",null,project.lastFolder ?? project.curFile?.folder);
+});
+
 let project:Project;
 
 async function loadProject(pid:string){
@@ -49,10 +64,28 @@ async function loadProject(pid:string){
     }
     console.log("project meta:",meta);
 
-    for(const f of meta.files){
-        project.createFile(f.name,f.val);
+    // for(const f of meta.files){
+    //     project.createFile(f.name,f.val);
+    // }
+    function run(l:any[],cur:FFolder){
+        let list = [];
+        for(const f of l){
+            if(f.val != null){
+                // console.log("created file: ",f.name,cur?.name);
+                let ff = project.createFile(f.name,f.val,null,cur);
+                list.push(ff);
+            }
+            else if(f.items != null){
+                // console.log("created folder: ",f.name);
+                let ff = project.createFolder(f.name,cur);
+                list.push(ff);
+                ff.items = run(f.items,ff);
+            }
+        }
+        return list;
     }
-    if(meta.files.length) project.hasSavedOnce = true;
+    run(meta.items,null);
+    if(meta.items.length) project.hasSavedOnce = true;
     
     if(project.files.length == 0){ // create boilerplate files
         console.warn(":: no files found");
@@ -80,6 +113,7 @@ async function loadProject(pid:string){
     else project.hasSavedOnce = true;
 
     project.files.forEach(v=>v.setSaved(true));
+    if(project.curFile) project.curFile.open();
 }
 
 async function init(){    
@@ -224,7 +258,7 @@ class ProjectDashboard extends Menu{
             <div class="flx edb-body">
                 <div class="edb-nav">
                     <div class="edb-nav-cont">
-                        <button class="icon-btn regular">
+                        <button class="icon-btn regular sel">
                             <div class="material-symbols-outlined">face</div>
                             <div>Personal</div>
                         </button>
@@ -259,7 +293,11 @@ class ProjectDashboard extends Menu{
         let content = this.body.querySelector(".edb-content-list");
         for(let i = 0; i < navCont.children.length; i++){
             let b = navCont.children[i];
-            b.addEventListener("click",e=>{
+            b.addEventListener("mousedown",e=>{
+                for(const c of navCont.children){
+                    c.classList.remove("sel");
+                }
+                b.classList.add("sel");
                 loadSection(i);
             });
         }
@@ -308,7 +346,7 @@ class ProjectDashboard extends Menu{
     }
 }
 
-async function createNewProject(name:string,desc="A default project description."){
+async function createNewProject(name:string,desc="A project for experiments."){
     let pid = await new Promise<string>(resolve=>{
         console.log("...creating project");
         socket.emit("createProject",name,desc,(pid:string)=>{

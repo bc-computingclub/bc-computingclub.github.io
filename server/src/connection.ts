@@ -67,7 +67,8 @@ export class Project{
         this.isPublic = false;
 
         this._owner = null;
-        this.files = [];
+        // this.files = [];
+        this.items = [];
     }
     pid:string;
     name:string;
@@ -76,7 +77,8 @@ export class Project{
     
     desc:string;
     isPublic:boolean;
-    files:ULFile[];
+    // files:ULFile[];
+    items:ULItem[];
     cid?:string;
 
     // meta:ProjectMeta; // might need this at some point
@@ -95,7 +97,8 @@ export class Project{
             desc:this.desc,
             isPublic:this.isPublic,
             pid:this.pid,
-            files:this.files,
+            // files:this.files,
+            items:this.items,
             cid:this.cid
         };
     }
@@ -359,10 +362,27 @@ export async function attemptToGetProject(user:User,pid:string){
         console.log("Err: failed to find project files");
         return;
     }
-    let files:ULFile[] = [];
-    for(const f of curFiles){
-        files.push(new ULFile(f,await read(path+"/"+f,"utf8"),"","utf8"));
+    // let files:ULFile[] = [];
+    // for(const f of curFiles){
+    //     files.push(new ULFile(f,await read(path+"/"+f,"utf8"),"","utf8"));
+    // }
+    async function run(l:string[]|null,pth:string){
+        if(l == null) return [];
+        let list:ULItem[] = [];
+        for(const s of l){
+            if(s.includes(".")){
+                let ff = new ULFile(s,await read(path+"/"+pth+"/"+s,"utf8"),"","utf8");
+                list.push(ff);
+            }
+            else{
+                let ff = new ULFolder(s,await run(await readdir(path+"/"+pth+"/"+s),pth+"/"+s));
+                list.push(ff);
+            }
+        }
+        return list;
     }
+    let root = await run(curFiles,"");
+
     console.log("$ found files! fetching meta...");
     let meta = user.pMeta.find(v=>v.pid == pid);
     if(!meta){
@@ -372,7 +392,8 @@ export async function attemptToGetProject(user:User,pid:string){
 
         let p1 = user.createProject(meta,pid);
         p1._owner = user;
-        p1.files = files;
+        // p1.files = files;
+        p1.items = root;
         return p1;
     }
     console.log("$ found meta!",meta.name,meta.desc);
@@ -380,7 +401,8 @@ export async function attemptToGetProject(user:User,pid:string){
     p2.desc = meta.desc;
     p2.isPublic = meta.isPublic;
     p2._owner = user;
-    p2.files = files;
+    // p2.files = files;
+    p2.items = root;
     p2.cid = meta.cid;
     user.projects.push(p2);
     loadProject(p2);
@@ -448,14 +470,35 @@ app.use("/",express.static("../../"));
 export {Socket};
 
 // UTIL
-export class ULFile{
-    constructor(name:string,val:string,path:string,enc:BufferEncoding){
+export class ULItem{
+    constructor(name:string){
         this.name = name;
+    }
+    name:string;
+    static from(d:any):ULItem{
+        function sanitize(data:any){
+            if(data.items){
+                return new ULFolder(data.name,data.items.map((v:any)=>sanitize(v)));
+            }
+            else return new ULFile(data.name,data.val,data.path,data.enc);
+        }
+        return sanitize(d);
+    }
+}
+export class ULFolder extends ULItem{
+    constructor(name:string,items:ULItem[]=[]){
+        super(name);
+        this.items = items;
+    }
+    items:ULItem[];
+}
+export class ULFile extends ULItem{
+    constructor(name:string,val:string,path:string,enc:BufferEncoding){
+        super(name);
         this.val = val;
         this.path = path;
         this.enc = enc;
     }
-    name:string;
     val:string;
     path:string;
     enc:BufferEncoding;

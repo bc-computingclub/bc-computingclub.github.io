@@ -57,14 +57,26 @@ h_profile.addEventListener("click",e=>{
 });
 
 // lesson
-class ULFile{
-    constructor(name:string,val:string,path:string,enc:string){
+class ULItem{
+    constructor(name:string){
         this.name = name;
+    }
+    name:string;
+}
+class ULFolder extends ULItem{
+    constructor(name:string,items:ULItem[]=[]){
+        super(name);
+        this.items = items;
+    }
+    items:ULItem[];
+}
+class ULFile extends ULItem{
+    constructor(name:string,val:string,path:string,enc:string){
+        super(name);
         this.val = val;
         this.path = path;
         this.enc = enc;
     }
-    name:string;
     val:string;
     path:string;
     enc:string;
@@ -98,11 +110,29 @@ async function restoreLessonFiles(lesson:Lesson){
     if(files.length) lesson.p.hasSavedOnce = true;
 }
 // 
-function uploadProjectFiles(project:Project){ // for refresh
+function old_uploadProjectFiles(project:Project){ // for refresh
     let list:ULFile[] = [];
     for(const f of project.files){
         list.push(new ULFile(f.name,f.editor.getValue(),"","utf8"));
     }
+    return new Promise<void>(resolve=>{
+        socket.emit("uploadProjectFiles",project.pid||"tmp_project",list,(err:any)=>{
+            if(err) console.log("ERR while uploading files:",err);
+            resolve();
+        });
+    });
+}
+function uploadProjectFiles(project:Project){ // for refresh
+    let list:ULItem[] = [];
+    function sant(l:FItem[]){
+        let ll:ULItem[] = [];
+        for(const f of l){
+            if(f instanceof FFile) ll.push(new ULFile(f.name,f.editor.getValue(),"","utf8"));
+            else if(f instanceof FFolder) ll.push(new ULFolder(f.name,sant(f.items)));
+        }
+        return ll;
+    }
+    list = sant(project.items);
     return new Promise<void>(resolve=>{
         socket.emit("uploadProjectFiles",project.pid||"tmp_project",list,(err:any)=>{
             if(err) console.log("ERR while uploading files:",err);

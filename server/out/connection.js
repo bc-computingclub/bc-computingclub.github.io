@@ -26,7 +26,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.readdir = exports.mkdir = exports.removeFile = exports.read = exports.write = exports.access = exports.ULFile = exports.Socket = exports.getUserBySock = exports.attemptToGetProject = exports.getProject2 = exports.getProject = exports.allProjects = exports.users = exports.User = exports.UserChallengeData = exports.ProjectMeta = exports.Project = exports.sanitizeEmail = exports.io = exports.server = void 0;
+exports.readdir = exports.mkdir = exports.removeFile = exports.read = exports.write = exports.access = exports.ULFile = exports.ULFolder = exports.ULItem = exports.Socket = exports.getUserBySock = exports.attemptToGetProject = exports.getProject2 = exports.getProject = exports.allProjects = exports.users = exports.User = exports.UserChallengeData = exports.ProjectMeta = exports.Project = exports.sanitizeEmail = exports.io = exports.server = void 0;
 const http = __importStar(require("http"));
 const express_1 = __importDefault(require("express"));
 const socket_io_1 = require("socket.io");
@@ -88,7 +88,8 @@ class Project {
         this.desc = "A project for experiments.";
         this.isPublic = false;
         this._owner = null;
-        this.files = [];
+        // this.files = [];
+        this.items = [];
     }
     pid;
     name;
@@ -96,7 +97,8 @@ class Project {
     _owner;
     desc;
     isPublic;
-    files;
+    // files:ULFile[];
+    items;
     cid;
     // meta:ProjectMeta; // might need this at some point
     getRefStr() {
@@ -113,7 +115,8 @@ class Project {
             desc: this.desc,
             isPublic: this.isPublic,
             pid: this.pid,
-            files: this.files,
+            // files:this.files,
+            items: this.items,
             cid: this.cid
         };
     }
@@ -361,10 +364,27 @@ async function attemptToGetProject(user, pid) {
         console.log("Err: failed to find project files");
         return;
     }
-    let files = [];
-    for (const f of curFiles) {
-        files.push(new ULFile(f, await read(path + "/" + f, "utf8"), "", "utf8"));
+    // let files:ULFile[] = [];
+    // for(const f of curFiles){
+    //     files.push(new ULFile(f,await read(path+"/"+f,"utf8"),"","utf8"));
+    // }
+    async function run(l, pth) {
+        if (l == null)
+            return [];
+        let list = [];
+        for (const s of l) {
+            if (s.includes(".")) {
+                let ff = new ULFile(s, await read(path + "/" + pth + "/" + s, "utf8"), "", "utf8");
+                list.push(ff);
+            }
+            else {
+                let ff = new ULFolder(s, await run(await readdir(path + "/" + pth + "/" + s), pth + "/" + s));
+                list.push(ff);
+            }
+        }
+        return list;
     }
+    let root = await run(curFiles, "");
     console.log("$ found files! fetching meta...");
     let meta = user.pMeta.find(v => v.pid == pid);
     if (!meta) {
@@ -373,7 +393,8 @@ async function attemptToGetProject(user, pid) {
         console.log("$ loading meta!", meta.name, meta.desc);
         let p1 = user.createProject(meta, pid);
         p1._owner = user;
-        p1.files = files;
+        // p1.files = files;
+        p1.items = root;
         return p1;
     }
     console.log("$ found meta!", meta.name, meta.desc);
@@ -381,7 +402,8 @@ async function attemptToGetProject(user, pid) {
     p2.desc = meta.desc;
     p2.isPublic = meta.isPublic;
     p2._owner = user;
-    p2.files = files;
+    // p2.files = files;
+    p2.items = root;
     p2.cid = meta.cid;
     user.projects.push(p2);
     loadProject(p2);
@@ -446,14 +468,38 @@ app.use("/lesson/:userId/:auth/", (req, res, next) => {
 // TEMPORARY FOR SAME ORIGIN STUFF
 app.use("/", express_1.default.static("../../"));
 // UTIL
-class ULFile {
-    constructor(name, val, path, enc) {
+class ULItem {
+    constructor(name) {
         this.name = name;
+    }
+    name;
+    static from(d) {
+        function sanitize(data) {
+            if (data.items) {
+                return new ULFolder(data.name, data.items.map((v) => sanitize(v)));
+            }
+            else
+                return new ULFile(data.name, data.val, data.path, data.enc);
+        }
+        return sanitize(d);
+    }
+}
+exports.ULItem = ULItem;
+class ULFolder extends ULItem {
+    constructor(name, items = []) {
+        super(name);
+        this.items = items;
+    }
+    items;
+}
+exports.ULFolder = ULFolder;
+class ULFile extends ULItem {
+    constructor(name, val, path, enc) {
+        super(name);
         this.val = val;
         this.path = path;
         this.enc = enc;
     }
-    name;
     val;
     path;
     enc;
