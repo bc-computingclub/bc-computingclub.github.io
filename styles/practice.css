@@ -393,8 +393,8 @@ body {
 }
 
 .menu-challenge-menu {
-    width: calc(100dvw - 26em) !important;
-    height: calc(100dvh - (16em)) !important;
+    width: 60em !important;
+    height: 35em !important;
     animation: AddBubble forwards 0.35s ease-out;
 }
 
@@ -745,11 +745,6 @@ body {
 
     .c-popup {
         height: 100%;
-    }
-
-    .menu-challenge-menu {
-        width: 55em !important;
-        height: 35em !important;
     }
 }
 

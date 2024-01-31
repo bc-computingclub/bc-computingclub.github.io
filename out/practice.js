@@ -197,27 +197,35 @@ class ChallengeMenu extends Menu {
 }
 function showImplementations(cID) {
     // add code to get array of all submissions from server using cID
-    let subArr = submissionArray; // delete once we have server code
+    let subArr = []; // delete once we have server code
     challengePopupBody = document.querySelector(".c-popup-body");
     tempPopupBody = challengePopupBody.cloneNode(true);
     while (challengePopupBody.firstChild)
         challengePopupBody.removeChild(challengePopupBody.firstChild); // clear body
-    challengePopupBody.append(getImplementationsHTML());
-    for (let i = 0; i < subArr.length; i++) {
-        let implementationsCont = document.querySelector(".c-implementations");
-        implementationsCont.innerHTML += `
-            <div class="c-implementation">
-                <div class="c-implementation-preview">
-                    <img class="c-implementation-img" src="${subArr[i].previewURL}" alt="challenge image">
+    challengePopupBody.append(getImplementationsHTML(subArr.length > 0));
+    let implementationsCont = document.querySelector(".c-implementations");
+    if (subArr.length > 0) {
+        for (let i = 0; i < subArr.length; i++) {
+            implementationsCont.innerHTML += `
+                <div class="c-implementation">
+                    <div class="c-implementation-preview">
+                        <img class="c-implementation-img" src="${subArr[i].previewURL}" alt="challenge image">
+                    </div>
+                    <div class="c-implementation-credit">${subArr[i].sentBy}</div>
                 </div>
-                <div class="c-implementation-credit">${subArr[i].sentBy}</div>
-            </div>
-        `;
+            `;
+        }
     }
 }
-function getImplementationsHTML() {
+function getImplementationsHTML(submissionsExist) {
     let temp = document.createElement("div");
     temp.classList.add("c-popup-implementations");
+    let defaultText = "";
+    let emptyClass = "";
+    if (submissionsExist) {
+        defaultText = "<i>There are currently no submissions to this challenge. Upload one to be featured here!</i>";
+        emptyClass = "empty";
+    }
     temp.innerHTML = `
         <div class="c-popup-implementations-header">
             <h4 class="c-popup-sub-title">Implementations</h4>
@@ -225,7 +233,8 @@ function getImplementationsHTML() {
             Back <span class="material-symbols-outlined c-back-arrow">arrow_back_ios</span>
         </button>
         </div>
-        <div class="c-implementations">
+        <div class="c-implementations ${emptyClass}">
+            ${defaultText}
         </div>
     `;
     return temp;
@@ -281,7 +290,7 @@ async function showChallenges(cArr, showAnim) {
     }
     else {
         inProgressDiv.classList.remove("empty");
-        if (inProgressHeader.childElementCount < 3) { // probably a better way to do this, works for now - paul
+        if (!inProgressHeader.contains(cToggle)) {
             createCToggle();
         }
     }
