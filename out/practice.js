@@ -95,13 +95,11 @@ window.addEventListener("load", async () => {
     shouldBeOpen = toggleState == "open" ? true : false;
     outerInProgressDiv.classList.add("window-load");
     if (shouldBeOpen == false) {
-        console.log("Should be closed, closing (no animation)");
+        // console.log("Should be closed, closing (no animation)");
         outerInProgressDiv.classList.add("collapse");
         cToggle.classList.remove("point-up");
         cToggle.classList.add("point-down");
     }
-    else
-        console.log("Should be open, no toggling");
 });
 function toggleInProgressDiv(btn, opening) {
     if (opening == true) {
@@ -268,21 +266,24 @@ async function createChallengePopup(c) {
 }
 async function showChallenges(cArr, showAnim) {
     if (showAnim)
-        await showLoadingAnim("400"); // feel free to change delay
+        await showLoadingAnim("400");
     for (let challenge of cArr) {
         setChallengeHTML(challenge);
     }
     await hideLoadingAnim();
+    // console.log("Showing Challenges. In Progress: " + ipCounter + " Browse: " + bCounter);
     if (ipCounter <= 0) {
         inProgressDiv.classList.add("empty");
         inProgressDiv.innerHTML = "<i>Start working on a challenge, and it'll show up here!</i>";
-        if (cToggle)
+        if (cToggle) {
             cToggle.remove();
+        }
     }
     else {
         inProgressDiv.classList.remove("empty");
-        if (!cToggle)
+        if (inProgressHeader.childElementCount < 3) { // probably a better way to do this, works for now - paul
             createCToggle();
+        }
     }
     if (bCounter == 0) {
         browseDiv.classList.add("empty");
