@@ -246,6 +246,7 @@ class AddFileTask extends Task{
             lesson.tut.curFile = existingFile;
         }
         this.file = lesson.tut.createFile(this.name,"");
+        this.file.open();
         await wait(500);
 
         let alreadyFoundFile = lesson.p.files.find(v=>v.name == this.name);

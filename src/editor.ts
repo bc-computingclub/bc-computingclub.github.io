@@ -22,7 +22,7 @@ b_newFile.addEventListener("click",e=>{
     if(!project) return;
     let name = prompt("Enter file name:");
     if(!name) return;
-    project.createFile(name,"",null,project.lastFolder ?? project.curFile?.folder);
+    project.createFile(name,"",null,project.lastFolder ?? project.curFile?.folder,true);
 });
 
 let project:Project;

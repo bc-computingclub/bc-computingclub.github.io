@@ -599,16 +599,18 @@ class Project{
     findFile(name:string){
         return this.files.find(v=>v.name == name);
     }
-    createFile(name:string,text:string,lang?:string,folder?:FFolder){
+    createFile(name:string,text:string,lang?:string,folder?:FFolder,isNew=false){
         let res = resolveHook(listenHooks.addFile,name);
         if(res == 1){
             console.warn("Failed creation prevented from hook");
             return;
         }
-        let q = this.findFile(name);
-        if(q){
-            q.open();
-            return q;
+        if(PAGE_ID == PAGEID.lesson){
+            let q = this.findFile(name);
+            if(q){
+                q.open();
+                return q;
+            }
         }
         let f = new FFile(this,name,text,folder,lang);
         this.files.push(f);
@@ -618,10 +620,12 @@ class Project{
         if(PAGE_ID == PAGEID.editor){
             createFileListItem(f);
         }
-        f.open();
-        // isFromStart = true;
-        // if(isFromStart) f.setSaved(true);
-        if(PAGE_ID == PAGEID.lesson) f.setSaved(true);
+        if(PAGE_ID == PAGEID.lesson) f.open();
+        if(!isNew) f.setSaved(true);
+        if(PAGE_ID == PAGEID.lesson){
+            f.setSaved(true);
+            f.setTemp(false);
+        }
         return f;
     }
     createFolder(name:string,folder?:FFolder){
@@ -764,8 +768,17 @@ class FFile extends FItem{
     _saved = true;
     setSaved(v:boolean,noChange=false){
         this._saved = v;
-        this.link.textContent = this.name+(v?"":"*");
-        if(!noChange) this._lastSavedText = this.editor.getValue();
+        if(this.link){
+            // this.link.children[0].textContent = this.name+(v?"":"*");
+            if(!v){
+                this.link.classList.add("unsaved");
+                this.setTemp(false);
+            }
+            else{
+                this.link.classList.remove("unsaved");
+            }
+        }
+        if(!noChange) if(this.editor) this._lastSavedText = this.editor.getValue();
     }
 
     type(lineno:number,colno:number,text:string){
@@ -793,18 +806,74 @@ class FFile extends FItem{
         // });
     }
 
-    open(){
+    close(){
+        if(this.p.openFiles.includes(this)){
+            if(!this._saved){
+                if(!confirm("This file is unsaved, are you sure you want to close it?")) return;
+            }
+            if(this._saved) this.text = this.editor.getValue();
+            this.p.d_files.removeChild(this.link);
+            let ind = this.p.openFiles.indexOf(this);
+            this.p.openFiles.splice(ind,1);
+            if(this.cont.parentElement) this.cont.parentElement.removeChild(this.cont);
+            this.cont = null;
+            this.link = null;
+            if(this.p.curFile == this){
+                let tar = this.p.openFiles[ind];
+                if(tar) tar.open(false);
+                else if(this.p.openFiles.length){
+                    this.p.openFiles[ind-1].open(false);
+                }
+                else{
+                    this.p.curFile = null;
+                    let all = document.querySelectorAll(".file-item.sel");
+                    for(const c of all){
+                        c.classList.remove("sel");
+                    }
+                }
+            }
+            this.editor.dispose();
+            this.editor = null;
+        }
+    }
+    isTemp = true;
+    setTemp(v:boolean){
+        this.isTemp = v;
+        if(this.link){
+            if(this.isTemp) this.link.classList.add("is-tmp");
+            else this.link.classList.remove("is-tmp");
+        }
+    }
+    open(isTemp?:boolean){
+        if(isTemp == null){
+            isTemp = (PAGE_ID != PAGEID.lesson);
+        }
         if(!this.p.openFiles.includes(this)){
+            for(const f of this.p.openFiles){
+                if(f.isTemp) if(f._saved) f.close();
+            }
             let link = document.createElement("div");
             this.link = link;
-            link.textContent = this.name;
+            let l_name = document.createElement("div");
+            l_name.textContent = this.name;
+            link.appendChild(l_name);
+            let b_close = document.createElement("button");
+            b_close.innerHTML = "<div class='material-symbols-outlined'>close</div>";
+            b_close.classList.add("file-close");
+            b_close.addEventListener("click",e=>{
+                if(PAGE_ID == PAGEID.lesson) return;
+                if(this.p.readonly) return;
+                this.close();
+            });
+            link.appendChild(b_close);
             link.className = "file-link";
             this.p.d_files.insertBefore(link,this.p.d_files.children[this.p.d_files.children.length-2]);
             this.p.openFiles.push(this);
             let t = this;
-            link.onmousedown = function(){
+            l_name.addEventListener("mousedown",e=>{
                 t.open();
-            };
+            });
+            if(isTemp) this.setTemp(isTemp);
 
             let cont = document.createElement("div");
             cont.className = "js-cont cont";
@@ -824,12 +893,13 @@ class FFile extends FItem{
                 readOnly:this.p.isTutor
                 // cursorSmoothCaretAnimation:"on"
             });
-            editor.onDidContentSizeChange(e=>{
-                if(!this._saved) return;
-                let v = editor.getValue();
-                if(this._lastSavedText != v) this.setSaved(false);
-                // else this.setSaved(true,true);
-            });
+            // editor.onDidContentSizeChange(e=>{
+            //     if(!this._saved) return;
+            //     let v = editor.getValue();
+            //     if(this._lastSavedText != v) this.setSaved(false);
+            //     //monaco-mouse-cursor-text
+            //     // else this.setSaved(true,true);
+            // });
             if(this.p.readonly){
                 editor.onDidFocusEditorText(e=>{
                     if (document.activeElement instanceof HTMLElement) {
@@ -890,7 +960,9 @@ class FFile extends FItem{
             bubbles_ov.className = "bubbles-overlay";
             this.bubbles_ov = bubbles_ov;
             cont.appendChild(bubbles_ov);
+            this.setSaved(true);
         }
+        else this.setTemp(false); // <-- should this be moved onto to when opening files from the left menu? 
         // deselect others
         for(const c of this.p.d_files.children){
             c.classList.remove("cur");
@@ -1077,7 +1149,7 @@ function postSetupEditor(project:Project){
         let name = prompt("Enter file name:","index.html");
         if(!name) return;
 
-        project.createFile(name,"",null,project.lastFolder ?? project.curFile?.folder);
+        project.createFile(name,"",null,project.lastFolder ?? project.curFile?.folder,true);
     });
 
     // loadEditorTheme();
@@ -1240,3 +1312,25 @@ function goToProject(pid:string){
     history.pushState(null,null,url);
     location.reload();
 }
+
+document.addEventListener("keydown",e=>{
+    let active = document.activeElement;
+    if(active) if(active.className.endsWith("cursor-text")){
+        let f = (PAGE_ID == PAGEID.lesson ? lesson.p.curFile : project.curFile);
+        if(!f){
+            // console.warn("no file");
+            return;
+        }
+        if(!f._saved){
+            // console.warn("not saved");
+            return;
+        }
+        requestAnimationFrame(()=>{
+            let v = f.editor.getValue();
+            if(f._lastSavedText != v){
+                f.setSaved(false);
+            }
+        });
+        // else console.warn("sam");
+    }
+});

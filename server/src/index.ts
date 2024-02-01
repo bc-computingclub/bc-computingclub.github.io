@@ -411,6 +411,9 @@ io.on("connection",socket=>{
         }
         f(m.pid);
     });
+    socket.on("deleteChallengeProgress",async (cid:string,f:(data:any)=>void)=>{
+        
+    });
 
     // 
     socket.on("createProject",async (name:string,desc:string,f:(data:any)=>void)=>{

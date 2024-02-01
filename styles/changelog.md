@@ -147,3 +147,11 @@
 - you can create folders and files anywhere and they save and work across sessions
 - if the open files list overflows then it's scrollable
 - fixed some bugs with internal stuff and things related to not saving and reloading correctly
+
+### 1/31/24 - Claeb
+- editor now doesn't open all files into currently opened files
+- added ability to close files that are open and they prompt when aren't saved
+- added temp open file support like how vscode does it
+- changed saved to be shown as a white dot in the close button like vscode does
+- fixed lesson to work with these new changes and prevented closing open files in there
+- fixed the detection for when files have been changed (before if you typed in a comment it wouldn't detect you wrote anything)

@@ -490,12 +490,20 @@ body .nav-links > .active{
     min-width: 32px;
 } */
 .file-link{
-    padding:6px 12px;
+    /* padding:6px 12px; */
     font-size:14px;
     border-radius:3px;
     width:max-content;
     user-select:none;
     -webkit-user-select:none;
+
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+}
+.file-link > :nth-child(1){
+    padding:6px 12px;
+    padding-right:4px;
 }
 .file-link:hover{
     background-color:var(--darken);
@@ -517,6 +525,64 @@ body .nav-links > .active{
     /* border-bottom-left-radius:0px; */
     /* border-bottom-right-radius:0px; */
 }
+.file-link.is-tmp{
+    font-style:italic;
+}
+.file-link.is-tmp > :nth-child(1){
+    opacity:0.5;
+}
+.file-link > .file-close{
+    font-family:"Material Symbols Outlined";
+    /* margin-right:-5px; */
+    margin:6px 0px;
+    margin-right:6px;
+    margin-left:4px;
+    outline:none;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    padding:2px;
+    background-color:transparent;
+    position:relative;
+    color:var(--col);
+}
+.file-link.cur > .file-close{
+    /* filter:invert(1); */
+    color:white;
+}
+.file-link > .file-close:hover{
+    /* background-color:var(--lighten3); */
+}
+.file-link > .file-close > div{
+    font-size:15px;
+}
+.file-link.unsaved > .file-close > div{
+    opacity:0;
+}
+.file-link.unsaved:hover > .file-close > div{
+    opacity:1;
+}
+.file-link.unsaved:hover > .file-close::before{
+    opacity:0;
+}
+.file-link.unsaved > .file-close::before{
+    content:"";
+    pointer-events:none;
+    position:absolute;
+    top:50%;
+    left:50%;
+    transform:translate(-50%,-50%);
+    width:9px;
+    height:9px;
+    background-color:var(--col);
+    border-radius:50%;
+}
+.file-link.cur.unsaved > .file-close::before{
+    background-color:white;
+}
+/* .file-link .file-close:hover{
+    background-color:
+} */
 
 .pane-preview > iframe{
     background-color:white;

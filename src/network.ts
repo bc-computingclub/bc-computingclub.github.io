@@ -127,7 +127,7 @@ function uploadProjectFiles(project:Project){ // for refresh
     function sant(l:FItem[]){
         let ll:ULItem[] = [];
         for(const f of l){
-            if(f instanceof FFile) ll.push(new ULFile(f.name,f.editor.getValue(),"","utf8"));
+            if(f instanceof FFile) ll.push(new ULFile(f.name,(f.editor ? f.editor.getValue() : f.text),"","utf8"));
             else if(f instanceof FFolder) ll.push(new ULFolder(f.name,sant(f.items)));
         }
         return ll;
