@@ -628,7 +628,7 @@ class Project{
         }
         return f;
     }
-    createFolder(name:string,folder?:FFolder){
+    createFolder(name:string,folder?:FFolder,isNew=true){
         if(name.includes(".")){
             alert("Folder names cannot have '.' characters in them");
             return;
@@ -639,7 +639,8 @@ class Project{
         if(PAGE_ID == PAGEID.editor){
             createFolderListItem(f);
         }
-        this.needsSave = true;
+        // this.needsSave = true;
+        if(isNew) saveProject();
         return f;
     }
 
@@ -660,6 +661,30 @@ class Project{
 }
 
 let fileList:HTMLElement;
+let hoverFileListItem:FFile;
+let hoverFolderListItems:FFolder[] = [];
+// let hoverFolderListItem:FFolder;
+function sortFiles(l:any[]){
+    l.sort((a,b)=>{
+        let dif = ((a.val != null || a.curI != null) && (b.val == null && b.curI == null) ? 1 : ((a.val == null &&a.curI == null) && (b.val != null || b.curI != null) ? -1 : 0));
+        if(dif == 0) dif = a.name.localeCompare(b.name);
+        return dif;
+    });
+}
+function calcFolderPath(f:FFolder){
+    if(!f) return "";
+    let list:FFolder[] = [];
+    function add(ff:FFolder){
+    list.push(ff);
+        if(ff.folder) add(ff.folder);
+    }
+    add(f);
+    let path = "";
+    for(let i = list.length-1; i >= 0; i--){
+        path += list[i].name+"/";
+    }
+    return path;
+}
 function createFileListItem(f:FFile){
     if(!fileList){
         fileList = document.querySelector(".file-list");
@@ -668,11 +693,87 @@ function createFileListItem(f:FFile){
     let div = document.createElement("div");
     div.className = "file-item";
     div.textContent = f.name;
-    if(f.folder) f.folder._fiList.appendChild(div);
-    else fileList.appendChild(div);
+
+    let list = [...(f.folder?.items ?? f.p.items)];
+    if(list.includes(f)) list.splice(list.indexOf(f),1);
+    list.push(f);
+    sortFiles(list);
+    let i1 = list.indexOf(f);
+    let fiList:HTMLElement;
+    if(f.folder) fiList = f.folder._fiList;
+    else fiList = fileList;
+    fiList.insertBefore(div,fiList.children[i1]);
+    // if(f.folder) f.folder._fiList.appendChild(div);
+    // else fileList.appendChild(div);
+
+    setupDropdown(div,[
+        "Option 1",
+        "Option 2",
+        "Option 3"
+    ],(i)=>{
+        console.log("clicked: ",i);
+    },()=>{
+        div.classList.add("hl");
+    },()=>{
+        div.classList.remove("hl");
+    });
+    
     f._fi = div;
     div.addEventListener("mousedown",e=>{
+        if(e.button != 0) return;
         f.open();
+        dragItem = new DragData<FFile>(down=>{
+            return div.cloneNode(true) as HTMLElement;
+        },async last=>{
+            let hover = hoverFolderListItems[hoverFolderListItems.length-1];
+            if(hover == last.folder) return;
+            let items:FItem[] = [];
+            let fiList:HTMLElement;
+            if(!hover){
+                items = f.p.items;
+                fiList = fileList;
+            }
+            else{
+                items = hover.items;
+                fiList = hover._fiList;
+            }
+            let i1 = 0;
+            let fromFolder = last.folder;
+            
+            let res = await new Promise<number>(resolve=>{
+                socket.emit("moveFiles",f.p.pid,[f.name],calcFolderPath(fromFolder),calcFolderPath(hover),(res:any)=>{
+                    console.log("res: ",res);
+                    resolve(res);
+                });
+            });
+            if(res != 0){
+                console.log("failed to move files/folders");
+                return;
+            }
+
+            let list = [...items];
+            if(list.includes(f)) list.splice(list.indexOf(f),1);
+            list.push(f);
+            sortFiles(list);
+            i1 = list.indexOf(f);
+            fiList.insertBefore(last._fi,fiList.children[i1]);
+            last.folder = hover;
+
+            let fromItems = (fromFolder?.items ?? f.p.items);
+            let toItems = (hover?.items ?? f.p.items);
+            fromItems.splice(fromItems.indexOf(f),1);
+            toItems.push(f);
+            saveProject();
+        });
+        dragItem.down = f;
+    });
+    div.addEventListener("mouseenter",e=>{
+        hoverFileListItem = f;
+        if(!f.folder) hoverFolderListItems.push(null);
+    });
+    div.addEventListener("mouseleave",e=>{
+        hoverFileListItem = null;
+        if(!f.folder) hoverFolderListItems.splice(hoverFolderListItems.indexOf(null),1);
     });
 }
 function createFolderListItem(f:FFolder){
@@ -689,8 +790,19 @@ function createFolderListItem(f:FFolder){
         </div>
         <div class="fi-list"></div>
     `;
-    if(f.folder) f.folder._fiList.appendChild(div);
-    else fileList.appendChild(div);
+
+    let list = [...(f.folder?.items ?? f.p.items)];
+    if(list.includes(f)) list.splice(list.indexOf(f),1);
+    list.push(f);
+    sortFiles(list);
+    let i1 = list.indexOf(f);
+    let fiList:HTMLElement;
+    if(f.folder) fiList = f.folder._fiList;
+    else fiList = fileList;
+    fiList.insertBefore(div,fiList.children[i1]);
+    // if(f.folder) f.folder._fiList.appendChild(div);
+    // else fileList.appendChild(div);
+    
     f._fiLabel = div.querySelector(".fi-label");
     f._fiList = div.querySelector(".fi-list");
     f._fiLabel.addEventListener("click",e=>{
@@ -703,6 +815,75 @@ function createFolderListItem(f:FFolder){
         div.classList.add("sel");
         f.p.lastFolder = f;
     });
+    f._fiLabel.addEventListener("mousedown",e=>{
+        if(e.button != 0) return;
+        dragItem = new DragData<FFolder>(down=>{
+            return f._fiLabel.cloneNode(true) as HTMLElement;
+        },async last=>{
+            let hover = hoverFolderListItems[hoverFolderListItems.length-1];
+            if(hover == last.folder) return;
+            let items:FItem[] = [];
+            let fiList:HTMLElement;
+            if(!hover){
+                items = f.p.items;
+                fiList = fileList;
+            }
+            else{
+                items = hover.items;
+                fiList = hover._fiList;
+                let hasFailed = false;
+                function check(folder:FFolder){
+                    if(folder == f){
+                        hasFailed = true;
+                        return;
+                    }
+                    if(folder.folder) check(folder.folder);
+                }
+                check(hover);
+                if(hasFailed) return;
+            }
+            let i1 = 0;
+            let fromFolder = last.folder;
+            
+            let res = await new Promise<number>(resolve=>{
+                socket.emit("moveFiles",f.p.pid,[f.name],calcFolderPath(fromFolder),calcFolderPath(hover),(res:any)=>{
+                    console.log("res: ",res);
+                    resolve(res);
+                });
+            });
+            if(res != 0){
+                console.log("failed to move files/folders");
+                return;
+            }
+
+            let list = [...items];
+            if(list.includes(f)) list.splice(list.indexOf(f),1);
+            list.splice(0,0,f);
+            sortFiles(list);
+            i1 = list.indexOf(f);
+            fiList.insertBefore(last._fiLabel.parentElement,fiList.children[i1]);
+            last.folder = hover;
+
+            let fromItems = (fromFolder?.items ?? f.p.items);
+            let toItems = (hover?.items ?? f.p.items);
+            fromItems.splice(fromItems.indexOf(f),1);
+            toItems.push(f);
+            saveProject();
+        });
+        dragItem.down = f;
+    });
+    div.addEventListener("mouseenter",e=>{
+        hoverFolderListItems.push(f);
+    });
+    div.addEventListener("mouseleave",e=>{
+        hoverFolderListItems.splice(hoverFolderListItems.indexOf(f),1);
+    });
+    // f._fiLabel.addEventListener("mouseenter",e=>{
+    //     hoverFolderListItem = f;
+    // });
+    // f._fiLabel.addEventListener("mouseleave",e=>{
+    //     hoverFolderListItem = null;
+    // });
 }
 
 class FItem{
@@ -724,6 +905,9 @@ class FFolder extends FItem{
     _fiList:HTMLElement;
     _fiLabel:HTMLElement;
 }
+// let downOpenFile:FFile;
+// let dragOpenFile:FFile;
+let hoverOpenFile:FFile;
 class FFile extends FItem{
     constructor(p:Project,name:string,text:string,folder:FFolder,lang?:string){
         super(p,name,folder);
@@ -874,6 +1058,32 @@ class FFile extends FItem{
                 t.open();
             });
             if(isTemp) this.setTemp(isTemp);
+            link.addEventListener("mousedown",e=>{
+                if(e.button != 0) return;
+                // downOpenFile = this;
+                dragItem = new DragData<FFile>(down=>{
+                    return down.link.cloneNode(true) as HTMLElement;
+                },(last)=>{
+                    if(!hoverOpenFile) return;
+                    let i1 = 0;
+                    let i2 = 0;
+                    let i = 0;
+                    for(const c of project.d_files.children){
+                        if(c == last.link) i1 = i;
+                        else if(c == hoverOpenFile.link) i2 = i;
+                        i++;
+                    }
+                    if(i1 >= i2) project.d_files.insertBefore(last.link,hoverOpenFile.link);
+                    else project.d_files.insertBefore(last.link,hoverOpenFile.link.nextElementSibling);
+                });
+                dragItem.down = this;
+            });
+            link.addEventListener("mouseenter",e=>{
+                hoverOpenFile = this;
+            });
+            link.addEventListener("mouseleave",e=>{
+                hoverOpenFile = null;
+            });
 
             let cont = document.createElement("div");
             cont.className = "js-cont cont";
@@ -1179,6 +1389,7 @@ function closeTmpMenus(){
 }
 document.addEventListener("mousedown",e=>{
     if(!isOverTmpMenu) closeTmpMenus();
+    if(!overSubMenu) closeAllSubMenus();
 });
 // document.addEventListener("mouseup",e=>{
 //     requestAnimationFrame(()=>{
@@ -1314,9 +1525,13 @@ function goToProject(pid:string){
 }
 
 document.addEventListener("keydown",e=>{
-    let active = document.activeElement;
-    if(active) if(active.className.endsWith("cursor-text")){
-        let f = (PAGE_ID == PAGEID.lesson ? lesson.p.curFile : project.curFile);
+    // let active = document.activeElement;
+    // if(active) if(active.className.endsWith("cursor-text")){
+    
+});
+document.addEventListener("keyup",e=>{
+    {
+        let f = (PAGE_ID == PAGEID.lesson ? lesson?.p?.curFile : project?.curFile);
         if(!f){
             // console.warn("no file");
             return;
@@ -1325,12 +1540,114 @@ document.addEventListener("keydown",e=>{
             // console.warn("not saved");
             return;
         }
-        requestAnimationFrame(()=>{
+        function check(){
             let v = f.editor.getValue();
             if(f._lastSavedText != v){
                 f.setSaved(false);
             }
-        });
-        // else console.warn("sam");
+        }
+        // setTimeout(()=>{
+            // check();
+        // },50);
+        requestAnimationFrame(check);
     }
 });
+document.addEventListener("mouseup",e=>{
+    if(dragItem){
+        if(dragItem.down) dragItem.down = null;
+        if(dragItem.drag){
+            if(dragItem.tmp) dragItem.tmp.remove();
+            dragItem.tmp = null;
+            // document.body.classList.remove("dragging");
+            let last = dragItem.drag;
+            dragItem.drag = null;
+            dragItem.end(last);
+        }
+    }
+});
+
+class DragData<T>{
+    constructor(clone:(down:T)=>HTMLElement,end:(last:T)=>void){
+        this.clone = clone;
+        this.end = end;
+    }
+    down:T;
+    drag:T;
+    tmp:HTMLElement;
+    clone:(down:T)=>HTMLElement;
+    end:(last:T)=>void;
+}
+let dragItem:DragData<FItem>;
+
+// let dragOpenFileTmp:HTMLElement;
+document.addEventListener("mousemove",e=>{
+    if(dragItem){
+        let down = dragItem.down;
+        if(down){
+            dragItem.drag = down;
+            // document.body.classList.add("dragging");
+            if(!dragItem.tmp){
+                // let clone = down.link.cloneNode(true) as HTMLElement;
+                let clone = dragItem.clone(down);
+                clone.style.pointerEvents = "none";
+                let cont = document.createElement("div");
+                cont.className = "d-open-files";
+                cont.style.position = "absolute";
+                cont.classList.add("drag-cont");
+                cont.appendChild(clone);
+                menuCont.appendChild(cont);
+                dragItem.tmp = cont;
+            }
+        }
+        if(dragItem.drag){
+            dragItem.tmp.style.left = (e.clientX)+"px";
+            dragItem.tmp.style.top = (e.clientY)+"px";
+        }
+    }
+});
+
+// Dropdowns
+let subMenus:HTMLElement;
+let overSubMenu = false;
+let subs:any[] = [];
+setTimeout(()=>{
+    subMenus = document.querySelector(".sub-menus") as HTMLElement;
+    subMenus.addEventListener("mouseenter",e=>{
+        overSubMenu = true;
+    });
+    subMenus.addEventListener("mouseleave",e=>{
+        overSubMenu = false;
+    });
+},500);
+function closeAllSubMenus(){
+    for(const s of subs){
+        s.e.remove();
+        s.onclose();
+    }
+}
+function setupDropdown(btn:HTMLElement,labels:string[],onclick:(i:number)=>void,onopen:()=>void,onclose:()=>void,ops={}){
+    btn.addEventListener("contextmenu",e=>{
+        // if(e.button != 2) return;
+        e.preventDefault();
+        // subMenus.innerHTML = "";
+        closeAllSubMenus();
+        // let rect = btn.getBoundingClientRect();
+        let dd = document.createElement("div");
+        dd.className = "dropdown";
+        for(const l of labels){
+            let d = document.createElement("div");
+            d.textContent = l;
+            d.className = "dd-item";
+            dd.appendChild(d);
+        }
+        subMenus.appendChild(dd);
+        console.log("appended");
+        dd.style.left = (e.clientX)+"px";
+        dd.style.top = (e.clientY-60)+"px";
+        onopen();
+        subs.push({
+            e:dd,
+            onclose
+        });
+    });
+}

@@ -1,3 +1,11 @@
+/* body.dragging{
+    cursor:no-drop !important;
+} */
+.drag-cont{
+    transform:translate(-50%,-50%) scale(0.9);
+    opacity:0.75;
+}
+
 .icon-btn{
     display:flex;
     /* justify-content:space-between; */
@@ -634,6 +642,11 @@ body .nav-links > .active{
 .file-item.sel{
     background-color:var(--editor-bg);
 }
+.file-item.hl{
+    background-color:var(--editor-bg);
+    outline:dashed 2px var(--cta-btn-col);
+}
+
 .folder-item{
     /* padding-left:0px; */
     --op:0;
@@ -924,4 +937,30 @@ input[type="checkbox"]{
     width:18px;
     height:18px;
     font-family: var(--font);
+}
+
+/* Dropdowns */
+.sub-menus{
+    position:absolute;
+}
+.dropdown{
+    border:solid 2px var(--secondary-bg-col);
+    background-color:var(--bg-col);
+    padding:4px;
+    border-radius:5px;
+    position:absolute;
+    z-index:99;
+    pointer-events:all;
+    min-width:200px;
+    user-select:none;
+    -webkit-user-select:none;
+}
+.dd-item{
+    padding:5px;
+    color:var(--col);
+    font-size:12px;
+    border-radius:3px;
+}
+.dd-item:hover{
+    background-color:var(--secondary-bg-col);
 }

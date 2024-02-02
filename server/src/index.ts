@@ -1,4 +1,4 @@
-import { io, server, CredentialResData, User, users, getUserBySock, sanitizeEmail, getProject, attemptToGetProject, access, readdir, read, mkdir, removeFile, write, ULFile, ProjectMeta, allProjects, UserChallengeData, Project, getProject2, ULItem, ULFolder } from "./connection";
+import { io, server, CredentialResData, User, users, getUserBySock, sanitizeEmail, getProject, attemptToGetProject, access, readdir, read, mkdir, removeFile, write, ULFile, ProjectMeta, allProjects, UserChallengeData, Project, getProject2, ULItem, ULFolder, rename } from "./connection";
 import { Challenge, ChallengeData, ChallengeGet, challenges } from "./s_challenges";
 import fs from "fs";
 import { createInterface } from "readline";
@@ -189,9 +189,10 @@ io.on("connection",socket=>{
         async function _write(l:ULItem[],pth:string,ffL:ULItem[]){
             let i = 0;
             for(const item of l){
-                let ff:ULItem|null = null;
+                let ff:ULItem|undefined = undefined;
                 if(ffL){
-                    ff = ffL[i];
+                    // ff = ffL[i];
+                    ff = ffL.find(v=>v.name == item.name);
                     if(!ff) ffL.splice(i,0,item);
                 }
                 if(item instanceof ULFile){
@@ -424,6 +425,70 @@ io.on("connection",socket=>{
         if(!user) return;
         let p = await createProject(user,name,desc,false);
         f(p.pid);
+    });
+    socket.on("moveFiles",async (pid:string,files:string[],fromPath:string,toPath:string,f:(data:any)=>void)=>{
+        if(!valVar2(pid,"string",f)) return;
+        if(!valVar2(files,"object",f)) return;
+        if(!valVar2(fromPath,"string",f)) return;
+        if(!valVar2(toPath,"string",f)) return;
+        if(fromPath.includes(".") || toPath.includes(".")){
+            f(3);
+            return; // you trying to hack or something there?
+        }
+
+        let user = getUserBySock(socket.id);
+        if(!user){
+            f(2);
+            return;
+        }
+        let p = getProject2(user.email,pid);
+        if(!p){
+            f(1);
+            return;
+        }
+        
+        function parseFolderStr(path:string){
+            if(!p) return;
+            let s = path.split("/").filter(v=>v != null && v != "");
+            console.log(s);
+            if(!s.length) return null;
+            let f = p.items.find(v=>v.name == s[0]) as ULFolder;
+            if(!f) return null;
+            // if(!(f instanceof ULFolder)) return null;
+            // s.splice(0,1);
+            // while(s.length){
+            for(let i = 1; i < s.length; i++){
+                f = f.items.find(v=>v.name == s[i]) as ULFolder;
+                if(!f) return null;
+            }
+            return f;
+        }
+        let fromF = parseFolderStr(fromPath);
+        let toF = parseFolderStr(toPath);
+        // if(!fromF || !toF){
+        //     f(null);
+        //     return;
+        // }
+        let fromItems = (fromF?.items ?? p.items);
+        let toItems = (toF?.items ?? p.items);
+        
+        for(const f of files){
+            let file = fromItems.find(v=>v.name == f);
+            if(!file){
+                console.log("$ weird, couldn't find file while trying to move it");
+                continue;
+            }
+            fromItems.splice(fromItems.indexOf(file),1);
+            toItems.push(file);
+        }
+        // console.log(fromF,toF);
+
+        let start = p.getPath();
+        for(const f of files){
+            await rename(start+fromPath+f,start+toPath+f);
+        }
+        // console.log(fromPath,toPath,files);
+        f(0);
     });
 });
 function genPID(){

@@ -83,6 +83,9 @@ export class Project{
 
     // meta:ProjectMeta; // might need this at some point
     
+    getPath(){
+        return "../project/"+this.ownerEmail+"/"+this.pid+"/";
+    }
     getRefStr(){
         return this.ownerEmail+":"+this.pid;
     }
@@ -567,6 +570,17 @@ export function readdir(path:string){
                 resolve(null);
             }
             else resolve(files);
+        });
+    });
+}
+export function rename(fromPath:string,toPath:string){
+    return new Promise<boolean>(resolve=>{
+        fs.rename(fromPath,toPath,err=>{
+            if(err){
+                console.log("err renaming...",err);
+                resolve(false);
+            }
+            else resolve(true);
         });
     });
 }

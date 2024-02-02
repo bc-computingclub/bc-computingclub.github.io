@@ -155,3 +155,11 @@
 - changed saved to be shown as a white dot in the close button like vscode does
 - fixed lesson to work with these new changes and prevented closing open files in there
 - fixed the detection for when files have been changed (before if you typed in a comment it wouldn't detect you wrote anything)
+
+### 2/1/24 - Claeb
+- rearrange open files
+- files,folders in the FILES panel are sorted based on folders first and then by name alphabetically
+- fixed issue where if you move lines using shift+alt up/down it wouldn't detect a change to the file to mark it unsaved
+- ** rearrange files, folders and next them with server and saving support
+- fixed adding files and folders so they follow the sorting
+- started adding submenu and dropdown support

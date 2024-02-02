@@ -68,6 +68,12 @@ async function loadProject(pid:string){
     //     project.createFile(f.name,f.val);
     // }
     function run(l:any[],cur:FFolder){
+        sortFiles(l);
+        // l.sort((a,b)=>{
+        //     let dif = (a.val != null && b.val == null ? 1 : (a.val == null && b.val != null ? -1 : 0));
+        //     if(dif == 0) dif = a.name.localeCompare(b.name);
+        //     return dif;
+        // });
         let list = [];
         for(const f of l){
             if(f.val != null){
@@ -77,7 +83,7 @@ async function loadProject(pid:string){
             }
             else if(f.items != null){
                 // console.log("created folder: ",f.name);
-                let ff = project.createFolder(f.name,cur);
+                let ff = project.createFolder(f.name,cur,false);
                 list.push(ff);
                 ff.items = run(f.items,ff);
             }
