@@ -163,3 +163,19 @@
 - ** rearrange files, folders and next them with server and saving support
 - fixed adding files and folders so they follow the sorting
 - started adding submenu and dropdown support
+
+### 2/2/24 - Claeb
+- more stuff with right click menu for files/folders
+
+### 2/3/24 - Claeb
+- added styling for hl2 file-items and folder-items
+- ctrl mulit select for files panel
+- rename files
+- added delete files/folders
+- fixed rename files to work in root dir
+- added rename folders
+- added multi select (ctrl and shift - shift still needs custom impl)
+- multi move folder(s), file(s) and folders with files
+- cut, copy, paste in right click menu implemented for single and multiple files
+- - cut works for folders, copy only copies the folder (without files inside) (for right now)
+- probably very buggy

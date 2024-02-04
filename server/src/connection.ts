@@ -551,6 +551,17 @@ export function removeFile(path:string){
         });
     });
 }
+export function removeFolder(path:string){
+    return new Promise<boolean>(resolve=>{
+        fs.rm(path,{recursive:true},err=>{
+            if(err){
+                console.log("err: ",err);
+                resolve(false);
+            }
+            else resolve(true);
+        });
+    });
+}
 export function mkdir(path:string,encoding?:BufferEncoding){
     return new Promise<boolean>(resolve=>{
         fs.mkdir(path,{recursive:true},err=>{

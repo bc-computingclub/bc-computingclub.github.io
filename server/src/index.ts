@@ -1,4 +1,4 @@
-import { io, server, CredentialResData, User, users, getUserBySock, sanitizeEmail, getProject, attemptToGetProject, access, readdir, read, mkdir, removeFile, write, ULFile, ProjectMeta, allProjects, UserChallengeData, Project, getProject2, ULItem, ULFolder, rename } from "./connection";
+import { io, server, CredentialResData, User, users, getUserBySock, sanitizeEmail, getProject, attemptToGetProject, access, readdir, read, mkdir, removeFile, write, ULFile, ProjectMeta, allProjects, UserChallengeData, Project, getProject2, ULItem, ULFolder, rename, removeFolder } from "./connection";
 import { Challenge, ChallengeData, ChallengeGet, challenges } from "./s_challenges";
 import fs from "fs";
 import { createInterface } from "readline";
@@ -447,24 +447,8 @@ io.on("connection",socket=>{
             return;
         }
         
-        function parseFolderStr(path:string){
-            if(!p) return;
-            let s = path.split("/").filter(v=>v != null && v != "");
-            console.log(s);
-            if(!s.length) return null;
-            let f = p.items.find(v=>v.name == s[0]) as ULFolder;
-            if(!f) return null;
-            // if(!(f instanceof ULFolder)) return null;
-            // s.splice(0,1);
-            // while(s.length){
-            for(let i = 1; i < s.length; i++){
-                f = f.items.find(v=>v.name == s[i]) as ULFolder;
-                if(!f) return null;
-            }
-            return f;
-        }
-        let fromF = parseFolderStr(fromPath);
-        let toF = parseFolderStr(toPath);
+        let fromF = parseFolderStr(p,fromPath);
+        let toF = parseFolderStr(p,toPath);
         // if(!fromF || !toF){
         //     f(null);
         //     return;
@@ -485,12 +469,113 @@ io.on("connection",socket=>{
 
         let start = p.getPath();
         for(const f of files){
+            console.log("...moving...",fromPath+f,toPath+f);
             await rename(start+fromPath+f,start+toPath+f);
         }
         // console.log(fromPath,toPath,files);
         f(0);
     });
+    socket.on("renameFItem",async (pid:string,fromPath:string,file:string,newName:string,f:(data:any)=>void)=>{
+        if(!valVar2(pid,"string",f)) return;
+        if(!valVar2(file,"string",f)) return;
+        if(!valVar2(fromPath,"string",f)) return;
+        if(fromPath.includes(".")){
+            f(3);
+            return; // you trying to hack or something there?
+        }
+
+        let user = getUserBySock(socket.id);
+        if(!user){
+            f(2);
+            return;
+        }
+        let p = getProject2(user.email,pid);
+        if(!p){
+            f(1);
+            return;
+        }
+
+        let fromF = parseFolderStr(p,fromPath);
+        let items = fromF?.items;
+        if(!fromF){
+            items = p.items;
+            // f(4); // couldn't find path
+            // return;
+        }
+        if(!items) return;
+
+        let item = items.find(v=>v.name == file);
+        if(!item){
+            f(5); // couldn't find file/folder
+            return;
+        }
+
+        let start = p.getPath();
+        item.name = newName;
+        await rename(start+fromPath+file,start+fromPath+newName);
+        f(0);
+    });
+    socket.on("deleteFItem",async (pid:string,fromPath:string,file:string,f:(data:any)=>void)=>{
+        if(!valVar2(pid,"string",f)) return;
+        if(!valVar2(file,"string",f)) return;
+        if(!valVar2(fromPath,"string",f)) return;
+        if(fromPath.includes(".")){
+            f(3);
+            return; // you trying to hack or something there?
+        }
+
+        let user = getUserBySock(socket.id);
+        if(!user){
+            f(2);
+            return;
+        }
+        let p = getProject2(user.email,pid);
+        if(!p){
+            f(1);
+            return;
+        }
+
+        let fromF = parseFolderStr(p,fromPath);
+        let items = fromF?.items;
+        if(!items){
+            items = p.items;
+            // f(4); // couldn't find path
+            // return;
+        }
+        if(!items) return;
+
+        let item = items.find(v=>v.name == file);
+        if(!item){
+            console.log("couldn't find file: ",file,items.map(v=>v.name));
+            f(5); // couldn't find file/folder
+            return;
+        }
+
+        let start = p.getPath();
+        console.log(`deleting NAME (${file})...`,items.map(v=>v.name));
+        items.splice(items.indexOf(item),1);
+        console.log("after...",items.map(v=>v.name));
+        if(item instanceof ULFile) await removeFile(start+fromPath+file);
+        else await removeFolder(start+fromPath+file);
+        f(0);
+    });
 });
+function parseFolderStr(p:Project,path:string){
+    if(!p) return;
+    let s = path.split("/").filter(v=>v != null && v != "");
+    console.log(s);
+    if(!s.length) return null;
+    let f = p.items.find(v=>v.name == s[0]) as ULFolder;
+    if(!f) return null;
+    // if(!(f instanceof ULFolder)) return null;
+    // s.splice(0,1);
+    // while(s.length){
+    for(let i = 1; i < s.length; i++){
+        f = f.items.find(v=>v.name == s[i]) as ULFolder;
+        if(!f) return null;
+    }
+    return f;
+}
 function genPID(){
     return crypto.randomUUID();
 }

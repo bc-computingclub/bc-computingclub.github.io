@@ -278,6 +278,9 @@ button{
 button.accent:active{
     outline:solid 2px var(--col);
 }
+*.disabled{
+    opacity:0.4;
+}
 button:disabled{
     opacity:0.4;
     /* cursor:not-allowed; */
@@ -646,6 +649,52 @@ body .nav-links > .active{
     background-color:var(--editor-bg);
     outline:dashed 2px var(--cta-btn-col);
 }
+.fi-label.hl{
+    background-color:var(--editor-bg);
+    outline:dashed 2px var(--cta-btn-col) !important;
+}
+.file-item.hl2{
+    background-color:var(--editor-bg);
+    /* outline:dashed 2px var(--cta-btn-col); */
+    /* margin:2px; */
+    /* margin-top:-2px; */
+    /* margin-left:-2px; */
+    /* margin-bottom:3px; */
+    position:relative;
+}
+.file-item.hl2::after{
+    content:"";
+    position:absolute;
+    z-index:1;
+    left:0px;
+    top:0px;
+    width:calc(100% - 2px);
+    height:calc(100% - 2px);
+    background-color:var(--cta-btn-col);
+    opacity:0.45;
+    pointer-events:none;
+}
+.folder-item.hl2{
+    background-color:var(--editor-bg);
+    /* outline:dashed 2px var(--cta-btn-col); */
+    /* margin:2px; */
+    /* margin-top:-2px; */
+    /* margin-left:-2px; */
+    /* margin-bottom:3px; */
+    position:relative;
+}
+.folder-item.hl2::after{
+    content:"";
+    position:absolute;
+    z-index:1;
+    left:0px;
+    top:0px;
+    width:calc(100% - 2px);
+    height:calc(100% - 2px);
+    background-color:var(--cta-btn-col);
+    opacity:0.45;
+    pointer-events:none;
+}
 
 .folder-item{
     /* padding-left:0px; */
@@ -947,7 +996,7 @@ input[type="checkbox"]{
     border:solid 2px var(--secondary-bg-col);
     background-color:var(--bg-col);
     padding:4px;
-    border-radius:5px;
+    border-radius:7px;
     position:absolute;
     z-index:99;
     pointer-events:all;
