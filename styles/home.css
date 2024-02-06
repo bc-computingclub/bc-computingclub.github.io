@@ -434,3 +434,26 @@ a {
 .hide{
     display:none;
 }
+
+/* some anims */
+@keyframes AddBubble{
+    0%{
+        scale:0.8;
+    }
+    40%{
+        scale:1.01;
+    }
+    100%{
+        scale:1;
+    }
+}
+@keyframes RemoveBubble{
+    0%{
+        /* scale:1; */
+        opacity:1;
+    }
+    100%{
+        opacity:0;
+        /* scale:0.5; */
+    }
+}

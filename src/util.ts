@@ -44,9 +44,6 @@ function wait(delay:number){
     });
 }
 
-// callouts
-const callouts = document.querySelectorAll(".callout");
-
 // menus
 let menuCont = document.createElement("div");
 menuCont.className = "menu-cont";
@@ -490,7 +487,7 @@ function genHeader(i:number,isCompact=true,id:string){
         </a>
         </div>`:id=="editor"||id=="lesson"?`
         <div class="editor-menu-bar">
-            <div class="b-editor-dashboard icon-div"><div class="material-symbols-outlined">home</div></div>
+            <div class="b-editor-dashboard icon-div"><div class="material-symbols-outlined co-item" co-label="Project Dashboard">home</div></div>
             <!--<div>File</div>
             <div>Edit</div>
             <div>View</div>-->
@@ -594,15 +591,135 @@ class Project{
     hasSavedOnce = false;
     needsSave = false;
 
+    // right click actions
+
+    renameFItem(f:FItem){
+        if(!f) return;
+        let newName = prompt("Old name: "+f.name+"\n\nEnter new name: ",f.name);
+        if(newName == f.name || newName == null || newName == ""){
+            close();
+            return;
+        }
+        if(newName.includes("/") || newName.includes("..")){
+            alert("Invalid file/folder name");
+            close();
+            return;
+        }
+        socket.emit("renameFItem",f.p.pid,calcFolderPath(f.folder),f.name,newName,((res:number)=>{
+            console.log("RES RENAME: ",res);
+            if(res != 0) return;
+            f.name = newName;
+            if(f instanceof FFile){
+                if(f.link) f.link.children[0].textContent = newName;
+                if(f._fi) f._fi.textContent = newName;
+            }
+            else if(f._fi) f._fi.children[0].children[1].textContent = newName;
+            close();
+        }));
+    }
+    async deleteFItem(f:FItem){
+        if(!f) return;
+        let list:FItem[] = [];
+        if(f.p.hlItems.length){
+            for(const f1 of f.p.hlItems){
+                list.push(f1);
+            }
+        }
+        else list.push(f);
+        if(!confirm("Are you sure you want to delete: ["+list.map(v=>v.name).join(", ")+"] ?\n\nThere is no reversing this option!")) return;
+        for(const f1 of list){
+            let res = await new Promise<number>(resolve=>{
+                socket.emit("deleteFItem",f1.p.pid,calcFolderPath(f1.folder),f1.name,((res:number)=>{
+                    console.log("RES delete: ",res);
+                    resolve(res);
+                }));
+            });
+            if(res == 0){
+                let items = (f1.folder ? f1.folder.items : f1.p.items);
+                items.splice(items.indexOf(f1),1);
+                f1._fi.remove();
+            }
+            await wait(100);
+        }
+        f.p.deselectHLItems();
+    }
+    cutFItems(f:FItem){
+        if(!f) return;
+        fclipboard.files = [];
+        if(f.p.hlItems.length) for(const f1 of f.p.hlItems){
+            fclipboard.files.push(f1);
+        }
+        else fclipboard.files.push(f);
+        fclipboard.action = "cut";
+        f.p.deselectHLItems();
+        console.log("Cut "+fclipboard.files.length+" items into the clipboard");
+    }
+    copyFItems(f:FItem){
+        if(!f) return;
+        fclipboard.files = [];
+        if(f.p.hlItems.length) for(const f1 of f.p.hlItems){
+            fclipboard.files.push(f1);
+        }
+        else fclipboard.files.push(f);
+        fclipboard.action = "copy";
+        f.p.deselectHLItems();
+        console.log("Copied "+fclipboard.files.length+" items into the clipboard");
+    }
+    async pasteFItems(f:FItem,cb:(list:FItem[])=>void){
+        if(!f) return;
+        let folder = (f instanceof FFolder ? f : f.folder);
+        // let folder = f.p.lastFolder;
+        // if(!folder) folder = f.p.curFile?.folder;
+        let amt = fclipboard.files.length;
+        let effected:FItem[] = [];
+        for(const f1 of fclipboard.files){
+            let item:FItem;
+            if(fclipboard.action == "cut"){
+                await moveFile(f1,folder,true);
+                item = f1;
+                effected.push(f1);
+            }
+            else if(fclipboard.action == "copy"){
+                if(f1 instanceof FFile) item = f.p.createFile(f1.name,f1.text,null,folder,true);
+                else if(f1 instanceof FFolder) item = f.p.createFolder(f1.name,folder,true);
+                effected.push(item);
+            }
+            if(!item) continue;
+            f.p.hlItems.push(item);
+            item._fi.classList.add("hl2");
+        }
+        close();
+        await saveProject();
+        // await wait(500);
+        f.p.deselectHLItems();
+        for(const f1 of effected){
+            if(f1) f1.p.flashAddHLItem(f1);
+        }
+        if(fclipboard.action == "cut"){
+            fclipboard.files = [];
+            fclipboard.action = null;
+        }
+        console.log("Pasted "+amt+" items from the clipboard");
+        if(cb) cb(effected);
+    }
+
+    // 
+
     addHLItem(f:FItem){
         if(this.hlItems.includes(f)) return;
-        f._fi.classList.add("hl2");
         this.hlItems.push(f);
+        f._fi.classList.add("hl2");
+    }
+    removeHLItem(f:FItem){
+        let i = this.hlItems.indexOf(f);
+        if(i == -1) return;
+        this.hlItems.splice(i,1);
+        f._fi.classList.remove("hl2");
     }
     async flashAddHLItem(f:FItem){
-        f._fi.classList.add("hl2");
+        this.addHLItem(f);
         await wait(500);
-        f._fi.classList.remove("hl2");
+        this.removeHLItem(f);
     }
     deselectHLItems(){
         for(const item of this.hlItems){
@@ -695,7 +812,11 @@ class Project{
             createFolderListItem(f);
         }
         // this.needsSave = true;
-        if(isNew) saveProject();
+        if(isNew){
+            f._fiLabel.click();
+            saveProject();
+        }
+        else f._fi.classList.toggle("close");
         return f;
     }
 
@@ -730,7 +851,7 @@ function calcFolderPath(f:FFolder){
     if(!f) return "";
     let list:FFolder[] = [];
     function add(ff:FFolder){
-    list.push(ff);
+        list.push(ff);
         if(ff.folder) add(ff.folder);
     }
     add(f);
@@ -748,11 +869,23 @@ let fclipboard = {
 
 let _multiSelLast:FItem;
 let _multiSelFolder:FFolder;
-function applyMultiSelectFI(f:FItem,isShift:boolean){
+function applyMultiSelectFI(e:MouseEvent,f:FItem){
+    let isMulti = (e.shiftKey || e.ctrlKey);
     let items = f.p.hlItems;
-    if(items.length) if(f.folder != _multiSelFolder) return;
-    if(items.length == 0){
-        // let cur:FItem = f.p.curFile;
+    // if(items.length) if(f.folder != _multiSelFolder) return true;
+    if(items.length) if(f.folder != items[0].folder) return true;
+    if(true) if(isMulti) if(items.length == 0){
+        let cur:FItem = f.p.curFile;
+        if(cur?.folder == f.folder){
+            if(cur instanceof FFile){
+                if(!items.includes(cur)){
+                    items.push(cur);
+                    cur._fi.classList.add("hl2");
+                    if(f == cur) return true;
+                }
+            }
+        }
+        else return true;
         // if(f instanceof FFolder) cur = f.p.lastFolder;
         // if(f){
         //     _multiSelFolder = f.folder;
@@ -772,12 +905,20 @@ function applyMultiSelectFI(f:FItem,isShift:boolean){
         items.push(f);
         f._fi.classList.add("hl2");
     }
+
+    if(isMulti) return true;
+    // project.deselectHLItems();
+    // return false;
+    return true;
 }
 
 function createFileListItem(f:FFile){
     if(!fileList){
         fileList = document.querySelector(".file-list");
         if(!fileList) return;
+        fileList.oncontextmenu = function(e){
+            e.preventDefault();
+        };
     }
     let div = document.createElement("div");
     div.className = "file-item";
@@ -798,13 +939,17 @@ function createFileListItem(f:FFile){
     setupFItemDropdown(f,div);
     
     f._fi = div;
+    div.addEventListener("click",e=>{
+        if(!e.ctrlKey && !e.shiftKey) f.p.deselectHLItems();
+    });
     div.addEventListener("mousedown",e=>{
         if(!f.p.hlItems.includes(f) && f.p.hlItems.length && !e.ctrlKey && !e.shiftKey){
             f.p.deselectHLItems();
         }
         if(e.button != 0) return;
         if(e.ctrlKey || e.shiftKey){ // multi file select
-            applyMultiSelectFI(f,e.shiftKey);
+            // if(applyMultiSelectFI(e,f)) return;
+            applyMultiSelectFI(e,f);
             return;
         }
 
@@ -813,6 +958,7 @@ function createFileListItem(f:FFile){
             return div.cloneNode(true) as HTMLElement;
         },async last=>{
             let hover = hoverFolderListItems[hoverFolderListItems.length-1];
+            if(hover == last.folder) return;
             let effected:FItem[] = [];
             if(f.p.hlItems.length){
                 for(const f1 of f.p.hlItems){
@@ -825,7 +971,7 @@ function createFileListItem(f:FFile){
                 await moveFile(f,hover,true);
                 effected.push(f);
             }
-            f.p.deselectHLItems();
+            // if(effected.length) f.p.deselectHLItems();
             for(const f1 of effected){
                 f1.p.flashAddHLItem(f1);
             }
@@ -870,116 +1016,40 @@ function setupFItemDropdown(f:FItem,div:HTMLElement){
             closeAllSubMenus();
         }
         if(i == 0){ // rename
-            let newName = prompt("Old name: "+f.name+"\n\nEnter new name: ",f.name);
-            if(newName == f.name || newName == null || newName == ""){
-                close();
-                return;
-            }
-            if(newName.includes("/") || newName.includes("..")){
-                alert("Invalid file/folder name");
-                close();
-                return;
-            }
-            socket.emit("renameFItem",f.p.pid,calcFolderPath(f.folder),f.name,newName,((res:number)=>{
-                console.log("RES RENAME: ",res);
-                if(res != 0) return;
-                f.name = newName;
-                if(f instanceof FFile){
-                    if(f.link) f.link.children[0].textContent = newName;
-                    if(f._fi) f._fi.textContent = newName;
-                }
-                else if(f._fi) f._fi.children[0].children[1].textContent = newName;
-                close();
-            }));
+            f.p.renameFItem(f);
         }
         else if(i == 1){ // delete
-            let list:FItem[] = [];
-            if(f.p.hlItems.length){
-                for(const f1 of f.p.hlItems){
-                    list.push(f1);
-                }
-            }
-            else list.push(f);
-            if(!confirm("Are you sure you want to delete: ["+list.map(v=>v.name).join(", ")+"] ?\n\nThere is no reversing this option!")) return;
-            for(const f1 of list){
-                let res = await new Promise<number>(resolve=>{
-                    socket.emit("deleteFItem",f1.p.pid,calcFolderPath(f1.folder),f1.name,((res:number)=>{
-                        console.log("RES delete: ",res);
-                        resolve(res);
-                    }));
-                });
-                if(res == 0){
-                    let items = (f1.folder ? f1.folder.items : f1.p.items);
-                    items.splice(items.indexOf(f1),1);
-                    f1._fi.remove();
-                }
-                await wait(100);
-            }
-            f.p.deselectHLItems();
+            await f.p.deleteFItem(f);
             close();
         }
         else if(i == 2){ // cut
-            fclipboard.files = [];
-            if(f.p.hlItems.length) for(const f1 of f.p.hlItems){
-                fclipboard.files.push(f1);
-            }
-            else fclipboard.files.push(f);
-            fclipboard.action = "cut";
-            f.p.deselectHLItems();
-            console.log("Cut "+fclipboard.files.length+" items into the clipboard");
+            f.p.cutFItems(f);
             close();
         }
         else if(i == 3){ // copy
-            fclipboard.files = [];
-            if(f.p.hlItems.length) for(const f1 of f.p.hlItems){
-                fclipboard.files.push(f1);
-            }
-            else fclipboard.files.push(f);
-            fclipboard.action = "copy";
-            f.p.deselectHLItems();
-            console.log("Copied "+fclipboard.files.length+" items into the clipboard");
+            f.p.copyFItems(f);
             close();
         }
         else if(i == 4){ // paste
-            let folder = (f instanceof FFolder ? f : f.folder);
-            // let folder = f.p.lastFolder;
-            // if(!folder) folder = f.p.curFile?.folder;
-            let amt = fclipboard.files.length;
-            let effected:FItem[] = [];
-            for(const f1 of fclipboard.files){
-                let item:FItem;
-                if(fclipboard.action == "cut"){
-                    await moveFile(f1,folder,true);
-                    item = f1;
-                    effected.push(f1);
-                }
-                else if(fclipboard.action == "copy"){
-                    if(f1 instanceof FFile) item = f.p.createFile(f1.name,f1.text,null,folder,true);
-                    else if(f1 instanceof FFolder) item = f.p.createFolder(f1.name,folder,true);
-                    effected.push(item);
-                }
-                if(!item) continue;
-                f.p.hlItems.push(item);
-                item._fi.classList.add("hl2");
-            }
-            close();
-            await saveProject();
-            // await wait(500);
-            f.p.deselectHLItems();
-            for(const f1 of effected){
-                if(f1) f1.p.flashAddHLItem(f1);
-            }
-            if(fclipboard.action == "cut"){
-                fclipboard.files = [];
-                fclipboard.action = null;
-            }
-            console.log("Pasted "+amt+" items from the clipboard");
+            await f.p.pasteFItems(f,()=>{
+                close();
+            });
         }
     },(dd)=>{
         div.classList.add("hl");
         if(!fclipboard.files.length) dd.children[4].classList.add("disabled");
     },()=>{
         div.classList.remove("hl");
+    },{
+        getIcons:()=>{
+            return [
+                "edit",
+                "delete",
+                "content_cut",
+                "content_copy",
+                "content_paste"
+            ];
+        }
     });
 }
 
@@ -1022,6 +1092,8 @@ async function moveFile(f:FItem,toFolder:FFolder,noSave=false){
     let toItems = (toFolder?.items ?? f.p.items);
     fromItems.splice(fromItems.indexOf(f),1);
     toItems.push(f);
+
+    if(toFolder) if(toFolder._fi.classList.contains("close")) toFolder._fi.classList.remove("close");
     if(!noSave) saveProject();
 }
 
@@ -1029,6 +1101,9 @@ function createFolderListItem(f:FFolder){
     if(!fileList){
         fileList = document.querySelector(".file-list");
         if(!fileList) return;
+        fileList.oncontextmenu = function(e){
+            e.preventDefault();
+        };
     }
     let div = document.createElement("div");
     div.className = "folder-item";
@@ -1055,9 +1130,11 @@ function createFolderListItem(f:FFolder){
     f._fiLabel = div.querySelector(".fi-label");
     f._fiList = div.querySelector(".fi-list");
     f._fiLabel.addEventListener("click",e=>{
+        // if(!e.ctrlKey || !e.shiftKey) f.p.deselectHLItems();
         if(e.shiftKey || e.ctrlKey) return;
         
         div.classList.toggle("close");
+        // if(f.p.lastFolder == f) div.classList.toggle("close");
         // let sels = document.querySelectorAll(".folder-item.sel");
         // for(const c of sels){
         //     c.classList.remove("sel");
@@ -1076,7 +1153,8 @@ function createFolderListItem(f:FFolder){
         }
         if(e.button != 0) return;
         if(e.ctrlKey || e.shiftKey){ // multi file select
-            applyMultiSelectFI(f,e.shiftKey);
+            // if(applyMultiSelectFI(e,f)) return;
+            applyMultiSelectFI(e,f);
             return;
         }
 
@@ -1631,6 +1709,48 @@ function postSetupEditor(project:Project){
     // project.files[0].d_files;
     // project.files[0].codeCont;
     // project.files[0].bubbles_ov;
+
+    // INIT OPS BUTTONS
+    const ops_rename = document.querySelector(".ops-rename");
+    const ops_delete = document.querySelector(".ops-delete");
+    const ops_cut = document.querySelector(".ops-cut");
+    const ops_copy = document.querySelector(".ops-copy");
+    const ops_paste = document.querySelector(".ops-paste");
+    async function flashHL(f:FItem){
+        if(!f) return;
+        let ele = (f instanceof FFolder ? f._fiLabel : f._fi);
+        if(!ele) return;
+        ele.classList.add("hl");
+        await wait(200);
+        ele.classList.remove("hl");
+    }
+    ops_rename.addEventListener("click",e=>{
+        if(!project) return;
+        project.renameFItem(project.lastFolder??project.curFile);
+    });
+    ops_delete.addEventListener("click",e=>{
+        if(!project) return;
+        project.deleteFItem(project.curFile);
+    });
+    ops_cut.addEventListener("click",e=>{
+        if(!project) return;
+        let items = project.hlItems.length ? project.hlItems : [project.lastFolder??project.curFile];
+        for(const c of items) flashHL(c);
+        project.cutFItems(project.curFile);
+    });
+    ops_copy.addEventListener("click",e=>{
+        if(!project) return;
+        let items = project.hlItems.length ? project.hlItems : [project.lastFolder??project.curFile];
+        for(const c of items) flashHL(c);
+        project.copyFItems(project.curFile);
+    });
+    ops_paste.addEventListener("click",e=>{
+        if(!project) return;
+        let item = project.lastFolder??project.curFile;
+        project.pasteFItems(item,(effected)=>{
+            // for(const c of effected) flashHL(item);
+        });
+    });
 }
 
 // PAGE ID
@@ -1672,9 +1792,9 @@ async function refreshProject(){
         project.needsSave = false;
     }
     
-    let file1 = project.files.find(v=>v.name == "index.html");
+    let file1 = project.items.find(v=>v.name == "index.html");
     if(!file1 || !project.hasSavedOnce){
-        alert("No index.html file found! Please create a new file called index.html, this file will be used in the preview.");
+        alert("No index.html file found! Please create a new file called index.html in the outer most folder of your project, this file will be used in the preview.");
         return;
     }
     iframe.src = serverURL+"/project/"+g_user.sanitized_email+"/"+socket.id+"/"+g_user.sanitized_email+"/"+project.pid;
@@ -1876,6 +1996,7 @@ let overSubMenu = false;
 let subs:any[] = [];
 setTimeout(()=>{
     subMenus = document.querySelector(".sub-menus") as HTMLElement;
+    if(!subMenus) return;
     subMenus.addEventListener("mouseenter",e=>{
         overSubMenu = true;
     });
@@ -1889,20 +2010,33 @@ function closeAllSubMenus(){
         s.onclose();
     }
 }
-function setupDropdown(btn:HTMLElement,getLabels:()=>string[],onclick:(i:number)=>void,onopen:(dd:HTMLElement)=>void,onclose:()=>void,ops={}){
+function setupDropdown(btn:HTMLElement,getLabels:()=>string[],onclick:(i:number)=>void,onopen:(dd:HTMLElement)=>void,onclose:()=>void,ops:any={}){
     btn.addEventListener("contextmenu",e=>{
         let labels = getLabels();
+        let icons = ops?.getIcons() as string[];
         // if(e.button != 2) return;
         e.preventDefault();
         // subMenus.innerHTML = "";
         closeAllSubMenus();
         // let rect = btn.getBoundingClientRect();
         let dd = document.createElement("div");
+        dd.oncontextmenu = function(e){
+            e.preventDefault();
+        };
         dd.className = "dropdown";
         for(let i = 0; i < labels.length; i++){
-            let l = labels[i];
             let d = document.createElement("div");
-            d.textContent = l;
+            let l = labels[i];
+            let icon = icons[i];
+            if(icon){
+                let ic = document.createElement("div");
+                ic.className = "material-symbols-outlined";
+                ic.textContent = icon;
+                d.appendChild(ic);
+            }
+            let lab = document.createElement("div");
+            lab.textContent = l;
+            d.appendChild(lab);
             d.className = "dd-item";
             dd.appendChild(d);
             d.addEventListener("click",function(e){
@@ -1913,10 +2047,73 @@ function setupDropdown(btn:HTMLElement,getLabels:()=>string[],onclick:(i:number)
         console.log("appended");
         dd.style.left = (e.clientX)+"px";
         dd.style.top = (e.clientY-60)+"px";
+        if(e.clientY > innerHeight/2) dd.style.transform = "translate(0px,-100%)";
+        else dd.style.transform = "translate(0px,0px)";
         onopen(dd);
         subs.push({
             e:dd,
             onclose
         });
+        // requestAnimationFrame(()=>{
+        //     let rect = dd.getBoundingClientRect();
+        //     if(rect.bottom >= innerHeight-20){
+        //         let y = rect.y = innerHeight-20-rect.height - 60;
+        //         dd.style.top = (y)+"px";
+        //     }
+        // });
     });
+}
+
+// callouts
+function setupCallout(ele:Element,label?:string){
+    if(label == null) label = ele.getAttribute("co-label");
+    let d:HTMLElement;
+    let isOver = false;
+    let flag = false;
+    ele.addEventListener("mouseenter",async (e:MouseEvent)=>{
+        if(isOver || flag){
+            if(d?.parentElement) d.remove();
+            return;
+        }
+        isOver = true;
+        flag = true;
+        // await wait(500);
+        await wait(200);
+        flag = false;
+        if(!isOver){
+            if(d?.parentElement) d.remove();
+            return;
+        }
+
+        d = document.createElement("div");
+        d.textContent = label;
+        d.className = "callout";
+        subMenus.appendChild(d);
+
+        let rect = ele.getBoundingClientRect();
+        d.style.top = (rect.y+rect.height-60+12)+"px";
+        if(rect.x > innerWidth/2){
+            d.style.left = (rect.right+d.offsetWidth)+"px";
+            d.style.setProperty("--left",(rect.width/2-7-rect.width+d.offsetWidth)+"px");
+            // d.style.setProperty("--left",(rect.width/2-7+d.offsetWidth)+"px");
+            d.style.transform = "translate(-200%,0px)";
+        }
+        else{
+            d.style.left = (rect.x)+"px";
+            d.style.setProperty("--left",(rect.width/2-7)+"px");
+            d.style.transform = "translate(0px,0px)";
+        }
+    });
+    ele.addEventListener("mouseleave",e=>{
+        isOver = false;
+        if(d?.parentElement) d.remove();
+    });
+}
+async function initCallouts(){
+    await loginProm;
+    const callouts = document.querySelectorAll(".co-item");
+    for(const c of callouts){
+        setupCallout(c);
+    }
+    console.log(`initialized ${callouts.length} callouts`);
 }

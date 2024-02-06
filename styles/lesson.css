@@ -65,27 +65,6 @@ body{
     animation:AddBubble forwards 0.35s ease-out;
     /* animation:AddBubble forwards 0.2s cubic-bezier(0.44, 1.07, 1, 1.31); */
 }
-@keyframes AddBubble{
-    0%{
-        scale:0.8;
-    }
-    40%{
-        scale:1.01;
-    }
-    100%{
-        scale:1;
-    }
-}
-@keyframes RemoveBubble{
-    0%{
-        /* scale:1; */
-        opacity:1;
-    }
-    100%{
-        opacity:0;
-        /* scale:0.5; */
-    }
-}
 
 .bubble:hover{
     /* opacity:0.2; */

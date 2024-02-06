@@ -37,3 +37,7 @@ b_invertColors.addEventListener("click",e=>{
     updateIFrameContrast();
 });
 if(settings.invertContrast.get()) updateIFrameContrast();
+
+setTimeout(()=>{
+    initCallouts();
+},500);

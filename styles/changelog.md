@@ -179,3 +179,16 @@
 - cut, copy, paste in right click menu implemented for single and multiple files
 - - cut works for folders, copy only copies the folder (without files inside) (for right now)
 - probably very buggy
+
+### 2/5/24 - Claeb
+- selecting file or folder while multi selecting will deselect all
+- added callouts
+- prevented right click menu from opening on right click menu or in files panel
+- fixed multi selection of files to make it more intuitive
+- fixed sub menu right click menu in files panel to go up instead of down when used in the lower half of the page
+- added scrollbar to files panel in editor
+- made folders be closed by default on project load
+- fixed no index.html alert message to appear if the html file is hidden in a sub folder instead of displaying HTTP error
+- fixed moving files so that when they are moved into a closed folder it opens the folder
+- added icons and redid styling on the right click menu for the files pane
+- added bottom ops panel for right click options to the files pane
