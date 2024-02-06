@@ -120,6 +120,10 @@ async function loadProject(pid:string){
 
     project.files.forEach(v=>v.setSaved(true));
     if(project.curFile) project.curFile.open();
+
+    // load index.html by default
+    let index = project.items.find(v=>v.name == "index.html") as FFile;
+    if(index) index.open();
 }
 
 async function init(){    
@@ -327,14 +331,18 @@ class ProjectDashboard extends Menu{
                     <div class="l-project-name">${meta.name}</div>
                     <div class="l-project-desc">${meta.desc}</div>
                 </div>
-                <div>
+                <div class="flx-sb" style="gap:5px">
                     <button class="icon-btn accent smaller b-open-project">
                         <div class="material-symbols-outlined">edit</div>
                         <div>Tinker</div>
                     </button>
+                    <button class="icon-btn-single accent smaller b-ops">
+                        <div class="material-symbols-outlined">discover_tune</div>
+                    </button>
                 </div>
             `;
             content.appendChild(div);
+            let l_pname = div.querySelector(".l-project-name");
             let b_openProject = div.querySelector(".b-open-project");
             b_openProject.addEventListener("click",e=>{
                 openProjectSuper(meta.pid);
@@ -343,6 +351,34 @@ class ProjectDashboard extends Menu{
                 b_openProject.classList.add("challenge");
                 b_openProject.children[1].textContent = "Practice";
             }
+
+            let b_ops = div.querySelector(".b-ops") as HTMLButtonElement;
+            b_ops.addEventListener("click",e=>{
+                let cur = openCurProjSettingsMeta(meta,{
+                    onrename(v:string){
+                        l_pname.textContent = v;
+                    }
+                });
+                // b_ops.parentElement.insertAdjacentElement("afterend",cur);
+                if(cur) div.insertAdjacentElement("beforebegin",cur);
+            });
+            // setupDropdown(b_ops,()=>[
+            //     "Rename",
+            //     "Delete"
+            // ],(i)=>{
+            //     if(i == 0){
+            //         let name = prompt(`Old project name: ${meta.name}\n\nEnter new project name:`,meta.name);
+            //         if(!name) return;
+            //         if(name == "") return;
+            //         socket.emit("renameProject",meta.pid,name,(res:number)=>{
+            //             if(res != 0) return;
+            //             l_pname.textContent = name;
+            //         });
+            //     }
+            //     else if(i == 1){
+                    
+            //     }
+            // });
             // div.addEventListener("click",e=>{
 
             // });
@@ -389,6 +425,8 @@ d_curProject.addEventListener("click",e=>{
 
 function openCurProjSettings(){   
     if(!project) return;
+
+    let oldName = project.title;
     
     let div = document.createElement("div");
     div.className = "proj-settings";
@@ -408,6 +446,16 @@ function openCurProjSettings(){
     div.onmouseleave = function(){
         isOverTmpMenu = false;
     };
+    div.onclose = function(){
+        let newName = i_rename.value;
+        if(!newName || newName == "") return;
+        if(oldName == newName) return;
+        socket.emit("renameProject",project.pid,newName,(res:number)=>{
+            console.log("rename project res:",res);
+            let elm = document.querySelector(".d-current-project");
+            if(elm) elm.textContent = newName;
+        });
+    };
     tmpMenus.push(div);
     
     let rect = d_curProject.getBoundingClientRect();
@@ -418,4 +466,62 @@ function openCurProjSettings(){
 
     let i_rename = div.querySelector(".i-rename") as HTMLInputElement;
     i_rename.value = project.title;
+
+    return div;
+}
+let curProjectSettingsMetaPID:string;
+let curProjectSettingsMeta:HTMLElement;
+function openCurProjSettingsMeta(meta:ProjectMeta,ops:any){
+    if(!meta) return;
+    if(curProjectSettingsMetaPID == meta.pid){
+        curProjectSettingsMeta.remove();
+        curProjectSettingsMeta = null;
+        curProjectSettingsMetaPID = null;
+        return;
+    }
+
+    let oldName = meta.name;
+    
+    let div = document.createElement("div");
+    div.className = "proj-settings";
+    div.innerHTML = `
+        <div>
+            <div>Rename</div>
+            <input type="text" class="i-rename">
+        </div>
+        <div>
+            <div>Is public?</div>
+            <input type="checkbox">
+        </div>
+    `;
+    if(curProjectSettingsMeta) curProjectSettingsMeta.remove();
+    curProjectSettingsMeta = div;
+    curProjectSettingsMetaPID = meta.pid;
+    
+    let rect = d_curProject.getBoundingClientRect();
+    div.style.left = (rect.x)+"px";
+    div.style.top = (rect.bottom+3)+"px";
+
+    document.body.appendChild(div);
+
+    let i_rename = div.querySelector(".i-rename") as HTMLInputElement;
+    i_rename.value = meta.name;
+    whenEnter(i_rename,v=>{
+        let newName = i_rename.value;
+        if(!newName || newName == "") return;
+        if(oldName == newName) return;
+        socket.emit("renameProject",meta.pid,newName,(res:number)=>{
+            console.log("rename project res:",res);
+            let elm = document.querySelector(".d-current-project");
+            if(elm) elm.textContent = newName;
+
+            ops.onrename(v);
+        });
+    });
+
+    // 
+    div.style.position = "static";
+    div.style.marginLeft = "10px";
+
+    return div;
 }

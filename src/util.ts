@@ -1767,6 +1767,7 @@ let isOverTmpMenu = false;
 function closeTmpMenus(){
     for(const c of tmpMenus){
         c.parentElement.removeChild(c);
+        if(c.onclose) c.onclose(null);
     }
     tmpMenus = [];
     isOverTmpMenu = false;
@@ -1775,6 +1776,9 @@ document.addEventListener("mousedown",e=>{
     if(!isOverTmpMenu) closeTmpMenus();
     if(!overSubMenu) closeAllSubMenus();
 });
+// document.addEventListener("mouseup",e=>{
+//     if(tmpMenus.length) if(!isOverTmpMenu) closeTmpMenus();
+// });
 // document.addEventListener("mouseup",e=>{
 //     requestAnimationFrame(()=>{
 //         if(project.lastFolder){
@@ -2010,10 +2014,10 @@ function closeAllSubMenus(){
         s.onclose();
     }
 }
-function setupDropdown(btn:HTMLElement,getLabels:()=>string[],onclick:(i:number)=>void,onopen:(dd:HTMLElement)=>void,onclose:()=>void,ops:any={}){
+function setupDropdown(btn:HTMLElement,getLabels:()=>string[],onclick:(i:number)=>void,onopen?:(dd:HTMLElement)=>void,onclose?:()=>void,ops:any={}){
     btn.addEventListener("contextmenu",e=>{
         let labels = getLabels();
-        let icons = ops?.getIcons() as string[];
+        let icons = (ops?.getIcons ? ops?.getIcons() : null) as string[];
         // if(e.button != 2) return;
         e.preventDefault();
         // subMenus.innerHTML = "";
@@ -2116,4 +2120,13 @@ async function initCallouts(){
         setupCallout(c);
     }
     console.log(`initialized ${callouts.length} callouts`);
+}
+
+function whenEnter(elm:HTMLInputElement,f:(v:string)=>void){
+    elm.addEventListener("keydown",e=>{
+        if(e.key.toLowerCase() == "enter") f(elm.value);
+    });
+    elm.addEventListener("blur",e=>{
+        f(elm.value);
+    });
 }

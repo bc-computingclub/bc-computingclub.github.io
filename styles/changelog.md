@@ -192,3 +192,8 @@
 - fixed moving files so that when they are moved into a closed folder it opens the folder
 - added icons and redid styling on the right click menu for the files pane
 - added bottom ops panel for right click options to the files pane
+
+### 2/6/24 - Claeb
+- added ability to rename projects
+- made index.html open by default
+- custom meta edit panel in project dashboard (can rename projects there too now)

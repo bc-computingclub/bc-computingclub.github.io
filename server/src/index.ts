@@ -559,6 +559,33 @@ io.on("connection",socket=>{
         else await removeFolder(start+fromPath+file);
         f(0);
     });
+    // 
+    socket.on("renameProject",async (pid:string,newName:string,f:(res:number)=>void)=>{
+        if(!valVar2(pid,"string",f)) return;
+        if(!valVar2(newName,"string",f)) return;
+
+        let user = getUserBySock(socket.id);
+        if(!user){
+            f(1);
+            return;
+        }
+
+        let m = user.pMeta.find(v=>v.pid == pid);
+        if(!m){
+            f(2);
+            return;
+        }
+        m.name = newName;
+        let p = user.projects.find(v=>v.pid == pid);
+        if(p) p.name = newName;
+        await user.saveToFile();
+
+        m.name = newName;
+        f(0);
+    });
+    socket.on("deleteProject",(pid:string)=>{
+
+    });
 });
 function parseFolderStr(p:Project,path:string){
     if(!p) return;
