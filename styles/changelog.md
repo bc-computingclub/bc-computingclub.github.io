@@ -197,3 +197,16 @@
 - added ability to rename projects
 - made index.html open by default
 - custom meta edit panel in project dashboard (can rename projects there too now)
+- fixed "close" warning when using right click menu ops
+- fixed "project not defined" on practice page when pressing a key
+- split up setupDropdown to add openDropdown for manual dropdown creation with DropdownOptions for static typing and some other abstracty things
+- replaced "Delete Progress" dropdown with the dropdown API stuff
+- added animation to dropdown menu and shadows on it and on callouts
+- fixed issue with pasting even though it doesn't have any in the clipboard
+- added "challenges" section in project dashboard
+- changed some styling in Project Dashboard
+- changed backend structure of the Project class to use meta for meta storage instead of individual properties on Project
+    - may cause issues but I haven't found any yet
+- added ability to Delete Projects
+- added ability to Unlink Challenge Projects into regular projects
+- when starting a challenge, you go into the submissions now (not final but for now is alright)

@@ -25,8 +25,6 @@ b_newFile.addEventListener("click",e=>{
     project.createFile(name,"",null,project.lastFolder ?? project.curFile?.folder,true);
 });
 
-let project:Project;
-
 async function loadProject(pid:string){
     project = null;
     let meta = await restoreProjectFiles(pid);
@@ -43,6 +41,7 @@ async function loadProject(pid:string){
     }
 
     project = new Project(meta.name,pane_code);
+    project.meta = meta;
     project.pid = pid;
     project.desc = meta.desc;
     project.isPublic = meta.isPublic;
@@ -273,6 +272,10 @@ class ProjectDashboard extends Menu{
                             <div>Personal</div>
                         </button>
                         <button class="icon-btn regular">
+                            <div class="material-symbols-outlined">fitness_center</div>
+                            <div>Challenges</div>
+                        </button>
+                        <button class="icon-btn regular">
                             <div class="material-symbols-outlined">schedule</div>
                             <div>Recent</div>
                         </button>
@@ -304,14 +307,17 @@ class ProjectDashboard extends Menu{
         for(let i = 0; i < navCont.children.length; i++){
             let b = navCont.children[i];
             b.addEventListener("mousedown",e=>{
-                for(const c of navCont.children){
-                    c.classList.remove("sel");
-                }
-                b.classList.add("sel");
                 loadSection(i);
             });
         }
         async function loadSection(i:number){
+            let b = navCont.children[i];
+            for(const c of navCont.children){
+                c.classList.remove("sel");
+            }
+            b.classList.add("sel");
+            curProjectSettingsMeta = null;
+            curProjectSettingsMetaPID = null;
             content.textContent = "";
             let raw = await new Promise<string[]>(resolve=>{
                 socket.emit("user-getProjectList",i,(data:string[])=>{
@@ -326,6 +332,7 @@ class ProjectDashboard extends Menu{
         function loadItem(meta:ProjectMeta){
             let div = document.createElement("div");
             div.className = "project-item";
+            div.classList.add("pi-"+meta.pid);
             div.innerHTML = `
                 <div class="project-info">
                     <div class="l-project-name">${meta.name}</div>
@@ -383,7 +390,7 @@ class ProjectDashboard extends Menu{
 
             // });
         }
-        loadSection(0);
+        loadSection(project ? (project.meta?.cid != null ? 1 : 0) : 0);
         return this;
     }
 }
@@ -485,13 +492,19 @@ function openCurProjSettingsMeta(meta:ProjectMeta,ops:any){
     let div = document.createElement("div");
     div.className = "proj-settings";
     div.innerHTML = `
-        <div>
-            <div>Rename</div>
-            <input type="text" class="i-rename">
+        <div class="flx-sb">
+            <div class="flx-al" style="gap:10px">
+                <div>Rename</div>
+                <input type="text" class="i-rename">
+            </div>
+            <button class="icon-btn-single b-delete-project"><div class="material-symbols-outlined">delete</div></button>
         </div>
-        <div>
-            <div>Is public?</div>
-            <input type="checkbox">
+        <div class="flx-sb">
+            <div class="flx-al" style="gap:10px">
+                <div>Is public?</div>
+                <input type="checkbox">
+            </div>
+            <button class="icon-btn-single b-unlink-project"><div class="material-symbols-outlined">link_off</div></button>
         </div>
     `;
     if(curProjectSettingsMeta) curProjectSettingsMeta.remove();
@@ -516,6 +529,41 @@ function openCurProjSettingsMeta(meta:ProjectMeta,ops:any){
             if(elm) elm.textContent = newName;
 
             ops.onrename(v);
+        });
+    });
+
+    let b_deleteProject = div.querySelector(".b-delete-project") as HTMLButtonElement;
+    b_deleteProject.addEventListener("click",e=>{
+        if(!confirm(`Are you sure you want to delete project: "${meta.name}" ?\n\nThere is no reversing this option.`)) return;
+        socket.emit("deleteProject",meta.pid,(res:number)=>{
+            console.log("delete project res: ",res);
+            if(res != 0){
+                alert("There was an error deleting the project, error code: "+res);
+                return;
+            }
+            let item = document.querySelector(".pi-"+meta.pid);
+            if(item) item.remove();
+            div.remove();
+            if(project?.pid == meta.pid) location.reload();
+        });
+    });
+    setupCallout(b_deleteProject,"Delete Project");
+
+    let b_unlinkProject = div.querySelector(".b-unlink-project") as HTMLButtonElement;
+    if(!meta.cid) b_unlinkProject.style.display = "none";
+    b_unlinkProject.addEventListener("click",e=>{
+        if(!confirm(`Are you sure you want to unlink the challenge with this project: "${meta.name}" ?\n\nThere is no reversing this option.`)) return;
+        socket.emit("unlinkProject",meta.pid,(res:number)=>{
+            console.log("unlink project res: ",res);
+            if(res != 0){
+                alert("There was an error unlinking the project, error code: "+res);
+                return;
+            }
+            // let item = document.querySelector(".pi-"+meta.pid);
+            // if(item) item.remove();
+            // div.remove();
+            // if(project?.pid == meta.pid) location.reload();
+            location.reload();
         });
     });
 

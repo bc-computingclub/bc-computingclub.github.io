@@ -57,26 +57,31 @@ function checkAuth(req:Request,res:Response,next:NextFunction){
 function genPID(){
     return crypto.randomUUID();
 }
+export function getDefaultProjectMeta(user:User,pid:string,name:string){
+    return new ProjectMeta(user,pid,name,"A project for experiments.",false);
+}
 export class Project{
-    constructor(pid:string,name:string,ownerEmail:string){
+    constructor(pid:string,ownerEmail:string,meta:ProjectMeta){
         this.pid = pid;
-        this.name = name;
+        // this.name = name;
         this.ownerEmail = ownerEmail;
         
-        this.desc = "A project for experiments.";
-        this.isPublic = false;
+        // this.desc = "A project for experiments.";
+        // this.isPublic = false;
+        this.meta = meta;
 
         this._owner = null;
         // this.files = [];
         this.items = [];
     }
+    meta:ProjectMeta;
     pid:string;
-    name:string;
+    // name:string;
     ownerEmail:string;
     _owner:User|null;
     
-    desc:string;
-    isPublic:boolean;
+    // desc:string;
+    // isPublic:boolean;
     // files:ULFile[];
     items:ULItem[];
     cid?:string;
@@ -96,9 +101,9 @@ export class Project{
         // let challenge = this._owner.challenges.find(v=>v.pid == this.pid);
         return {
             owner:this.ownerEmail,
-            name:this.name,
-            desc:this.desc,
-            isPublic:this.isPublic,
+            name:this.meta.name,
+            desc:this.meta.desc,
+            isPublic:this.meta.isPublic,
             pid:this.pid,
             // files:this.files,
             items:this.items,
@@ -111,7 +116,7 @@ export class Project{
             return;
         }
         // return this.meta;
-        let m = new ProjectMeta(this._owner,this.pid,this.name,this.desc,this.isPublic);
+        let m = new ProjectMeta(this._owner,this.pid,this.meta.name,this.meta.desc,this.meta.isPublic);
         m.cid = this.cid;
         return m;
         // return JSON.stringify({
@@ -126,8 +131,8 @@ export class Project{
     static deserialize(str:string){
         let o = JSON.parse(str);
         let p = new Project(o.pid,o.name,o.ownerEmail);
-        p.desc = o.desc;
-        p.isPublic = o.isPublic;
+        p.meta.desc = o.desc;
+        p.meta.isPublic = o.isPublic;
         return p;
     }
 }
@@ -199,7 +204,7 @@ export class User{
         this.lastLoggedIn = _lastLoggedIn;
         this.tokens = [];
         this.sockIds = [];
-        console.log("loading pmeta obj",pMeta);
+        // console.log("loading pmeta obj",pMeta);
         if(pMeta) this.pMeta = pMeta.map(v=>ProjectMeta.deserialize(this,v)).filter(v=>v.pid != null);
         else this.pMeta = [];
         this.projects = [];
@@ -287,9 +292,7 @@ export class User{
     // Projects
     createProject(meta:ProjectMeta,pid?:string){
         if(pid == null) pid = genPID();
-        let p = new Project(pid,meta.name,this.email);
-        p.desc = meta.desc;
-        p.isPublic = meta.isPublic;
+        let p = new Project(pid,this.email,meta);
         p._owner = this;
         this.projects.push(p);
         this.pMeta.push(meta);
@@ -340,7 +343,7 @@ export async function attemptToGetProject(user:User,pid:string){
     
     let p = getProject(ref);
     if(p){
-        console.log(" :: FOUND PROJECT: ",p.name);
+        // console.log(" :: FOUND PROJECT: ",p.name);
         return p;
     }
     else{
@@ -349,7 +352,7 @@ export async function attemptToGetProject(user:User,pid:string){
         // return;
     }
 
-    console.log("$ searching...");
+    // console.log("$ searching...");
 
     let uid = user.sanitized_email;
     let path = "../project/"+uid+"/"+pid;
@@ -386,7 +389,7 @@ export async function attemptToGetProject(user:User,pid:string){
     }
     let root = await run(curFiles,"");
 
-    console.log("$ found files! fetching meta...");
+    // console.log("$ found files! fetching meta...");
     let meta = user.pMeta.find(v=>v.pid == pid);
     if(!meta){
         meta = new ProjectMeta(user,pid,"New Project","A project description!",false);
@@ -399,10 +402,8 @@ export async function attemptToGetProject(user:User,pid:string){
         p1.items = root;
         return p1;
     }
-    console.log("$ found meta!",meta.name,meta.desc);
-    let p2 = new Project(meta.pid,meta.name,user.email);
-    p2.desc = meta.desc;
-    p2.isPublic = meta.isPublic;
+    // console.log("$ found meta!",meta.name,meta.desc);
+    let p2 = new Project(meta.pid,user.email,meta);
     p2._owner = user;
     // p2.files = files;
     p2.items = root;

@@ -1939,7 +1939,6 @@ class Lesson{
     }
 }
 
-let lesson:Lesson;
 // d_files = document.querySelector(".d-open-files");
 main = document.querySelector(".main") as HTMLElement;
 // codeCont = document.querySelector(".cont-js");

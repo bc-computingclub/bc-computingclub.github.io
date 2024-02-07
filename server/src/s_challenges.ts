@@ -1,5 +1,18 @@
-import { User, read, readdir } from "./connection";
+import { User, read, readdir, write } from "./connection";
 
+export class CSubmission{
+    constructor(url:string,who:string,pid:string){
+        this.url = url;
+        this.who = who;
+        this.pid = pid;
+    }
+    url:string;
+    who:string;
+    pid:string;
+    static from(data:any){
+        return new CSubmission(data.url,data.who,data.pid);
+    }
+}
 export class Challenge{
     constructor(id:string,name:string,desc:string,imgUrl:string,difficulty:string){
         this.id = id;
@@ -8,7 +21,8 @@ export class Challenge{
         this.imgUrl = imgUrl;
         this.difficulty = difficulty;
         this.timespan = null;
-        this.hl = [];
+        // this.hl = [];
+        this.sub = [];
         this.cnt = 0;
     }
     name:string;
@@ -17,7 +31,8 @@ export class Challenge{
     difficulty:string;
     id:string;
     timespan:Timespan|null;
-    hl:any[];
+    // hl:CSubmission[];
+    sub:CSubmission[];
     cnt:number; // submission count
 
     isCompleted(){
@@ -34,7 +49,23 @@ export class Challenge{
         for(const k of ok){
             d[k] = data[k];
         }
+        d.sub = [];
+        if(data.sub) for(const s of data.sub){
+            d.sub.push(CSubmission.from(s));
+        }
         return d;
+    }
+    async save(){
+        let data = {
+            name:this.name,
+            desc:this.desc,
+            imgUrl:this.imgUrl,
+            difficulty:this.difficulty,
+            timespan:this.timespan,
+            cnt:this.cnt,
+            sub:this.sub
+        };
+        await write("../challenges/"+this.id+".json",JSON.stringify(data));
     }
 
     get ongoing(){
@@ -46,7 +77,7 @@ export class Challenge{
         return ongoing;
     }
 
-    serializeGet(user:User){
+    serializeGet(user:User|null){
         return {
             id:this.id,
             name:this.name,
@@ -55,10 +86,11 @@ export class Challenge{
             difficulty:this.difficulty,
             timespan:this.timespan,
             ongoing:this.ongoing,
-            hl:this.hl,
+            hl:this.sub.slice(0,2),
+            sub:this.sub,
             submission_count:this.cnt,
             completed:this.isCompleted(),
-            inProgress:this.isInProgress(user)
+            inProgress:(user ? this.isInProgress(user) : null)
         } as ChallengeGet;
     }
 }
@@ -68,6 +100,7 @@ export type ChallengeGet = {
     desc:string,
     imgUrl:string,
     difficulty:string,
+    hl?:CSubmission[];
 };
 export class Timespan{
     constructor(start:string,end:string){

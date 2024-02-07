@@ -1,4 +1,6 @@
 let serverURL = "http://localhost:3000";
+let lesson:Lesson;
+let project:Project;
 
 let settingsList:Setting<any>[] = [];
 class Settings{
@@ -494,7 +496,7 @@ function genHeader(i:number,isCompact=true,id:string){
         </div>
         <div class="cur-project-controls">
             <div class="d-current-project">. . .</div>
-            <div class="b-save icon-div"><div class="material-symbols-outlined">save</div></div>
+            <div class="b-save icon-div"><div class="material-symbols-outlined co-item" co-label="Save Project">save</div></div>
             <div class="icon-div hide"><div class="material-symbols-outlined">play_arrow</div></div>
         </div>
         `:""}
@@ -569,6 +571,7 @@ class Project{
         this.readonly = settings.readonly || false;
         this.disableCopy = settings.disableCopy || false;
     }
+    meta:ProjectMeta;
     pid:string;
     title:string;
     items:FItem[];
@@ -593,16 +596,16 @@ class Project{
 
     // right click actions
 
-    renameFItem(f:FItem){
+    renameFItem(f:FItem,close?:()=>void){
         if(!f) return;
         let newName = prompt("Old name: "+f.name+"\n\nEnter new name: ",f.name);
         if(newName == f.name || newName == null || newName == ""){
-            close();
+            if(close) close();
             return;
         }
         if(newName.includes("/") || newName.includes("..")){
             alert("Invalid file/folder name");
-            close();
+            if(close) close();
             return;
         }
         socket.emit("renameFItem",f.p.pid,calcFolderPath(f.folder),f.name,newName,((res:number)=>{
@@ -614,7 +617,7 @@ class Project{
                 if(f._fi) f._fi.textContent = newName;
             }
             else if(f._fi) f._fi.children[0].children[1].textContent = newName;
-            close();
+            if(close) close();
         }));
     }
     async deleteFItem(f:FItem){
@@ -665,8 +668,9 @@ class Project{
         f.p.deselectHLItems();
         console.log("Copied "+fclipboard.files.length+" items into the clipboard");
     }
-    async pasteFItems(f:FItem,cb:(list:FItem[])=>void){
+    async pasteFItems(f:FItem,cb:(list:FItem[])=>void,close?:()=>void){
         if(!f) return;
+        if(!fclipboard.files.length) return;
         let folder = (f instanceof FFolder ? f : f.folder);
         // let folder = f.p.lastFolder;
         // if(!folder) folder = f.p.curFile?.folder;
@@ -688,7 +692,7 @@ class Project{
             f.p.hlItems.push(item);
             item._fi.classList.add("hl2");
         }
-        close();
+        if(close) close();
         await saveProject();
         // await wait(500);
         f.p.deselectHLItems();
@@ -1016,7 +1020,7 @@ function setupFItemDropdown(f:FItem,div:HTMLElement){
             closeAllSubMenus();
         }
         if(i == 0){ // rename
-            f.p.renameFItem(f);
+            f.p.renameFItem(f,close);
         }
         else if(i == 1){ // delete
             await f.p.deleteFItem(f);
@@ -1033,14 +1037,16 @@ function setupFItemDropdown(f:FItem,div:HTMLElement){
         else if(i == 4){ // paste
             await f.p.pasteFItems(f,()=>{
                 close();
-            });
+            },close);
         }
-    },(dd)=>{
-        div.classList.add("hl");
-        if(!fclipboard.files.length) dd.children[4].classList.add("disabled");
-    },()=>{
-        div.classList.remove("hl");
     },{
+        onopen:(dd)=>{
+            div.classList.add("hl");
+            if(!fclipboard.files.length) dd.children[4].classList.add("disabled");
+        },
+        onclose:()=>{
+            div.classList.remove("hl");
+        },
         getIcons:()=>{
             return [
                 "edit",
@@ -1716,41 +1722,43 @@ function postSetupEditor(project:Project){
     const ops_cut = document.querySelector(".ops-cut");
     const ops_copy = document.querySelector(".ops-copy");
     const ops_paste = document.querySelector(".ops-paste");
-    async function flashHL(f:FItem){
-        if(!f) return;
-        let ele = (f instanceof FFolder ? f._fiLabel : f._fi);
-        if(!ele) return;
-        ele.classList.add("hl");
-        await wait(200);
-        ele.classList.remove("hl");
-    }
-    ops_rename.addEventListener("click",e=>{
-        if(!project) return;
-        project.renameFItem(project.lastFolder??project.curFile);
-    });
-    ops_delete.addEventListener("click",e=>{
-        if(!project) return;
-        project.deleteFItem(project.curFile);
-    });
-    ops_cut.addEventListener("click",e=>{
-        if(!project) return;
-        let items = project.hlItems.length ? project.hlItems : [project.lastFolder??project.curFile];
-        for(const c of items) flashHL(c);
-        project.cutFItems(project.curFile);
-    });
-    ops_copy.addEventListener("click",e=>{
-        if(!project) return;
-        let items = project.hlItems.length ? project.hlItems : [project.lastFolder??project.curFile];
-        for(const c of items) flashHL(c);
-        project.copyFItems(project.curFile);
-    });
-    ops_paste.addEventListener("click",e=>{
-        if(!project) return;
-        let item = project.lastFolder??project.curFile;
-        project.pasteFItems(item,(effected)=>{
-            // for(const c of effected) flashHL(item);
+    if(ops_rename){
+        async function flashHL(f:FItem){
+            if(!f) return;
+            let ele = (f instanceof FFolder ? f._fiLabel : f._fi);
+            if(!ele) return;
+            ele.classList.add("hl");
+            await wait(200);
+            ele.classList.remove("hl");
+        }
+        ops_rename.addEventListener("click",e=>{
+            if(!project) return;
+            project.renameFItem(project.lastFolder??project.curFile);
         });
-    });
+        ops_delete.addEventListener("click",e=>{
+            if(!project) return;
+            project.deleteFItem(project.curFile);
+        });
+        ops_cut.addEventListener("click",e=>{
+            if(!project) return;
+            let items = project.hlItems.length ? project.hlItems : [project.lastFolder??project.curFile];
+            for(const c of items) flashHL(c);
+            project.cutFItems(project.curFile);
+        });
+        ops_copy.addEventListener("click",e=>{
+            if(!project) return;
+            let items = project.hlItems.length ? project.hlItems : [project.lastFolder??project.curFile];
+            for(const c of items) flashHL(c);
+            project.copyFItems(project.curFile);
+        });
+        ops_paste.addEventListener("click",e=>{
+            if(!project) return;
+            let item = project.lastFolder??project.curFile;
+            project.pasteFItems(item,(effected)=>{
+                // for(const c of effected) flashHL(item);
+            });
+        });
+    }
 }
 
 // PAGE ID
@@ -1997,7 +2005,10 @@ document.addEventListener("mousemove",e=>{
 // Dropdowns
 let subMenus:HTMLElement;
 let overSubMenu = false;
-let subs:any[] = [];
+let subs:{
+    e:HTMLElement,
+    ops:DropdownOptions
+}[] = [];
 setTimeout(()=>{
     subMenus = document.querySelector(".sub-menus") as HTMLElement;
     if(!subMenus) return;
@@ -2011,60 +2022,90 @@ setTimeout(()=>{
 function closeAllSubMenus(){
     for(const s of subs){
         s.e.remove();
-        s.onclose();
+        if(s.ops?.onclose) s.ops?.onclose();
     }
 }
-function setupDropdown(btn:HTMLElement,getLabels:()=>string[],onclick:(i:number)=>void,onopen?:(dd:HTMLElement)=>void,onclose?:()=>void,ops:any={}){
-    btn.addEventListener("contextmenu",e=>{
-        let labels = getLabels();
-        let icons = (ops?.getIcons ? ops?.getIcons() : null) as string[];
-        // if(e.button != 2) return;
+function openDropdown(btn:HTMLElement,getLabels:()=>string[],onclick:(i:number)=>void,ops?:DropdownOptions){
+    let labels = getLabels();
+    let icons = (ops?.getIcons ? ops?.getIcons() : null) as string[];
+    // if(e.button != 2) return;
+    // subMenus.innerHTML = "";
+    closeAllSubMenus();
+    // let rect = btn.getBoundingClientRect();
+    let dd = document.createElement("div");
+    dd.oncontextmenu = function(e){
         e.preventDefault();
-        // subMenus.innerHTML = "";
-        closeAllSubMenus();
-        // let rect = btn.getBoundingClientRect();
-        let dd = document.createElement("div");
-        dd.oncontextmenu = function(e){
-            e.preventDefault();
-        };
-        dd.className = "dropdown";
-        for(let i = 0; i < labels.length; i++){
-            let d = document.createElement("div");
-            let l = labels[i];
-            let icon = icons[i];
-            if(icon){
-                let ic = document.createElement("div");
-                ic.className = "material-symbols-outlined";
-                ic.textContent = icon;
-                d.appendChild(ic);
-            }
-            let lab = document.createElement("div");
-            lab.textContent = l;
-            d.appendChild(lab);
-            d.className = "dd-item";
-            dd.appendChild(d);
-            d.addEventListener("click",function(e){
-                onclick(i);
-            });
+    };
+    dd.className = "dropdown";
+    for(let i = 0; i < labels.length; i++){
+        let d = document.createElement("div");
+        let l = labels[i];
+        let icon = icons[i];
+        if(icon){
+            let ic = document.createElement("div");
+            ic.className = "material-symbols-outlined";
+            ic.textContent = icon;
+            d.appendChild(ic);
         }
-        subMenus.appendChild(dd);
-        console.log("appended");
+        let lab = document.createElement("div");
+        lab.textContent = l;
+        d.appendChild(lab);
+        d.className = "dd-item";
+        dd.appendChild(d);
+        d.addEventListener("click",function(e){
+            onclick(i);
+        });
+    }
+    subMenus.appendChild(dd);
+    console.log("appended");
+    // dd.style.left = (e.clientX)+"px";
+    // dd.style.top = (e.clientY-60)+"px";
+    let rect = btn.getBoundingClientRect();
+    let x = rect.x;
+    let y = rect.bottom;
+    if(!ops?.customPos){
+        let xoff = 0;
+        if(ops?.openToLeft){
+            xoff = -100;
+            x += rect.width;
+        }
+        dd.style.left = (x)+"px";
+        dd.style.top = (y-60)+"px";
+        if(y > innerHeight/2) dd.style.transform = `translate(${xoff}%,-100%)`;
+        else dd.style.transform = `translate(${xoff}%,0px)`;
+    }
+    if(ops?.onopen) ops.onopen(dd);
+    subs.push({
+        e:dd,
+        ops:ops
+        // onclose:ops?.onclose
+    });
+
+    return dd;
+    // requestAnimationFrame(()=>{
+    //     let rect = dd.getBoundingClientRect();
+    //     if(rect.bottom >= innerHeight-20){
+    //         let y = rect.y = innerHeight-20-rect.height - 60;
+    //         dd.style.top = (y)+"px";
+    //     }
+    // });
+}
+type DropdownOptions = {
+    onopen?:(dd:HTMLElement)=>void;
+    onclose?:()=>void;
+    getIcons?:()=>string[];
+    customPos?:boolean;
+    openToLeft?:boolean;
+}
+function setupDropdown(btn:HTMLElement,getLabels:()=>string[],onclick:(i:number)=>void,ops?:DropdownOptions){
+    btn.addEventListener("contextmenu",e=>{
+        e.preventDefault();
+        ops.customPos = true;
+        let dd = openDropdown(btn,getLabels,onclick,ops);
         dd.style.left = (e.clientX)+"px";
         dd.style.top = (e.clientY-60)+"px";
         if(e.clientY > innerHeight/2) dd.style.transform = "translate(0px,-100%)";
         else dd.style.transform = "translate(0px,0px)";
-        onopen(dd);
-        subs.push({
-            e:dd,
-            onclose
-        });
-        // requestAnimationFrame(()=>{
-        //     let rect = dd.getBoundingClientRect();
-        //     if(rect.bottom >= innerHeight-20){
-        //         let y = rect.y = innerHeight-20-rect.height - 60;
-        //         dd.style.top = (y)+"px";
-        //     }
-        // });
     });
 }
 

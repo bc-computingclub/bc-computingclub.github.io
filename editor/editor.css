@@ -149,16 +149,6 @@ div.b-editor-dashboard .material-symbols-outlined{
     align-items:center;
     gap:10px;
 }
-@keyframes OpenProjSettings{
-    0%{
-        translate:0px -5px;
-        opacity:0;
-    }
-    100%{
-        translate:0px 0px;
-        opacity:1;
-    }
-}
 
 .progress-anim{
     animation:ProgressAnim infinite 0.5s cubic-bezier(0.445, 0.05, 0.55, 0.95);
@@ -236,12 +226,24 @@ div.b-editor-dashboard .material-symbols-outlined{
     flex-direction:column;
     gap:3px;
     padding:10px;
+    & > button.icon-btn.regular{
+        background-color:var(--bg);
+        color:var(--col);
+        padding:6px 12px;
+        margin:2px 4px;
+    }
+    & > button.sel{
+        /* background-color:var(--secondary-bg-col) !important; */
+        /* background-color:var(--darken2) !important; */
+        background-color:var(--col) !important;
+        color:var(--bg) !important;
+    }
     & > button::before{
         height:0%;
         opacity:0;
         transition:all 0.1s ease-out;
         content:"";
-        background-color:white;
+        background-color:var(--col);
         border-radius:5rem;
         width:5px;
         position:absolute;
@@ -293,13 +295,13 @@ div.b-editor-dashboard .material-symbols-outlined{
 .menu-project-dashboard{
     &{
         .b-new-project{
-            background-color:var(--experiment-col);
+            background-color:var(--experiment-col) !important;
         }
         .b-open-project{
-            background-color:var(--experiment-col);
+            background-color:var(--experiment-col) !important;
         }
         .b-open-project.challenge{
-            background-color:var(--practice-col);
+            background-color:var(--practice-col) !important;
         }
     }
     /* &::after{

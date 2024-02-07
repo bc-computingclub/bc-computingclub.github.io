@@ -37,7 +37,7 @@
 }
 
 .icon-btn.accent{
-    background-color:var(--cta-btn-col);
+    background-color:var(--cta-btn-col) !important;
     color:whitesmoke;
 }
 .icon-btn.regular{
@@ -134,14 +134,14 @@ button.icon-btn-single:hover{
     flex-direction:column;
     justify-content:stretch;
 
-    & input{
+    /* & input{
         background-color:var(--c-bg);
         border:none;
         border-radius:5px;
         padding:5px 10px;
         font-family:var(--font);
         font-size:14px;
-    }
+    } */
 }
 .menu::before{
     content:"";
@@ -255,6 +255,16 @@ button.icon-btn-single:hover{
     }
     100%{
         transform:rotate(720deg);
+    }
+}
+@keyframes OpenProjSettings{
+    0%{
+        translate:0px -5px;
+        opacity:0;
+    }
+    100%{
+        translate:0px 0px;
+        opacity:1;
     }
 }
 
@@ -429,6 +439,7 @@ body .nav-links > .active{
     justify-content:space-between;
 }
 .flx-al{
+    display:flex;
     align-items:center;
 }
 
@@ -1043,11 +1054,15 @@ input[type="checkbox"]{
     padding:4px;
     border-radius:7px;
     position:absolute;
-    z-index:99;
+    z-index:20;
     pointer-events:all;
     min-width:200px;
     user-select:none;
     -webkit-user-select:none;
+    /* box-shadow:0px 4px 5px rgba(0,0,0,0.2); */
+    box-shadow:0px 4px 8px rgba(0,0,0,0.07);
+
+    animation:OpenProjSettings 0.15s ease-out;
 }
 .dd-item{
     padding:5px;
@@ -1072,7 +1087,7 @@ input[type="checkbox"]{
 /* callouts */
 .callout{
     position:absolute;
-    z-index:5;
+    z-index:7;
     padding:8px 14px;
     /* border:solid 1px gray; */
     /* background-color:var(--bg-col); */
@@ -1082,9 +1097,14 @@ input[type="checkbox"]{
     width:max-content;
     max-width:150px;
     border-radius:4px;
-    animation:AddBubble forwards 0.35s ease-out;
     position:relative;
     --left:9px;
+
+    /* box-shadow:0px 4px 5px rgba(0,0,0,0.4); */
+    box-shadow:0px 4px 8px rgba(0,0,0,0.2);
+
+    animation:OpenProjSettings 0.15s ease-out;
+    /* animation:AddBubble forwards 0.35s ease-out; */
 }
 .callout::after{
     content:"";

@@ -1,5 +1,5 @@
-import { io, server, CredentialResData, User, users, getUserBySock, sanitizeEmail, getProject, attemptToGetProject, access, readdir, read, mkdir, removeFile, write, ULFile, ProjectMeta, allProjects, UserChallengeData, Project, getProject2, ULItem, ULFolder, rename, removeFolder } from "./connection";
-import { Challenge, ChallengeData, ChallengeGet, challenges } from "./s_challenges";
+import { io, server, CredentialResData, User, users, getUserBySock, sanitizeEmail, getProject, attemptToGetProject, access, readdir, read, mkdir, removeFile, write, ULFile, ProjectMeta, allProjects, UserChallengeData, Project, getProject2, ULItem, ULFolder, rename, removeFolder, getDefaultProjectMeta } from "./connection";
+import { CSubmission, Challenge, ChallengeData, ChallengeGet, challenges } from "./s_challenges";
 import fs from "fs";
 import { createInterface } from "readline";
 import crypto from "crypto";
@@ -254,7 +254,7 @@ io.on("connection",socket=>{
             return;
         }
 
-        console.log("restoring... from PID: ",pid);
+        // console.log("restoring... from PID: ",pid);
 
         let p = await attemptToGetProject(user,pid);
         // let p = getProject2(user.email,pid);
@@ -289,7 +289,10 @@ io.on("connection",socket=>{
         switch(section){
             case ProjectGroup.personal:{
                 // data = user.projects.map(v=>v.serialize()?.serialize());
-                data = user.pMeta.map(v=>v.serialize());
+                data = user.pMeta.filter(v=>v.cid == null).map(v=>v.serialize());
+            } break;
+            case ProjectGroup.challenges:{
+                data = user.pMeta.filter(v=>v.cid != null).map(v=>v.serialize()); // probably need to optimize the filters at some point
             } break;
         }
         
@@ -389,12 +392,19 @@ io.on("connection",socket=>{
         let user = getUserBySock(socket.id);
         if(!user) return;
 
+        let ch = challenges.get(cid);
+        if(!ch){
+            f(null);
+            return;
+        }
         let p = await createChallengeProject(user,cid);
         if(typeof p == "number"){
             console.log("Err: failed starting challenge with error code: "+p);
             f(p);
             return;
         }
+        ch.sub.push(new CSubmission("",user.name,p.pid));
+        await ch.save();
 
         f(p.pid);
         console.log(">> created challenge project");
@@ -575,16 +585,118 @@ io.on("connection",socket=>{
             f(2);
             return;
         }
+
         m.name = newName;
-        let p = user.projects.find(v=>v.pid == pid);
-        if(p) p.name = newName;
+        // let p = user.projects.find(v=>v.pid == pid);
+        // if(p) p.name = newName;
         await user.saveToFile();
 
         m.name = newName;
         f(0);
     });
-    socket.on("deleteProject",(pid:string)=>{
+    socket.on("updatePMeta",async (pid:string,data:any,f:(res:number)=>void)=>{
+        if(!valVar2(pid,"string",f)) return;
+        if(!valVar2(data,"object",f)) return;
 
+        let user = getUserBySock(socket.id);
+        if(!user){
+            f(1);
+            return;
+        }
+
+        let m = user.pMeta.find(v=>v.pid == pid);
+        if(!m){
+            f(2);
+            return;
+        }
+
+        // let p = user.projects.find(v=>v.pid == pid);
+
+        if(data.name) if(valVar(data.name,"string")){
+            m.name = data.name;
+            // if(p) p.name = data.name;
+        }
+        if(data.desc) if(valVar(data.desc,"string")){
+            m.desc = data.desc;
+            // if(p) p.desc = data.desc;
+        }
+        
+        await user.saveToFile();
+
+        // m.name = newName;
+        f(0);
+    });
+    socket.on("deleteProject",async (pid:string,f:(res:number)=>void)=>{
+        if(!valVar2(pid,"string",f)) return;
+
+        let user = getUserBySock(socket.id);
+        if(!user){
+            f(1);
+            return;
+        }
+
+        let m = user.pMeta.find(v=>v.pid == pid);
+        if(!m){
+            f(2);
+            return;
+        }
+
+        let p = user.projects.find(v=>v.pid == pid);
+        if(p){
+            user.projects.splice(user.projects.indexOf(p),1);
+            allProjects.delete(p.getRefStr());
+        }
+        if(m.cid){
+            //remove from challenges
+            user.challenges.splice(user.challenges.findIndex(v=>v.pid == pid),1);
+            // remove from submissions
+            let ch = challenges.get(m.cid);
+            if(ch){
+                ch.sub.splice(ch.sub.findIndex(v=>v.pid == pid),1);
+                await ch.save();
+            }
+            else console.log("warn: couldn't find challenge: ",m.cid);
+        }
+        user.pMeta.splice(user.pMeta.indexOf(m),1);
+        await user.saveToFile();
+
+        let res = await removeFolder("../project/"+user.email+"/"+pid);
+        f(res ? 0 : 3);
+    });
+    socket.on("unlinkProject",async (pid:string,f:(res:number)=>void)=>{
+        if(!valVar2(pid,"string",f)) return;
+
+        let user = getUserBySock(socket.id);
+        if(!user){
+            f(1);
+            return;
+        }
+
+        let m = user.pMeta.find(v=>v.pid == pid);
+        if(!m){
+            f(2);
+            return;
+        }
+
+        let p = user.projects.find(v=>v.pid == pid);
+        if(p){
+            p.cid = undefined;
+        }
+        if(m.cid){
+            //remove from challenges
+            user.challenges.splice(user.challenges.findIndex(v=>v.pid == pid),1);
+            // remove from submissions
+            let ch = challenges.get(m.cid);
+            if(ch){
+                ch.sub.splice(ch.sub.findIndex(v=>v.pid == pid),1);
+                await ch.save();
+            }
+            else console.log("warn: couldn't find challenge: ",m.cid);
+        }
+        m.cid = undefined;
+        await user.saveToFile();
+
+        f(0);
     });
 });
 function parseFolderStr(p:Project,path:string){
@@ -620,13 +732,14 @@ async function createChallengeProject(user:User,cid:string):Promise<Project|numb
     await user.saveToFile();
 
     // setup/create project
-    let p = new Project(pid,c.name,user.email);
+    let p = new Project(pid,user.email,getDefaultProjectMeta(user,pid,c.name));
     allProjects.set(pid,p);
     p.cid = cid;
     // let m = user.pMeta.find(v=>v.pid == pid);
     // if(m) m.cid = cid;
     // else console.log(">> Err: couldn't find meta when starting challenge");
-    let m = new ProjectMeta(user,pid,p.name,p.desc,p.isPublic);
+    // let m = new ProjectMeta(user,pid,p.name,p.desc,p.isPublic);
+    let m = p.meta;
     m.cid = p.cid;
     user.pMeta.push(m);
     user.saveToFile();
@@ -642,6 +755,7 @@ async function createProject(user:User,name:string,desc:string,isPublic=false){
 }
 enum ProjectGroup{
     personal,
+    challenges,
     recent,
     saved,
     custom

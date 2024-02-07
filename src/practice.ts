@@ -24,6 +24,7 @@ let ipCounter = 0;
 
 class Challenge {
     constructor(cID: string, name: string, desc: string, inProgress: boolean, imgURL: string, pid: string, submitted: boolean, difficulty: string, ongoing:boolean, submission_count:string) {
+        if(!imgURL || imgURL == "") imgURL = "/images/fillerthumbnail.png";
         this.name = name;
         this.desc = desc;
         this.inProgress = inProgress;
@@ -53,7 +54,7 @@ class Challenge {
     static from(data:any){
         let c = new Challenge(data.id,data.name,data.desc,false,data.imgUrl,null,false,data.difficulty,data.ongoing,"0");
         c.timespan = data.timespan;
-        c.sub_highlights = data.hl.map((v:any)=>new Submission(v.url,v.who));
+        c.sub_highlights = data.hl.map((v:any)=>new Submission(v.url||"/images/fillerthumbnail.png",v.who));
         c.inProgress = data.inProgress;
         // c.completed = data.completed;
         return c;
@@ -380,7 +381,21 @@ function setChallengeHTML(c: Challenge) {
         let tempSpan = document.createElement("span");
         tempSpan.className = "c-details material-symbols-outlined";
         tempSpan.innerHTML = "more_horiz";
-        tempSpan.addEventListener("click", () =>  createRemoveBtn(c.cID, tempCard));
+        // tempSpan.addEventListener("click", () =>  createRemoveBtn(c.cID, tempCard));
+        tempSpan.addEventListener("click",e=>{
+            openDropdown(tempSpan,()=>[
+                "Delete Progress"
+            ],(i)=>{
+                if(i == 0){
+                    confirmProgressDeletion(c.cID);
+                }
+            },{
+                getIcons(){
+                    return ["delete"];
+                },
+                openToLeft:true
+            })
+        });
         tempCard.appendChild(tempSpan);
     }
     if (c.submitted) {
@@ -392,7 +407,7 @@ function setChallengeHTML(c: Challenge) {
     return tempCard;
 }
 
-function createRemoveBtn(cID:Challenge["cID"], elm:HTMLElement) {
+function createRemoveBtn(cID:Challenge["cID"], elm:HTMLElement) { // Caleb: I migrated this to my dropdown api thingy
     console.log("Creating Remove Button")
     let deleteDiv = document.createElement("div") as HTMLElement;
     deleteDiv.classList.add("c-delete-div");
