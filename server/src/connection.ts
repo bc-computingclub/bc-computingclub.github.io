@@ -2,6 +2,7 @@ import * as http from "http";
 import express, { NextFunction, Request, Response } from "express";
 import {Server, Socket} from "socket.io";
 import fs from "fs";
+import { challenges } from "./s_challenges";
 
 console.log("started...");
 const app = express();
@@ -58,7 +59,7 @@ function genPID(){
     return crypto.randomUUID();
 }
 export function getDefaultProjectMeta(user:User,pid:string,name:string){
-    return new ProjectMeta(user,pid,name,"A project for experiments.",false);
+    return new ProjectMeta(user,pid,name,"A project for experiments.",false,false);
 }
 export class Project{
     constructor(pid:string,ownerEmail:string,meta:ProjectMeta){
@@ -116,7 +117,7 @@ export class Project{
             return;
         }
         // return this.meta;
-        let m = new ProjectMeta(this._owner,this.pid,this.meta.name,this.meta.desc,this.meta.isPublic);
+        let m = new ProjectMeta(this._owner,this.pid,this.meta.name,this.meta.desc,this.meta.isPublic,this.meta.submitted);
         m.cid = this.cid;
         return m;
         // return JSON.stringify({
@@ -148,18 +149,20 @@ export interface CredentialResData{
     _lastLoggedIn:string;
 }
 export class ProjectMeta{
-    constructor(user:User,pid:string,name:string,desc:string,isPublic:boolean){
+    constructor(user:User,pid:string,name:string,desc:string,isPublic:boolean,submitted:boolean){
         this.user = user;
         this.pid = pid;
         this.name = name;
         this.desc = desc;
         this.isPublic = isPublic;
+        this.submitted = submitted || false;
     }
     user:User;
     pid:string;
     name:string;
     desc:string;
     isPublic:boolean;
+    submitted:boolean;
 
     cid?:string;
     
@@ -172,12 +175,13 @@ export class ProjectMeta{
             desc:this.desc,
             isPublic:this.isPublic,
             // cid:challenge?.cid
-            cid:this.cid
+            cid:this.cid,
+            sub:this.submitted
         });
     }
     static deserialize(user:User,str:string){
         let o = JSON.parse(str);
-        let p = new ProjectMeta(user,o.pid,o.name,o.desc,o.isPublic);
+        let p = new ProjectMeta(user,o.pid,o.name,o.desc,o.isPublic,o.sub);
         p.cid = o.cid;
         // console.log("DESEL",o,p);
         return p;
@@ -209,6 +213,9 @@ export class User{
         else this.pMeta = [];
         this.projects = [];
         this.challenges = [];
+
+        // temp for now
+        this.uid = email;
     }
     name:string;
     email:string;
@@ -216,6 +223,7 @@ export class User{
     picture:string;
     joinDate:string;
     lastLoggedIn:string;
+    uid:string;
 
     private tokens:string[];
     private sockIds:string[];
@@ -392,7 +400,7 @@ export async function attemptToGetProject(user:User,pid:string){
     // console.log("$ found files! fetching meta...");
     let meta = user.pMeta.find(v=>v.pid == pid);
     if(!meta){
-        meta = new ProjectMeta(user,pid,"New Project","A project description!",false);
+        meta = new ProjectMeta(user,pid,"New Project","A project description!",false,false);
         console.log("$ couldn't find meta, making up some...");
         console.log("$ loading meta!",meta.name,meta.desc);
 

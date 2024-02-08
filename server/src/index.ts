@@ -354,7 +354,7 @@ io.on("connection",socket=>{
             if(filter.ongoing?.length) if(!ongoing) continue;
             // if(filter.ongoing?.length ? !ongoing : ongoing) continue;
 
-            // if(filter.completed?.length) if(!v.isCompleted(user)) continue;
+            if(filter.completed?.length) if(!v.isCompleted(user)) continue;
             
             if(i >= skip) list.push(v.serializeGet(user));
 
@@ -390,30 +390,102 @@ io.on("connection",socket=>{
         console.log("starting challenge...",cid);
 
         let user = getUserBySock(socket.id);
-        if(!user) return;
-
-        let ch = challenges.get(cid);
-        if(!ch){
+        if(!user){
             f(null);
             return;
         }
+
+        // let ch = challenges.get(cid);
+        // if(!ch){
+        //     f(null);
+        //     return;
+        // }
         let p = await createChallengeProject(user,cid);
         if(typeof p == "number"){
             console.log("Err: failed starting challenge with error code: "+p);
             f(p);
             return;
         }
-        ch.sub.push(new CSubmission("",user.name,p.pid));
-        await ch.save();
+        // ch.sub.push(new CSubmission("",user.name,p.pid));
+        // await ch.save();
 
         f(p.pid);
         console.log(">> created challenge project");
+    });
+    socket.on("submitChallenge",async (pid:string,f:(res:number)=>void)=>{
+        if(!valVar2(pid,"string",f)) return;
+
+        let user = getUserBySock(socket.id);
+        if(!user){
+            f(1);
+            return;
+        }
+
+        let p = getProject2(user.uid,pid);
+        if(!p){
+            f(2);
+            return;
+        }
+        if(p.cid == null){
+            f(3); // wasn't a challenge project
+            return;
+        }
+
+        let ch = challenges.get(p.cid);
+        if(!ch){
+            f(4); // challenge doesn't exist anymore
+            return;
+        }
+        
+        ch.sub.push(new CSubmission("",user.name,p.pid));
+        await ch.save();
+        p.meta.submitted = true;
+        await user.saveToFile();
+
+        f(0);
+        console.log(">> submitted challenge");
+    });
+    socket.on("unsubmitChallenge",async (pid:string,f:(res:number)=>void)=>{
+        if(!valVar2(pid,"string",f)) return;
+
+        let user = getUserBySock(socket.id);
+        if(!user){
+            f(1);
+            return;
+        }
+
+        let p = getProject2(user.uid,pid);
+        if(!p){
+            f(2);
+            return;
+        }
+        if(p.cid == null){
+            f(3); // wasn't a challenge project
+            return;
+        }
+
+        let ch = challenges.get(p.cid);
+        if(!ch){
+            f(4); // challenge doesn't exist anymore
+            return;
+        }
+        
+        ch.sub.splice(ch.sub.findIndex(v=>v.pid == pid),1);
+        await ch.save();
+        p.meta.submitted = false;
+        await user.saveToFile();
+
+        f(0);
+        console.log(">> unsubmitted challenge");
     });
     socket.on("continueChallenge",async (cid:string,f:(data:any)=>void)=>{
         if(!valVar2(cid,"string",f)) return;
         
         let user = getUserBySock(socket.id);
-        if(!user) return;
+        if(!user){
+            f(null);
+            return;
+        }
 
         let m = user.challenges.find(v=>v.cid == cid);
         if(!m){
@@ -423,7 +495,27 @@ io.on("connection",socket=>{
         f(m.pid);
     });
     socket.on("deleteChallengeProgress",async (cid:string,f:(data:any)=>void)=>{
-        
+        if(!valVar2(cid,"string",f)) return;
+
+        let user = getUserBySock(socket.id);
+        if(!user){
+            f(1);
+            return;
+        }
+
+        let m = user.pMeta.find(v=>v.cid == cid);
+        if(!m){
+            f(2);
+            return;
+        }
+
+        let p = user.projects.find(v=>v.pid == m?.pid);
+        if(!p){
+            f(3);
+            return;
+        }
+
+        deleteProject(user,p,f);
     });
 
     // 
@@ -642,26 +734,12 @@ io.on("connection",socket=>{
         }
 
         let p = user.projects.find(v=>v.pid == pid);
-        if(p){
-            user.projects.splice(user.projects.indexOf(p),1);
-            allProjects.delete(p.getRefStr());
+        if(!p){
+            f(3);
+            return;
         }
-        if(m.cid){
-            //remove from challenges
-            user.challenges.splice(user.challenges.findIndex(v=>v.pid == pid),1);
-            // remove from submissions
-            let ch = challenges.get(m.cid);
-            if(ch){
-                ch.sub.splice(ch.sub.findIndex(v=>v.pid == pid),1);
-                await ch.save();
-            }
-            else console.log("warn: couldn't find challenge: ",m.cid);
-        }
-        user.pMeta.splice(user.pMeta.indexOf(m),1);
-        await user.saveToFile();
 
-        let res = await removeFolder("../project/"+user.email+"/"+pid);
-        f(res ? 0 : 3);
+        deleteProject(user,p,f);
     });
     socket.on("unlinkProject",async (pid:string,f:(res:number)=>void)=>{
         if(!valVar2(pid,"string",f)) return;
@@ -688,8 +766,11 @@ io.on("connection",socket=>{
             // remove from submissions
             let ch = challenges.get(m.cid);
             if(ch){
-                ch.sub.splice(ch.sub.findIndex(v=>v.pid == pid),1);
-                await ch.save();
+                let ind = ch.sub.findIndex(v=>v.pid == pid);
+                if(ind != -1){
+                    ch.sub.splice(ind,1);
+                    await ch.save();
+                }
             }
             else console.log("warn: couldn't find challenge: ",m.cid);
         }
@@ -699,6 +780,33 @@ io.on("connection",socket=>{
         f(0);
     });
 });
+async function deleteProject(user:User,p:Project,f:(res:number)=>void){
+    if(p){
+        user.projects.splice(user.projects.indexOf(p),1);
+        allProjects.delete(p.getRefStr());
+    }
+    let pid = p.pid;
+    if(p.cid){
+        //remove from challenges
+        user.challenges.splice(user.challenges.findIndex(v=>v.pid == pid),1);
+        // remove from submissions
+        let ch = challenges.get(p.cid);
+        if(ch){
+            let ind = ch.sub.findIndex(v=>v.pid == pid);
+            if(ind != -1){
+                ch.sub.splice(ind,1);
+                await ch.save();
+            }
+        }
+        else console.log("warn: couldn't find challenge: ",p.cid);
+    }
+    user.pMeta.splice(user.pMeta.findIndex(v=>v.pid == pid),1);
+    await user.saveToFile();
+
+    let res = await removeFolder("../project/"+user.email+"/"+pid);
+    f(res ? 0 : 3);
+}
+
 function parseFolderStr(p:Project,path:string){
     if(!p) return;
     let s = path.split("/").filter(v=>v != null && v != "");
@@ -746,8 +854,8 @@ async function createChallengeProject(user:User,cid:string):Promise<Project|numb
     return p;
 }
 async function createProject(user:User,name:string,desc:string,isPublic=false){
-    let pid = crypto.randomUUID();
-    let meta = new ProjectMeta(user,pid,name,desc,isPublic);
+    let pid = genPID();
+    let meta = new ProjectMeta(user,pid,name,desc,isPublic,false);
     let p = user.createProject(meta,pid);
     let path = "../project/"+user.email+"/"+p.pid;
     await mkdir(path);

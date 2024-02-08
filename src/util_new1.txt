@@ -612,142 +612,116 @@ class Project {
 
   // right click actions
 
-  renameFItem(f: FItem, close?: () => void) {
-    if (!f) return;
-    let newName = prompt(
-      "Old name: " + f.name + "\n\nEnter new name: ",
-      f.name,
-    );
-    if (newName == f.name || newName == null || newName == "") {
-      if (close) close();
-      return;
+    renameFItem(f:FItem,close?:()=>void){
+        if(!f) return;
+        let newName = prompt("Old name: "+f.name+"\n\nEnter new name: ",f.name);
+        if(newName == f.name || newName == null || newName == ""){
+            if(close) close();
+            return;
+        }
+        if(newName.includes("/") || newName.includes("..")){
+            alert("Invalid file/folder name");
+            if(close) close();
+            return;
+        }
+        socket.emit("renameFItem",f.p.pid,calcFolderPath(f.folder),f.name,newName,((res:number)=>{
+            console.log("RES RENAME: ",res);
+            if(res != 0) return;
+            f.name = newName;
+            if(f instanceof FFile){
+                if(f.link) f.link.children[0].textContent = newName;
+                if(f._fi) f._fi.textContent = newName;
+            }
+            else if(f._fi) f._fi.children[0].children[1].textContent = newName;
+            if(close) close();
+        }));
     }
-    if (newName.includes("/") || newName.includes("..")) {
-      alert("Invalid file/folder name");
-      if (close) close();
-      return;
+    async deleteFItem(f:FItem){
+        if(!f) return;
+        let list:FItem[] = [];
+        if(f.p.hlItems.length){
+            for(const f1 of f.p.hlItems){
+                list.push(f1);
+            }
+        }
+        else list.push(f);
+        if(!confirm("Are you sure you want to delete: ["+list.map(v=>v.name).join(", ")+"] ?\n\nThere is no reversing this option!")) return;
+        for(const f1 of list){
+            let res = await new Promise<number>(resolve=>{
+                socket.emit("deleteFItem",f1.p.pid,calcFolderPath(f1.folder),f1.name,((res:number)=>{
+                    console.log("RES delete: ",res);
+                    resolve(res);
+                }));
+            });
+            if(res == 0){
+                let items = (f1.folder ? f1.folder.items : f1.p.items);
+                items.splice(items.indexOf(f1),1);
+                f1._fi.remove();
+            }
+            await wait(100);
+        }
+        f.p.deselectHLItems();
     }
-    socket.emit(
-      "renameFItem",
-      f.p.pid,
-      calcFolderPath(f.folder),
-      f.name,
-      newName,
-      (res: number) => {
-        console.log("RES RENAME: ", res);
-        if (res != 0) return;
-        f.name = newName;
-        if (f instanceof FFile) {
-          if (f.link) f.link.children[0].textContent = newName;
-          if (f._fi) f._fi.textContent = newName;
-        } else if (f._fi) f._fi.children[0].children[1].textContent = newName;
-        if (close) close();
-      },
-    );
-  }
-  async deleteFItem(f: FItem) {
-    if (!f) return;
-    let list: FItem[] = [];
-    if (f.p.hlItems.length) {
-      for (const f1 of f.p.hlItems) {
-        list.push(f1);
-      }
-    } else list.push(f);
-    if (
-      !confirm(
-        "Are you sure you want to delete: [" +
-        list.map((v) => v.name).join(", ") +
-        "] ?\n\nThere is no reversing this option!",
-      )
-    )
-      return;
-    for (const f1 of list) {
-      let res = await new Promise<number>((resolve) => {
-        socket.emit(
-          "deleteFItem",
-          f1.p.pid,
-          calcFolderPath(f1.folder),
-          f1.name,
-          (res: number) => {
-            console.log("RES delete: ", res);
-            resolve(res);
-          },
-        );
-      });
-      if (res == 0) {
-        let items = f1.folder ? f1.folder.items : f1.p.items;
-        items.splice(items.indexOf(f1), 1);
-        f1._fi.remove();
-      }
-      await wait(100);
+    cutFItems(f:FItem){
+        if(!f) return;
+        fclipboard.files = [];
+        if(f.p.hlItems.length) for(const f1 of f.p.hlItems){
+            fclipboard.files.push(f1);
+        }
+        else fclipboard.files.push(f);
+        fclipboard.action = "cut";
+        f.p.deselectHLItems();
+        console.log("Cut "+fclipboard.files.length+" items into the clipboard");
     }
-    f.p.deselectHLItems();
-  }
-  cutFItems(f: FItem) {
-    if (!f) return;
-    fclipboard.files = [];
-    if (f.p.hlItems.length)
-      for (const f1 of f.p.hlItems) {
-        fclipboard.files.push(f1);
-      }
-    else fclipboard.files.push(f);
-    fclipboard.action = "cut";
-    f.p.deselectHLItems();
-    console.log("Cut " + fclipboard.files.length + " items into the clipboard");
-  }
-  copyFItems(f: FItem) {
-    if (!f) return;
-    fclipboard.files = [];
-    if (f.p.hlItems.length)
-      for (const f1 of f.p.hlItems) {
-        fclipboard.files.push(f1);
-      }
-    else fclipboard.files.push(f);
-    fclipboard.action = "copy";
-    f.p.deselectHLItems();
-    console.log(
-      "Copied " + fclipboard.files.length + " items into the clipboard",
-    );
-  }
-  async pasteFItems(f: FItem, cb: (list: FItem[]) => void, close?: () => void) {
-    if (!f) return;
-    if (!fclipboard.files.length) return;
-    let folder = f instanceof FFolder ? f : f.folder;
-    // let folder = f.p.lastFolder;
-    // if(!folder) folder = f.p.curFile?.folder;
-    let amt = fclipboard.files.length;
-    let effected: FItem[] = [];
-    for (const f1 of fclipboard.files) {
-      let item: FItem;
-      if (fclipboard.action == "cut") {
-        await moveFile(f1, folder, true);
-        item = f1;
-        effected.push(f1);
-      } else if (fclipboard.action == "copy") {
-        if (f1 instanceof FFile)
-          item = f.p.createFile(f1.name, f1.text, null, folder, true);
-        else if (f1 instanceof FFolder)
-          item = f.p.createFolder(f1.name, folder, true);
-        effected.push(item);
-      }
-      if (!item) continue;
-      f.p.hlItems.push(item);
-      item._fi.classList.add("hl2");
+    copyFItems(f:FItem){
+        if(!f) return;
+        fclipboard.files = [];
+        if(f.p.hlItems.length) for(const f1 of f.p.hlItems){
+            fclipboard.files.push(f1);
+        }
+        else fclipboard.files.push(f);
+        fclipboard.action = "copy";
+        f.p.deselectHLItems();
+        console.log("Copied "+fclipboard.files.length+" items into the clipboard");
     }
-    if (close) close();
-    await saveProject();
-    // await wait(500);
-    f.p.deselectHLItems();
-    for (const f1 of effected) {
-      if (f1) f1.p.flashAddHLItem(f1);
+    async pasteFItems(f:FItem,cb:(list:FItem[])=>void,close?:()=>void){
+        if(!f) return;
+        if(!fclipboard.files.length) return;
+        let folder = (f instanceof FFolder ? f : f.folder);
+        // let folder = f.p.lastFolder;
+        // if(!folder) folder = f.p.curFile?.folder;
+        let amt = fclipboard.files.length;
+        let effected:FItem[] = [];
+        for(const f1 of fclipboard.files){
+            let item:FItem;
+            if(fclipboard.action == "cut"){
+                await moveFile(f1,folder,true);
+                item = f1;
+                effected.push(f1);
+            }
+            else if(fclipboard.action == "copy"){
+                if(f1 instanceof FFile) item = f.p.createFile(f1.name,f1.text,null,folder,true);
+                else if(f1 instanceof FFolder) item = f.p.createFolder(f1.name,folder,true);
+                effected.push(item);
+            }
+            if(!item) continue;
+            f.p.hlItems.push(item);
+            item._fi.classList.add("hl2");
+        }
+        if(close) close();
+        await saveProject();
+        // await wait(500);
+        f.p.deselectHLItems();
+        for(const f1 of effected){
+            if(f1) f1.p.flashAddHLItem(f1);
+        }
+        if(fclipboard.action == "cut"){
+            fclipboard.files = [];
+            fclipboard.action = null;
+        }
+        console.log("Pasted "+amt+" items from the clipboard");
+        if(cb) cb(effected);
     }
-    if (fclipboard.action == "cut") {
-      fclipboard.files = [];
-      fclipboard.action = null;
-    }
-    console.log("Pasted " + amt + " items from the clipboard");
-    if (cb) cb(effected);
-  }
 
   //
 
@@ -925,6 +899,30 @@ class Project {
     return this.disableCopy;
   }
 }
+
+
+// submitting challenges
+
+async function submitChallenge(pid:string){
+    let res = await new Promise<number>(resolve=>{
+        socket.emit("submitChallenge",pid,(res:number)=>{
+            resolve(res);
+        });
+    });
+    if(res != 0) alert("Failed to submit challenge, error code: "+res);
+    else console.log(">> submitted challenge");
+}
+async function unsubmitChallenge(pid:string){
+    let res = await new Promise<number>(resolve=>{
+        socket.emit("unsubmitChallenge",pid,(res:number)=>{
+            resolve(res);
+        });
+    });
+    if(res != 0) alert("Failed to unsubmit challenge, error code: "+res);
+    else console.log(">> unsubmitted challenge");
+}
+
+// filtering
 
 let fileList: HTMLElement;
 let hoverFileListItem: FFile;
@@ -1228,6 +1226,7 @@ function createFolderListItem(f: FFolder) {
   div.innerHTML = `
         <div class=fi-label>
             <div class="material-symbols-outlined b-expand">expand_more</div>
+            <div class="ic-folder"></div>
             <div>${f.name}</div>
         </div>
         <div class="fi-list"></div>
@@ -2215,66 +2214,61 @@ function closeAllSubMenus() {
     if (s.ops?.onclose) s.ops?.onclose();
   }
 }
-function openDropdown(
-  btn: HTMLElement,
-  getLabels: () => string[],
-  onclick: (i: number) => void,
-  ops?: DropdownOptions,
-) {
-  let labels = getLabels();
-  let icons = (ops?.getIcons ? ops?.getIcons() : null) as string[];
-  // if(e.button != 2) return;
-  // subMenus.innerHTML = "";
-  closeAllSubMenus();
-  // let rect = btn.getBoundingClientRect();
-  let dd = document.createElement("div");
-  dd.oncontextmenu = function (e) {
-    e.preventDefault();
-  };
-  dd.className = "dropdown";
-  for (let i = 0; i < labels.length; i++) {
-    let d = document.createElement("div");
-    let l = labels[i];
-    let icon = icons[i];
-    if (icon) {
-      let ic = document.createElement("div");
-      ic.className = "material-symbols-outlined";
-      ic.textContent = icon;
-      d.appendChild(ic);
+function openDropdown(btn:HTMLElement,getLabels:()=>string[],onclick:(i:number)=>void,ops?:DropdownOptions){
+    let labels = getLabels();
+    let icons = (ops?.getIcons ? ops?.getIcons() : null) as string[];
+    // if(e.button != 2) return;
+    // subMenus.innerHTML = "";
+    closeAllSubMenus();
+    // let rect = btn.getBoundingClientRect();
+    let dd = document.createElement("div");
+    dd.oncontextmenu = function(e){
+        e.preventDefault();
+    };
+    dd.className = "dropdown";
+    for(let i = 0; i < labels.length; i++){
+        let d = document.createElement("div");
+        let l = labels[i];
+        let icon = icons[i];
+        if(icon){
+            let ic = document.createElement("div");
+            ic.className = "material-symbols-outlined";
+            ic.textContent = icon;
+            d.appendChild(ic);
+        }
+        let lab = document.createElement("div");
+        lab.textContent = l;
+        d.appendChild(lab);
+        d.className = "dd-item";
+        dd.appendChild(d);
+        d.addEventListener("click",function(e){
+            onclick(i);
+        });
     }
-    let lab = document.createElement("div");
-    lab.textContent = l;
-    d.appendChild(lab);
-    d.className = "dd-item";
-    dd.appendChild(d);
-    d.addEventListener("click", function (e) {
-      onclick(i);
+    subMenus.appendChild(dd);
+    console.log("appended");
+    // dd.style.left = (e.clientX)+"px";
+    // dd.style.top = (e.clientY-60)+"px";
+    let rect = btn.getBoundingClientRect();
+    let x = rect.x;
+    let y = rect.bottom;
+    if(!ops?.customPos){
+        let xoff = 0;
+        if(ops?.openToLeft){
+            xoff = -100;
+            x += rect.width;
+        }
+        dd.style.left = (x)+"px";
+        dd.style.top = (y-60)+"px";
+        if(y > innerHeight/2) dd.style.transform = `translate(${xoff}%,-100%)`;
+        else dd.style.transform = `translate(${xoff}%,0px)`;
+    }
+    if(ops?.onopen) ops.onopen(dd);
+    subs.push({
+        e:dd,
+        ops:ops
+        // onclose:ops?.onclose
     });
-  }
-  subMenus.appendChild(dd);
-  console.log("appended");
-  // dd.style.left = (e.clientX)+"px";
-  // dd.style.top = (e.clientY-60)+"px";
-  let rect = btn.getBoundingClientRect();
-  let x = rect.x;
-  let y = rect.bottom;
-  if (!ops?.customPos) {
-    let xoff = 0;
-    if (ops?.openToLeft) {
-      xoff = -100;
-      x += rect.width;
-    }
-    dd.style.left = x + "px";
-    dd.style.top = y - 60 + "px";
-    if (y > innerHeight / 2) dd.style.transform = `translate(${xoff}%,-100%)`;
-    else dd.style.transform = `translate(${xoff}%,0px)`;
-  }
-  if (ops?.onopen) ops.onopen(dd);
-  subs.push({
-    e: dd,
-    ops: ops,
-    // onclose:ops?.onclose
-  });
 
   return dd;
   // requestAnimationFrame(()=>{

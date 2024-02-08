@@ -761,8 +761,9 @@ body .nav-links > .active{
     }
 }
 .folder-item.close{
-    & > .fi-label .material-symbols-outlined{
+    & > .fi-label .b-expand{
         rotate:-90deg;
+        opacity:0.5;
     }
     & > .fi-list{
         height:0px;
@@ -788,7 +789,29 @@ body .nav-links > .active{
     padding-left:2px;
 }
 .fi-label .b-expand{
+    position:relative;
     font-size:16px;
+    opacity:1;
+}
+.fi-label .ic-folder{
+    &::after{
+        opacity:1;
+        content:"folder_open";
+        font-family:"Material Symbols Outlined";
+        color:var(--cta-btn-col);
+        filter:brightness(1.5);
+        font-weight:bold;
+        font-size:18px;
+        margin-left:-2px;
+        margin-right:4px;
+    }
+}
+.folder-item.close .ic-folder::after{
+    content:"folder";
+    opacity:0.5;
+    color:var(--col);
+    font-weight:300;
+    filter:none;
 }
 .fi-list{
     margin-top:3px;

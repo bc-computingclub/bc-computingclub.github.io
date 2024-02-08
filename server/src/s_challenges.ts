@@ -35,8 +35,10 @@ export class Challenge{
     sub:CSubmission[];
     cnt:number; // submission count
 
-    isCompleted(){
-        return false;
+    isCompleted(user:User){
+        let p = user.pMeta.find(v=>v.cid == this.id);
+        if(!p) return false;
+        return p.submitted;
     }
     isInProgress(user:User){
         return user.challenges.some(v=>v.cid == this.id);
@@ -89,7 +91,7 @@ export class Challenge{
             hl:this.sub.slice(0,2),
             sub:this.sub,
             submission_count:this.cnt,
-            completed:this.isCompleted(),
+            completed:(user ? this.isCompleted(user) : false),
             inProgress:(user ? this.isInProgress(user) : null)
         } as ChallengeGet;
     }
@@ -150,3 +152,16 @@ async function initChallenges(){
     }
 }
 initChallenges();
+
+// THIS ERROR CHECKING CODE NEEDS TO GO SOMEWHERE BUT THAT PLACE DOESN'T EXIST YET
+/**if(p.cid) if(!p.meta.submitted){ 
+        let ch = challenges.get(p.cid);
+        if(!ch) return;
+        let sub = ch.sub.find(v=>v.pid == p.pid);
+        if(!sub) return;
+        if(sub){
+            console.log("$ error: submission misalignment, correcting...");
+            p.meta.submitted = true;
+            p._owner?.saveToFile();
+        }
+    } */
