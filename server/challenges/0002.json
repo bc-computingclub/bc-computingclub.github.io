@@ -1,6 +1,1 @@
-{
-    "name":"Combination Lock",
-    "desc":"Create a combination lock which reveals a secret message when the correct combination is entered.",
-    "imgUrl":"/images/fillerthumbnail.png",
-    "difficulty":"medium"
-}
+{"name":"Combination Lock","desc":"Create a combination lock which reveals a secret message when the correct combination is entered.","imgUrl":"/images/fillerthumbnail.png","difficulty":"medium","timespan":null,"cnt":0,"sub":[]}

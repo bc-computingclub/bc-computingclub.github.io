@@ -34,7 +34,7 @@ body {
 
 .c-home {
     display: grid;
-    grid-template-columns: 1fr 3fr;
+    grid-template-columns: 2fr 7fr;
     gap: 1em;
     padding-block: 1em;
     padding-inline: 10em;
@@ -101,6 +101,7 @@ body {
 }
 
 .c-header {
+    max-height: 35px;
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -180,6 +181,7 @@ body {
 .c-sort-div {
     position: relative;
     overflow: hidden;
+    height: 35px;
 
     &.collapse {
         overflow: visible;
@@ -187,11 +189,12 @@ body {
 }
 
 .c-sort-btn {
+    height: 35px;
+    padding-inline-start: 20px;
+    padding-inline-end: 10px;
     background-color: var(--secondary-bg-col);
     color: var(--col);
     font-family: var(--font) !important;
-    padding-inline-start: 20px;
-    padding-inline-end: 10px;
     border-radius: 3px;
     cursor: pointer;
 }
@@ -390,209 +393,6 @@ body {
     backdrop-filter: blur(5px) brightness(0.2);
     border-radius: 2px;
     color: var(--secondary-col);
-}
-
-.menu-challenge-menu {
-    width: 60em !important;
-    height: 35em !important;
-    animation: AddBubble forwards 0.35s ease-out;
-}
-
-.c-popup {
-    position: absolute;
-    color: var(--col);
-    background-color: var(--bg-col);
-
-    width: 100%;
-    height: 100% !important;
-
-    border-radius: 3px;
-
-    display: grid;
-    grid-template-columns: 7fr 3fr;
-    gap: 1em;
-    padding: 1em;
-}
-
-.c-popup-left {
-    display: grid;
-    grid-template-rows: 3em 1fr;
-    align-content: space-between;
-    gap: 1em;
-}
-
-.c-popup-title,
-.c-attempted,
-.c-popup-sub-title {
-    text-transform: uppercase;
-}
-
-.c-attempted {
-    padding-block: 1em;
-    padding-inline: 2em;
-    background-color: var(--secondary-bg-col);
-    border-radius: 3px;
-    color: var(--col);
-}
-
-.c-popup-right {
-    display: grid;
-    grid-template-rows: 3em 3fr 1fr 1fr;
-    gap: 1em;
-    align-content: space-between;
-}
-
-.c-popup-img-div {
-    display: flex;
-    flex-direction: column;
-    border-radius: 3px;
-    gap: .5em;
-}
-
-.c-popup-img {
-    aspect-ratio: 4/3;
-    max-width: 100%;
-    ;
-    border-radius: 3px;
-    margin: auto;
-    margin-top: 0px;
-}
-
-.c-popup-img-text {
-    align-self: flex-end;
-    text-transform: uppercase;
-    font-size: 13px;
-}
-
-.c-popup-implementations-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
-
-.c-popup-implementations {
-    display: grid;
-    grid-template-rows: auto auto;
-    gap: 1em;
-}
-
-.c-implementations {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 1em;
-
-    &.empty {
-        grid-template-columns: 1fr;
-        height: 6em;
-        align-items: start;
-    }
-}
-
-.c-implementation {
-    display: grid;
-    grid-template-rows: auto auto;
-    gap: .5em;
-    padding: .5em;
-    background-color: var(--bg-col);
-    cursor: pointer;
-}
-
-.c-implementation-img {
-    aspect-ratio: 4/3;
-    width: 100%;
-    /* height: 100%; */
-    border-radius: 3px;
-}
-
-.c-implementation-preview {
-    border-radius: 3px;
-    width: fit-content;
-    gap: .5em;
-}
-
-.c-view-all {
-    cursor: pointer;
-    text-transform: uppercase;
-}
-
-.c-implementation-credit {
-    display: flex;
-    justify-content: flex-start;
-}
-
-.c-popup-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-}
-
-.c-popup-body {
-    padding: 1em;
-    background-color: var(--secondary-bg-col);
-    border-radius: 3px;
-    display: grid;
-    grid-template-rows: auto auto;
-    align-content: space-between;
-    color: var(--col);
-}
-
-.c-popup-task {
-    display: grid;
-    grid-template-rows: auto auto;
-    gap: 1em;
-}
-
-.c-popup-close {
-    display: flex;
-    align-items: center;
-    justify-self: end;
-    cursor: pointer;
-}
-
-.c-difficulty {
-    margin-block: auto;
-    text-transform: uppercase;
-    background-color: var(--secondary-bg-col);
-    color: var(--col);
-    display: flex;
-    align-self: flex-end;
-    justify-content: space-between;
-    border-radius: 3px;
-    padding: 1em;
-    font-size: 13px;
-}
-
-.c-start {
-    padding-block: 1.5em;
-    width: 100%;
-    height: max-content;
-    text-transform: uppercase;
-    display: flex;
-    gap: .5em;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    font: var(--font);
-    align-self: self-end;
-}
-
-.c-back {
-    display: flex;
-    align-items: center;
-    gap: .5em;
-    justify-content: center;
-    text-transform: uppercase;
-    cursor: pointer;
-}
-
-.c-back-arrow {
-    font-size: inherit;
-    font-weight: 700;
-}
-
-.c-start-arrow {
-    font-size: inherit;
-    font-weight: 700;
 }
 
 .c-details {

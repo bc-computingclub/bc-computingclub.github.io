@@ -6,3 +6,4 @@ server/out/
 .DS_Store
 *.js
 *.js.map
+.vscode/settings.json
