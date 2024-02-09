@@ -1,26 +1,12 @@
-const inProgressDiv = document.querySelector(
-  ".c-in-progress-container",
-) as HTMLElement;
-const outerInProgressDiv = document.querySelector(
-  ".c-outer-in-progress",
-) as HTMLElement;
+const inProgressDiv = document.querySelector(".c-in-progress-container") as HTMLElement;
+const outerInProgressDiv = document.querySelector(".c-outer-in-progress") as HTMLElement;
 const browseDiv = document.querySelector(".c-browse-container") as HTMLElement;
-const inProgressHeader = document.querySelector(
-  ".c-ip-container-header",
-) as HTMLElement;
-const inProgressTracker = document.querySelector(
-  ".c-in-progress-counter",
-) as HTMLElement;
-const browseTracker = document.querySelector(
-  ".c-browse-counter",
-) as HTMLElement;
-const browseHeader = document.querySelector(
-  ".c-browse-container-header",
-) as HTMLElement;
+const inProgressHeader = document.querySelector(".c-ip-container-header") as HTMLElement;
+const inProgressTracker = document.querySelector(".c-in-progress-counter") as HTMLElement;
+const browseTracker = document.querySelector(".c-browse-counter") as HTMLElement;
+const browseHeader = document.querySelector(".c-browse-container-header") as HTMLElement;
 const cHome = document.querySelector(".c-home") as HTMLElement;
-const clearFiltersButton = document.querySelector(
-  ".clear-filters",
-) as HTMLElement;
+const clearFiltersButton = document.querySelector(".clear-filters") as HTMLElement;
 const cSortDiv = document.querySelector(".c-sort-div") as HTMLElement;
 const cSort = document.querySelector(".c-sort-btn") as HTMLElement;
 

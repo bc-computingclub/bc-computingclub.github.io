@@ -5,6 +5,7 @@ const cDetails = document.querySelector<HTMLElement>(".c-details");
 const cBack = document.querySelector<HTMLElement>(".c-back");
 const sSort = document.querySelector<HTMLElement>(".s-sort");
 const sContainer = document.querySelector<HTMLElement>(".s-container");
+const sCheckboxes = document.querySelectorAll('input[type="checkbox"]');
 let showAnim = true;
 let previewButtons: NodeListOf<HTMLElement>;
 
@@ -48,9 +49,11 @@ function addClickListeners(elm: NodeListOf<HTMLElement>) {
   }
 }
 
-function toggleLineCount(sub: HTMLElement) {
-  let sLineCount: HTMLElement = sub.querySelector(".s-line-count");
-  sLineCount.classList.toggle("show-count");
+function toggleLineCount() {
+  let sLineCount: NodeListOf<HTMLElement> = document.querySelectorAll(".s-line-count");
+  sLineCount.forEach((el) => {
+    el.classList.toggle("show-count");
+  });
 }
 
 function getSubmissionElement(submission: Submission): HTMLElement {
@@ -107,17 +110,17 @@ class SubmissionMenu extends Menu {
     this.menu.innerHTML = `
       <div class="s-popup">
         <div class="s-popup-header">
-          <h2 class="s-popup-title">${this.submission.sentBy}'s Submission</h2>
+          <h1 class="s-popup-title">${this.submission.sentBy}'s Submission</h1>
           <span class="s-popup-close material-symbols-outlined">close</span>
         </div>
         <div class="s-popup-body">
           <div class="s-popup-code">
-            <h3 class="s-popup-code-title">Code</h3>
+            <h2 class="s-popup-code-title">Code</h2>
             <div class="s-popup-code-contents">I'm starting to wonder how far I'm willing to take these class names, it's getting bad...</div>
           </div>
           <div class="s-popup-preview">
             <div class="s-popup-preview-header">
-              <h3 class="s-popup-preview-title">Preview</h3>
+              <h2 class="s-popup-preview-title">Preview</h2>
               <div class="s-preview-title-nested">
                 <button class="b-refresh icon-btn">
                   <div class="icon-refresh material-symbols-outlined">sync</div>
@@ -125,6 +128,30 @@ class SubmissionMenu extends Menu {
                 </button>
                 <div style="margin-left:auto;gap:10px" class="flx-h flx-al">
                   <div class="material-symbols-outlined b-open-in-new co-item" co-label="Open in new tab">open_in_new</div>
+                </div>
+              </div>
+            </div>
+            <div class="s-popup-preview-iframe-cont">
+              <iframe src="https://www.google.com" class="s-popup-iframe"></iframe>
+            </div>
+            <div class="s-popup-preview-details">
+              <h3 class="s-popup-preview-details-title">Details</h3>
+              <div class="s-popup-preview-details-contents">
+                <div class="s-popup-preview-details-item">
+                  <h4 class="s-popup-preview-details-item-title">Line Count</h4>
+                  <div class="s-popup-preview-details-item-contents">${this.submission.lineCount}</div>
+                </div>
+                <div class="s-popup-preview-details-item">
+                  <h4 class="s-popup-preview-details-item-title">Language(s)</h4>
+                  <div class="s-popup-preview-details-item-contents">JavaScript</div>
+                </div>
+                <div class="s-popup-preview-details-item">
+                  <h4 class="s-popup-preview-details-item-title">Date Submitted</h4>
+                  <div class="s-popup-preview-details-item-contents">2021-09-09</div>
+                </div>
+                <div class="s-popup-preview-details-item">
+                  <h4 class="s-popup-preview-details-item-title">Detail Field</h4>
+                  <div class="s-popup-preview-details-item-contents">Detail Contents Test</div>
                 </div>
               </div>
             </div>
@@ -140,3 +167,10 @@ class SubmissionMenu extends Menu {
     return this;
   }
 }
+
+sCheckboxes.forEach((cb:HTMLInputElement) => {
+  cb.addEventListener("change", (event) => {
+    const checkboxValue = (event.target as HTMLInputElement).value;
+    if(checkboxValue == "show-line-count") toggleLineCount();
+  });
+});
