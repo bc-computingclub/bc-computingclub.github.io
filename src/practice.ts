@@ -107,7 +107,7 @@ async function continueChallenge(cid: string) {
 }
 
 async function showChallenges(cArr: Challenge[], showAnim?: boolean) {
-  if (showAnim) await showLoadingAnim([browseDiv,inProgressDiv],"400");
+  if (showAnim) await showLoadingAnim([browseDiv, inProgressDiv], "400");
   for (let challenge of cArr) {
     setChallengeHTML(challenge);
   }
@@ -265,18 +265,19 @@ function cancelProgressDeletion() {
     document.querySelector(".c-confirm-div").remove();
 }
 
-async function deleteProgress(cID:Challenge["cID"]) {
-    console.log("Deleting progress on challenge: " + cID);
-    // Challenge["cID"].inProgress = false; ... and then send this to the server? or does it need to be a query of its own?
-    // delete any Project on the server which is associated with this challenge
-    // i'm going to need your help here Caleb lol -> Claeb: I got you haha
-    let res = await new Promise<number>(resolve=>{
-        socket.emit("deleteChallengeProgress",cID,(res:number)=>{
-            resolve(res);
-        });
+async function deleteProgress(cID: Challenge["cID"]) {
+  console.log("Deleting progress on challenge: " + cID);
+  // Challenge["cID"].inProgress = false; ... and then send this to the server? or does it need to be a query of its own?
+  // delete any Project on the server which is associated with this challenge
+  // i'm going to need your help here Caleb lol -> Claeb: I got you haha
+  let res = await new Promise<number>((resolve) => {
+    socket.emit("deleteChallengeProgress", cID, (res: number) => {
+      resolve(res);
     });
-    console.log("delete progress res: ",res);
-    if(res != 0) alert("Failed to delete challenge progress, error code: "+res);
+  });
+  console.log("delete progress res: ", res);
+  if (res != 0)
+    alert("Failed to delete challenge progress, error code: " + res);
 }
 
 async function setupButton(cID: Challenge["cID"]) {

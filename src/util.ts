@@ -2198,19 +2198,19 @@ function whenEnter(elm:HTMLInputElement,f:(v:string)=>void){
 
 // Paul transfered stuff
 class Submission {
-    constructor(previewURL: string, sentBy: string, lineCount: string, pID: string) {
+    constructor(previewURL: string, sentBy: string, lineCount: string, pid: string) {
         this.previewURL = previewURL;
         this.sentBy = sentBy;
         this.lineCount = lineCount;
-        this.pID = pID;
+        this.pid = pid;
     }
     previewURL: string;
     sentBy: string;
     lineCount: string;
-    pID: string;
+    pid: string;
     // add fields. note: make sure to add to Challenge where relevant
 }
-  
+
 class Challenge {
     constructor(
         cID: string,
@@ -2271,7 +2271,7 @@ class Challenge {
                 v.url || "/images/fillerthumbnail.png",
                 v.who,
                 v.lineCount,
-                v.pID,
+                v.pid,
             ),
         );
         c.inProgress = data.inProgress;
@@ -2406,10 +2406,8 @@ class ChallengeMenu extends Menu {
             document.querySelector(".c-view-all").classList.add("empty");
             console.log("No submissions found for this challenge.");
         }
-  
-        this.menu.style.right = "0px";
+        
         cLeft = document.querySelector(".c-popup-left") as HTMLElement;
-  
         let cBtn = document.querySelector(".c-popup-close") as HTMLElement;
         cBtn.onclick = () => {
             this.close();

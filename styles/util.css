@@ -1147,8 +1147,13 @@ input[type="checkbox"]{
     animation: AddBubble forwards 0.35s ease-out;
 }
 
+.menu-submission-menu {
+    width: 80em;
+    height: 40em;
+    animation: AddBubble forwards 0.35s ease-out;
+}
+
 .c-popup {
-    position: absolute;
     color: var(--col);
     background-color: var(--bg-col);
 
