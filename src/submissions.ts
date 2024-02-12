@@ -79,7 +79,7 @@ cDetails.addEventListener("click", async () => {
 });
 
 cBack.addEventListener("click", () => {
-  window.location.href = `index.html?cid=${cId}`;
+  window.location.href = `index.html?cid=${cId}`; // redirects to challenge page and opens challenge corresponding to cId
 });
 
 function createSubmissionMenu(sub: Submission) {
@@ -171,6 +171,7 @@ class SubmissionMenu extends Menu {
 sCheckboxes.forEach((cb:HTMLInputElement) => {
   cb.addEventListener("change", (event) => {
     const checkboxValue = (event.target as HTMLInputElement).value;
-    if(checkboxValue == "show-line-count") toggleLineCount();
+    console.log(checkboxValue);
+    if(checkboxValue == "show-lines-of-code") toggleLineCount();
   });
 });

@@ -182,6 +182,24 @@
     border-radius: 3px;
     height: min-content;
     position: relative;
+
+    animation: card-intro 0.3s ease-out;
+}
+
+@keyframes card-intro {
+    0% {
+        opacity: .7;
+        transform: scale(0.97);
+    }
+
+    90% {
+        transform: scale(1.01);
+    }
+
+    100% {
+        opacity: 1;
+        transform: scale(1);
+    }
 }
 
 .s-img-div {
@@ -210,18 +228,19 @@
 .s-line-count {
     display: flex;
     align-items: center;
-    background-color: var(--darken0);
-    visibility: hidden;
+    background-color: var(--bg-col);
+    opacity: 0;
     position: absolute;
     justify-content: center;
     border-radius: 2px;
     padding-inline: 5px;
     top: 1em;
     right: 1em;
-    /* color:var(--secondary-col); */
+    color:var(--col);
+    transition: opacity 0.1s ease;
 
     &.show-count {
-        visibility: visible;
+        opacity: 1;
     }
 }
 
@@ -370,7 +389,7 @@
 .b-refresh {
     padding-block: .3em;
     padding-inline: .8em;
-    color:var(--secondary-col);
+    color:var(--secondary-bg-col);
     background-color: var(--col);
 }
 

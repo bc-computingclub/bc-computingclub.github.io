@@ -7,3 +7,4 @@ server/out/
 *.js
 *.js.map
 .vscode/settings.json
+.zed/settings.json

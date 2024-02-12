@@ -2417,8 +2417,9 @@ class ChallengeMenu extends Menu {
 }
   
 function showImplementations(cID: string, areSubmissions: boolean) {
-    if (areSubmissions) {
-        window.location.href = `submissions.html?cid=${cID}`;
+    if (areSubmissions && cID) { 
+        console.log(cID);
+        window.location.href = `submissions.html?cid=${cID || ''}`; 
     }
 }
   
@@ -2427,7 +2428,7 @@ function getImplementationsHTML(submissionsExist: boolean) {
     temp.classList.add("c-popup-implementations");
     let defaultText = "" as string;
     let emptyClass = "" as string;
-  
+
     if (!submissionsExist) {
         defaultText =
             "<i>There are currently no submissions to this challenge. Upload one to be featured here!</i>";

@@ -49,9 +49,9 @@ window.addEventListener("load", async () => {
     cToggle.classList.remove("point-up");
     cToggle.classList.add("point-down");
   }
-  if (popupCID) {
+  if (popupCID && popupCID != '""') {
     await setupButton(popupCID);
-    // could remove cID from url to prevent user from getting popup again on refresh?
+    // remove cID from url to prevent user from getting popup again on refresh?
   }
 });
 
@@ -147,6 +147,7 @@ function addClickEventListener(cToggle: HTMLElement) {
 function setChallengeHTML(c: Challenge) {
   let tempCard = document.createElement("div") as HTMLElement;
   tempCard.classList.add("c-card");
+  tempCard.setAttribute("cID", c.cID);
 
   if (!c.inProgress) {
     browseDiv.appendChild(tempCard);
@@ -209,9 +210,10 @@ class DeleteMenu extends Menu {
 
   load(priority?: number) {
     super.load();
+    let challengeName = challengeArray.find((v) => v.cID == this.cID).name;
     this.body.innerHTML = `
             <div class="c-confirm-div">
-                <span class="c-confirm-text">Are you sure you want to delete your progress towards this challenge? You won't be able to get it back...</span>
+                <span class="c-confirm-text">Are you sure you want to delete your progress on the <strong>${challengeName}</strong> Challenge? You won't be able to get it back...</span>
                 <div class="c-confirm-options">
                     <button class="c-confirm-btn">
                         Yes
@@ -253,17 +255,19 @@ function cancelProgressDeletion() {
 
 async function deleteProgress(cID: Challenge["cID"]) {
   console.log("Deleting progress on challenge: " + cID);
-  // Challenge["cID"].inProgress = false; ... and then send this to the server? or does it need to be a query of its own?
-  // delete any Project on the server which is associated with this challenge
-  // i'm going to need your help here Caleb lol -> Claeb: I got you haha
   let res = await new Promise<number>((resolve) => {
     socket.emit("deleteChallengeProgress", cID, (res: number) => {
       resolve(res);
     });
   });
   console.log("delete progress res: ", res);
-  if (res != 0)
+  if (res != 0){
     alert("Failed to delete challenge progress, error code: " + res);
+  } else { // refresh challenges
+    await getChallenges();
+    clearChallenges();
+    showChallenges(challengeArray);
+  }
 }
 
 async function setupButton(cID: Challenge["cID"]) {

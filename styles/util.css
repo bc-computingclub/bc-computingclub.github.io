@@ -1,6 +1,7 @@
 /* body.dragging{
     cursor:no-drop !important;
 } */
+
 .drag-cont{
     transform:translate(-50%,-50%) scale(0.9);
     opacity:0.75;
