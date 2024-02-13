@@ -20,7 +20,7 @@ function updateCurrentButton(targetButtonAttr:string) {
         if(link.getAttribute("card-label") == targetButtonAttr) {
             link.classList.add("active");
             document.body.classList.remove("learn-page","practice-page","experiment-page");
-            document.body.classList.add(["learn-page","practice-page","experiment-page"][i]); // <- caleb: I added this just so other things like the menus will have the corresponding accents on them
+            document.body.classList.add(["learn-page","practice-page","experiment-page"][i]);
         } else { link.classList.remove("active"); }
         i++;
     })

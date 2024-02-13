@@ -199,58 +199,6 @@ body {
     cursor: pointer;
 }
 
-.c-sort-options {
-    display: grid;
-    grid-template-rows: repeat(4, 1fr);
-    cursor: pointer;
-    position: absolute;
-    right: 0px;
-    border-radius: 3px;
-    height: max-content;
-    background-color: var(--secondary-bg-col);
-    overflow: hidden;
-    z-index: 99;
-    width: max-content;
-
-    box-shadow: 0px 4px 4px 0px rgba(0, 0, 0, 0.25);
-    -webkit-box-shadow: 0px 4px 4px 0px rgba(0, 0, 0, 0.25);
-    -moz-box-shadow: 0px 4px 4px 0px rgba(0, 0, 0, 0.25);
-}
-
-.c-sort-option {
-    display: flex;
-    flex-wrap: nowrap;
-    align-items: center;
-    gap: .5em;
-    justify-content: flex-end;
-    padding: 1em;
-    border-radius: 3px;
-    color: var(--col);
-    width: 100%;
-    background-color: var(--secondary-bg-col);
-    overflow-y: hidden;
-    font-size: 14px;
-
-    &:hover {
-        background-color: var(--darken0);
-    }
-
-}
-
-.c-sort-toggle {
-    transform: rotate(0deg);
-    transition-duration: 0.3s;
-    transition-timing-function: ease-out;
-
-    &.point-down {
-        transform: rotate(180deg);
-    }
-
-    &.point-up {
-        transform: rotate(0deg);
-    }
-}
-
 .c-outer-browse {
     background-color: var(--purple-col-alt);
     border-radius: 3px;
@@ -356,6 +304,15 @@ body {
     box-shadow: 0px 4px 4px 0px rgba(0, 0, 0, 0.25);
     -webkit-box-shadow: 0px 4px 4px 0px rgba(0, 0, 0, 0.25);
     -moz-box-shadow: 0px 4px 4px 0px rgba(0, 0, 0, 0.25);
+
+    .c-details {
+        opacity: 0;
+    }
+    &:hover {
+        .c-details{
+            opacity: 1;
+        }
+    }
 }
 
 @keyframes card-intro {

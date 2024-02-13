@@ -6,7 +6,6 @@ const cBack = document.querySelector<HTMLElement>(".c-back");
 const sSort = document.querySelector<HTMLElement>(".s-sort");
 const sContainer = document.querySelector<HTMLElement>(".s-container");
 const sCheckboxes = document.querySelectorAll('input[type="checkbox"]');
-let showAnim = true;
 let previewButtons: NodeListOf<HTMLElement>;
 
 // Get submissions based on cID
@@ -23,12 +22,11 @@ window.onload = async () => {
   await loginProm;
   cTitle.style.opacity = "1";
   cTitle.textContent = `${test1.name} Challenge`;
-  showSubmissions(submissionArray);
+  showSubmissions(submissionArray,true);
 };
 
-async function showSubmissions(submissionArray: Submission[]) {
+async function showSubmissions(submissionArray: Submission[],showAnim?:boolean) {
   if (showAnim) await showLoadingAnim([sContainer], "400");
-  showAnim = false;
   for (const sub of submissionArray) {
     let tempSub: HTMLElement = getSubmissionElement(sub);
     sContainer.appendChild(tempSub);
@@ -53,6 +51,7 @@ function toggleLineCount() {
   let sLineCount: NodeListOf<HTMLElement> = document.querySelectorAll(".s-line-count");
   sLineCount.forEach((el) => {
     el.classList.toggle("show-count");
+    // todo: store in localstorage and get value on page load?
   });
 }
 

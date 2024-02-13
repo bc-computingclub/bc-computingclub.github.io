@@ -51,7 +51,9 @@ window.addEventListener("load", async () => {
   }
   if (popupCID && popupCID != '""') {
     await setupButton(popupCID);
-    // remove cID from url to prevent user from getting popup again on refresh?
+    let tempURL = new URL(location.href);
+    tempURL.searchParams.delete("cid");
+    window.history.replaceState({}, document.title, tempURL.toString());
   }
 });
 
@@ -305,26 +307,8 @@ checkboxes.forEach((checkbox) => {
 
 async function filterChallenges() {
   await getChallenges();
-
-  if (false)
-    displayedChallenges = challengeArray.filter((challenge) => {
-      return Object.keys(selectedFilters).every((filterType) => {
-        switch (filterType) {
-          case "difficulty":
-            return selectedFilters[filterType].includes(challenge.difficulty);
-          case "ongoing":
-            return challenge.ongoing === true;
-          case "completed":
-            return challenge.submitted === true;
-          default:
-            return true;
-        }
-      });
-    });
-  else displayedChallenges = challengeArray;
-
   clearChallenges();
-  showChallenges(displayedChallenges);
+  showChallenges(challengeArray);
 }
 
 function clearChallenges() {
@@ -351,42 +335,43 @@ clearFiltersButton.addEventListener("click", () => {
 let searchOption: string = "popularity";
 let searchDesc: boolean = true;
 async function sortChallenges(option: string, descending: boolean) {
-  // showLoadingAnim("500"); // change delay as you see fit, i can't tell what looks good or bad
   clearChallenges();
 
   searchOption = option;
   searchDesc = descending;
   await getChallenges();
+  showChallenges(challengeArray);
   if (challengeArray.filter((c) => c.inProgress).length == 1) {
     toggleInProgressDiv(cToggle, false);
   } // if there's 1 challenge in progress, close section, since sorting it would be pointless
-  showChallenges(challengeArray);
-  // hideLoadingAnim();
-  return; // vvv - Claeb: moved this to server side
-
-  clearChallenges();
-  displayedChallenges = challengeArray.sort((a, b) => {
-    switch (option) {
-      case "popularity":
-        if (descending) {
-          return parseInt(b.submission_count) - parseInt(a.submission_count);
-        } else
-          return parseInt(a.submission_count) - parseInt(b.submission_count);
-      case "alphabetical":
-        if (descending) {
-          return a.name.localeCompare(b.name);
-        }
-        return b.name.localeCompare(a.name);
-    }
-  });
-
-  showChallenges(displayedChallenges);
+  return;
 }
 
 cSortDiv.addEventListener("click", () => {
-  toggleSortMenu();
+  // openDropdown(cSortDiv, () => ["Popularity inc","Popularity dec", "Alphabetical (A-Z)","Alphabetical (Z-A)"],onclick);
+  openDropdown(
+    cSortDiv,
+    () => ["Popularity", "Popularity", "Alphabetical (A-Z)", "Alphabetical (Z-A)"],
+    (i) => {
+      if (i == 0) {
+        sortChallenges("popularity", true);
+      }
+      if (i == 1) {
+        sortChallenges("popularity", false);
+      }
+      if (i == 2) {
+        sortChallenges("alphabetical", true);
+      }
+      if (i == 3) {
+        sortChallenges("alphabetical", false);
+      }
+      closeAllSubMenus(); // Feel free to change this behavior
+    },
+    {
+      getIcons() {
+        return [];
+      },
+      openToLeft: true,
+    },
+  );
 });
-
-function toggleSortMenu() {
-  cSortDiv.classList.toggle("collapse");
-}
