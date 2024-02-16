@@ -497,6 +497,7 @@ function genHeader(i:number,isCompact=true,id:string){
         <div class="cur-project-controls">
             <div class="d-current-project">. . .</div>
             <div class="b-save icon-div"><div class="material-symbols-outlined co-item" co-label="Save Project">save</div></div>
+            <div class="b-publish icon-div"><div class="material-symbols-outlined"></div></div>
             <div class="icon-div hide"><div class="material-symbols-outlined">play_arrow</div></div>
         </div>
         `:""}
@@ -527,6 +528,12 @@ function genHeader(i:number,isCompact=true,id:string){
     ][i]);
 
     d_lesson_confirm = document.querySelector(".d-lesson-confirm") as HTMLElement;
+
+    b_publish = navCont.querySelector(".b-publish");
+    setupCustomCallout(b_publish,div=>{
+        div.classList.add("callout-no-color");
+        div.textContent = "test";
+    });
 }
 
 // Add General Scripts
@@ -593,6 +600,14 @@ class Project{
 
     hasSavedOnce = false;
     needsSave = false;
+    setPublished(v:boolean){
+        if(!this.meta) return;
+        this.meta.submitted = v;
+        b_publish.children[0].textContent = (v ? "public" : "lock");
+    }
+    isPublished(){
+        return this.meta.submitted;
+    }
 
     // right click actions
 
@@ -849,8 +864,12 @@ async function submitChallenge(pid:string){
             resolve(res);
         });
     });
-    if(res != 0) alert("Failed to submit challenge, error code: "+res);
-    else console.log(">> submitted challenge");
+    if(res != 0){
+        alert("Failed to submit challenge, error code: "+res);
+        return;
+    }
+    console.log(">> submitted challenge");
+    project.setPublished(true);
 }
 async function unsubmitChallenge(pid:string){
     let res = await new Promise<number>(resolve=>{
@@ -858,8 +877,12 @@ async function unsubmitChallenge(pid:string){
             resolve(res);
         });
     });
-    if(res != 0) alert("Failed to unsubmit challenge, error code: "+res);
-    else console.log(">> unsubmitted challenge");
+    if(res != 0){
+        alert("Failed to unsubmit challenge, error code: "+res);
+        return;
+    }
+    console.log(">> unsubmitted challenge");
+    project.setPublished(false);
 }
 
 // filtering
@@ -1631,6 +1654,7 @@ function escapeMarkup (dangerousInput) {
 // refresh system
 let b_refresh:HTMLButtonElement;
 let b_save:HTMLButtonElement;
+let b_publish:HTMLButtonElement;
 let icon_refresh:HTMLElement;
 let iframe:HTMLIFrameElement;
 let _icRef_state = true;
@@ -1784,6 +1808,10 @@ function postSetupEditor(project:Project){
             });
         });
     }
+
+    // other meta
+    if(project.meta) project.setPublished(project.meta.submitted);
+    else project.setPublished(false);
 }
 
 // PAGE ID
@@ -1926,6 +1954,7 @@ type ProjectMeta = {
     // files:ULFile[],
     items:ULItem[],
     cid?:string;
+    submitted:boolean;
 };
 
 // screenshot util
@@ -2165,6 +2194,48 @@ function setupCallout(ele:Element,label?:string){
             d.style.left = (rect.right+d.offsetWidth)+"px";
             d.style.setProperty("--left",(rect.width/2-7-rect.width+d.offsetWidth)+"px");
             // d.style.setProperty("--left",(rect.width/2-7+d.offsetWidth)+"px");
+            d.style.transform = "translate(-200%,0px)";
+        }
+        else{
+            d.style.left = (rect.x)+"px";
+            d.style.setProperty("--left",(rect.width/2-7)+"px");
+            d.style.transform = "translate(0px,0px)";
+        }
+    });
+    ele.addEventListener("mouseleave",e=>{
+        isOver = false;
+        if(d?.parentElement) d.remove();
+    });
+}
+function setupCustomCallout(ele:Element,onshow:(div:HTMLElement)=>void){
+    let d:HTMLElement;
+    let isOver = false;
+    let flag = false;
+    ele.addEventListener("mouseenter",async (e:MouseEvent)=>{
+        if(isOver || flag){
+            if(d?.parentElement) d.remove();
+            return;
+        }
+        isOver = true;
+        flag = true;
+        // await wait(500);
+        await wait(200);
+        flag = false;
+        if(!isOver){
+            if(d?.parentElement) d.remove();
+            return;
+        }
+
+        d = document.createElement("div");
+        d.className = "callout";
+        subMenus.appendChild(d);
+        onshow(d);
+
+        let rect = ele.getBoundingClientRect();
+        d.style.top = (rect.y+rect.height-60+12)+"px";
+        if(rect.x > innerWidth/2){
+            d.style.left = (rect.right+d.offsetWidth)+"px";
+            d.style.setProperty("--left",(rect.width/2-7-rect.width+d.offsetWidth)+"px");
             d.style.transform = "translate(-200%,0px)";
         }
         else{

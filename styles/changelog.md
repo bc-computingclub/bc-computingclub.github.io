@@ -210,3 +210,7 @@
 - added ability to Delete Projects
 - added ability to Unlink Challenge Projects into regular projects
 - when starting a challenge, you go into the submissions now (not final but for now is alright)
+
+### 2/14/24
+- added publish/unpublish button
+- probably other stuff and from earlier days that I never logged

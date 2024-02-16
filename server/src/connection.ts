@@ -108,7 +108,8 @@ export class Project{
             pid:this.pid,
             // files:this.files,
             items:this.items,
-            cid:this.cid
+            cid:this.cid,
+            submitted:this.meta.submitted
         };
     }
     serialize(){

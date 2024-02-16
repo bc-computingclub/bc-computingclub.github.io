@@ -150,9 +150,9 @@ io.on("connection",socket=>{
     // editor
     socket.on("uploadProjectFiles",async (pid:string,listData:any[],call:()=>void)=>{
         if(!valVar(listData,"object")) return;
+        if(!Array.isArray(listData)) return;
         if(!valVar(pid,"string")) return;
         if(!valVar(call,"function")) return;
-        
         let user = getUserBySock(socket.id);
         if(!user) return;
 

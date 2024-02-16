@@ -9,6 +9,11 @@ b_save.addEventListener("click",e=>{
     if(PAGE_ID == PAGEID.editor) saveProject();
     else if(PAGE_ID == PAGEID.lesson) saveLesson();
 });
+b_publish.addEventListener("click",e=>{
+    if(!project) return;
+    if(!project.meta.submitted) submitChallenge(project.pid);
+    else unsubmitChallenge(project.pid);
+});
 
 // 
 let b_openInNew = document.querySelector(".b-open-in-new") as HTMLElement;

@@ -2102,6 +2102,7 @@ async function initLessonPage(){
     // lesson.p.files[2].open();
 
     lesson.init();
+    project = lesson.p;
 
     onResize(true);
 }

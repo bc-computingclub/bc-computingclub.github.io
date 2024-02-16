@@ -1141,6 +1141,9 @@ input[type="checkbox"]{
     height:14px;
     z-index:-1;
 }
+.callout.no-color{
+    background-color:var(--bg-col);
+}
 
 .menu-challenge-menu {
     width: 60em !important;
