@@ -52,7 +52,7 @@ function removeCard(card:HTMLElement) {
         }
         cardArray = getCardArray();
         cardArray[0].setAttribute("position","1");
-        cardArray[1].classList.remove("initial-state")
+        cardArray[1].classList.remove("initial-state");
         cardArray[1].setAttribute("position","2");
         cardContainer.append(tempCard);
         currentCard = cardArray[0];

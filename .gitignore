@@ -8,3 +8,5 @@ server/out/
 *.js.map
 .vscode/settings.json
 .zed/settings.json
+server/package-lock.json
+server/package.json
