@@ -7,6 +7,7 @@ body {
     --purple-col-alt: rgb(56, 42, 77);
     /* --purple-col: #8D679F; */
     /* --purple-col-alt: #503E6E; */
+    overflow: scroll;
 }
 
 .material-symbols-outlined {
@@ -286,12 +287,11 @@ body {
 
 .c-card {
     padding: 10px;
-    min-height: 0px;
     overflow: hidden;
 
     display: grid;
-    grid-template-rows: auto auto auto auto;
-    gap: 1em;
+    grid-template-rows: 6fr .7fr 2fr 1fr;
+    gap: .5em;
     background-color: var(--secondary-bg-col);
     border-radius: 4px;
     position: relative;
@@ -331,11 +331,33 @@ body {
     }
 }
 
-.c-preview {
+.c-button-options {
+    display: grid;
+    grid-template-columns: 3fr 2fr;
+    gap: .5em;
+    width: 100%;
+    align-items: center;
+
+    .material-symbols-outlined {
+        font-size: 1.2em;
+        /* font-weight: bold; */
+    }
+}
+
+.c-submissions {
+    background-color: var(--bg-col);
+    color: var(--col);
+}
+
+.c-preview, .c-submissions {
     cursor: pointer;
-    padding-block: .8em;
     text-transform: uppercase;
     font-weight: bold;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: .5em;
+    height: 100%;
 }
 
 .c-submitted {

@@ -18,7 +18,7 @@ const lsUID = "BCC-01";
 
 let cURL = new URL(location.href);
 let popupCID = cURL.searchParams.get("cid") || "";
-
+ 
 let bCounter = 0;
 let ipCounter = 0;
 
@@ -74,6 +74,14 @@ function toggleInProgressDiv(btn: HTMLElement, opening: boolean) {
   outerInProgressDiv.classList.remove("window-load");
 }
 
+function giveCToggleEventListener(cToggle: HTMLElement) {
+    if (cToggle) {
+    cToggle.addEventListener("click", () => {
+        toggleInProgressDiv(cToggle, localStorage.getItem(`${lsUID}toggleState`) == "open" ? false : true);
+    });
+  }
+}
+
 async function startChallenge(cid: string) {
   socket.emit("startChallenge", cid, (data: number | string) => {
     if (typeof data == "number") {
@@ -123,7 +131,7 @@ async function showChallenges(cArr: Challenge[], showAnim?: boolean) {
 
   inProgressTracker.innerHTML = `(${ipCounter})`;
   browseTracker.innerHTML = `(${bCounter})`;
-  addClickEventListener(cToggle);
+  giveCToggleEventListener(cToggle);
 }
 
 function createCToggle() {
@@ -131,19 +139,6 @@ function createCToggle() {
   cToggle.classList.add("material-symbols-outlined", "c-toggle");
   cToggle.innerHTML = "expand_less";
   inProgressHeader.append(cToggle);
-}
-
-function addClickEventListener(cToggle: HTMLElement) {
-  if (cToggle) {
-    cToggle.addEventListener("click", () => {
-      if (shouldBeOpen) {
-        toggleInProgressDiv(cToggle, false);
-      } else {
-        toggleInProgressDiv(cToggle, true);
-      }
-      console.log(localStorage.getItem(`${lsUID}toggleState`));
-    });
-  }
 }
 
 function setChallengeHTML(c: Challenge) {
@@ -167,9 +162,14 @@ function setChallengeHTML(c: Challenge) {
             ${c.name}
         </h3>
         <span class="c-text">${c.desc}</span>
-        <button class="c-preview" onclick="setupButton(${c.cID});">
-            Open Preview
-        </button>
+        <div class="c-button-options">
+          <button class="c-preview" onclick="setupButton(${c.cID});">
+            Details <span class="material-symbols-outlined">info</span>
+          </button>
+          <button class="c-submissions" onclick="showSubmissions('${c.cID}','${c.inProgress}')">
+            Submissions
+          </button>
+        </div>
     `;
   if (c.inProgress) {
     let tempSpan = document.createElement("span");
@@ -348,7 +348,6 @@ async function sortChallenges(option: string, descending: boolean) {
 }
 
 cSortDiv.addEventListener("click", () => {
-  // openDropdown(cSortDiv, () => ["Popularity inc","Popularity dec", "Alphabetical (A-Z)","Alphabetical (Z-A)"],onclick);
   openDropdown(
     cSortDiv,
     () => ["Popularity", "Popularity", "Alphabetical (A-Z)", "Alphabetical (Z-A)"],
@@ -369,7 +368,7 @@ cSortDiv.addEventListener("click", () => {
     },
     {
       getIcons() {
-        return [];
+        return []; // Might use later and replace (A-Z)/(Z-A) with icons
       },
       openToLeft: true,
     },

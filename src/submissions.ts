@@ -22,10 +22,10 @@ window.onload = async () => {
   await loginProm;
   cTitle.style.opacity = "1";
   cTitle.textContent = `${test1.name} Challenge`;
-  showSubmissions(submissionArray,true);
+  displaySubmissions(submissionArray,true);
 };
 
-async function showSubmissions(submissionArray: Submission[],showAnim?:boolean) {
+async function displaySubmissions(submissionArray: Submission[],showAnim?:boolean) {
   if (showAnim) await showLoadingAnim([sContainer], "400");
   for (const sub of submissionArray) {
     let tempSub: HTMLElement = getSubmissionElement(sub);
@@ -168,9 +168,9 @@ class SubmissionMenu extends Menu {
 }
 
 sCheckboxes.forEach((cb:HTMLInputElement) => {
-  cb.addEventListener("change", (event) => {
-    const checkboxValue = (event.target as HTMLInputElement).value;
-    console.log(checkboxValue);
-    if(checkboxValue == "show-lines-of-code") toggleLineCount();
-  });
+    cb.addEventListener("change", (event) => {
+        const checkboxValue = (event.target as HTMLInputElement).value;
+        console.log(checkboxValue);
+        if(checkboxValue == "show-lines-of-code") toggleLineCount();
+    });
 });

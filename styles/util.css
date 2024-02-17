@@ -1195,25 +1195,30 @@ input[type="checkbox"]{
 
 .c-popup-right {
     display: grid;
-    grid-template-rows: 3em 3fr 1fr 1fr;
+    grid-template-rows: 3em auto auto;
     gap: 1em;
-    align-content: space-between;
+    /* align-content: space-between; */
+}
+
+.c-popup-bottom-right {
+    display: grid;
+    align-content: end;
+    gap: 1em;
 }
 
 .c-popup-img-div {
     display: flex;
     flex-direction: column;
     border-radius: 3px;
-    gap: .5em;
+    gap: 1em;
+    height: 100%;
 }
 
 .c-popup-img {
     aspect-ratio: 4/3;
     max-width: 100%;
-    ;
+    max-height: 100%;
     border-radius: 3px;
-    margin: auto;
-    margin-top: 0px;
 }
 
 .c-popup-img-text {
@@ -1241,7 +1246,7 @@ input[type="checkbox"]{
 
     &.empty {
         grid-template-columns: 1fr;
-        height: 6em;
+        height: 8em;
         align-items: start;
     }
 }
@@ -1271,6 +1276,8 @@ input[type="checkbox"]{
 .c-view-all {
     cursor: pointer;
     text-transform: uppercase;
+    /* font-weight: bold; */
+    padding: .7em;
 }
 
 .c-implementation-credit {

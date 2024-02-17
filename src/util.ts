@@ -2429,13 +2429,13 @@ class ChallengeMenu extends Menu {
                       </div>
                       <div class="c-popup-body">
                           <div class ="c-popup-task">
-                              <h4 class="c-popup-sub-title">Task</h4>
+                              <h3 class="c-popup-sub-title">Task</h3>
                               <span class="c-popup-task-text">${this.c.desc}</span>
                           </div>
                           <div class ="c-popup-implementations">
                               <div class="c-popup-implementations-header">
-                                  <h4 class="c-popup-sub-title">Submissions</h4>
-                                  <button class="c-view-all" onclick="showImplementations('${this.c.cID}','${areSubmissions}')">
+                                  <h3 class="c-popup-sub-title">Submissions</h3>
+                                  <button class="c-view-all" onclick="showSubmissions('${this.c.cID}','${areSubmissions}')">
                                       View All (${this.c.submission_count})
                                   </button>
                               </div>
@@ -2452,10 +2452,12 @@ class ChallengeMenu extends Menu {
                           <img class="c-popup-img" src="${this.c.imgURL}" alt="challenge image">
                           <i class="c-popup-img-text">Sketch Mockup</i>
                       </div>
-                      <div class="c-difficulty">
-                          <span class="c-difficulty-text">Difficulty:</span><span class="c-difficulty-number">${this.c.difficulty}</span>
+                      <div class="c-popup-bottom-right">
+                        <div class="c-difficulty">
+                            <span class="c-difficulty-text">Difficulty:</span><span class="c-difficulty-number">${this.c.difficulty}</span>
+                        </div>
+                        <button class="c-start" onclick="${!this.c.inProgress ? `startChallenge('${this.c.cID}')` : `continueChallenge('${this.c.cID}')`}"><h3>${this.c.inProgress ? "Continue" : "Start"}</h3><span class="material-symbols-outlined c-start-arrow">arrow_forward_ios<span/></button>
                       </div>
-                      <button class="c-start" onclick="${!this.c.inProgress ? `startChallenge('${this.c.cID}')` : `continueChallenge('${this.c.cID}')`}"><h3>${this.c.inProgress ? "Continue" : "Start"}</h3><span class="material-symbols-outlined c-start-arrow">arrow_forward_ios<span/></button>
                   </div>
               </div>
         `;
@@ -2487,7 +2489,7 @@ class ChallengeMenu extends Menu {
     }
 }
   
-function showImplementations(cID: string, areSubmissions: boolean) {
+function showSubmissions(cID: string, areSubmissions: boolean) {
     if (areSubmissions && cID) { 
         console.log(cID);
         window.location.href = `submissions.html?cid=${cID || ''}`; 
