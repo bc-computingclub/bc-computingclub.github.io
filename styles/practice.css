@@ -521,25 +521,11 @@ body {
     .c-home {
         padding-inline: 20em;
     }
-
-    .c-popup {
-        height: 100%;
-    }
 }
 
 /* Ultrawide screens */
 @media (min-width: 2560px) {
     .c-home {
         padding-inline: 30em;
-    }
-
-    .c-container {
-        &:not(.empty) {
-            grid-template-columns: repeat(5, 1fr);
-        }
-    }
-
-    .c-popup {
-        height: 100%;
     }
 }

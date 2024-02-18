@@ -27,11 +27,17 @@
     cursor: pointer;
 }
 
-.c-title-right,
 .c-title-left {
     display: flex;
     justify-content: center;
     align-content: center;
+    gap: 1em;
+}
+
+.c-title-right {
+    display: flex;
+    justify-content: center;
+    padding-block: .5em;
     gap: 1em;
 }
 

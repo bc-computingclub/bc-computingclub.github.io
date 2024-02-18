@@ -6,9 +6,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Code Challenges</title>
     <link rel="stylesheet" href="/styles/home.css">
+    <link rel="stylesheet" href="/styles/testindex.css">
 </head>
 
-<body>
+<body class="h-body" section="1">
     <script src="/out/pre_init.js"></script>
     <script src="/out/util.js"></script>
 
@@ -26,9 +27,22 @@
         </div>
     </div>
 
+    <div class="h-background" section="1"></div>
+    
+    <div class="h-feature-cont">
+        <div class="h-timeline" section="1">
+            <div class="timeline-marker active" n="1"></div>
+            <div class="timeline-marker" n="2"></div>
+            <div class="timeline-marker" n="3"></div>
+        </div>
+        <div class="h-description">
+            <div class="h-feature">
+                <!-- Typescript will add and swap out these "features" on a delay, or when the user clicks to browse through them. -->
+            </div>
+        </div>
+    </div>
 
-
-    <script src="out/cards.js"></script>
+    <script src="/out/home.js"></script>
     <script src="/out/socket.io.min.js"></script>
     <script src="/out/network.js"></script>
 </body>

@@ -1,0 +1,186 @@
+body {
+    position: relative;
+    height: 100%;
+    transition: background-color 0.3s ease-in-out;
+    height: 100dvh;
+    overflow: hidden;
+
+    &[section="1"] {
+        background-color: var(--learn-col);
+    }
+    &[section="2"] {
+        background-color: var(--practice-col);
+    }
+    &[section="3"] {
+        background-color: var(--experiment-col);
+    }
+}
+
+.h-background {
+    background-size: 110%;
+    /* background-position: ; */
+    position: absolute;
+    top: 100px;
+    z-index: 1;
+    opacity: 0.12;
+    
+    /* Background image styling */
+    transition: background-image 0.3s ease-in-out, opacity 0.3s ease-in-out;
+    height: calc(100vh - 100px);
+    width: 100%;
+    background-repeat: no-repeat;
+
+    &[section="1"] {
+        background-image: url('/images/test.png');
+    } 
+    &[section="2"] {
+        background-image: url('/images/showcase2.png');
+    }
+    &[section="3"] {
+        background-image: url('/images/showcase3.png');
+    }
+}
+
+.h-feature-cont {
+    width: 100%;
+    position: absolute;
+    top: calc(100dvh - 100px - 280px);
+    z-index: 2;
+    display: grid;
+    min-height: 280px;
+    grid-template-columns: auto 23em;
+    gap: 5em;
+    justify-content: start;
+    margin-inline: 5em;
+
+    animation-name: fade-in-up;
+    animation-duration: 1s;
+    animation-timing-function: cubic-bezier(0, 0.97, 0.43, 1.02);
+}
+
+@keyframes fade-in-up {
+    from {
+        opacity: 0;
+        transform: translateY(80px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+    
+}
+
+.h-text,
+.h-title {
+    color: var(--secondary-col);
+}
+
+.h-title {
+    font-size: 7em;
+    text-transform: uppercase;
+    font-weight: 400;
+    letter-spacing: -2px;
+    line-height: 70px;
+}
+
+.h-timeline {
+    display: grid;
+    height: 100%;
+    width: 100%;
+    gap: 1em;
+    transition: grid-template-rows 0.3s ease-in-out;
+    
+    &[section="1"] {
+        grid-template-rows: 3fr 1fr 1fr;
+    }
+
+    &[section="2"] {
+        grid-template-rows: 1fr 3fr 1fr;
+    }
+
+    &[section="3"] {
+        grid-template-rows: 1fr 1fr 3fr;
+    }
+
+    & > * {
+        width: 8px;
+        position: relative;
+        background-color: var(--faded-col);
+        color: var(--faded-col);
+        border-radius: 2px;
+        transition: all 0.25s ease-in;
+        transform-origin: left;
+
+        &.active {
+            background-color: var(--secondary-col);
+            color: var(--secondary-col);
+        }
+
+        &::after {
+            position: absolute;
+            left: 30px;
+        }
+
+        &:nth-child(1)::after {
+            content: '01';
+        }
+        &:nth-child(2)::after {
+            content: '02';
+        }
+        &:nth-child(3)::after {
+            content: '03';
+        }
+
+        &:hover {
+            cursor: pointer;
+            background-color: var(--secondary-col);
+            &::after {
+                color: var(--secondary-col);
+            }
+        }
+    }
+}
+
+.h-feature {
+    display: grid;
+    grid-template-rows: auto auto auto;
+    align-items: center;
+    align-content: space-between;
+    justify-content: start;
+    gap: 1em;
+    height: 100%;
+    width: 100%;
+}
+
+.h-text {
+    font-size: 1.4em;
+    line-height: 1.3;
+    font-weight: 300;
+    letter-spacing: 1.2px;
+}
+
+.h-redirect-cont {
+    display: flex;
+    align-items: center;
+    gap: 1em;
+}
+
+.h-redirect {
+    display: flex;
+    align-items: center;
+    gap: 1em;
+    width: max-content;
+    cursor: pointer;
+    font-size: inherit;
+
+    & > * {
+        font-size: inherit;
+        color: var(--secondary-col);
+    }
+}
+
+.h-redirect-featured {
+    text-transform: uppercase;
+    cursor: pointer;
+    text-decoration: underline;
+}
