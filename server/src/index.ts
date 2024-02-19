@@ -1,5 +1,6 @@
 import { io, server, CredentialResData, User, users, getUserBySock, sanitizeEmail, getProject, attemptToGetProject, access, readdir, read, mkdir, removeFile, write, ULFile, ProjectMeta, allProjects, UserChallengeData, Project, getProject2, ULItem, ULFolder, rename, removeFolder, getDefaultProjectMeta } from "./connection";
 import { CSubmission, Challenge, ChallengeData, ChallengeGet, challenges } from "./s_challenges";
+import {LessonData} from "./s_lesson";
 import fs from "fs";
 import { createInterface } from "readline";
 import crypto from "crypto";
@@ -88,6 +89,46 @@ io.on("connection",socket=>{
     });
 
     // lesson
+    socket.on("getAvailableLessons",()=>{
+
+    })
+    socket.on("getLesson",async (lid:string,f:(data:any)=>void)=>{
+        if(!valVar2(lid,"string",f)) return;
+        if(lid.includes(".")){
+            f(3);
+            return;
+        }
+        
+        let user = getUserBySock(socket.id);
+        if(!user) return;
+
+        let path = "../lessons/"+lid+"/";
+        let str = await read(path+"meta.json");
+        if(!str){
+            f(1);
+            return;
+        }
+        let data:any;
+        try{
+            data = JSON.parse(str);
+        }
+        catch(e){}
+        if(!data){
+            console.log("$ invalid/corrupted lesson data");
+            f(2);
+            return;
+        }
+        // let lessonData = new LessonData(data); // this is a lot of work but probably good to eventually use for data integrity stuff
+        
+        data.lid = lid;
+        data.events = await read(path+"evts.js","utf8");
+        // data.boardData = data.boards.map(async (v:any)=>await read(path+v+".js","utf8"));
+        data.boardData = [];
+        for(const board of data.boards){
+            data.boardData.push(await read(path+board+".js","utf8"));
+        }
+        f(data);
+    });
     socket.on("uploadLessonFiles",async (lessonId:string,list:ULFile[],call:()=>void)=>{
         if(!valVar(list,"object")) return;
         if(!valVar(lessonId,"string")) return;
@@ -879,7 +920,7 @@ server.listen(3000,()=>{
 });
 
 let rl = createInterface(process.stdin,process.stdout);
-rl.on("line",(line)=>{
+rl.on("line",async (line)=>{
     line = line.trim();
     let s = line.split(" ");
     if(line == "challenges"){
@@ -934,6 +975,25 @@ rl.on("line",(line)=>{
     else if(s[0] == "cls" || s[0] == "clear"){
         process.stdout.cursorTo(0,0);
         process.stdout.clearScreenDown();
+        return;
+    }
+    else if(s[0] == "test-lesson"){
+        let dataStr = await read("../lessons/"+s[1]+".json");
+        if(!dataStr){
+            console.log("$ couldn't find lesson data");
+            return;
+        }
+        let data:any;
+        try{
+            data = JSON.parse(dataStr);
+        }
+        catch(e){}
+        if(!data){
+            console.log("$ invalid/corrupted lesson data");
+            return;
+        }
+        let lessonData = new LessonData(data);
+        console.log("LESSON DATA",lessonData);
         return;
     }
     console.log("Unknown command: ",s[0]);

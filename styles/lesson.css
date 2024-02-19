@@ -9,20 +9,19 @@ body{
     display:none;
 }
 .pane-tutor-code{
-    /* width:calc(50% - 133px); */
-    /* width:calc(50% - 200px); */
     width:calc(50% - 300px);
 }
 .pane-code{
-    /* width:calc(50% - 133px); */
-    /* width:calc(50% - 200px); */
     width:calc(50% - 300px);
 }
 .pane-preview{
-    /* width:calc(50% - 200px); */
     width:calc(50% - 300px);
-    /* width:calc(50% - 133px); */
 }
+
+/* .pane-code > div{
+    flex-shrink:1;
+    flex-grow:0;
+} */
 
 .pane-tutor-code .file-link.cur{
     background-color:var(--tutor-col);

@@ -43,27 +43,28 @@ for(const a of resizes){
         a.style.position = "relative";
         a.style.minWidth = "150px";
         a.style.minHeight = "150px";
+        let dist = 0; //5
         d.setAttribute("style",{
             r:`
-                right:-5px; 
+                right:-${dist}px; 
                 width:10px;
                 height:100%;
                 cursor:ew-resize;
             `,
             l:`
-                left:-5px;
+                left:-${dist}px;
                 width:10px;
                 height:100%;
                 cursor:ew-resize;
             `,
             d:`
-                bottom:-5px;
+                bottom:-${dist}px;
                 height:10px;
                 width:100%;
                 cursor:ns-resize;
             `,
             u:`
-                top:-5px;
+                top:-${dist}px;
                 height:10px;
                 width:100%;
                 cursor:ns-resize;
@@ -71,7 +72,7 @@ for(const a of resizes){
         }[dir]);
         d.style.position = "absolute";
         d.style.opacity = "0";
-        d.style.zIndex = "6";
+        d.style.zIndex = "6"; //6
         // 
         
         d.onmousedown = function(e){

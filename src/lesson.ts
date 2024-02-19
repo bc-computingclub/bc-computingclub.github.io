@@ -195,6 +195,33 @@ abstract class Task{
         await t.play();
         this.canBeFinished = true;
     }
+
+    static parse(data:any){
+        let id = data.id;
+        if(id == null) return;
+        
+        let t:Task;
+
+        switch(id){
+            case "addFile":
+                t = new AddFileTask(data.name,data.required);
+                break;
+            case "addCode":
+                t = new AddGenericCodeTask(data.text,data.lang);
+                break;
+            case "refresh":
+                t = new DoRefreshTask(data.text,data.com);
+                break;
+            case "sideText":
+                t = new AddTutorSideText(data.text,data.com);
+                break;
+            case "board":
+                t = new PonderBoardTask(data.bid,data.text);
+                break;
+        }
+
+        return t;
+    }
 }
 class AddFileTask extends Task{
     constructor(name:string,isRequired:boolean){
@@ -499,10 +526,12 @@ class ClickButtonTask extends Task{
     }
 }
 class PonderBoardTask extends Task{
-    constructor(title:string){
+    constructor(bid:string,title:string){
         super(title);
+        this.bid = bid;
         this.requiresDoneConfirm = false;
     }
+    bid:string;
     async start(): Promise<string | void> {
         super.start();
 
@@ -515,15 +544,19 @@ class PonderBoardTask extends Task{
         });
         await b2.clickProm;
 
-        lesson.board.init();
-
-        let b = lesson.board;
+        let b = lesson.boards.find(v=>v.bid == this.bid);
+        lesson.board = b;
+        
+        b.init();
         b.show();
 
         await this.finish();
     }
     cleanup(): void {
-        lesson.board.exit();
+        if(lesson.board){
+            lesson.board.exit();
+            lesson.board = null;
+        }
     }
 }
 
@@ -555,6 +588,17 @@ abstract class LEvent{
     getTaskText(){return ""}
 
     tasks:Task[];
+
+    static parse(data:any){
+        if(!data.id) data.id = "g";
+
+        let id = data.id;
+        let e:LEvent;
+        if(id == "g"){
+            e = new LE_AddGBubble(data.text,BubbleLoc.global,data.tasks?.map((v:any)=>Task.parse(v))??[]);
+        }
+        return e;
+    }
 }
 class LE_AddBubble extends LEvent{
     constructor(text:string,lineno:number,colno:number){
@@ -576,8 +620,8 @@ class LE_AddGBubble extends LEvent{
         this.ogLines = lines;
         let text = lines.join("<br><br>").replaceAll("\n","<br><br>");
         this.text = text;
-        this.loc = loc;
-        this.tasks = tasks;
+        this.loc = loc ?? BubbleLoc.global;
+        this.tasks = tasks || [];
     }
     ogLines:string[];
     text:string;
@@ -758,12 +802,14 @@ abstract class BoardObj{
         }
         return false;
     }
-    addTag(tag:string){
-        if(!this._storeTags.includes(tag)){
-            this._storeTags.push(...tag.split(" "));
-            // let oldObj = this.b.objStore.get(tag);
-            // if(oldObj) oldObj.removeTag(tag);
-            // this.b.objStore.set(tag,this);
+    addTag(...tags:string[]){
+        for(const tag of tags){
+            if(!this._storeTags.includes(tag)){
+                this._storeTags.push(...tag.split(" "));
+                // let oldObj = this.b.objStore.get(tag);
+                // if(oldObj) oldObj.removeTag(tag);
+                // this.b.objStore.set(tag,this);
+            }
         }
     }
     removeTag(...tags:string[]){
@@ -898,6 +944,28 @@ abstract class BoardEvent{
         f(this);
         return this;
     }
+
+    abstract serialize():any;
+    static parse(data:any):BoardEvent { return null; };
+    
+    static parseAny(b:Board,data:any){
+        switch(data.id){
+            case "wait":
+                return BE_Wait.parse(data);
+            case "addCode":
+                return BE_AddCode.parse2(b,data);
+            case "circleObj":
+                return BE_CircleObj.parse(data);
+            case "endBoard":
+                return BE_EndPonder.parse(data);
+            case "removeObj":
+                return BE_RemoveObj.parse(data);
+            case "setOpacity":
+                return BE_SetOpacity.parse(data);
+            default:
+                return BE_GlobalBubble.parse(data);
+        }
+    }
 }
 abstract class AnchoredBoardEvent extends BoardEvent{
     constructor(ha:Anchor,va:Anchor){
@@ -986,6 +1054,13 @@ class TypeAnim{
             if(t.onAfter) t.onAfter();
         }
     }
+
+    serialize(){
+        return this.tasks.map(v=>v.serialize());
+    }
+    static parse(data:any){
+        return new TypeAnim(data.map(v=>TA_Task.parseAny(v)));
+    }
 }
 abstract class TA_Task{
     constructor(){
@@ -999,6 +1074,23 @@ abstract class TA_Task{
     getOffset(){return 0}
     getText(){return ""}
     onAfter:()=>void;
+
+    abstract serialize():any;
+    static parse(data:any):TA_Task { return null; };
+
+    static parseAny(data:any){
+        switch(data.id){
+            case "wait":
+                return TA_Wait.parse(data);
+            case "move":
+                return TA_Move.parse(data);
+            case "replaceText":
+                return TA_ReplaceText.parse(data);
+            case "text":
+                return TA_Text.parse(data);
+        }
+        return null;
+    }
 }
 class TA_ObjBubble extends TA_Task{
     constructor(text:string,par:BoardObj){
@@ -1016,6 +1108,13 @@ class TA_ObjBubble extends TA_Task{
         })
         await b.clickProm;
     }
+    serialize() {
+        // return {};
+        return null;
+    }
+    static parse(data: any): TA_Task {
+        return null;
+    }
 }
 class TA_Wait extends TA_Task{
     constructor(delay:number){
@@ -1025,6 +1124,15 @@ class TA_Wait extends TA_Task{
     delay:number;
     async run(): Promise<void> {
         await wait(this.delay);
+    }
+    serialize() {
+        return {
+            id:"wait",
+            val:this.delay
+        };
+    }
+    static parse(data: any): TA_Task {
+        return new TA_Wait(data.val);
     }
 }
 class TA_Text extends TA_Task{
@@ -1037,6 +1145,7 @@ class TA_Text extends TA_Task{
     code:string;
     colId:number;
     tc:TC;
+    _preTags:string[];
     getOffset(): number {
         return this.code.length;
     }
@@ -1057,8 +1166,22 @@ class TA_Text extends TA_Task{
         this.obj = obj;
         let b = this.b;
         await b.addObj(obj);
+        if(this._preTags) obj.addTag(...this._preTags);
         let amt = b.baseFontScale*(b.can.height/b.can.width)*0.55;
         this.e.tx += amt * this.code.length;
+    }
+    serialize():any{
+        return {
+            id:"text",
+            text:this.code,
+            colId:this.colId,
+            tags:this.obj._storeTags
+        };
+    }
+    static parse(data: any): TA_Task {
+        let a = new TA_Text(data.text,data.colId);
+        a._preTags = data.tags;
+        return a;
     }
 }
 class TA_ReplaceText extends TA_Text{
@@ -1081,6 +1204,17 @@ class TA_ReplaceText extends TA_Text{
     getOffset(): number {
         return 0;
     }
+    serialize() {
+        return {
+            id:"replaceText",
+            tag:this.ref,
+            text:this.code,
+            colId:this.colId
+        };
+    }
+    static parse(data: any): TA_Task {
+        return new TA_ReplaceText(data.tag,data.text,data.colId);
+    }
 }
 class TA_Move extends TA_Task{
     constructor(amtX:number,amtY:number){
@@ -1095,6 +1229,16 @@ class TA_Move extends TA_Task{
         let amt = b.baseFontScale*(b.can.height/b.can.width)*0.55;
         this.e.tx += amt * this.amtX;
         this.e.ty += amt * this.amtY;
+    }
+    serialize() {
+        return {
+            id:"move",
+            x:this.amtX,
+            y:this.amtY
+        };
+    }
+    static parse(data: any): TA_Task {
+        return new TA_Move(data.x,data.y);
     }
 }
 
@@ -1125,6 +1269,23 @@ class BE_AddCode extends AnchoredBoardEvent{
     parts:string[];
     tx:number;
     ty:number;
+
+    serialize() {
+        return {
+            id:"addCode",
+            com:this.comment,
+            x:this.x,
+            y:this.y,
+            ha:this.ha,
+            va:this.va,
+            anim:this.anim.serialize()
+        };
+    }
+    static parse2(b:Board,data: any): BoardEvent {
+        let a = new BE_AddCode(data.com,data.x,data.y,data.ha,data.va,TypeAnim.parse(data.anim));
+        a.finalize(b);
+        return a;
+    }
     
     async run(b: Board): Promise<void> {
         this.start();
@@ -1155,6 +1316,7 @@ class BE_AddCode extends AnchoredBoardEvent{
     }
 }
 
+// depricated
 class BE_AddText extends AnchoredBoardEvent{
     constructor(comment:string,text:TC[],x:number,y:number,ha:Anchor,va:Anchor,newOrder?:number[]){
         super(ha,va);
@@ -1169,6 +1331,14 @@ class BE_AddText extends AnchoredBoardEvent{
     x:number;
     y:number;
     newOrder:number[];
+
+    serialize() {
+        return {};
+    }
+    parse(data: any): BoardEvent {
+        return null;
+    }
+
     async run(b:Board): Promise<void> {
         this.start();
 
@@ -1443,6 +1613,13 @@ class BE_AddObj extends BoardEvent{
         await b.addObj(this.obj);
         await this.finish(true);
     }
+
+    serialize() {
+        return {};
+    }
+    static parse(data: any): BoardEvent {
+        return null;
+    }
 }
 class BE_Wait extends BoardEvent{
     constructor(delay:number){
@@ -1454,6 +1631,15 @@ class BE_Wait extends BoardEvent{
         this.start();
         await wait(this.delay);
         await this.finish(true);
+    }
+    serialize() {
+        return {
+            id:"wait",
+            val:this.delay
+        };
+    }
+    static parse(data: any): BoardEvent {
+        return new BE_Wait(data.val);
     }
 }
 class BE_SetOpacity extends ObjRefBoardEvent{
@@ -1473,6 +1659,17 @@ class BE_SetOpacity extends ObjRefBoardEvent{
         if(objs[0]) await animateVal(objs.pop(),"opacity",this.opacity,this.animTime);
         await this.finish(true);
     }
+    serialize() {
+        return {
+            id:"setOpacity",
+            refs:this.refs.refs,
+            val:this.opacity,
+            time:this.animTime
+        };
+    }
+    static parse(data: any): BoardEvent {
+        return new BE_SetOpacity(new MultiBORef(...data.refs),data.val);
+    }
 }
 class BE_GlobalBubble extends BoardEvent{
     constructor(comment:string){
@@ -1484,6 +1681,14 @@ class BE_GlobalBubble extends BoardEvent{
         this.start();
         await b.waitForBubble(this.comment,0,-innerHeight/5,true);
         await this.finish(true);
+    }
+    serialize() {
+        return {
+            com:this.comment
+        };
+    }
+    static parse(data: any): BoardEvent {
+        return new BE_GlobalBubble(data.com);
     }
 }
 class BE_CircleObj extends ObjRefBoardEvent{
@@ -1514,6 +1719,15 @@ class BE_CircleObj extends ObjRefBoardEvent{
         
         await this.finish(true);
     }
+    serialize() {
+        return {
+            id:"circleObj",
+            refs:this.refs.refs
+        };
+    }
+    static parse(data: any): BoardEvent {
+        return new BE_CircleObj(data.refs);
+    }
 }
 class BE_RemoveObj extends ObjRefBoardEvent{
     constructor(refs:string[]|MultiBORef,fadeOut=true,fadeTime=500){
@@ -1538,6 +1752,17 @@ class BE_RemoveObj extends ObjRefBoardEvent{
 
         await this.finish(true);
     }
+    serialize() {
+        return {
+            id:"removeObj",
+            refs:this.refs.refs,
+            fadeOut:this.fadeOut,
+            fadeTime:this.fadeTime
+        };
+    }
+    static parse(data: any): BoardEvent {
+        return new BE_RemoveObj(data.refs,data.fadeOut,data.fadeTime);
+    }
 }
 class BE_EndPonder extends BoardEvent{
     async run(b: Board): Promise<void> {
@@ -1546,6 +1771,14 @@ class BE_EndPonder extends BoardEvent{
         await b.exit();
         await this.finish(true);
         lesson.currentSubTask._resFinish();
+    }
+    serialize() {
+        return {
+            id:"endBoard"
+        };
+    }
+    static parse(data: any): BoardEvent {
+        return new BE_EndPonder();
     }
 }
 async function animateVal(obj:any,key:string,newVal:number,animTime:number){
@@ -1568,7 +1801,8 @@ async function animateVal(obj:any,key:string,newVal:number,animTime:number){
 }
 
 class Board{
-    constructor(){
+    constructor(bid:string){
+        this.bid = bid;
         this.objs = [];
         this.events = [];
 
@@ -1577,6 +1811,7 @@ class Board{
         this.paint = paint;
         // this.objStore = new Map();
     }
+    bid:string;
     isVisible = false;
     
     can:HTMLCanvasElement;
@@ -1727,6 +1962,21 @@ class Board{
     hide(){
         this.isVisible = false;
     }
+
+    // dev stuff
+    save(){
+        let a = {events:[]} as any;
+        for(const e of this.events){
+            let data = e.serialize();
+            a.events.push(data);
+        }
+        console.log("Board Data",a);
+    }
+    static parse(data:any){
+        let a = new Board(data.bid);
+        a.events = data.events.map(v=>BoardEvent.parseAny(a,v));
+        return a;
+    }
 }
 class Lesson{
     constructor(lid:string,title:string,parent:HTMLElement,tutParent:HTMLElement){
@@ -1756,6 +2006,39 @@ class Lesson{
     _hasShownFollowAlong = false;
 
     board:Board;
+    boards:Board[] = [];
+
+    static parse(data:any,parent:HTMLElement,tutParent:HTMLElement){
+        let a = new Lesson(data.lid,data.name,parent,tutParent);
+
+        a.bannerSection = new TextArea(data.banner.sections.map((v:any)=>new TextSection(v.head,v.text)));
+        a.finalInstance = new FinalProjectInstance([]);
+
+        data.events = data.events.substring(data.events.indexOf("\n")+1);
+        data.boardData = data.boardData.map(v=>v.substring(v.indexOf("\n")+1));
+        
+        a.events = Function(data.events)();
+        a.boards = data.boards.map(v=>new Board(v));
+        for(let i = 0; i < a.boards.length; i++){
+            let b = a.boards[i];
+            b.events = Function("data",data.boardData[i])({
+                board:b
+            });
+            if(b.events.length) if(!(b.events[b.events.length-1] instanceof BE_EndPonder)) b.events.push(new BE_EndPonder());
+        }
+
+        // a.events = data.events.map((v:any)=>LEvent.parse(v));
+
+        // let boardsOK = Object.keys(data.boards);
+        // for(const key of boardsOK){
+        //     let bdata = data.boards[key];
+        //     // a.boards.push(bdata.events.map(v=>BoardEvent.parseAny(v)));
+        //     a.boards.push(Board.parse(bdata));
+        // }
+        // a.board = a.boards[0];
+
+        return a;
+    }
 
     getCurrentState(){
         let state = new LessonState();
@@ -1766,8 +2049,8 @@ class Lesson{
     init(){
         addBannerBubble(this);
         addBannerPreviewBubble(this);
-        this.board = new Board();
-        this.board.events = [
+        // this.board = new Board();
+        if(false) this.board.events = [
             // "Let's take a closer look at this."
             new BE_AddCode(null,0.5,0.5,Anchor.CENTER,Anchor.CENTER,new TypeAnim([
                 ...parseCodeStr("<$button$>$         $<$/$button$>",[0,2,0,3,0,3,2,0],"$",(i:number,t:TA_Text)=>{
@@ -1818,7 +2101,7 @@ class Lesson{
             // vvv - use underline target bubble?
             new BE_GlobalBubble("Anything in between the opening and closing tag of the element will be used as text!")
         ];
-        this.board.events.push(new BE_EndPonder());
+        // this.board.events.push(new BE_EndPonder());
         if(false) this.board.events = [ 
             new BE_AddText("Hello there!",[
                 // new TC("<button>Click Me!</button>",2),
@@ -2009,7 +2292,23 @@ async function initLessonPage(){
         new PromptLoginMenu().load();
         return;
     }
-    else console.log("...user was logged in...");
+
+    let url = new URL(location.href);
+    let lid = url.searchParams.get("lid");
+    if(!lid){
+        console.log("No lid found so no lesson to load");
+        return;
+    }
+    let lessonData = await new Promise<any>(resolve=>{
+        socket.emit("getLesson",lid,(data:any)=>{
+            if(typeof data == "number"){
+                alert("Err: while trying to load lesson data, error code: "+data);
+                resolve(null);
+            }
+            else resolve(data);
+        });
+    });
+    if(!lessonData) return;
 
     // @ts-ignore
     require.config({paths:{vs:"/lib/monaco/min/vs"}});
@@ -2020,66 +2319,70 @@ async function initLessonPage(){
         });
     });
 
-    lesson = new Lesson("0001","Lesson 01",pane_code,pane_tutor_code);
-    lesson.bannerSection = new TextArea([
-        new TextSection("What Will We Be Doing in This Lesson?",[
-            "Want to start coding?",
-            "Well, before we can add any logic or fancy visuals, we first have to make an HTML page.",
-            "An HTML Page is like a document where you create all the visual parts of the page like buttons or text.",
-            // "In this tutorial we'll look at how to make a basic HTML or website page.<br>Nothing too fancy but a start of the core structure."
-        ]),
-        new TextSection("What Will We Learn?",[
-            "How to setup a basic HTML page",
-            'How to add a "Header" and "Paragraph" element to your page'
-        ])
-    ]);
-    lesson.finalInstance = new FinalProjectInstance([
-        new FileInstance("index.html",`
-<html>
-<body>
-        <h1>This is a heading, hello there!</h1>
-        <p>This is a paragraph.</p>
-</body>
-</html>
-`)
-    ]);
-    lesson.events = [
-        new LE_AddGBubble([
-            "Hello!",
-            "In order to do anything, we first need to create an HTML document."
-        ],BubbleLoc.global,[
-            new AddFileTask("index.html",false)
-        ]),
-        new LE_AddGBubble([
-            "Cool! Now you have an HTML document!",
-            'Note: Using the name "index" for our file name means the browser will automatically pick this page when someone tries to go to your site!',
-            "i[So what even is an HTML document and what can we do with it?]"
-        ],BubbleLoc.global,[]),
-        new LE_AddGBubble([
-            "An HTML document defines what is h[in the page.]",
-            "For example, this is where you would put b[buttons, text, and images.]",
-            "i[Let's try adding a button.]"
-        ],BubbleLoc.global,[
-            // new AddGenericCodeTask("<button>\x05\x05Click Me!\x05\x05</button>\x05\x01\x01\x05","html"),
-            new AddGenericCodeTask("<button>Click Me!</button>","html"),
-            new DoRefreshTask("Refresh the preview to see how it looks.","Refresh the preview"),
-            new PonderBoardTask("Alright, let's look a little closer at this."),
+    console.log(lessonData);
+    lesson = Lesson.parse(lessonData,pane_code,pane_tutor_code);
+    if(false){
+        lesson = new Lesson("0001","Lesson 01",pane_code,pane_tutor_code);
+        lesson.bannerSection = new TextArea([
+            new TextSection("What Will We Be Doing in This Lesson?",[
+                "Want to start coding?",
+                "Well, before we can add any logic or fancy visuals, we first have to make an HTML page.",
+                "An HTML Page is like a document where you create all the visual parts of the page like buttons or text.",
+                // "In this tutorial we'll look at how to make a basic HTML or website page.<br>Nothing too fancy but a start of the core structure."
+            ]),
+            new TextSection("What Will We Learn?",[
+                "How to setup a basic HTML page",
+                'How to add a "Header" and "Paragraph" element to your page'
+            ])
+        ]);
+        lesson.finalInstance = new FinalProjectInstance([
+            new FileInstance("index.html",`
+    <html>
+    <body>
+            <h1>This is a heading, hello there!</h1>
+            <p>This is a paragraph.</p>
+    </body>
+    </html>
+    `)
+        ]);
+        lesson.events = [
+            new LE_AddGBubble([
+                "Hello!",
+                "In order to do anything, we first need to create an HTML document."
+            ],BubbleLoc.global,[
+                new AddFileTask("index.html",false)
+            ]),
+            new LE_AddGBubble([
+                "Cool! Now you have an HTML document!",
+                'Note: Using the name "index" for our file name means the browser will automatically pick this page when someone tries to go to your site!',
+                "i[So what even is an HTML document and what can we do with it?]"
+            ],BubbleLoc.global,[]),
+            new LE_AddGBubble([
+                "An HTML document defines what is h[in the page.]",
+                "For example, this is where you would put b[buttons, text, and images.]",
+                "i[Let's try adding a button.]"
+            ],BubbleLoc.global,[
+                // new AddGenericCodeTask("<button>\x05\x05Click Me!\x05\x05</button>\x05\x01\x01\x05","html"),
+                new AddGenericCodeTask("<button>Click Me!</button>","html"),
+                new DoRefreshTask("Refresh the preview to see how it looks.","Refresh the preview"),
+                new PonderBoardTask("board0","Alright, let's look a little closer at this."),
 
-            new AddTutorSideText("\n\n","Add some space"),
-            new AddGenericCodeTask(`<button>Click</button>
+                new AddTutorSideText("\n\n","Add some space"),
+                new AddGenericCodeTask(`<button>Click</button>
 
-<div></div>\x01\x01\x01\x01\x01\x01
-<h1>Test</h1>
-<p>Test paragrph</p>`,"html"),
-            new AddFileTask("main.js",false),
-            new AddGenericCodeTask('alert("hi");',"javascript"),
-            new AddTutorSideText("\n\n","Add some space"),
-            new AddGenericCodeTask('alert("hi");',"javascript"),
-        ]),
-        new LE_AddGBubble([
-            "Awesome!"
-        ],BubbleLoc.global,[])
-    ];
+    <div></div>\x01\x01\x01\x01\x01\x01
+    <h1>Test</h1>
+    <p>Test paragrph</p>`,"html"),
+                new AddFileTask("main.js",false),
+                new AddGenericCodeTask('alert("hi");',"javascript"),
+                new AddTutorSideText("\n\n","Add some space"),
+                new AddGenericCodeTask('alert("hi");',"javascript"),
+            ]),
+            new LE_AddGBubble([
+                "Awesome!"
+            ],BubbleLoc.global,[])
+        ];
+    }
 
     // lesson.p.createFile("index.html");
 //     lesson.p.createFile("index.html",`<html>
@@ -2297,7 +2600,7 @@ function loadIFrameSimpleMode(iframe:HTMLIFrameElement,inst:FinalProjectInstance
     // let htmlText = project.files[0].editor.getValue();
     let indexHTML = inst.files.find(v=>v.filename == "index.html");
     if(!indexHTML){
-        alert("Err: could not find index.html to load");
+        // alert("Err: could not find index.html to load");
         return;
     }
     
@@ -2417,7 +2720,7 @@ function updateBubble(i:number){
     }
     else if(b.loc == BubbleLoc.refresh){
         let rect = b_refresh.getBoundingClientRect();
-        x = rect.x;
+        x = rect.x+11;
         y = rect.y+rect.height+15 - 60;
         b.e.classList.add("dir-top2");
     }
