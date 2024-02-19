@@ -223,3 +223,6 @@
 - need to fill this in later
 - fixed dropdowns to make them more intuitive with mousedown to open and mousedown to close (instead of click to close -> open)
 - changed users to uid system
+
+### 2/19/24
+- 

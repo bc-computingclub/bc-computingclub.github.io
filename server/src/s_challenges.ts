@@ -43,6 +43,7 @@ export class Challenge{
         return p.submitted;
     }
     isInProgress(user:User){
+        if(this.isCompleted(user)) return false;
         return user.challenges.some(v=>v.cid == this.id);
     }
 

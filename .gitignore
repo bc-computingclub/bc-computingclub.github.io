@@ -4,8 +4,6 @@ server/project/
 server/out/
 /out/
 .DS_Store
-*.js
-*.js.map
 .vscode/settings.json
 .zed/settings.json
 server/package-lock.json
