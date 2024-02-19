@@ -80,8 +80,10 @@ function createFeature() {
 
 // subtle parallax effect, feel free to remove if you don't like it Caleb
 window.addEventListener('mousemove', function(e) {
-    var x = e.clientX / window.innerWidth * 8;
-    var y = e.clientY / window.innerHeight * 8;
-
-    hBackground.style.backgroundPosition = x + '% ' + y + '%';
+    var x = e.clientX-innerWidth/2;
+    var y = e.clientY-innerHeight/2;
+    
+    let strength = innerWidth/40;
+    let scale = 2;
+    hBackground.style.translate = (-scale*Math.cos((x/(innerWidth)-0.5)*Math.PI)*strength) + 'px ' + (-scale*Math.cos((y/(innerWidth)-0.5)*Math.PI)*strength) + 'px';
 });

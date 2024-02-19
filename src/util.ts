@@ -1,4 +1,5 @@
 let serverURL = "http://localhost:3000";
+// let serverURL = "h" // DigitalOcean URL
 let lesson:Lesson;
 let project:Project;
 

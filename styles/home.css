@@ -159,6 +159,7 @@ a {
 
 .h-background {
     background-size: cover;
+    width:105%;
     position: absolute;
     top: 60px;
     z-index: 1;
@@ -167,8 +168,8 @@ a {
     
     /* Background image styling */
     transition: background-image 0.3s ease-in-out, opacity 0.3s ease-in-out;
-    height: calc(100vh - 60px);
-    width: 100%;
+    height: calc(105vh - 60px);
+    /* width: 100%; */
     background-repeat: no-repeat;
 
     &[section="1"] {
