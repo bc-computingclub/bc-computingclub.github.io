@@ -62,10 +62,10 @@ export function getDefaultProjectMeta(user:User,pid:string,name:string){
     return new ProjectMeta(user,pid,name,"A project for experiments.",false,false);
 }
 export class Project{
-    constructor(pid:string,ownerEmail:string,meta:ProjectMeta){
+    constructor(pid:string,ownerUid:string,meta:ProjectMeta){
         this.pid = pid;
         // this.name = name;
-        this.ownerEmail = ownerEmail;
+        this.ownerUid = ownerUid;
         
         // this.desc = "A project for experiments.";
         // this.isPublic = false;
@@ -78,7 +78,7 @@ export class Project{
     meta:ProjectMeta;
     pid:string;
     // name:string;
-    ownerEmail:string;
+    ownerUid:string;
     _owner:User|null;
     
     // desc:string;
@@ -90,10 +90,10 @@ export class Project{
     // meta:ProjectMeta; // might need this at some point
     
     getPath(){
-        return "../project/"+this.ownerEmail+"/"+this.pid+"/";
+        return "../project/"+this.ownerUid+"/"+this.pid+"/";
     }
     getRefStr(){
-        return this.ownerEmail+":"+this.pid;
+        return this.ownerUid+":"+this.pid;
     }
 
     serializeGet(){
@@ -101,7 +101,7 @@ export class Project{
         // let meta = this._owner.pMeta.find(v=>v.pid == this.pid);
         // let challenge = this._owner.challenges.find(v=>v.pid == this.pid);
         return {
-            owner:this.ownerEmail,
+            owner:this.ownerUid,
             name:this.meta.name,
             desc:this.meta.desc,
             isPublic:this.meta.isPublic,
@@ -140,6 +140,7 @@ export class Project{
 }
 
 export interface CredentialResData{
+    uid:string,
     name:string;
     email:string;
     sanitized_email:string;
@@ -199,10 +200,10 @@ export class UserChallengeData{
     pid:string;
 }
 export class User{
-    constructor(name:string,email:string,picture:string,_joinDate:string,_lastLoggedIn:string,sockId:string,pMeta:any[]){
+    constructor(uid:string,name:string,email:string,picture:string,_joinDate:string,_lastLoggedIn:string,sockId:string,pMeta:any[]){
         this.name = name;
         this.email = email;
-        this.sanitized_email = sanitizeEmail(email);
+        // this.sanitized_email = sanitizeEmail(email);
         this.picture = picture;
         this.joinDate = _joinDate;
         
@@ -216,11 +217,12 @@ export class User{
         this.challenges = [];
 
         // temp for now
-        this.uid = email;
+        // this.uid = email;
+        this.uid = uid;
     }
     name:string;
     email:string;
-    sanitized_email:string;
+    // sanitized_email:string;
     picture:string;
     joinDate:string;
     lastLoggedIn:string;
@@ -255,7 +257,7 @@ export class User{
     addSocketId(sockId:string){
         if(this.sockIds.includes(sockId)) return;
         this.sockIds.push(sockId);
-        socks.set(sockId,this.email);
+        socks.set(sockId,this.uid);
     }
     removeSocketId(sockId:string){
         if(!this.sockIds.includes(sockId)) return;
@@ -265,9 +267,10 @@ export class User{
 
     getTransferData(){
         return {
+            uid:this.uid,
             name:this.name,
             email:this.email,
-            sanitized_email:this.sanitized_email,
+            // sanitized_email:this.sanitized_email,
             picture:this.picture,
             _joinDate:this.joinDate,
             _lastLoggedIn:this.lastLoggedIn
@@ -276,7 +279,7 @@ export class User{
 
     // _saveLock:Promise<void>; // do we need this? to prevent conflicts with saving? if there is a saveLock then await it and then proceed
     getPath(){
-        return "../users/"+this.sanitized_email+".json";
+        return "../users/"+this.uid+".json";
     }
     async saveToFile(){
         // if we don't save tokens this will require users to relog when there's a server restart maybe? do we need to save them?
@@ -301,7 +304,7 @@ export class User{
     // Projects
     createProject(meta:ProjectMeta,pid?:string){
         if(pid == null) pid = genPID();
-        let p = new Project(pid,this.email,meta);
+        let p = new Project(pid,this.uid,meta);
         p._owner = this;
         this.projects.push(p);
         this.pMeta.push(meta);
@@ -339,11 +342,11 @@ function loadProject(p:Project){
 export function getProject(ref:string){
     return allProjects.get(ref);
 }
-export function getProject2(email:string,pid:string){
-    return allProjects.get(email+":"+pid);
+export function getProject2(uid:string,pid:string){
+    return allProjects.get(uid+":"+pid);
 }
 export async function attemptToGetProject(user:User,pid:string){
-    let ref = user.email+":"+pid;
+    let ref = user.uid+":"+pid;
 
     // if(hasntFoundProject.includes(ref)){
     //     console.log("$ prevented, already stored that it couldn't find it");
@@ -363,7 +366,7 @@ export async function attemptToGetProject(user:User,pid:string){
 
     // console.log("$ searching...");
 
-    let uid = user.sanitized_email;
+    let uid = user.uid;
     let path = "../project/"+uid+"/"+pid;
     if(!await access(path)){
         // await mkdir(path);
@@ -412,7 +415,7 @@ export async function attemptToGetProject(user:User,pid:string){
         return p1;
     }
     // console.log("$ found meta!",meta.name,meta.desc);
-    let p2 = new Project(meta.pid,user.email,meta);
+    let p2 = new Project(meta.pid,user.uid,meta);
     p2._owner = user;
     // p2.files = files;
     p2.items = root;

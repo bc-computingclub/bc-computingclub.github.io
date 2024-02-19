@@ -1,16 +1,18 @@
 import { User, read, readdir, write } from "./connection";
 
 export class CSubmission{
-    constructor(url:string,who:string,pid:string){
+    constructor(url:string,who:string,uid:string,pid:string){
         this.url = url;
         this.who = who;
+        this.uid = uid;
         this.pid = pid;
     }
     url:string;
     who:string;
+    uid:string;
     pid:string;
     static from(data:any){
-        return new CSubmission(data.url,data.who,data.pid);
+        return new CSubmission(data.url,data.who,data.uid,data.pid);
     }
 }
 export class Challenge{

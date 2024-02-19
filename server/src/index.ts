@@ -18,34 +18,69 @@ function valVar2(v:any,type:string,f:any){
     return (typeof v == type);
 }
 
+let allUsers:Record<string,string> = {};
+function readAllUsers(){
+    let str = fs.readFileSync("../data/users.json","utf8");
+    if(!str){
+        console.log("$ error loading user cache; code 1");
+        return;
+    }
+    try{
+        allUsers = JSON.parse(str);
+    }
+    catch(e){
+        console.log("$ error loading user cache; code 2");
+        return;
+    }
+    console.log("$ loaded user cache");
+}
+async function saveUserCache(){
+    await write("../data/users.json",JSON.stringify(allUsers),"utf8");
+}
+readAllUsers();
+
 io.on("connection",socket=>{
-    socket.on("login",async (data:CredentialResData,token:string,call:(data:CredentialResData)=>void)=>{
-        if(!valVar(data,"object")) return;
-        if(!valVar(data.email,"string")) return;
-        if(!valVar(token,"string")) return;
-        if(token.length < 20) return;
+    socket.on("login",async (data:CredentialResData,token:string,call:(data:any)=>void)=>{
+        if(!valVar2(data,"object",call)) return;
+        if(!valVar2(data.email,"string",call)) return;
+        // if(!valVar2(data.uid,"string",call)) return; // not until we fully migrate to uid
+        if(!valVar2(token,"string",call)) return;
+        if(!valVar(call,"function")) return;
+        if(token.length < 20){
+            call(1);
+            return;
+        }
+
+        let uid = allUsers[data.email];
+        data.uid = uid;
 
         let wasNewUser = false;
 
-        let user = users.get(data.email);
+        // ** tmp fix for email to uid conversion
+        // if(data.uid == null) data.uid = data.email;
+
+        let user = users.get(data.uid);
+        console.log("... logging in ...",data.uid,data.email);
         if(!user){ // create account
-            if(!users.has(data.email)){
-                let san = sanitizeEmail(data.email);
+            if(!users.has(data.uid)){
+                // let san = sanitizeEmail(data.email);
                 // try to read from file first
                 let fdataStr:string|null = null;
                 try{
-                    fdataStr = await read("../users/"+san+".json","utf8");
+                    fdataStr = await read("../users/"+data.uid+".json","utf8");
                 }
-                catch(e){
-                    console.log("aaaaaaaa");
-                }
+                catch(e){}
 
                 function newUser(){
-                    user = new User(data.name,data.email,data.picture,data._joinDate,data._lastLoggedIn,socket.id,[]);
+                    if(data.uid == null) data.uid = crypto.randomUUID();
+                    user = new User(data.uid,data.name,data.email,data.picture,data._joinDate,data._lastLoggedIn,socket.id,[]);
                     user.joinDate = new Date().toISOString();
                     user.saveToFile();
                     wasNewUser = true;
-                    console.log(":: created new user: ",user.email);
+                    allUsers[data.email] = data.uid;
+                    saveUserCache();
+                    console.log(":: created new user: ",user.uid,user.email);
+                    return user;
                 }
                 if(!fdataStr){
                     // create new user if couldn't find their file
@@ -55,17 +90,21 @@ io.on("connection",socket=>{
                     let fdata = JSON.parse(fdataStr);
                     if(!fdata){
                         console.log("# Err couldn't read user file! using provided data instead");
-                        newUser();
+                        let u = newUser();
+                        call(u.getTransferData());
                         return;
                     }
-                    user = new User(fdata.name,fdata.email,fdata.picture,fdata._joinDate,fdata._lastLoggedIn,socket.id,fdata.pMeta);
+                    user = new User(data.uid,fdata.name,fdata.email,fdata.picture,fdata._joinDate,fdata._lastLoggedIn,socket.id,fdata.pMeta);
                     user.challenges = (fdata.challenges as any[]||[]).map(v=>new UserChallengeData(v.i,v.cid,v.pid));
                     user.saveToFile();
                 }
-                if(user) users.set(user.email,user);
+                if(user) users.set(user.uid,user);
             }
         }
-        if(!user) return;
+        if(!user){
+            call(2);
+            return;
+        }
         user.lastLoggedIn = new Date().toISOString();
 
         // login
@@ -75,9 +114,9 @@ io.on("connection",socket=>{
 
         // if(!wasNewUser) user.saveToFile(); // disabled for testing
 
-        if(valVar(call,"function")) call(user.getTransferData());
+        call(user.getTransferData());
 
-        console.log(":: user logged in: ",user.email,` (New session? ${user.getFirstToken() != _prevToken}) (SockIds: ${user.getSocketIds().join(", ")})`);
+        console.log(":: user logged in: ",user.uid,user.email,` (New session? ${user.getFirstToken() != _prevToken}) (SockIds: ${user.getSocketIds().join(", ")})`);
     });
     socket.on("disconnect",()=>{
         let user = getUserBySock(socket.id);
@@ -139,9 +178,8 @@ io.on("connection",socket=>{
         // need to validate type integrity here
         
         console.log("uploading...");
-        let uid = user.sanitized_email;
 
-        let path = "../lesson/"+uid+"/"+lessonId;
+        let path = "../lesson/"+user.uid+"/"+lessonId;
         if(!await access(path)) await mkdir(path);
 
         let curFiles = await readdir(path);
@@ -170,8 +208,7 @@ io.on("connection",socket=>{
         if(!user) return;
 
         console.log("restoring...");
-        let uid = user.sanitized_email;
-        let path = "../lesson/"+uid+"/"+lessonId;
+        let path = "../lesson/"+user.uid+"/"+lessonId;
         if(!await access(path)){
             await mkdir(path);
             // call(null);
@@ -206,9 +243,8 @@ io.on("connection",socket=>{
         }
         
         console.log("uploading...");
-        let uid = user.sanitized_email;
 
-        let path = "../project/"+uid+"/"+pid;
+        let path = "../project/"+user.uid+"/"+pid;
         if(!await access(path)) await mkdir(path);
 
         let curFiles = await readdir(path);
@@ -478,7 +514,7 @@ io.on("connection",socket=>{
             return;
         }
         
-        ch.sub.push(new CSubmission("",user.name,p.pid));
+        ch.sub.push(new CSubmission("",user.name,user.uid,p.pid));
         await ch.save();
         p.meta.submitted = true;
         await user.saveToFile();
@@ -584,7 +620,7 @@ io.on("connection",socket=>{
             f(2);
             return;
         }
-        let p = getProject2(user.email,pid);
+        let p = getProject2(user.uid,pid);
         if(!p){
             f(1);
             return;
@@ -632,7 +668,7 @@ io.on("connection",socket=>{
             f(2);
             return;
         }
-        let p = getProject2(user.email,pid);
+        let p = getProject2(user.uid,pid);
         if(!p){
             f(1);
             return;
@@ -672,7 +708,7 @@ io.on("connection",socket=>{
             f(2);
             return;
         }
-        let p = getProject2(user.email,pid);
+        let p = getProject2(user.uid,pid);
         if(!p){
             f(1);
             return;
@@ -844,7 +880,7 @@ async function deleteProject(user:User,p:Project,f:(res:number)=>void){
     user.pMeta.splice(user.pMeta.findIndex(v=>v.pid == pid),1);
     await user.saveToFile();
 
-    let res = await removeFolder("../project/"+user.email+"/"+pid);
+    let res = await removeFolder("../project/"+user.uid+"/"+pid);
     f(res ? 0 : 3);
 }
 
@@ -873,7 +909,7 @@ async function createChallengeProject(user:User,cid:string):Promise<Project|numb
     let pid = genPID();
     
     if(user.challenges.some(v=>v.cid == cid)) return 1; // already exists
-    let path = "../project/"+user.email+"/"+pid; //__c- prefix (THIS WILL BE INCLUDED ON CHALLENGES DATA EVENTUALLY)
+    let path = "../project/"+user.uid+"/"+pid; //__c- prefix (THIS WILL BE INCLUDED ON CHALLENGES DATA EVENTUALLY)
     // if(await access(path)) return 1; // already exists
     let res = await mkdir(path);
     if(!res) return 2; // failed to create
@@ -881,7 +917,7 @@ async function createChallengeProject(user:User,cid:string):Promise<Project|numb
     await user.saveToFile();
 
     // setup/create project
-    let p = new Project(pid,user.email,getDefaultProjectMeta(user,pid,c.name));
+    let p = new Project(pid,user.uid,getDefaultProjectMeta(user,pid,c.name));
     allProjects.set(pid,p);
     p.cid = cid;
     // let m = user.pMeta.find(v=>v.pid == pid);
@@ -898,7 +934,7 @@ async function createProject(user:User,name:string,desc:string,isPublic=false){
     let pid = genPID();
     let meta = new ProjectMeta(user,pid,name,desc,isPublic,false);
     let p = user.createProject(meta,pid);
-    let path = "../project/"+user.email+"/"+p.pid;
+    let path = "../project/"+user.uid+"/"+p.pid;
     await mkdir(path);
     return p;
 }

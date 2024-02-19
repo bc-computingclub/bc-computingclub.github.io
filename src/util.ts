@@ -357,9 +357,10 @@ interface CredentialResponse {
     credential:string;
 }
 interface CredentialResData{
+    uid:string;
     name:string;
     email:string;
-    sanitized_email:string;
+    // sanitized_email:string;
     email_verified:boolean;
     picture:string;
 
@@ -750,8 +751,8 @@ class Project{
     }
 
     getURL(){
-        if(PAGE_ID == PAGEID.editor) return serverURL+"/project/"+g_user.sanitized_email+"/"+socket.id+"/"+g_user.sanitized_email+"/"+project.pid;
-        else if(PAGE_ID == PAGEID.lesson) return serverURL+"/lesson/"+g_user.sanitized_email+"/"+socket.id+"/"+g_user.sanitized_email+"/"+lesson.lid;
+        if(PAGE_ID == PAGEID.editor) return serverURL+"/project/"+g_user.uid+"/"+socket.id+"/"+g_user.uid+"/"+project.pid;
+        else if(PAGE_ID == PAGEID.lesson) return serverURL+"/lesson/"+g_user.uid+"/"+socket.id+"/"+g_user.uid+"/"+lesson.lid;
     }
 
     findFile(name:string){
@@ -1102,7 +1103,8 @@ function setupFItemDropdown(f:FItem,div:HTMLElement){
                 "content_copy",
                 "content_paste"
             ];
-        }
+        },
+        isRightClick:true
     });
 }
 
@@ -1835,7 +1837,10 @@ function closeTmpMenus(){
 }
 document.addEventListener("mousedown",e=>{
     if(!isOverTmpMenu) closeTmpMenus();
-    if(!overSubMenu) closeAllSubMenus();
+    if(!overSubMenu){
+        console.log("...closing");
+        closeAllSubMenus();
+    }
 });
 // document.addEventListener("mouseup",e=>{
 //     if(tmpMenus.length) if(!isOverTmpMenu) closeTmpMenus();
@@ -1862,7 +1867,7 @@ async function refreshProject(){
         alert("No index.html file found! Please create a new file called index.html in the outer most folder of your project, this file will be used in the preview.");
         return;
     }
-    iframe.src = serverURL+"/project/"+g_user.sanitized_email+"/"+socket.id+"/"+g_user.sanitized_email+"/"+project.pid;
+    iframe.src = serverURL+"/project/"+g_user.uid+"/"+socket.id+"/"+g_user.uid+"/"+project.pid;
     // let cs = (iframe.contentWindow as any).console as Console;
     // cs.log = function(...data:any[]){
     //     console.log("BOB");
@@ -1887,7 +1892,7 @@ async function refreshLesson(){
         alert("No index.html file found! Please create a new file called index.html, this file will be used in the preview.");
         return;
     }
-    iframe.src = serverURL+"/lesson/"+g_user.sanitized_email+"/"+socket.id+"/"+g_user.sanitized_email+"/"+lesson.lid;
+    iframe.src = serverURL+"/lesson/"+g_user.uid+"/"+socket.id+"/"+g_user.uid+"/"+lesson.lid;
 
     icon_refresh.style.rotate = _icRef_state ? "360deg" : "0deg";
     _icRef_state = !_icRef_state;
@@ -2014,6 +2019,7 @@ document.addEventListener("mouseup",e=>{
             dragItem.end(last);
         }
     }
+    _hadClosedSubMenu = false;
 });
 
 class DragData<T>{
@@ -2063,6 +2069,12 @@ let subs:{
     e:HTMLElement,
     ops:DropdownOptions
 }[] = [];
+function pushSub(data:any){
+    subs.push(data);
+    requestAnimationFrame(()=>{
+        _areSubs = true;
+    });
+}
 setTimeout(()=>{
     subMenus = document.querySelector(".sub-menus") as HTMLElement;
     if(!subMenus) return;
@@ -2073,18 +2085,41 @@ setTimeout(()=>{
         overSubMenu = false;
     });
 },500);
+let _hadClosedSubMenu = false;
+let _areSubs = false;
 function closeAllSubMenus(){
+    if(!areSubMenus()) return;
+    // console.log("HAD: ",_hadClosedSubMenu);
+    // if(_hadClosedSubMenu) return;
+    let list = [...subs];
     for(const s of subs){
         s.e.remove();
+        subs.splice(subs.indexOf(s),1);
+        // _hadClosedSubMenu = true;
         if(s.ops?.onclose) s.ops?.onclose();
     }
+    _areSubs = false;
 }
-function openDropdown(btn:HTMLElement,getLabels:()=>string[],onclick:(i:number)=>void,ops?:DropdownOptions){
+function areSubMenus(){
+    return _areSubs;
+}
+async function openDropdown(btn:HTMLElement,getLabels:()=>string[],onclick:(i:number)=>void,ops?:DropdownOptions){
     let labels = getLabels();
     let icons = (ops?.getIcons ? ops?.getIcons() : null) as string[];
     // if(e.button != 2) return;
     // subMenus.innerHTML = "";
-    closeAllSubMenus();
+    if(ops.isRightClick) closeAllSubMenus();
+    else{
+        if(areSubMenus()){
+            closeAllSubMenus();
+            return;
+        }
+        // _hadClosedSubMenu = true;
+        // requestAnimationFrame(()=>{
+        //     _hadClosedSubMenu = false;
+        // });
+    }
+    // else await wait(1);
     // let rect = btn.getBoundingClientRect();
     let dd = document.createElement("div");
     dd.oncontextmenu = function(e){
@@ -2128,7 +2163,7 @@ function openDropdown(btn:HTMLElement,getLabels:()=>string[],onclick:(i:number)=
         else dd.style.transform = `translate(${xoff}%,0px)`;
     }
     if(ops?.onopen) ops.onopen(dd);
-    subs.push({
+    pushSub({
         e:dd,
         ops:ops
         // onclose:ops?.onclose
@@ -2149,12 +2184,13 @@ type DropdownOptions = {
     getIcons?:()=>string[];
     customPos?:boolean;
     openToLeft?:boolean;
+    isRightClick?:boolean;
 }
 function setupDropdown(btn:HTMLElement,getLabels:()=>string[],onclick:(i:number)=>void,ops?:DropdownOptions){
-    btn.addEventListener("contextmenu",e=>{
+    btn.addEventListener("contextmenu",async e=>{
         e.preventDefault();
         ops.customPos = true;
-        let dd = openDropdown(btn,getLabels,onclick,ops);
+        let dd = await openDropdown(btn,getLabels,onclick,ops);
         dd.style.left = (e.clientX)+"px";
         dd.style.top = (e.clientY-60)+"px";
         if(e.clientY > innerHeight/2) dd.style.transform = "translate(0px,-100%)";
@@ -2208,6 +2244,7 @@ function setupCallout(ele:Element,label?:string){
     });
 }
 function setupCustomCallout(ele:Element,onshow:(div:HTMLElement)=>void){
+    if(!ele) return;
     let d:HTMLElement;
     let isOver = false;
     let flag = false;

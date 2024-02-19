@@ -214,3 +214,12 @@
 ### 2/14/24
 - added publish/unpublish button
 - probably other stuff and from earlier days that I never logged
+
+### 2/17/24
+- need to fill this in later
+- added lid support to load custom lessons
+
+### 2/18/24
+- need to fill this in later
+- fixed dropdowns to make them more intuitive with mousedown to open and mousedown to close (instead of click to close -> open)
+- changed users to uid system

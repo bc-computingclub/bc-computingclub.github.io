@@ -175,7 +175,7 @@ function setChallengeHTML(c: Challenge) {
     let tempSpan = document.createElement("span");
     tempSpan.className = "c-details material-symbols-outlined";
     tempSpan.innerHTML = "more_horiz";
-    tempSpan.addEventListener("click", (e) => {
+    tempSpan.addEventListener("mousedown", (e) => {
       openDropdown(
         tempSpan,
         () => ["Delete Progress"],
@@ -347,7 +347,7 @@ async function sortChallenges(option: string, descending: boolean) {
   return;
 }
 
-cSortDiv.addEventListener("click", () => {
+cSortDiv.addEventListener("mousedown", () => {
   openDropdown(
     cSortDiv,
     () => ["Popularity", "Popularity", "Alphabetical (A-Z)", "Alphabetical (Z-A)"],
@@ -370,7 +370,7 @@ cSortDiv.addEventListener("click", () => {
       getIcons() {
         return []; // Might use later and replace (A-Z)/(Z-A) with icons
       },
-      openToLeft: true,
+      openToLeft: true
     },
   );
 });
