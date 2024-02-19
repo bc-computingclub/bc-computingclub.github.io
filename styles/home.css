@@ -2,35 +2,6 @@
 @import url(/styles/theme.css);
 @import url(/styles/util.css);
 
-:root1 {
-    --bg-col: rgb(216, 216, 216);
-    --secondary-bg-col:white;
-    --col: black;
-    --secondary-col:rgb(255, 255, 255);
-    --font: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    --faded-col:rgb(150, 157, 184);
-    
-    /* Colors for cards */
-    --learn-col: rgb(56, 71, 119); 
-    --experiment-col: rgb(33, 103, 121); 
-    --practice-col:rgb(80, 62, 110); 
-
-    /* Secondary colors for cards */
-    --learn-col-alt: rgb(113, 125, 170); 
-    --experiment-col-alt: rgb(98, 147, 160); 
-    --practice-col-alt:rgb(143, 125, 172); 
-
-    --menu-btn-bg:black;
-
-    --lighten0:rgba(255,255,255,0.25);
-    --lighten:rgba(255,255,255,0.1);
-    --lighten2:rgba(255,255,255,0.05);
-    --darken0:rgba(0,0,0,0.25);
-    --darken:rgba(0,0,0,0.1);
-    --darken2:rgba(0,0,0,0.05);
-
-    --dark-text:black;
-}
 :root{
     --bg-col:#050505;
     --secondary-bg-col:#000;
@@ -40,6 +11,7 @@
     --fourth-bg-col:#606060;
     --font: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     --faded-col:rgb(150, 157, 184);
+    --muted-col: rgb(180, 180, 180);
 
     /* Colors for cards */
     --learn-col: rgb(56, 71, 119); 
@@ -83,11 +55,23 @@
 
 body {
     font-family: var(--font);
-    background-color: var(--bg-col);
     color: var(--col);
 
-    --purple-col:var(--third-bg-col);
-    --purple-col-alt:var(--fourth-bg-col);
+    position: relative;
+    height: 100%;
+    transition: background-color 0.3s ease-in-out;
+    height: 100dvh;
+    overflow: hidden;
+
+    &[section="1"] {
+        background-color: var(--learn-col);
+    }
+    &[section="2"] {
+        background-color: var(--practice-col);
+    }
+    &[section="3"] {
+        background-color: var(--experiment-col);
+    }
 }
 
 a {
@@ -100,7 +84,6 @@ a {
     width: 100%;
     position: sticky;
     top: 0px;
-    height: 100px;
     padding-block: 1em;
 
     display: grid;
@@ -156,280 +139,9 @@ a {
     background-color: var(--menu-btn-bg);
 }
 
-.learn-link.active {
-    --cta-btn-col:var(--learn-col);
-    /* background-color: var(--learn-col); */
-    color:white;
-}
-
-.practice-link.active {
-    --cta-btn-col:var(--practice-col);
-    /* background-color: var(--practice-col); */
-}
-
-.experiment-link.active {
-    --cta-btn-col:var(--experiment-col);
-    /* background-color: var(--experiment-col); */
-}
-
-.cards-container {
-    height: calc(100dvh - 100px);
-    display: grid;
-    grid-template-rows: auto auto;
-    padding-inline: 8em;
-    align-content: center;
-    justify-content: center;
-}
-
-.cards {
-    display: grid;
-    align-content: center;
-    justify-content: center;
-    position: relative;
-    height: 340px;
-    width: 800px;
-    margin-bottom: calc(2em + 40px);
-}
-
-.card {
-    padding-inline: 3em;
-    padding-block: 4em;
-    border-radius: 5px;
-    color: var(--secondary-col);
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 4em;
-    align-items: center;
-    height: 340px;
-    width: 870px;
-    user-select: none;
-    border: 2px solid transparent;
-
-    position: absolute;
-
-    -webkit-box-shadow: 0px 10px 17px -11px rgba(0,0,0,0.54);
-    -moz-box-shadow: 0px 10px 17px -11px rgba(0,0,0,0.54);
-    box-shadow: 0px 10px 17px -11px rgba(0,0,0,0.54);
-    cursor: pointer;
-
-    &.current-card{
-        transition:
-            box-shadow 0.2s ease, 
-            background-color 0.2s ease-in;
-    }
-
-    &.current-card:hover{
-        -webkit-box-shadow: 2px 10px 17px -11px rgba(0,0,0,0.8);
-        -moz-box-shadow: 2px 10px 17px -11px rgba(0,0,0,0.8);
-        box-shadow: 2px 10px 17px -11px rgba(0,0,0,0.8);
-    }
-
-    &:not(.current-card){
-        &.learn-card{
-            background-color: var(--learn-col-alt);
-        }
-        &.practice-card{
-            background-color: var(--practice-col-alt);
-        }
-        &.experiment-card{
-            background-color: var(--experiment-col-alt);
-        }
-    }
-
-    &[position="1"]{
-        z-index: 3;
-        animation: 0.7s to-first ease-out forwards;
-        &.initial-state{
-            top: 0px;
-            left: 0px;
-        }
-    }
-
-    &[position="2"]{
-        z-index: 2;
-        animation: 0.7s to-second ease-out forwards;
-        &.initial-state{
-            top: 20px;
-            left: 20px;
-            animation: 0.7s to-second-alt ease-out forwards;
-        }
-    }
-
-    &[position="3"]{ /* default position for new cards*/
-        z-index: 1;
-        animation: 0.7s to-third ease-out forwards;
-        &.initial-state{
-            top: 40px;
-            left: 40px;   
-            animation: 0.7s to-third-alt ease-out forwards;
-        }
-    }
-}
-
-@keyframes to-first {
-    from {
-        top: 20px;
-        left: 20px;
-    }
-    to {
-        top: 0px;
-        left: 0px;
-    }
-}
-
-@keyframes to-second {
-    from {
-        top: 40px;
-        left: 40px;
-    }
-    to {
-        top: 20px;
-        left: 20px;
-    }
-}
-
-@keyframes to-second-alt {
-    from {
-        top: 40px;
-        left: 40px;
-        filter: grayscale(1);
-    }
-    to {
-        top: 20px;
-        left: 20px;
-        filter: grayscale(0);
-    }
-}
-
-@keyframes to-third {
-    from {
-        top: 60px;
-        left: 60px;
-        opacity: 0.3;
-    }
-    to {
-        top: 40px;
-        left: 40px;
-        opacity: 1;
-    }
-}
-
-@keyframes to-third-alt {
-    from {
-        top: 60px;
-        left: 60px;
-        filter: grayscale(1);
-    }
-    to {
-        top: 40px;
-        left: 40px;
-        filter: grayscale(0);
-    }
-}
-
-.learn-card {
-    background-color: var(--learn-col);
-}
-
-.practice-card {
-    background-color: var(--practice-col);
-    animation-delay: 0.2s;
-}
-
-.experiment-card {
-    background-color: var(--experiment-col);
-    animation-delay: 0.4s;
-}
-
-.card-left, .card-right{
-    text-align: start;
-}
-
-.card-left {
-    font-size: 2rem;
-}
-
-.card-right {
-    font-size: 1.6rem;
-    border-left: 4px solid var(--secondary-col);
-    padding-inline-start: 1em;
-}
-
-.card.remove-card {
-    animation-name: remove-card;
-    animation-duration: .3s;
-    animation-timing-function: linear;
-    animation-fill-mode: forwards;
-
-    & >*{
-        visibility: hidden;
-    }
-}
-
-@keyframes remove-card {
-    0% {
-        opacity: 1;
-        translate: 0 0;
-    }
-    100% {   
-        opacity: 0;
-        translate: -10px -10px;
-    }
-}
-
 .material-symbols-outlined{
     max-width:1em;
 }
-
-.card-controls {
-    display: grid;
-    grid-template-columns: auto auto auto;
-    gap: 1em;
-    align-content: center;
-    justify-content: center;
-    width: 840px;
-
-    animation-name: slide-up;
-    animation-duration: 0.7s;
-    animation-timing-function: cubic-bezier(0,1.07,.69,.95);
-    animation-fill-mode: forwards;
-}
-
-@keyframes slide-up {
-    0% {
-        translate: 0 100px;
-        opacity: 0;
-    }
-    100% {
-        translate: 0 0;
-        opacity: 1;
-    }
-}
-
-.card-btn {
-    width: 30px;
-    height: 8px;
-    border-radius: 8px;
-    background-color: var(--faded-col);
-    transition-duration: 0.6s;
-    transition-timing-function: ease-in-out;
-    transform-origin: center;
-
-    &.active-card-btn {
-        width: 160px;
-        &[card-label="learn"] {
-            background-color: var(--learn-col);
-        }
-        &[card-label="practice"] {
-            background-color: var(--practice-col);   
-        }
-        &[card-label="experiment"] {
-            background-color: var(--experiment-col);
-        }
-    }
-}
-
-/*  */
 
 .hide{
     display:none;
@@ -456,4 +168,187 @@ a {
         opacity:0;
         /* scale:0.5; */
     }
+}
+
+.h-background {
+    background-size: cover;
+    position: absolute;
+    top: 60px;
+    z-index: 1;
+    opacity: 0.12;
+    background-position: 0% 0%;
+    transition: backround-position 0.1s ease;
+    
+    /* Background image styling */
+    transition: background-image 0.3s ease-in-out, opacity 0.3s ease-in-out;
+    height: calc(100vh - 60px);
+    width: 100%;
+    background-repeat: no-repeat;
+
+    &[section="1"] {
+        background-image: url('/images/test.png');
+    } 
+    &[section="2"] {
+        background-image: url('/images/showcase2.png');
+    }
+    &[section="3"] {
+        background-image: url('/images/showcase3.png');
+    }
+}
+
+.h-feature-cont {
+    width: 100%;
+    position: absolute;
+    top: 50dvh;
+    z-index: 2;
+    display: grid;
+    min-height: 360px;
+    grid-template-columns: auto 23em;
+    gap: 5em;
+    justify-content: start;
+    margin-inline: 5em;
+
+    animation-name: fade-in-up;
+    animation-duration: 1s;
+    animation-timing-function: cubic-bezier(0, 0.97, 0.43, 1.02);
+}
+
+@keyframes fade-in-up {
+    from {
+        opacity: 0;
+        transform: translateY(80px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.h-text,
+.h-title {
+    color: var(--secondary-col);
+}
+
+.h-title {
+    font-size: 7em;
+    text-transform: uppercase;
+    font-weight: 400;
+    letter-spacing:2px;
+    line-height: 70px;
+}
+
+.h-timeline {
+    display: grid;
+    height: 100%;
+    width: 100%;
+    gap: 1em;
+    transition: grid-template-rows 0.3s ease-in-out;
+    
+    &[section="1"] {
+        grid-template-rows: 3fr 1fr 1fr;
+    }
+
+    &[section="2"] {
+        grid-template-rows: 1fr 3fr 1fr;
+    }
+
+    &[section="3"] {
+        grid-template-rows: 1fr 1fr 3fr;
+    }
+
+    & > * {
+        width: 8px;
+        position: relative;
+        background-color: var(--muted-col);
+        color: var(--muted-col);
+        border-radius: 2px;
+        transition: all 0.25s ease-in;
+        transform-origin: left;
+
+        &.active {
+            background-color: var(--secondary-col);
+            color: var(--secondary-col);
+        }
+
+        &::after {
+            position: absolute;
+            left: 30px;
+        }
+
+        &:nth-child(1)::after {
+            content: '01';
+        }
+        &:nth-child(2)::after {
+            content: '02';
+        }
+        &:nth-child(3)::after {
+            content: '03';
+        }
+
+        &:hover {
+            cursor: pointer;
+            background-color: var(--secondary-col);
+            &::after {
+                color: var(--secondary-col);
+            }
+        }
+    }
+}
+
+.h-feature {
+    display: grid;
+    grid-template-rows: auto auto auto;
+    align-items: center;
+    align-content: space-between;
+    justify-content: start;
+    gap:3em;
+    height: 100%;
+    width: 100%;
+
+    animation: fade-in-slower 1s cubic-bezier(0, 0.97, 0.43, 1.02);
+}
+
+@keyframes fade-in-slower {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.h-text {
+    font-size: 1.6em;
+    line-height: 1.3;
+    font-weight: 300;
+    letter-spacing: 1.2px;
+}
+
+.h-redirect-cont {
+    display: flex;
+    align-items: center;
+    gap: 1em;
+}
+
+.h-redirect {
+    display: flex;
+    align-items: center;
+    gap: 1em;
+    width: max-content;
+    cursor: pointer;
+    font-size: inherit;
+
+    & > * {
+        font-size: inherit;
+        color: var(--secondary-col);
+    }
+}
+
+.h-redirect-featured {
+    text-transform: uppercase;
+    cursor: pointer;
+    text-decoration: underline;
+    color: var(--muted-col);
 }
