@@ -326,10 +326,13 @@ a {
     width: max-content;
     cursor: pointer;
     font-size: inherit;
+    font-weight: 700;
+    padding-block: .7em;
 
     & > * {
         font-size: inherit;
         color: var(--secondary-col);
+        font-weight: 700;
     }
 }
 

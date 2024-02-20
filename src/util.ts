@@ -2459,6 +2459,7 @@ class ChallengeMenu extends Menu {
   
     load() {
         super.load();
+        alert("This contest has: " + this.c.submission_count + " submissions");
         let areSubmissions: boolean = parseInt(this.c.submission_count) <= 0 ? false : true;
         this.menu.innerHTML = `
               <div class="c-popup">
