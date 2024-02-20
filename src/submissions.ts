@@ -17,10 +17,10 @@ let currentChallenge:Challenge;
 
 window.onload = async () => {
   await loginProm;
-  cTitle.style.opacity = "1";
-  cTitle.textContent = `${currentChallenge.name} Challenge`;
   currentChallenge = await getChallenge(cid);
   submissionArray = currentChallenge.submissions;
+  cTitle.style.opacity = "1";
+  cTitle.textContent = `${currentChallenge.name} Challenge`;
   displaySubmissions(submissionArray,true);
   if(pid) {
     console.log("Creating popup with " + submissionArray.find((v) => v.pid == pid)?.sentBy + "'s Submission details");
@@ -79,7 +79,7 @@ function getSubmissionElement(submission: Submission): HTMLElement {
 }
 
 cDetails.addEventListener("click", async () => {
-  await createChallengePopup(test1); // replace with reference to actual challenge
+  await createChallengePopup(currentChallenge); // replace with reference to actual challenge
 });
 
 cBack.addEventListener("click", () => {
