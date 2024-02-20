@@ -2361,6 +2361,7 @@ class Challenge {
     submission_count: number;
     timespan: { start: string; end: string };
     sub_highlights: Submission[];
+    submissions:Submission[];
   
     static from(data: any) {
         let c = new Challenge(
@@ -2373,9 +2374,18 @@ class Challenge {
             false,
             data.difficulty,
             data.ongoing,
-            "0",
+            data.submission_count
         );
         c.timespan = data.timespan;
+        c.submissions = data.sub.map(
+            (v: any) =>
+            new Submission(
+                v.url || "/images/fillerthumbnail.png",
+                v.who,
+                v.lineCount,
+                v.pid,
+            ),
+        );
         c.sub_highlights = data.hl.map(
             (v: any) =>
             new Submission(
@@ -2386,6 +2396,7 @@ class Challenge {
             ),
         );
         c.inProgress = data.inProgress;
+        
         // c.completed = data.completed;
         return c;
     }
@@ -2594,5 +2605,14 @@ async function hideLoadingAnim() {
     ) as NodeListOf<HTMLElement>;
     loadingDivs.forEach((div: HTMLElement) => {
         div.remove();
+    });
+}
+
+// submissions
+async function getChallenge(cid:string){
+    return new Promise<Challenge>(resolve=>{
+        socket.emit("getChallenge",cid,(data:any)=>{
+            resolve(Challenge.from(data));
+        });
     });
 }

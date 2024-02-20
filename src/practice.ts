@@ -353,18 +353,10 @@ cSortDiv.addEventListener("mousedown", () => {
     cSortDiv,
     () => ["Popularity", "Popularity", "Alphabetical (A-Z)", "Alphabetical (Z-A)"],
     (i) => {
-      if (i == 0) {
-        sortChallenges("popularity", true);
-      }
-      if (i == 1) {
-        sortChallenges("popularity", false);
-      }
-      if (i == 2) {
-        sortChallenges("alphabetical", true);
-      }
-      if (i == 3) {
-        sortChallenges("alphabetical", false);
-      }
+      if (i == 0) sortChallenges("popularity", true);
+      if (i == 1) sortChallenges("popularity", false);
+      if (i == 2) sortChallenges("alphabetical", true);
+      if (i == 3) sortChallenges("alphabetical", false);
       closeAllSubMenus(); // Feel free to change this behavior
     },
     {

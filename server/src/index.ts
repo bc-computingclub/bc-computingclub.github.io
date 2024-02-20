@@ -384,6 +384,20 @@ io.on("connection",socket=>{
         let data = await ChallengeData.fromCID(cid);
         f(data?.serializeGet());
     });
+    socket.on("getChallenge",(cid:string,f:(data:any)=>void)=>{
+        if(!valVar2(cid,"string",f)) return;
+        
+        let user = getUserBySock(socket.id);
+        if(!user) return;
+
+        let c = challenges.get(cid);
+        if(!c){
+            f(null);
+            return;
+        }
+
+        f(c.serializeGet(user));
+    });
     socket.on("getChallenges",(perPage:number,pageI:number,filter:FilterType,option:string,desc:boolean,f:(data:any)=>void)=>{
         let user = getUserBySock(socket.id);
         if(!user) return;

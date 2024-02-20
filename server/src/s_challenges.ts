@@ -93,7 +93,7 @@ export class Challenge{
             ongoing:this.ongoing,
             hl:this.sub.slice(0,2),
             sub:this.sub,
-            submission_count:this.cnt,
+            submission_count:this.sub.length,
             completed:(user ? this.isCompleted(user) : false),
             inProgress:(user ? this.isInProgress(user) : null)
         } as ChallengeGet;
