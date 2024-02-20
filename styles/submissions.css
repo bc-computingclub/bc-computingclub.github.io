@@ -8,11 +8,11 @@
 }
 
 .s-top {
-    display: grid;
-    grid-template-columns: auto auto;
+    max-height: 35px;
+    display: flex;
+    align-items: center;
     justify-content: space-between;
     text-transform: uppercase;
-    height: 35px;
 }
 
 .clear-filters {
@@ -81,6 +81,10 @@
     border-radius: 3px;
     padding: 1em;
     height: min-content;
+
+    animation-name: intro-up;
+    animation-duration: 0.3s;
+    animation-timing-function: ease-out;
 }
 
 .s-container-top {
@@ -260,6 +264,10 @@
     height: calc(100dvh - (92px + 3em));
     position: sticky;
     top: 1em;
+
+    animation-name: intro-from-left;
+    animation-duration: 0.3s;
+    animation-timing-function: ease-out;
 }
 
 .f-options {

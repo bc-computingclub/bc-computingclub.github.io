@@ -15,109 +15,112 @@
     <script>genHeader(1);</script>
 
     <div class="sub-menus"></div>
-    <div class="c-home">
-        <div class="challenge-left">
-            <div class="c-filter-div">
-                <h3 style="display: flex; justify-content: center;">
-                    FILTERS
-                </h3>
-                <div class="filter-section">
-                    <button class="clear-filters">
-                        Clear Filters
-                        <!-- <span class="material-symbols-outlined">refresh</span> -->
+
+    <div class="c-home-outer">
+        <div class="c-header">
+            <h1>CHALLENGES</h1>
+            <div class="c-header-r">
+                <div class="c-sort-div">
+                    <button class="c-sort-btn c-search">
+                        Sort By <span class="material-symbols-outlined c-sort-toggle">arrow_drop_down</span>
                     </button>
-                </div>
-                <div class="filter-section">
-                    <h4 class="f-title">
-                        DIFFICULTY
-                    </h4>
-                    <div class="f-options">
-                        <div class="f-option">
-                            <input type="checkbox" name="difficulty" id="easy" value="easy">
-                            <label for="easy">Easy</label>
-                        </div>
-                        <div class="f-option">
-                            <input type="checkbox" name="difficulty" id="medium" value="medium">
-                            <label for="medium">Medium</label>
-                        </div>
-                        <div class="f-option">
-                            <input type="checkbox" name="difficulty" id="hard" value="hard">
-                            <label for="hard">Hard</label>
-                        </div>
-                        <div class="f-option">
-                            <input type="checkbox" name="difficulty" id="code-wizard" value="code-wizard">
-                            <label for="code-wizard">Code Wizard</label>
-                        </div>
+                    <div class="c-sort-options">
+                        <!--Typescript adds sort options here-->
                     </div>
                 </div>
-                <div class="filter-section">
-                    <h4 class="f-title">
-                        TYPE
-                    </h4>
-                    <div class="f-options">
-                        <div class="f-option">
-                            <input type="checkbox" name="ongoing" id="ongoing" value="ongoing">
-                            <label for="ongoing">Featured (Computing Club)</label>
-                        </div>
-                    </div>
-                    <div class="f-options">
-                        <div class="f-option">
-                            <input type="checkbox" name="completed" id="completed" value="completed">
-                            <label for="completed">Completed</label>
-                        </div>
-                    </div>
-                </div>
+                <form action="/search" method="get" class="c-search">
+                    <input type="text" id="search" name="q" placeholder="Search Challenges" class="c-search-inner c-search-bar">
+                    <input type="submit" value="Search" class="material-symbols-outlined c-search-inner c-bubble">
+                </form>
             </div>
         </div>
-
-        <div class="challenge-right">
-            <div class="c-header">
-                <h1>CHALLENGES</h1>
-                <div class="c-header-r">
-                    <div class="c-sort-div">
-                        <button class="c-sort-btn c-search">
-                            Sort By <span class="material-symbols-outlined c-sort-toggle">arrow_drop_down</span>
+        <div class="c-home">
+            <div class="challenge-left">
+                <div class="c-filter-div">
+                    <h3 style="display: flex; justify-content: center;">
+                        FILTERS
+                    </h3>
+                    <div class="filter-section">
+                        <button class="clear-filters">
+                            Clear Filters
+                            <!-- <span class="material-symbols-outlined">refresh</span> -->
                         </button>
-                        <div class="c-sort-options">
-                            <!--Typescript adds sort options here-->
+                    </div>
+                    <div class="filter-section">
+                        <h4 class="f-title">
+                            DIFFICULTY
+                        </h4>
+                        <div class="f-options">
+                            <div class="f-option">
+                                <input type="checkbox" name="difficulty" id="easy" value="easy">
+                                <label for="easy">Easy</label>
+                            </div>
+                            <div class="f-option">
+                                <input type="checkbox" name="difficulty" id="medium" value="medium">
+                                <label for="medium">Medium</label>
+                            </div>
+                            <div class="f-option">
+                                <input type="checkbox" name="difficulty" id="hard" value="hard">
+                                <label for="hard">Hard</label>
+                            </div>
+                            <div class="f-option">
+                                <input type="checkbox" name="difficulty" id="code-wizard" value="code-wizard">
+                                <label for="code-wizard">Code Wizard</label>
+                            </div>
                         </div>
                     </div>
-                    <form action="/search" method="get" class="c-search">
-                        <input type="text" id="search" name="q" placeholder="Search Challenges" class="c-search-inner c-search-bar">
-                        <input type="submit" value="Search" class="material-symbols-outlined c-search-inner c-bubble">
-                    </form>
+                    <div class="filter-section">
+                        <h4 class="f-title">
+                            TYPE
+                        </h4>
+                        <div class="f-options">
+                            <div class="f-option">
+                                <input type="checkbox" name="ongoing" id="ongoing" value="ongoing">
+                                <label for="ongoing">Featured (Computing Club)</label>
+                            </div>
+                        </div>
+                        <div class="f-options">
+                            <div class="f-option">
+                                <input type="checkbox" name="completed" id="completed" value="completed">
+                                <label for="completed">Completed</label>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
-
-            <div class="c-outer-in-progress c-outer">
-                <div class="c-ip-container-header">
-                    <h3 class="c-section">
-                        IN PROGRESS
-                    </h3>
-                    <h3 class="c-in-progress-counter">
-                        (0)
-                    </h3>
+    
+            <div class="challenge-right">
+                <div class="c-outer-in-progress c-outer">
+                    <div class="c-ip-container-header">
+                        <h3 class="c-section">
+                            IN PROGRESS
+                        </h3>
+                        <h3 class="c-in-progress-counter">
+                            (0)
+                        </h3>
+                    </div>
+                    <div class="c-in-progress-container c-container">
+                        <!--Typescript adds in progress challenges here-->
+                    </div>
                 </div>
-                <div class="c-in-progress-container c-container">
-                    <!--Typescript adds in progress challenges here-->
-                </div>
-            </div>
-
-            <div class="c-outer-browse c-outer">
-                <div class="c-browse-container-header">
-                    <h3 class="c-section">
-                        BROWSE
-                    </h3>
-                    <h3 class="c-browse-counter">
-                        (0)
-                    </h3>
-                </div>
-                <div class="c-browse-container c-container">
-                    <!--Typescript adds challenges that are not in progress here (if they match the selected filters)-->
+    
+                <div class="c-outer-browse c-outer">
+                    <div class="c-browse-container-header">
+                        <h3 class="c-section">
+                            BROWSE
+                        </h3>
+                        <h3 class="c-browse-counter">
+                            (0)
+                        </h3>
+                    </div>
+                    <div class="c-browse-container c-container">
+                        <!--Typescript adds challenges that are not in progress here (if they match the selected filters)-->
+                    </div>
                 </div>
             </div>
         </div>
     </div>
+
 
     <script src="/out/socket.io.min.js"></script>
     <script src="/lib/html2canvas/html2canvas.min.js"></script>
