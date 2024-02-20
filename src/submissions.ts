@@ -1,5 +1,7 @@
 let url = new URL(location.href);
-let cId = url.searchParams.get("cid") || "";
+let cid = url.searchParams.get("cid") || "" as string;
+let pid = url.searchParams.get("pid") || "" as string;
+let fromPopup = url.searchParams.get("frompopup") as string;
 const cTitle = document.querySelector<HTMLElement>(".c-title");
 const cDetails = document.querySelector<HTMLElement>(".c-details");
 const cBack = document.querySelector<HTMLElement>(".c-back");
@@ -10,19 +12,20 @@ let previewButtons: NodeListOf<HTMLElement>;
 
 // Get submissions based on cID
 // Get challenge based on cID
-
-let sub1 = new Submission("/images/fillerthumbnail.png", "Paul Bauer", "112","01");
-let sub2 = new Submission("/images/fillerthumbnail.png", "Claeb Claeb", "367","02");
-let sub3 = new Submission("/images/fillerthumbnail.png", "Butler Test", "245","03");
-let submissionArray = [sub1, sub2, sub1, sub2, sub1, sub2];
-
-let test1 = new Challenge("01", "Color Wheel", "Create a circular wheel which selects different colors depending on user mouse input", true, "/images/colorwheel.png", "", false, "easy", false, "1");
+let submissionArray:Submission[];
+let currentChallenge:Challenge;
 
 window.onload = async () => {
   await loginProm;
   cTitle.style.opacity = "1";
-  cTitle.textContent = `${test1.name} Challenge`;
+  cTitle.textContent = `${currentChallenge.name} Challenge`;
+  currentChallenge = await getChallenge(cid);
+  submissionArray = currentChallenge.submissions;
   displaySubmissions(submissionArray,true);
+  if(pid) {
+    console.log("Creating popup with " + submissionArray.find((v) => v.pid == pid)?.sentBy + "'s Submission details");
+    createSubmissionMenu(submissionArray.find((v) => v.pid == pid));
+  }
 };
 
 async function displaySubmissions(submissionArray: Submission[],showAnim?:boolean) {
@@ -55,6 +58,8 @@ function toggleLineCount() {
   });
 }
 
+
+
 function getSubmissionElement(submission: Submission): HTMLElement {
   let subDiv = document.createElement("div");
   subDiv.className = "s-card";
@@ -78,7 +83,7 @@ cDetails.addEventListener("click", async () => {
 });
 
 cBack.addEventListener("click", () => {
-  window.location.href = `index.html?cid=${cId}`; // redirects to challenge page and opens challenge corresponding to cId
+  window.location.href = `index.html?cid=${cid}`; // redirects to challenge page and opens challenge corresponding to cId
 });
 
 function createSubmissionMenu(sub: Submission) {

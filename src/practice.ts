@@ -154,6 +154,7 @@ function setChallengeHTML(c: Challenge) {
     ipCounter++;
   }
 
+  let fromPopup = false;
   tempCard.innerHTML = `
         <div class="c-img-div">
             <img class="c-img" src="${c.imgURL}" alt="challenge image">
@@ -166,7 +167,7 @@ function setChallengeHTML(c: Challenge) {
           <button class="c-preview" onclick="setupButton(${c.cID});">
             Details <span class="material-symbols-outlined">info</span>
           </button>
-          <button class="c-submissions" onclick="showSubmissions('${c.cID}','${c.inProgress}')">
+          <button class="c-submissions" onclick="showSubmissions('${c.cID}','${c.inProgress}','${fromPopup}')">
             Submissions
           </button>
         </div>

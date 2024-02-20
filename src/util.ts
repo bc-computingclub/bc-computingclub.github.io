@@ -2333,7 +2333,7 @@ class Challenge {
         submitted: boolean,
         difficulty: string,
         ongoing: boolean,
-        submission_count: string,
+        submission_count: number,
     ) {
         if (!imgURL || imgURL == "") imgURL = "/images/fillerthumbnail.png";
         this.name = name;
@@ -2358,7 +2358,7 @@ class Challenge {
     cID: string;
     difficulty: string;
     ongoing: boolean;
-    submission_count: string;
+    submission_count: number;
     timespan: { start: string; end: string };
     sub_highlights: Submission[];
   
@@ -2402,7 +2402,7 @@ class DetailedChallenge extends Challenge {
         submitted: boolean,
         difficulty: string,
         ongoing: boolean,
-        submission_count: string,
+        submission_count: number,
         submissions: Submission[],
     ) {
         super(
@@ -2459,8 +2459,8 @@ class ChallengeMenu extends Menu {
   
     load() {
         super.load();
-        // alert("This contest has: " + this.c.submission_count + " submissions");
-        let areSubmissions: boolean = parseInt(this.c.submission_count) <= 0 ? false : true;
+        let areSubmissions: boolean = this.c.submission_count <= 0 ? false : true;
+        let fromPopup = true;
         this.menu.innerHTML = `
               <div class="c-popup">
                   <div class ="c-popup-left">
@@ -2476,7 +2476,7 @@ class ChallengeMenu extends Menu {
                           <div class ="c-popup-implementations">
                               <div class="c-popup-implementations-header">
                                   <h3 class="c-popup-sub-title">Submissions</h3>
-                                  <button class="c-view-all" onclick="showSubmissions('${this.c.cID}','${areSubmissions}')">
+                                  <button class="c-view-all" onclick="showSubmissions('${this.c.cID}','${areSubmissions}','${fromPopup}')">
                                       View All (${this.c.submission_count})
                                   </button>
                               </div>
@@ -2505,7 +2505,7 @@ class ChallengeMenu extends Menu {
         if (this.c.sub_highlights?.length) {
             for (let i = 0; i < this.c.sub_highlights.length; i++) {
                 document.querySelector(".c-implementations").innerHTML += `
-                <div class="c-implementation">
+                <div class="c-implementation" onclick="showSubmissions('${this.c.cID}','${this.c.submission_count > 0 ? true : false}','${this.c.sub_highlights[i].pid}')">
                     <div class="c-implementation-preview">
                         <img class="c-implementation-img" src="${this.c.sub_highlights[i].previewURL}" alt="challenge image">
                     </div>
@@ -2530,10 +2530,15 @@ class ChallengeMenu extends Menu {
     }
 }
   
-function showSubmissions(cID: string, areSubmissions: boolean) {
+function showSubmissions(cID: string, areSubmissions: boolean, goToSID?:string, fromPopup?:boolean) {
+    let tempSID:string;
+    let frompopup:boolean;
+    if(fromPopup) frompopup = true;
+    else frompopup = false;
+    if(goToSID) tempSID = goToSID;
     if (areSubmissions && cID) { 
         console.log(cID);
-        window.location.href = `submissions.html?cid=${cID || ''}`; 
+        window.location.href = `submissions.html?cid=${cID || ''}&sid=${tempSID || ''}&frompopup=${fromPopup || ''}`; 
     }
 }
   
