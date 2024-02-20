@@ -499,7 +499,7 @@ function genHeader(i:number,isCompact=true,id:string){
         <div class="cur-project-controls">
             <div class="d-current-project">. . .</div>
             <div class="b-save icon-div"><div class="material-symbols-outlined co-item" co-label="Save Project">save</div></div>
-            <div class="b-publish icon-div"><div class="material-symbols-outlined"></div></div>
+            <div class="b-publish icon-div hide"><div class="material-symbols-outlined"></div></div>
             <div class="icon-div hide"><div class="material-symbols-outlined">play_arrow</div></div>
         </div>
         `:""}
@@ -510,7 +510,7 @@ function genHeader(i:number,isCompact=true,id:string){
                 <div>I'm Done</div>
             </button>
             <button class="b-replay"><div class="material-symbols-outlined">replay</div></button>
-            <button style="display:none" class="b-go-back-step"><div class="material-symbols-outlined">keyboard_double_arrow_left</div></button>
+            <button class="b-go-back-step hide"><div class="material-symbols-outlined">keyboard_double_arrow_left</div></button>
         </div>
         <div class="nav-links">
             <a href="/learn/lesson/index.html" class="nav-link">Learn <span class="material-symbols-outlined">Auto_stories</span></a>
@@ -522,7 +522,7 @@ function genHeader(i:number,isCompact=true,id:string){
     if(isCompact) navCont.classList.add("compact");
     document.body.appendChild(navCont);
     let links = navCont.querySelectorAll(".nav-link");
-    links[i].classList.add("active");
+    if(links[i]) links[i].classList.add("active");
     document.body.classList.add([
         "learn-page",
         "practice-page",
@@ -1815,6 +1815,8 @@ function postSetupEditor(project:Project){
     // other meta
     if(project.meta) project.setPublished(project.meta.submitted);
     else project.setPublished(false);
+
+    if(project.meta.cid != null) b_publish.classList.remove("hide");
 }
 
 // PAGE ID

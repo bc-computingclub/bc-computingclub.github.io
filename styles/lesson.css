@@ -51,6 +51,8 @@ body{
     width:max-content;
     max-width:300px;
     font-size:14px;
+    user-select:none;
+    -webkit-user-select:none;
 
     transition:opacity 0.2s ease-out;
 

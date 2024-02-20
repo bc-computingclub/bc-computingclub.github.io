@@ -1,6 +1,6 @@
 node_modules
-server/users/
-server/project/
+# server/users/
+# server/project/
 server/out/
 /out/
 .DS_Store

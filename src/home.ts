@@ -1,5 +1,6 @@
 const hBody = document.querySelector('.h-body') as HTMLElement;
 const hDesc = document.querySelector('.h-description') as HTMLElement;
+const hFeatureCont = document.querySelector('.h-feature-cont') as HTMLElement;
 const hBackground = document.querySelector('.h-background') as HTMLElement;
 
 let timelineBtns = document.querySelectorAll('.timeline-marker') as NodeListOf<HTMLElement>;
@@ -83,7 +84,10 @@ window.addEventListener('mousemove', function(e) {
     var x = e.clientX-innerWidth/2;
     var y = e.clientY-innerHeight/2;
     
-    let strength = innerWidth/40;
-    let scale = 2;
+    let strength = innerWidth/300;
+    let scale = -2;
     hBackground.style.translate = (-scale*Math.cos((x/(innerWidth)-0.5)*Math.PI)*strength) + 'px ' + (-scale*Math.cos((y/(innerWidth)-0.5)*Math.PI)*strength) + 'px';
+
+    strength /= 2;
+    hFeatureCont.style.translate = (scale*Math.cos((x/(innerWidth)-0.5)*Math.PI)*strength) + 'px ' + (scale*Math.cos((y/(innerWidth)-0.5)*Math.PI)*strength) + 'px';
 });

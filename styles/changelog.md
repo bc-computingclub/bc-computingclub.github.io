@@ -225,4 +225,6 @@
 - changed users to uid system
 
 ### 2/19/24
-- 
+- various fixes
+- alt parallax thing
+- publish/submit challenge project hidden on non challenge projects

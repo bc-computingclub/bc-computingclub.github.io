@@ -45,6 +45,7 @@ b_goBackStep.addEventListener("click",e=>{
             ct.file.editor.setPosition(ct.file.editor.getPosition().with(1,1));
         }
         t.replay(lesson.tut.getCurEditor()); // ^^^
+        // lesson._subTaskNum--;
     }
 });
 async function hideLessonConfirm(){
@@ -64,6 +65,8 @@ async function showLessonConfirm(){
     }
     d_lesson_confirm.style.opacity = "1";
     d_lesson_confirm.style.pointerEvents = null;
+    if(lesson._subTaskNum > 1) b_goBackStep.classList.remove("hide");
+    else b_goBackStep.classList.add("hide");
     await wait(500);
 }
 

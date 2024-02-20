@@ -1,4 +1,4 @@
-import * as a from "../../../src/lesson";
+import * as a from "../../../src/lesson"; declare data = {board:Board};
 return [
     new BE_AddCode(null,0.5,0.5,Anchor.CENTER,Anchor.CENTER,new TypeAnim([
         ...parseCodeStr("<$button$>$         $<$/$button$>",[0,2,0,3,0,3,2,0],"$",(i,t)=>{
@@ -16,12 +16,12 @@ return [
         new TA_Wait(500),
         new TA_Move(-18,0),
         new TA_ReplaceText("textContent","Click Me!",3)
-    ])).finalize(this.board),
+    ])).finalize(data.board),
     new BE_GlobalBubble(`This line adds a button to the page with "Click Me!" as the button's text.\nLet's break down it's structure.`),
     new BE_SetOpacity(["textContent","fullTag"],0,500),
     new BE_Wait(300),
     new BE_CircleObj(new MultiBORef("tagName").with((o,i)=>{
-        if(i == 1) o.extraPad.l = this.board.getCharWidthInPX();
+        if(i == 1) o.extraPad.l = data.board.getCharWidthInPX();
     })).applyToObjs(o=>{
         console.log("AFTER APPLY",o);
         o.addTag("<>_circle");
