@@ -2471,7 +2471,6 @@ class ChallengeMenu extends Menu {
     load() {
         super.load();
         let areSubmissions: boolean = this.c.submission_count <= 0 ? false : true;
-        let fromPopup = true;
         this.menu.innerHTML = `
               <div class="c-popup">
                   <div class ="c-popup-left">
@@ -2487,7 +2486,7 @@ class ChallengeMenu extends Menu {
                           <div class ="c-popup-implementations">
                               <div class="c-popup-implementations-header">
                                   <h3 class="c-popup-sub-title">Submissions</h3>
-                                  <button class="c-view-all" onclick="showSubmissions('${this.c.cID}','${areSubmissions}','${fromPopup}')">
+                                  <button class="c-view-all" onclick="showSubmissions('${this.c.cID}','${areSubmissions}')">
                                       View All (${this.c.submission_count})
                                   </button>
                               </div>
@@ -2516,7 +2515,7 @@ class ChallengeMenu extends Menu {
         if (this.c.sub_highlights?.length) {
             for (let i = 0; i < this.c.sub_highlights.length; i++) {
                 document.querySelector(".c-implementations").innerHTML += `
-                <div class="c-implementation" onclick="showSubmissions('${this.c.cID}','${this.c.submission_count > 0 ? true : false}','${this.c.sub_highlights[i].pid}')">
+                <div class="c-implementation" onclick="showSubmissions('${this.c.cID}','true','${this.c.sub_highlights[i].pid}')">
                     <div class="c-implementation-preview">
                         <img class="c-implementation-img" src="${this.c.sub_highlights[i].previewURL}" alt="challenge image">
                     </div>
@@ -2541,15 +2540,12 @@ class ChallengeMenu extends Menu {
     }
 }
   
-function showSubmissions(cID: string, areSubmissions: boolean, goToSID?:string, fromPopup?:boolean) {
-    let tempSID:string;
-    let frompopup:boolean;
-    if(fromPopup) frompopup = true;
-    else frompopup = false;
-    if(goToSID) tempSID = goToSID;
+function showSubmissions(cID: string, areSubmissions: boolean, goToSubmission?:string) {
+    let goToSub:string = "";
+    if(goToSubmission) goToSub = goToSubmission;
     if (areSubmissions && cID) { 
         console.log(cID);
-        window.location.href = `submissions.html?cid=${cID || ''}&sid=${tempSID || ''}&frompopup=${fromPopup || ''}`; 
+        window.location.href = `submissions.html?cid=${cID || ''}&pid=${goToSub || ''}`; 
     }
 }
   
@@ -2586,13 +2582,18 @@ function resetChallengeBody() {
   
   let loadingDiv: HTMLElement;
   async function showLoadingAnim(loadThese: HTMLElement[], delay?: string) {
-    // if no delay is passed in, it'll just loop until hideLoadingAnim() is called
+    // if no delay is passed in, loading animation wil loop until hideLoadingAnim() is called
     loadingDiv = document.createElement("div") as HTMLElement;
     loadingDiv.classList.add("loading-div");
     loadingDiv.innerHTML = `
-            <div class="lds-ellipsis"><div></div><div></div><div></div><div></div></div>
-            <i class ="loading-text">Loading...</i>
-        `;
+        <div class="lds-ellipsis">
+            <div></div>
+            <div></div>
+            <div></div>
+            <div></div>
+        </div>
+        <i class ="loading-text">Loading...</i>
+    `;
     for (const c of loadThese) {
         c.appendChild(loadingDiv.cloneNode(true));
     }
@@ -2608,11 +2609,14 @@ async function hideLoadingAnim() {
     });
 }
 
-// submissions
+/**
+ * Get a single challenge from the server. 
+ * Calling challenge.submissions gives array with all submissions for that challenge.
+ */
 async function getChallenge(cid:string){
     return new Promise<Challenge>(resolve=>{
         socket.emit("getChallenge",cid,(data:any)=>{
             resolve(Challenge.from(data));
         });
     });
-}
+} 

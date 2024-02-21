@@ -8,7 +8,6 @@ const browseHeader = document.querySelector(".c-browse-container-header") as HTM
 const cHome = document.querySelector(".c-home") as HTMLElement;
 const clearFiltersButton = document.querySelector(".clear-filters") as HTMLElement;
 const cSortDiv = document.querySelector(".c-sort-div") as HTMLElement;
-const cSort = document.querySelector(".c-sort-btn") as HTMLElement;
 
 let cToggle: HTMLElement;
 let displayedChallenges: Challenge[] = [];
@@ -141,6 +140,9 @@ function createCToggle() {
   inProgressHeader.append(cToggle);
 }
 
+/** 
+ * Returns HTML element creating card for Challenge.
+ */
 function setChallengeHTML(c: Challenge) {
   let tempCard = document.createElement("div") as HTMLElement;
   tempCard.classList.add("c-card");
@@ -154,7 +156,6 @@ function setChallengeHTML(c: Challenge) {
     ipCounter++;
   }
 
-  let fromPopup = false;
   tempCard.innerHTML = `
         <div class="c-img-div">
             <img class="c-img" src="${c.imgURL}" alt="challenge image">
@@ -167,7 +168,7 @@ function setChallengeHTML(c: Challenge) {
           <button class="c-preview" onclick="setupButton(${c.cID});">
             Details <span class="material-symbols-outlined">info</span>
           </button>
-          <button class="c-submissions" onclick="showSubmissions('${c.cID}','${c.inProgress}','${fromPopup}')">
+          <button class="c-submissions" onclick="showSubmissions('${c.cID}','${c.inProgress}')">
             Submissions
           </button>
         </div>
@@ -181,9 +182,7 @@ function setChallengeHTML(c: Challenge) {
         tempSpan,
         () => ["Delete Progress"],
         (i) => {
-          if (i == 0) {
-            confirmProgressDeletion(c.cID);
-          }
+          if (i == 0) confirmProgressDeletion(c.cID);
         },
         {
           getIcons() {
@@ -344,7 +343,7 @@ async function sortChallenges(option: string, descending: boolean) {
   showChallenges(challengeArray);
   if (challengeArray.filter((c) => c.inProgress).length == 1) {
     toggleInProgressDiv(cToggle, false);
-  } // if there's 1 challenge in progress, close section, since sorting it would be pointless
+  } // if there's 1 challenge in progress, close section, since it's not being sorted and that may confuse the user.
   return;
 }
 
@@ -357,11 +356,16 @@ cSortDiv.addEventListener("mousedown", () => {
       if (i == 1) sortChallenges("popularity", false);
       if (i == 2) sortChallenges("alphabetical", true);
       if (i == 3) sortChallenges("alphabetical", false);
-      closeAllSubMenus(); // Feel free to change this behavior
+      closeAllSubMenus(); // Close menu when a sort option is clicked
     },
     {
       getIcons() {
-        return []; // Might use later and replace (A-Z)/(Z-A) with icons
+        return [
+          "keyboard_double_arrow_down",
+          "keyboard_double_arrow_up",
+          "keyboard_double_arrow_down",
+          "keyboard_double_arrow_up"
+        ];
       },
       openToLeft: true
     },

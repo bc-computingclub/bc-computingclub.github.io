@@ -180,6 +180,10 @@
     gap: 1em;
     padding-block-start: 1em;
     align-content: start;
+    &.empty {
+        color: var(--secondary-col);
+        grid-template-columns: 1fr;
+    }
 }
 
 .s-card {

@@ -1,13 +1,12 @@
 let url = new URL(location.href);
 let cid = url.searchParams.get("cid") || "" as string;
-let pid = url.searchParams.get("pid") || "" as string;
-let fromPopup = url.searchParams.get("frompopup") as string;
+let popupPid = url.searchParams.get("pid") || "" as string;
 const cTitle = document.querySelector<HTMLElement>(".c-title");
 const cDetails = document.querySelector<HTMLElement>(".c-details");
 const cBack = document.querySelector<HTMLElement>(".c-back");
-const sSort = document.querySelector<HTMLElement>(".s-sort");
+const sSortDiv = document.querySelector<HTMLElement>(".s-sort");
 const sContainer = document.querySelector<HTMLElement>(".s-container");
-const sCheckboxes = document.querySelectorAll('input[type="checkbox"]');
+const sCheckboxes = document.querySelectorAll('input[type="checkbox"]') as NodeListOf<HTMLInputElement>;
 let previewButtons: NodeListOf<HTMLElement>;
 
 // Get submissions based on cID
@@ -21,10 +20,10 @@ window.onload = async () => {
   submissionArray = currentChallenge.submissions;
   cTitle.style.opacity = "1";
   cTitle.textContent = `${currentChallenge.name} Challenge`;
-  displaySubmissions(submissionArray,true);
-  if(pid) {
-    console.log("Creating popup with " + submissionArray.find((v) => v.pid == pid)?.sentBy + "'s Submission details");
-    createSubmissionMenu(submissionArray.find((v) => v.pid == pid));
+  await displaySubmissions(submissionArray,true);
+  if(popupPid) {
+    console.log("Creating popup with " + submissionArray.find((v) => v.pid == popupPid)?.sentBy + "'s Submission details");
+    createSubmissionMenu(submissionArray.find((v) => v.pid == popupPid));
   }
 };
 
@@ -33,6 +32,10 @@ async function displaySubmissions(submissionArray: Submission[],showAnim?:boolea
   for (const sub of submissionArray) {
     let tempSub: HTMLElement = getSubmissionElement(sub);
     sContainer.appendChild(tempSub);
+  }
+  if(!submissionArray.length) { 
+    sContainer.innerHTML += `<i>There are currently no submissions to this challenge. Upload one to be featured here!</i>`
+    sContainer.classList.add("empty");
   }
   previewButtons = document.querySelectorAll(".s-open-preview");
   addClickListeners(previewButtons);
@@ -43,7 +46,7 @@ function addClickListeners(elm: NodeListOf<HTMLElement>) {
   for (let i = 0; i < elm.length; i++) {
     elm[i].addEventListener("click", () => {
       let pid = elm[i].getAttribute("pid");
-      console.log(pid);
+      // console.log(pid);
       let sub = submissionArray.find((s) => s.pid == pid);
       createSubmissionMenu(sub);
     });
@@ -58,15 +61,13 @@ function toggleLineCount() {
   });
 }
 
-
-
 function getSubmissionElement(submission: Submission): HTMLElement {
   let subDiv = document.createElement("div");
   subDiv.className = "s-card";
   subDiv.innerHTML = `
     <div class="s-img-div">
       <img src="${submission.previewURL}" alt="Submission Thumbnail" class="s-img">
-      <i class="s-line-count">${submission.lineCount}</i>
+      <span class="s-line-count">${submission.lineCount || "0 lines"}</span>
     </div>
     <div class="s-card-info">
       <div>${submission.sentBy}</div>
@@ -95,10 +96,6 @@ function createSubmissionMenu(sub: Submission) {
   curSubMenu = new SubmissionMenu(sub);
   curSubMenu.load();
 }
-
-sSort.addEventListener("click", () => {
-  sSort.classList.toggle("collapse");
-});
 
 let curSubMenu: SubmissionMenu;
 class SubmissionMenu extends Menu {
@@ -143,7 +140,7 @@ class SubmissionMenu extends Menu {
               <div class="s-popup-preview-details-contents">
                 <div class="s-popup-preview-details-item">
                   <h4 class="s-popup-preview-details-item-title">Line Count</h4>
-                  <div class="s-popup-preview-details-item-contents">${this.submission.lineCount}</div>
+                  <div class="s-popup-preview-details-item-contents">${this.submission.lineCount || 0}</div>
                 </div>
                 <div class="s-popup-preview-details-item">
                   <h4 class="s-popup-preview-details-item-title">Language(s)</h4>
@@ -178,4 +175,29 @@ sCheckboxes.forEach((cb:HTMLInputElement) => {
         console.log(checkboxValue);
         if(checkboxValue == "show-lines-of-code") toggleLineCount();
     });
+});
+
+sSortDiv.addEventListener("mousedown", () => {
+  openDropdown(
+    sSortDiv,
+    () => ["Popularity", "Popularity", "Alphabetical (A-Z)", "Alphabetical (Z-A)"],
+    (i) => {
+      if (i == 0) sortChallenges("popularity", true);
+      if (i == 1) sortChallenges("popularity", false);
+      if (i == 2) sortChallenges("alphabetical", true);
+      if (i == 3) sortChallenges("alphabetical", false);
+      closeAllSubMenus(); // Close menu when a sort option is clicked
+    },
+    {
+      getIcons() {
+        return [
+          "keyboard_double_arrow_down",
+          "keyboard_double_arrow_up",
+          "keyboard_double_arrow_down",
+          "keyboard_double_arrow_up"
+      ];
+      },
+      openToLeft: true
+    },
+  );
 });
