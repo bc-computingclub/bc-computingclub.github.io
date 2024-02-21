@@ -4,7 +4,7 @@ let popupPid = url.searchParams.get("pid") || "" as string;
 const cTitle = document.querySelector<HTMLElement>(".c-title");
 const cDetails = document.querySelector<HTMLElement>(".c-details");
 const cBack = document.querySelector<HTMLElement>(".c-back");
-const sSortDiv = document.querySelector<HTMLElement>(".s-sort");
+const sSortDiv = document.querySelector<HTMLElement>(".c-sort-div");
 const sContainer = document.querySelector<HTMLElement>(".s-container");
 const sCheckboxes = document.querySelectorAll('input[type="checkbox"]') as NodeListOf<HTMLInputElement>;
 let previewButtons: NodeListOf<HTMLElement>;

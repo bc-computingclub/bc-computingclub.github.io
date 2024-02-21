@@ -496,14 +496,14 @@ body {
 
 /* Large screens */
 @media (min-width: 1600px) {
-    .c-home {
+    /* .c-home {
         padding-inline: 20em;
-    }
+    } */
 }
 
 /* Ultrawide screens */
 @media (min-width: 2560px) {
-    .c-home {
+    /* .c-home {
         padding-inline: 30em;
-    }
+    } */
 }
