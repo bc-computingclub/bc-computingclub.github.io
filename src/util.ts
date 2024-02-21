@@ -856,6 +856,9 @@ class Project{
         return this.disableCopy;
     }
 }
+function getProjectURL(uid:string,pid:string){
+    return serverURL+"/project/"+g_user.uid+"/"+socket.id+"/"+uid+"/"+pid;
+}
 
 
 // submitting challenges
@@ -2309,16 +2312,18 @@ function whenEnter(elm:HTMLInputElement,f:(v:string)=>void){
 
 // Paul transfered stuff
 class Submission {
-    constructor(previewURL: string, sentBy: string, lineCount: string, pid: string) {
+    constructor(previewURL: string, sentBy: string, lineCount: string, pid: string, uid: string) {
         this.previewURL = previewURL;
         this.sentBy = sentBy;
         this.lineCount = lineCount;
         this.pid = pid;
+        this.uid = uid;
     }
     previewURL: string;
     sentBy: string;
     lineCount: string;
     pid: string;
+    uid: string;
     // add fields. note: make sure to add to Challenge where relevant
 }
 
@@ -2377,27 +2382,28 @@ class Challenge {
             data.submission_count
         );
         c.timespan = data.timespan;
-        c.submissions = data.sub.map(
+        c.submissions = data.sub?.map(
             (v: any) =>
             new Submission(
                 v.url || "/images/fillerthumbnail.png",
                 v.who,
                 v.lineCount,
                 v.pid,
+                v.uid
             ),
         );
-        c.sub_highlights = data.hl.map(
+        c.sub_highlights = data.hl?.map(
             (v: any) =>
             new Submission(
                 v.url || "/images/fillerthumbnail.png",
                 v.who,
                 v.lineCount,
                 v.pid,
+                v.uid
             ),
         );
         c.inProgress = data.inProgress;
-        
-        // c.completed = data.completed;
+        c.submitted = data.completed;
         return c;
     }
 }

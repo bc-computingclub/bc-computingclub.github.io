@@ -87,26 +87,46 @@ cBack.addEventListener("click", () => {
   window.location.href = `index.html?cid=${cid}`; // redirects to challenge page and opens challenge corresponding to cId
 });
 
-function createSubmissionMenu(sub: Submission) {
+async function getSubmission(uid:string,pid:string){
+  return new Promise<any>(resolve=>{
+    socket.emit("getSubmission",uid,pid,(data:any)=>{
+      resolve(data);
+    });
+  });
+}
+async function createSubmissionMenu(sub: Submission) {
   console.log("Creating Submission Menu");
   if (curSubMenu) {
     curSubMenu.close();
     console.log("already a menu");
   }
-  curSubMenu = new SubmissionMenu(sub);
+  let subData = await getSubmission(sub.uid,sub.pid);
+  curSubMenu = new SubmissionMenu(subData,sub);
   curSubMenu.load();
+}
+class SubmissionData{
+  p:ProjectMeta;
+  lines:number;
+  lang:string[];
+  date_submitted:string;
 }
 
 let curSubMenu: SubmissionMenu;
 class SubmissionMenu extends Menu {
-  constructor(submission: Submission) {
+  constructor(data: SubmissionData, sub:Submission) {
     super("Submission Menu");
-    this.submission = submission;
+    this.data = data;
+    console.log("loaded data",data);
+    this.submission = sub;
   }
 
+  data:SubmissionData;
   submission: Submission;
 
   load() {
+    let p = this.data.p;
+    let url = getProjectURL(this.submission.uid,this.submission.pid);
+
     super.load();
     this.menu.innerHTML = `
       <div class="s-popup">
@@ -117,7 +137,7 @@ class SubmissionMenu extends Menu {
         <div class="s-popup-body">
           <div class="s-popup-code">
             <h2 class="s-popup-code-title">Code</h2>
-            <div class="s-popup-code-contents">I'm starting to wonder how far I'm willing to take these class names, it's getting bad...</div>
+            <div class="s-popup-code-contents">${p.name}<br><br>${p.desc}<!--I'm starting to wonder how far I'm willing to take these class names, it's getting bad...--></div>
           </div>
           <div class="s-popup-preview">
             <div class="s-popup-preview-header">
@@ -125,7 +145,7 @@ class SubmissionMenu extends Menu {
               <div class="s-preview-title-nested">
                 <button class="b-refresh icon-btn">
                   <div class="icon-refresh material-symbols-outlined">sync</div>
-                  <div class="label">Refresh</div>
+                  <div class="label s-b-refresh">Refresh</div>
                 </button>
                 <div style="margin-left:auto;gap:10px" class="flx-h flx-al">
                   <div class="material-symbols-outlined b-open-in-new co-item" co-label="Open in new tab">open_in_new</div>
@@ -133,7 +153,7 @@ class SubmissionMenu extends Menu {
               </div>
             </div>
             <div class="s-popup-preview-iframe-cont">
-              <iframe src="https://www.google.com" class="s-popup-iframe"></iframe>
+              <iframe src="${url}" class="s-popup-iframe"></iframe>
             </div>
             <div class="s-popup-preview-details">
               <h3 class="s-popup-preview-details-title">Details</h3>
@@ -144,7 +164,7 @@ class SubmissionMenu extends Menu {
                 </div>
                 <div class="s-popup-preview-details-item">
                   <h4 class="s-popup-preview-details-item-title">Language(s)</h4>
-                  <div class="s-popup-preview-details-item-contents">JavaScript</div>
+                  <div class="s-popup-preview-details-item-contents">${this.data.lang?.join(", ") || "None"}<!--JavaScript--></div>
                 </div>
                 <div class="s-popup-preview-details-item">
                   <h4 class="s-popup-preview-details-item-title">Date Submitted</h4>
@@ -160,6 +180,15 @@ class SubmissionMenu extends Menu {
         </div>
       </div>
     `;
+
+    let b_refresh = this.menu.querySelector(".s-b-refresh") as HTMLButtonElement;
+    let frame = this.menu.querySelector(".s-popup-iframe") as HTMLIFrameElement;
+
+    b_refresh.addEventListener("click",e=>{
+      frame.src = url;
+      // icon_refresh.style.rotate = _icRef_state ? "360deg" : "0deg";
+      // _icRef_state = !_icRef_state;
+    });
 
     let sPopupClose = document.querySelector(".s-popup-close") as HTMLElement;
     sPopupClose.onclick = () => {

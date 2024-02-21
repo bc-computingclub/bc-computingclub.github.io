@@ -96,8 +96,8 @@ export class Project{
         return this.ownerUid+":"+this.pid;
     }
 
-    serializeGet(){
-        if(!this._owner) return;
+    serializeGet(force=false){
+        if(!force) if(!this._owner) return;
         // let meta = this._owner.pMeta.find(v=>v.pid == this.pid);
         // let challenge = this._owner.challenges.find(v=>v.pid == this.pid);
         return {
@@ -344,6 +344,45 @@ export function getProject(ref:string){
 }
 export function getProject2(uid:string,pid:string){
     return allProjects.get(uid+":"+pid);
+}
+export async function getProjectFromHD(uid:string,pid:string){
+    if(!uid) return -2;
+    if(!pid) return -3;
+    if(uid.includes(".")) return -4;
+    if(pid.includes(".")) return -5;
+    
+    let path = "../project/"+uid+"/"+pid;
+    if(!await access(path)) return -6;
+
+    let userData = await read("../users/"+uid+".json");
+    if(!userData) return -7;
+    let user = JSON.parse(userData);
+
+    let curFiles = await readdir(path);
+    if(!curFiles) return -8;
+
+    async function run(l:string[]|null,pth:string){
+        if(l == null) return [];
+        let list:ULItem[] = [];
+        for(const s of l){
+            if(s.includes(".")){
+                let ff = new ULFile(s,await read(path+"/"+pth+"/"+s,"utf8"),"","utf8");
+                list.push(ff);
+            }
+            else{
+                let ff = new ULFolder(s,await run(await readdir(path+"/"+pth+"/"+s),pth+"/"+s));
+                list.push(ff);
+            }
+        }
+        return list;
+    }
+    let root = await run(curFiles,"");
+
+    let meta = user.pMeta.map((v:any)=>JSON.parse(v)).find((v:any)=>v.pid == pid);
+    if(!meta) return -9;
+    let p = new Project(pid,uid,meta);
+    p.items = root;
+    return p;
 }
 export async function attemptToGetProject(user:User,pid:string){
     let ref = user.uid+":"+pid;

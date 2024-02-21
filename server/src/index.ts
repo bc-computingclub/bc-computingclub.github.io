@@ -1,4 +1,4 @@
-import { io, server, CredentialResData, User, users, getUserBySock, sanitizeEmail, getProject, attemptToGetProject, access, readdir, read, mkdir, removeFile, write, ULFile, ProjectMeta, allProjects, UserChallengeData, Project, getProject2, ULItem, ULFolder, rename, removeFolder, getDefaultProjectMeta } from "./connection";
+import { io, server, CredentialResData, User, users, getUserBySock, sanitizeEmail, getProject, attemptToGetProject, access, readdir, read, mkdir, removeFile, write, ULFile, ProjectMeta, allProjects, UserChallengeData, Project, getProject2, ULItem, ULFolder, rename, removeFolder, getDefaultProjectMeta, getProjectFromHD } from "./connection";
 import { CSubmission, Challenge, ChallengeData, ChallengeGet, challenges } from "./s_challenges";
 import {LessonData} from "./s_lesson";
 import fs from "fs";
@@ -377,18 +377,38 @@ io.on("connection",socket=>{
     });
 
     // Request stuff
-    socket.on("getChallengeDetails",async (cid:string,f:(data:any)=>void)=>{
+    /**@deprecated */
+    socket.on("old_getChallengeDetails",async (cid:string,f:(data:any)=>void)=>{
         if(!valVar2(cid,"string",f)) return;
         
         // let c = challenges.get(cid);
         let data = await ChallengeData.fromCID(cid);
         f(data?.serializeGet());
     });
+    socket.on("getSubmission",async (ownerUid:string,pid:string,f:(data:any)=>void)=>{
+        if(!valVar2(ownerUid,"string",f)) return 1;
+        if(!valVar2(pid,"string",f)) return 2;
+
+        let user = getUserBySock(socket.id);
+        if(!user){
+            f(null);
+            return 3;
+        }
+
+        let p = await getProjectFromHD(ownerUid,pid);
+        if(typeof p == "number") f(p);
+        else f({
+            p:p.serializeGet(true)
+        });
+    });
     socket.on("getChallenge",(cid:string,f:(data:any)=>void)=>{
         if(!valVar2(cid,"string",f)) return;
         
         let user = getUserBySock(socket.id);
-        if(!user) return;
+        if(!user){
+            f(null);
+            return;
+        }
 
         let c = challenges.get(cid);
         if(!c){
@@ -447,7 +467,7 @@ io.on("connection",socket=>{
 
             if(filter.completed?.length) if(!v.isCompleted(user)) continue;
             
-            if(i >= skip) list.push(v.serializeGet(user));
+            if(i >= skip) list.push(v.serializeGet(user,true));
 
             if(list.length >= perPage) break;
             i++;
