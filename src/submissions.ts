@@ -143,9 +143,9 @@ class SubmissionMenu extends Menu {
             <div class="s-popup-preview-header">
               <h2 class="s-popup-preview-title">Preview</h2>
               <div class="s-preview-title-nested">
-                <button class="b-refresh icon-btn">
+                <button class="b-refresh s-b-refresh icon-btn">
                   <div class="icon-refresh material-symbols-outlined">sync</div>
-                  <div class="label s-b-refresh">Refresh</div>
+                  <div class="label">Refresh</div>
                 </button>
                 <div style="margin-left:auto;gap:10px" class="flx-h flx-al">
                   <div class="material-symbols-outlined b-open-in-new co-item" co-label="Open in new tab">open_in_new</div>
@@ -182,12 +182,14 @@ class SubmissionMenu extends Menu {
     `;
 
     let b_refresh = this.menu.querySelector(".s-b-refresh") as HTMLButtonElement;
+    let icon_refresh = this.menu.querySelector(".icon-refresh") as HTMLElement;
     let frame = this.menu.querySelector(".s-popup-iframe") as HTMLIFrameElement;
 
     b_refresh.addEventListener("click",e=>{
+      console.log("click");
       frame.src = url;
-      // icon_refresh.style.rotate = _icRef_state ? "360deg" : "0deg";
-      // _icRef_state = !_icRef_state;
+      icon_refresh.style.rotate = _icRef_state ? "360deg" : "0deg";
+      _icRef_state = !_icRef_state;
     });
 
     let sPopupClose = document.querySelector(".s-popup-close") as HTMLElement;

@@ -1010,7 +1010,7 @@ function createFileListItem(f:FFile){
         }
 
         f.open();
-        dragItem = new DragData<FFile>(down=>{
+        dragItem = new DragData<FFile>(e,down=>{
             return div.cloneNode(true) as HTMLElement;
         },async last=>{
             let hover = hoverFolderListItems[hoverFolderListItems.length-1];
@@ -1218,7 +1218,7 @@ function createFolderListItem(f:FFolder){
             return;
         }
 
-        dragItem = new DragData<FFolder>(down=>{
+        dragItem = new DragData<FFolder>(e,down=>{
             return f._fiLabel.cloneNode(true) as HTMLElement;
         },async last=>{
             let hover = hoverFolderListItems[hoverFolderListItems.length-1];
@@ -1463,7 +1463,7 @@ class FFile extends FItem{
             link.addEventListener("mousedown",e=>{
                 if(e.button != 0) return;
                 // downOpenFile = this;
-                dragItem = new DragData<FFile>(down=>{
+                dragItem = new DragData<FFile>(e,down=>{
                     return down.link.cloneNode(true) as HTMLElement;
                 },(last)=>{
                     if(!hoverOpenFile) return;
@@ -1819,7 +1819,7 @@ function postSetupEditor(project:Project){
     if(project.meta) project.setPublished(project.meta.submitted);
     else project.setPublished(false);
 
-    if(project.meta.cid != null) b_publish.classList.remove("hide");
+    if(project.meta) if(project.meta.cid != null) b_publish.classList.remove("hide");
 }
 
 // PAGE ID
@@ -2029,7 +2029,9 @@ document.addEventListener("mouseup",e=>{
 });
 
 class DragData<T>{
-    constructor(clone:(down:T)=>HTMLElement,end:(last:T)=>void){
+    constructor(e:MouseEvent,clone:(down:T)=>HTMLElement,end:(last:T)=>void){
+        this._sx = e.clientX;
+        this._sy = e.clientY;
         this.clone = clone;
         this.end = end;
     }
@@ -2038,18 +2040,22 @@ class DragData<T>{
     tmp:HTMLElement;
     clone:(down:T)=>HTMLElement;
     end:(last:T)=>void;
+
+    _sx:number;
+    _sy:number;
 }
 let dragItem:DragData<FItem>;
 
-// let dragOpenFileTmp:HTMLElement;
 document.addEventListener("mousemove",e=>{
     if(dragItem){
         let down = dragItem.down;
-        if(down){
+        let dx = e.clientX-dragItem._sx;
+        let dy = e.clientY-dragItem._sy;
+        let dist = Math.sqrt(dx**2+dy**2);
+        if(down && dist > 20){
             dragItem.drag = down;
             // document.body.classList.add("dragging");
             if(!dragItem.tmp){
-                // let clone = down.link.cloneNode(true) as HTMLElement;
                 let clone = dragItem.clone(down);
                 clone.style.pointerEvents = "none";
                 let cont = document.createElement("div");
