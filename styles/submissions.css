@@ -461,3 +461,10 @@
     padding-inline-start: 1em;
     padding-block-start: 1em;
 }
+
+/* Ultrawide screens */
+@media (min-width: 2560px) {
+    .s-home {
+        padding-inline: 30em;
+    }
+}

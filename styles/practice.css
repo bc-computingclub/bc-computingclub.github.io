@@ -494,6 +494,13 @@ body {
     }
 }
 
+/* Small screens */
+@media (max-width: 1600px) {
+    .c-home-outer {
+        padding-inline: 2em;
+    }
+}
+
 /* Large screens */
 @media (min-width: 1600px) {
     /* .c-home {
@@ -503,7 +510,7 @@ body {
 
 /* Ultrawide screens */
 @media (min-width: 2560px) {
-    /* .c-home {
+    .c-home {
         padding-inline: 30em;
-    } */
+    }
 }
