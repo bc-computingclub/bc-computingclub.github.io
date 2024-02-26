@@ -3,7 +3,7 @@
 // declare let socket:Socket;
 
 // @ts-ignore
-let socket:Socket = io("http://127.0.0.1:3000");
+let socket:Socket = io(serverURL);
 
 let connected = false;
 

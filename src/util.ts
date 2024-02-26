@@ -1,5 +1,6 @@
 let serverURL = "http://localhost:3000";
-// let serverURL = "h" // DigitalOcean URL
+// let serverURL = "http://claebcode.top:3000";
+// let serverURL = "http://157.245.10.20:3000" // DigitalOcean URL
 let lesson:Lesson;
 let project:Project;
 
