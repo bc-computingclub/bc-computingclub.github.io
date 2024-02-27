@@ -186,10 +186,9 @@ a {
 .h-feature-cont {
     width: 100%;
     position: absolute;
-    top: 50dvh;
+    bottom: 5em;
     z-index: 2;
     display: grid;
-    min-height: 360px;
     grid-template-columns: auto 23em;
     gap: 5em;
     justify-content: start;
@@ -341,4 +340,31 @@ a {
     cursor: pointer;
     text-decoration: underline;
     color: var(--muted-col);
+}
+
+/* Formatting for mobile */
+
+@media (max-width: 918px) {
+    .h-feature-cont {
+        top: unset;
+        bottom: 4em;
+        gap: 4em;
+        margin-inline: 4em;
+    }
+
+    .nav-links {
+        display: none;
+    }
+
+    .nav-links {
+        display: none;
+    }
+
+    .nav-links > * {
+        display: none;
+    }
+
+    .h-title {
+        font-size: 5em;
+    }
 }
