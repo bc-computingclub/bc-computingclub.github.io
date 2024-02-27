@@ -1,0 +1,66 @@
+a { all: unset; }
+
+body {
+    background-color: rgb(80, 133, 160);
+    color: rgb(22, 44, 54);
+    position:relative;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.outer {
+    background-color: rgb(238, 226, 212);
+    position: absolute;
+    width: 500px;
+    border-radius: 10px;
+    padding: 20px;
+    display: grid;
+    grid-template-rows: auto 1fr;
+    gap: 1em;
+    top: 4em;
+    left: 4em;
+}
+
+.header-left {
+    display: flex;
+    margin: 0px;
+}
+
+.header-right {
+    display: flex;
+    gap: 1em;
+}
+
+.task-options {
+    display: flex;
+    justify-content: space-between;
+    align-content: center;
+}
+
+button {
+    all: unset;
+    padding: 10px;
+    background-color: rgb(255, 255, 255);
+    border-radius: 3px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    font-weight: bold;
+    gap: 5px;
+}
+
+.task-container {
+    display: grid;
+    grid-template-rows: auto;
+    gap: .4em;
+}
+
+.task {
+    padding: 10px;
+    background-color: rgb(255, 252, 243);
+    border-radius: 3px;
+    display: flex;
+    justify-content: space-between;
+}
+
+input { cursor: pointer; }

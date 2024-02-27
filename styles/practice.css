@@ -510,7 +510,7 @@ body {
 
 /* Ultrawide screens */
 @media (min-width: 2560px) {
-    .c-home {
+    .c-home-outer {
         padding-inline: 30em;
     }
 }
