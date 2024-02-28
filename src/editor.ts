@@ -25,9 +25,9 @@ b_newFile.addEventListener("click",e=>{
     project.createFile(name,"",null,project.lastFolder ?? project.curFile?.folder,true);
 });
 
-async function loadProject(pid:string){
+async function loadProject(uid:string,pid:string){
     project = null;
-    let meta = await restoreProjectFiles(pid);
+    let {meta,canEdit} = await restoreProjectFiles(uid,pid);
     if(!meta){
         console.warn(`selected project ${pid}: doesn't exist`);
         new ProjectDashboard().load();
@@ -41,6 +41,7 @@ async function loadProject(pid:string){
     }
 
     project = new Project(meta.name,pane_code);
+    project.canEdit = canEdit;
     project.meta = meta;
     project.pid = pid;
     project.desc = meta.desc;
@@ -123,6 +124,11 @@ async function loadProject(pid:string){
     // load index.html by default
     let index = project.items.find(v=>v.name == "index.html") as FFile;
     if(index) index.open();
+
+    if(!canEdit){
+        b_save.style.display = "none";
+        b_publish.style.display = "none";
+    }
 }
 
 async function init(){    
@@ -135,8 +141,10 @@ async function init(){
         });
     });
 
-    let pid = new URL(location.href).searchParams.get("pid");
-    await loadProject(pid);
+    let url = new URL(location.href);
+    let uid = url.searchParams.get("uid");
+    let pid = url.searchParams.get("pid");
+    await loadProject(url.searchParams.has("uid")?uid:g_user.uid,pid);
 
     onResize(true);
 }
@@ -413,7 +421,7 @@ async function createNewProject(name:string,desc="A project for experiments."){
     await openProjectSuper(pid);
 }
 async function openProjectSuper(pid:string){
-    if(!project) await loadProject(pid);
+    if(!project) await loadProject(g_user.uid,pid);
     else goToProject(pid);
     closeAllMenus();
 }

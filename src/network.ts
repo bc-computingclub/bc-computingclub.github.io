@@ -87,7 +87,7 @@ function uploadLessonFiles(lesson:Lesson){ // for refresh
         list.push(new ULFile(f.name,f.editor.getValue(),"","utf8"));
     }
     return new Promise<void>(resolve=>{
-        socket.emit("uploadLessonFiles",lesson.lid,list,(err:any)=>{
+        socket.emit("uploadLessonFiles",lesson.lid,list,lesson.progress,(err:any)=>{
             if(err) console.log("ERR while uploading files:",err);
             resolve();
         });
@@ -134,12 +134,13 @@ function uploadProjectFiles(project:Project){ // for refresh
     }
     list = sant(project.items);
     return new Promise<void>(resolve=>{
-        socket.emit("uploadProjectFiles",project.pid||"tmp_project",list,(err:any)=>{
+        socket.emit("uploadProjectFiles",project.meta.owner,project.pid||"tmp_project",list,(err:any)=>{
             if(err) console.log("ERR while uploading files:",err);
             resolve();
         });
     });
 }
+/**@deprecated */
 async function _restoreProjectFiles(project:Project){
     let files = await new Promise<ULFile[]>(resolve=>{
         socket.emit("restoreProjectFiles",project.pid||"tmp_project",(files:ULFile[])=>{
@@ -157,19 +158,22 @@ async function _restoreProjectFiles(project:Project){
     }
     if(files.length) project.hasSavedOnce = true;
 }
-async function restoreProjectFiles(pid:string){
-    let meta = await new Promise<ProjectMeta>(resolve=>{
-        socket.emit("restoreProjectFiles",pid||"tmp_project",(meta:ProjectMeta)=>{
+async function restoreProjectFiles(uid:string,pid:string){
+    let data = await new Promise<{meta:ProjectMeta,canEdit:boolean}>(resolve=>{
+        socket.emit("restoreProjectFiles",uid,pid,(meta:ProjectMeta,err:any,canEdit:boolean)=>{
+            console.warn("CAN EDIT THIS PROJECT: ",canEdit);
             if(meta == null){
-                console.log("ERR while restoring files");
+                console.log("ERR while restoring files","code",err);
+                if(err == -2) alert("You don't have permission to view this project");
                 resolve(null);
                 return;
             }
             console.log("FOUND META",meta);
-            resolve(meta);
+            resolve({meta,canEdit});
         });
     });
-    return meta;
+   if(!data) return {meta:null,canEdit:false};
+    return data;
 }
 
 // Challenge

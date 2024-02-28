@@ -8,3 +8,5 @@ server/out/
 .zed/settings.json
 server/package-lock.json
 server/package.json
+package.json
+package-lock.json

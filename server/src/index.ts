@@ -4,6 +4,7 @@ import {LessonData} from "./s_lesson";
 import fs from "fs";
 import { createInterface } from "readline";
 import crypto from "crypto";
+import { createLesson } from "./s_util";
 
 function valVar(v:any,type:string){
     if(v == null) return false;
@@ -15,6 +16,7 @@ function valVar2(v:any,type:string,f:any){
         f();
         return false;
     }
+    if(type == "array") return Array.isArray(v);
     return (typeof v == type);
 }
 
@@ -166,9 +168,22 @@ io.on("connection",socket=>{
         for(const board of data.boards){
             data.boardData.push(await read(path+board+".js","utf8"));
         }
+
+        // Initial files (for tutor)
+        let initialFiles = await readdir(path+"initial_files");
+        if(initialFiles){
+            data.initialFiles = [];
+            for(const v of initialFiles){
+                data.initialFiles.push({
+                    name:v,
+                    data:await read(path+"initial_files/"+v,"utf8")
+                });
+            }
+        }
+        
         f(data);
     });
-    socket.on("uploadLessonFiles",async (lessonId:string,list:ULFile[],call:()=>void)=>{
+    socket.on("uploadLessonFiles",async (lessonId:string,list:ULFile[],progress:any,call:()=>void)=>{
         if(!valVar(list,"object")) return;
         if(!valVar(lessonId,"string")) return;
         if(!valVar(call,"function")) return;
@@ -180,24 +195,27 @@ io.on("connection",socket=>{
         console.log("uploading...");
 
         let path = "../lesson/"+user.uid+"/"+lessonId;
-        if(!await access(path)) await mkdir(path);
+        let filePath = path+"/files";
+        if(!await access(path)){
+            await mkdir(path);
+            await mkdir(filePath);
+        }
 
-        let curFiles = await readdir(path);
+        let curFiles = await readdir(path+"/files");
         if(!curFiles) return;
 
         curFiles = curFiles.filter(v=>!list.some(w=>w.name == v));
         for(const f of curFiles){
-            console.log("...removing file:",path+"/"+f);
-            await removeFile(path+"/"+f);
+            await removeFile(filePath+"/"+f);
         }
         for(const f of list){
-            console.log("...writing file:",path+"/"+f.name,f.enc);
-            await write(path+"/"+f.name,f.val,f.enc);
+            await write(filePath+"/"+f.name,f.val,f.enc);
         }
 
         // todo - cache file values so if they're the same then they don't need to be reuploaded, or do this on the client maybe to speed it up
 
         console.log(":: done uploading");
+        console.log("progress:",progress);
         call();
     });
     socket.on("restoreLessonFiles",async (lessonId:string,call:(data:any)=>void)=>{
@@ -207,38 +225,57 @@ io.on("connection",socket=>{
         let user = getUserBySock(socket.id);
         if(!user) return;
 
-        console.log("restoring...");
+        console.log("restoring lesson files...");
         let path = "../lesson/"+user.uid+"/"+lessonId;
+        let filePath = path+"/files";
         if(!await access(path)){
             await mkdir(path);
+            await mkdir(filePath);
+            let path2 = "../lessons/"+lessonId+"/initial_files";
+            let initialFiles = await readdir(path2);
+            console.log("$ initial files: ",initialFiles);
+            if(initialFiles){
+                for(const name of initialFiles){
+                    await write(filePath+"/"+name,await read(path2+"/"+name));
+                }
+            }
             // call(null);
             // return;
         }
-        let curFiles = await readdir(path);
+        let curFiles = await readdir(filePath);
         if(!curFiles){
             console.log("Err: failed to find project curFiles");
             return;
         }
         let files:ULFile[] = [];
         for(const f of curFiles){
-            files.push(new ULFile(f,await read(path+"/"+f,"utf8"),"","utf8"));
+            files.push(new ULFile(f,await read(filePath+"/"+f,"utf8"),"","utf8"));
         }
         call(files);
     });
     // editor
-    socket.on("uploadProjectFiles",async (pid:string,listData:any[],call:()=>void)=>{
-        if(!valVar(listData,"object")) return;
-        if(!Array.isArray(listData)) return;
-        if(!valVar(pid,"string")) return;
-        if(!valVar(call,"function")) return;
+    socket.on("uploadProjectFiles",async (uid:string,pid:string,listData:any[],call:(data?:any)=>void)=>{
+        if(!valVar2(listData,"array",call)) return;
+        if(!valVar2(uid,"string",call)) return;
+        if(!valVar2(pid,"string",call)) return;
         let user = getUserBySock(socket.id);
-        if(!user) return;
+        if(!user){
+            call(1); // you aren't logged in
+            return;
+        }
 
         let list = listData.map(v=>ULItem.from(v));
 
-        let p = user.projects.find(v=>v.pid == pid);
+        // let p = user.projects.find(v=>v.pid == pid);
+        let p = getProject(uid+":"+pid);
         if(!p){
             console.log("Warn: project not found while uploading");
+            call(2); // project not found
+            return;
+        }
+        if(!p.canUserEdit(user.uid)){
+            console.log("$ err: user tried to edit project without permission");
+            call(3); // no permission
             return;
         }
         
@@ -248,7 +285,10 @@ io.on("connection",socket=>{
         if(!await access(path)) await mkdir(path);
 
         let curFiles = await readdir(path);
-        if(!curFiles) return;
+        if(!curFiles){
+            call(4); // failed to make path, HD error?
+            return;
+        }
 
         // curFiles = curFiles.filter(v=>!list.some(w=>w.name == v));
         // for(const f of curFiles){
@@ -310,9 +350,10 @@ io.on("connection",socket=>{
         // todo - cache file values so if they're the same then they don't need to be reuploaded, or do this on the client maybe to speed it up
 
         console.log(":: done uploading");
-        call();
+        call(0);
     });
-    socket.on("restoreProjectFiles",async (pid:string,call:(data:any)=>void)=>{
+    socket.on("restoreProjectFiles",async (uid:string,pid:string,call:(data:any,data2?:any,canEdit?:boolean)=>void)=>{
+        if(!valVar2(uid,"string",call)) return;
         if(!valVar(pid,"string")){
             console.log("Err: pid incorrect format");
             call(null);
@@ -326,17 +367,29 @@ io.on("connection",socket=>{
 
         let user = getUserBySock(socket.id);
         if(!user){
-            console.log("Err: could not find user");
             call(null);
             return;
         }
 
-        // console.log("restoring... from PID: ",pid);
-
-        let p = await attemptToGetProject(user,pid);
+        let p = await getProjectFromHD(uid,pid);
         // let p = getProject2(user.email,pid);
-        
-        call(p?.serializeGet());
+        if(!p){
+            call(null);
+            return;
+        }
+        if(typeof p == "number"){
+            call(null,p);
+            return;
+        }
+
+        if(!p.meta.isPublic){
+            if(uid != user.uid){
+                call(null,-2); // you do not have permission to view this private project
+                return;
+            }
+        }
+
+        call(p.serializeGet(true),null,uid == user.uid);
 
         return;
         
@@ -551,6 +604,8 @@ io.on("connection",socket=>{
         ch.sub.push(new CSubmission("",user.name,user.uid,p.pid));
         await ch.save();
         p.meta.submitted = true;
+        p.meta.isPublic = true;
+        p.validateMetaLink();
         await user.saveToFile();
 
         f(0);
@@ -584,6 +639,7 @@ io.on("connection",socket=>{
         ch.sub.splice(ch.sub.findIndex(v=>v.pid == pid),1);
         await ch.save();
         p.meta.submitted = false;
+        p.meta.isPublic = false;
         await user.saveToFile();
 
         f(0);
@@ -869,7 +925,7 @@ io.on("connection",socket=>{
 
         let p = user.projects.find(v=>v.pid == pid);
         if(p){
-            p.cid = undefined;
+            p.meta.cid = undefined;
         }
         if(m.cid){
             //remove from challenges
@@ -953,7 +1009,7 @@ async function createChallengeProject(user:User,cid:string):Promise<Project|numb
     // setup/create project
     let p = new Project(pid,user.uid,getDefaultProjectMeta(user,pid,c.name));
     allProjects.set(pid,p);
-    p.cid = cid;
+    p.meta.cid = cid;
     // let m = user.pMeta.find(v=>v.pid == pid);
     // if(m) m.cid = cid;
     // else console.log(">> Err: couldn't find meta when starting challenge");
@@ -993,6 +1049,7 @@ let rl = createInterface(process.stdin,process.stdout);
 rl.on("line",async (line)=>{
     line = line.trim();
     let s = line.split(" ");
+    let cmd = s[0];
     if(line == "challenges"){
         console.log(challenges);
         return;
@@ -1012,6 +1069,10 @@ rl.on("line",async (line)=>{
     else if(s[0] == "udata"){
         let u = users.get(s[1]);
         console.log(u);
+        return;
+    }
+    else if(s[0] == "projects"){
+        console.log(allProjects);
         return;
     }
     else if(s[0] == "pitems"){
@@ -1064,6 +1125,22 @@ rl.on("line",async (line)=>{
         }
         let lessonData = new LessonData(data);
         console.log("LESSON DATA",lessonData);
+        return;
+    }
+    // CREATE cmd
+    else if(s[0] == "create"){
+        let type = s[1];
+        switch(type){
+            case "lesson":
+                if(!s[2]){
+                    console.log("Invalid lesson name");
+                    return;
+                }
+                createLesson(s[2]);
+                break;
+            default:
+                console.log("Unknown type to create: ",type);
+        }
         return;
     }
     console.log("Unknown command: ",s[0]);

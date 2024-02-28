@@ -85,9 +85,11 @@ window.addEventListener('mousemove', function(e) {
     var y = e.clientY-innerHeight/2;
     
     let strength = innerWidth/300;
+    // strength /= 2;
     let scale = -2;
     hBackground.style.translate = (-scale*Math.cos((x/(innerWidth)-0.5)*Math.PI)*strength) + 'px ' + (-scale*Math.cos((y/(innerWidth)-0.5)*Math.PI)*strength) + 'px';
 
     strength /= 2;
+    // strength *= 2;
     hFeatureCont.style.translate = (scale*Math.cos((x/(innerWidth)-0.5)*Math.PI)*strength) + 'px ' + (scale*Math.cos((y/(innerWidth)-0.5)*Math.PI)*strength) + 'px';
 });

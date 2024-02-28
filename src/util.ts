@@ -591,6 +591,7 @@ class Project{
     lastFolder:FFolder;
     desc:string;
     isPublic:boolean;
+    canEdit = true;
 
     parent:HTMLElement;
     d_files:HTMLElement;
@@ -753,8 +754,11 @@ class Project{
     }
 
     getURL(){
-        if(PAGE_ID == PAGEID.editor) return serverURL+"/project/"+g_user.uid+"/"+socket.id+"/"+g_user.uid+"/"+project.pid;
-        else if(PAGE_ID == PAGEID.lesson) return serverURL+"/lesson/"+g_user.uid+"/"+socket.id+"/"+g_user.uid+"/"+lesson.lid;
+        if(PAGE_ID == PAGEID.editor){
+            if(!this.canEdit) return serverURL+"/public/"+project.meta.owner+"/"+project.pid;
+            return serverURL+"/project/"+g_user.uid+"/"+socket.id+"/"+project.meta.owner+"/"+project.pid;
+        }
+        else if(PAGE_ID == PAGEID.lesson) return serverURL+"/lesson/"+g_user.uid+"/"+socket.id+"/"+project.meta.owner+"/"+lesson.lid;
     }
 
     findFile(name:string){
@@ -1503,7 +1507,7 @@ class FFile extends FItem{
                     enabled:false
                 },
                 contextmenu:!this.p.isTutor,
-                readOnly:this.p.isTutor
+                readOnly:!this.p.canEdit||this.p.isTutor
                 // cursorSmoothCaretAnimation:"on"
             });
             // editor.onDidContentSizeChange(e=>{
@@ -1874,7 +1878,7 @@ async function refreshProject(){
         alert("No index.html file found! Please create a new file called index.html in the outer most folder of your project, this file will be used in the preview.");
         return;
     }
-    iframe.src = serverURL+"/project/"+g_user.uid+"/"+socket.id+"/"+g_user.uid+"/"+project.pid;
+    iframe.src = project.getURL();
     // let cs = (iframe.contentWindow as any).console as Console;
     // cs.log = function(...data:any[]){
     //     console.log("BOB");
@@ -1911,6 +1915,7 @@ let _isSaving = false;
 async function saveProject(isQuick=false){
     if(!project) return;
     if(_isSaving) return;
+    if(!project.canEdit) return;
     
     _isSaving = true;
     b_save.children[0].textContent = "progress_activity";
@@ -1967,6 +1972,7 @@ type ProjectMeta = {
     items:ULItem[],
     cid?:string;
     submitted:boolean;
+    owner?:string;
 };
 
 // screenshot util

@@ -589,6 +589,8 @@ abstract class LEvent{
         return [];
     }
     getTaskText(){return ""}
+    finish(){}
+    _res:()=>void;
 
     tasks:Task[];
 
@@ -629,12 +631,16 @@ class LE_AddGBubble extends LEvent{
     ogLines:string[];
     text:string;
     loc:BubbleLoc;
+
+    finish(): void {
+        this._res();
+    }
     // tasks:Task[];
     async run(): Promise<void> {
         console.warn(`::: Started SUPER Task #${lesson._taskNum} :::`,this.text);
 
-        let res:()=>void;
-        let prom = new Promise<void>(resolve=>{res = resolve});
+        // let res:()=>void;
+        let prom = new Promise<void>(resolve=>{this._res = resolve});
 
         let b_confirm = document.createElement("button");
         b_confirm.innerHTML = "<div>Next</div><div class='material-symbols-outlined'>mouse</div>";
@@ -646,7 +652,7 @@ class LE_AddGBubble extends LEvent{
         b.e.appendChild(b_confirm);
         b_confirm.addEventListener("click",e=>{
             console.log("click");
-            res();
+            this._res();
         });
         // TMP
         // b_confirm.click();
@@ -2011,6 +2017,11 @@ class Lesson{
     board:Board;
     boards:Board[] = [];
 
+    progress = {
+        eventI:0,
+        taskI:0
+    };
+
     static parse(data:any,parent:HTMLElement,tutParent:HTMLElement){
         let a = new Lesson(data.lid,data.name,parent,tutParent);
 
@@ -2029,6 +2040,15 @@ class Lesson{
             });
             if(b.events.length) if(!(b.events[b.events.length-1] instanceof BE_EndPonder)) b.events.push(new BE_EndPonder());
         }
+
+        // load initial tutor files
+        requestAnimationFrame(async ()=>{
+            if(data.initialFiles){
+                for(const file of data.initialFiles){
+                    a.tut.createFile(file.name,file.data);
+                }
+            }
+        });
 
         // a.events = data.events.map((v:any)=>LEvent.parse(v));
 

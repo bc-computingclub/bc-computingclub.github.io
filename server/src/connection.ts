@@ -85,9 +85,23 @@ export class Project{
     // isPublic:boolean;
     // files:ULFile[];
     items:ULItem[];
-    cid?:string;
+    get cid(){
+        return this.meta.cid;
+    }
 
     // meta:ProjectMeta; // might need this at some point
+
+    validateMetaLink(){
+        if(!this._owner){
+            console.log("$ err: cannot validate meta link (no owner loaded)");
+            return;
+        }
+        console.log(this._owner.pMeta.includes(this.meta));
+    }
+    canUserEdit(uid:string){
+        // tmp for now as there is no sharing projects with others or allowing specific access yet
+        return this.ownerUid == uid;
+    }
     
     getPath(){
         return "../project/"+this.ownerUid+"/"+this.pid+"/";
@@ -108,7 +122,7 @@ export class Project{
             pid:this.pid,
             // files:this.files,
             items:this.items,
-            cid:this.cid,
+            cid:this.meta.cid,
             submitted:this.meta.submitted
         };
     }
@@ -338,6 +352,12 @@ const hasntFoundProject:string[] = [];
 // for indexing, need to make a deloadProject at some point
 function loadProject(p:Project){
     allProjects.set(p.getRefStr(),p);
+    // extra catches when updating
+    if(p.meta.cid != null){
+        if(p.meta.submitted){
+            p.meta.isPublic = true;
+        }
+    }
 }
 export function getProject(ref:string){
     return allProjects.get(ref);
@@ -350,13 +370,28 @@ export async function getProjectFromHD(uid:string,pid:string){
     if(!pid) return -3;
     if(uid.includes(".")) return -4;
     if(pid.includes(".")) return -5;
+
+    let ref = uid+":"+pid;
+    let _p = getProject(ref);
+    if(_p) return _p;
     
     let path = "../project/"+uid+"/"+pid;
     if(!await access(path)) return -6;
 
-    let userData = await read("../users/"+uid+".json");
-    if(!userData) return -7;
-    let user = JSON.parse(userData);
+    let user = users.get(uid) as any;
+    let realUser = user as User;
+    let meta:any;
+    if(!user){
+        let userData = await read("../users/"+uid+".json");
+        if(!userData) return -7;
+        user = JSON.parse(userData);
+        meta = user.pMeta.map((v:any)=>JSON.parse(v)).find((v:any)=>v.pid == pid);
+        if(!meta) return -9;
+    }
+    else{
+        meta = realUser.pMeta.find((v:any)=>v.pid == pid);
+        if(!meta) return -9;
+    }
 
     let curFiles = await readdir(path);
     if(!curFiles) return -8;
@@ -378,10 +413,10 @@ export async function getProjectFromHD(uid:string,pid:string){
     }
     let root = await run(curFiles,"");
 
-    let meta = user.pMeta.map((v:any)=>JSON.parse(v)).find((v:any)=>v.pid == pid);
-    if(!meta) return -9;
     let p = new Project(pid,uid,meta);
     p.items = root;
+    if(realUser) p._owner = realUser;
+    loadProject(p); // hopefully this doesn't cause crashes
     return p;
 }
 export async function attemptToGetProject(user:User,pid:string){
@@ -458,7 +493,6 @@ export async function attemptToGetProject(user:User,pid:string){
     p2._owner = user;
     // p2.files = files;
     p2.items = root;
-    p2.cid = meta.cid;
     user.projects.push(p2);
     loadProject(p2);
     return p2;
@@ -470,6 +504,24 @@ export function getUserBySock(sockId:string){
     return users.get(email);
 }
 
+app.use("/public",(req,res,next)=>{
+    // let p = req.params;
+    // if(!p){
+    //     res.send("Invalid query");
+    //     return;
+    // }
+    let arr = req.originalUrl.split("/");
+    let project = getProject2(arr[2],arr[3]);
+    if(!project){
+        res.send("Project not found or loaded");
+        return;
+    }
+    if(!project.meta.isPublic){
+        res.send("Project is private");
+        return;
+    }
+    next();
+},express.static("../project/"));
 app.use("/project/:userId/:auth",(req,res,next)=>{
     let p = req.params;
     if(!p) return;
@@ -491,7 +543,6 @@ app.use("/project/:userId/:auth",(req,res,next)=>{
         return;
     }
     next();
-
 },express.static("../project/"));
 app.use("/lesson/:userId/:auth/",(req,res,next)=>{
     let p = req.params;
@@ -629,7 +680,7 @@ export function readdir(path:string){
     return new Promise<string[]|null>(resolve=>{
         fs.readdir(path,(err,files)=>{
             if(err){
-                console.log("err: ",err);
+                // console.log("err: ",err);
                 resolve(null);
             }
             else resolve(files);
