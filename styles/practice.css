@@ -265,10 +265,9 @@ body {
 
 .c-card {
     padding: 10px;
-    overflow: hidden;
 
     display: grid;
-    grid-template-rows: 6fr .7fr 2fr 1fr;
+    grid-template-rows: auto;
     gap: .5em;
     background-color: var(--secondary-bg-col);
     border-radius: 4px;
@@ -310,21 +309,20 @@ body {
 }
 
 .c-button-options {
-    display: grid;
-    grid-template-columns: 3fr 2fr;
+    display: flex;
+    justify-content: space-between;
     gap: .5em;
-    width: 100%;
     align-items: center;
 
     .material-symbols-outlined {
         font-size: 1.2em;
-        /* font-weight: bold; */
     }
 }
 
 .c-submissions {
-    background-color: var(--bg-col);
+    background-color: inherit;
     color: var(--col);
+    background-color: var(--darken);
 }
 
 .c-preview, .c-submissions {
@@ -336,6 +334,7 @@ body {
     justify-content: center;
     gap: .5em;
     height: 100%;
+    width: 100%;
 }
 
 .c-submitted {
@@ -348,7 +347,7 @@ body {
     text-transform: uppercase;
     padding: 5px;
     backdrop-filter: blur(5px) brightness(0.2);
-    border-radius: 2px;
+    border-radius: 3px;
     color: var(--secondary-col);
 }
 
@@ -502,10 +501,12 @@ body {
 }
 
 /* Large screens */
-@media (min-width: 1600px) {
-    /* .c-home {
-        padding-inline: 20em;
-    } */
+@media (min-width: 1900px) {
+    .c-container {
+        &:not(.empty) {
+            grid-template-columns: repeat(4,1fr);
+        }
+    }
 }
 
 /* Ultrawide screens */

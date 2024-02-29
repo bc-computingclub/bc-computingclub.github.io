@@ -165,12 +165,12 @@ function setChallengeHTML(c: Challenge) {
         </h3>
         <span class="c-text">${c.desc}</span>
         <div class="c-button-options">
-          <button class="c-preview" onclick="setupButton(${c.cID});">
-            Details <span class="material-symbols-outlined">info</span>
-          </button>
-          <button class="c-submissions" onclick="showSubmissions('${c.cID}','${c.inProgress}')">
-            Submissions
-          </button>
+            <button class="c-preview" onclick="setupButton(${c.cID});">
+                Details <span class="material-symbols-outlined">info</span>
+            </button>
+            <button class="c-submissions" onclick="showSubmissions('${c.cID}','${c.inProgress}')">
+                <span>Submissions</span>
+            </button>
         </div>
     `;
   if (c.inProgress) {
