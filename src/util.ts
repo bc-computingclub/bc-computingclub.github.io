@@ -47,6 +47,18 @@ function wait(delay:number){
         },delay*g_waitDelayScale);
     });
 }
+// debugWait - independent of g_waitDelayScale
+function DWait(delay:number){
+    return new Promise<void>(resolve=>{
+        if(delay == 0){
+            resolve();
+            return;
+        }
+        setTimeout(()=>{
+            resolve();
+        },Math.floor(delay));
+    });
+}
 
 // menus
 let menuCont = document.createElement("div");
@@ -758,7 +770,7 @@ class Project{
             if(!this.canEdit) return serverURL+"/public/"+project.meta.owner+"/"+project.pid;
             return serverURL+"/project/"+g_user.uid+"/"+socket.id+"/"+project.meta.owner+"/"+project.pid;
         }
-        else if(PAGE_ID == PAGEID.lesson) return serverURL+"/lesson/"+g_user.uid+"/"+socket.id+"/"+project.meta.owner+"/"+lesson.lid;
+        else if(PAGE_ID == PAGEID.lesson) return serverURL+"/lesson/"+g_user.uid+"/"+socket.id+"/"+g_user.uid+"/"+lesson.lid;
     }
 
     findFile(name:string){

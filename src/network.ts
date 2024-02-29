@@ -86,28 +86,49 @@ function uploadLessonFiles(lesson:Lesson){ // for refresh
     for(const f of lesson.p.files){
         list.push(new ULFile(f.name,f.editor.getValue(),"","utf8"));
     }
+    let prog = {
+        eventI:lesson.progress.eventI,
+        taskI:lesson.progress.taskI,
+        // tutFiles:[]
+    };
+    // for(const f of lesson.tut.files){
+    //     prog.tutFiles.push(new ULFile(f.name,f.editor.getValue(),"","utf8"));
+    // }
     return new Promise<void>(resolve=>{
-        socket.emit("uploadLessonFiles",lesson.lid,list,lesson.progress,(err:any)=>{
+        socket.emit("uploadLessonFiles",lesson.lid,list,prog,(err:any)=>{
             if(err) console.log("ERR while uploading files:",err);
             resolve();
         });
     });
 }
 async function restoreLessonFiles(lesson:Lesson){
-    let files = await new Promise<ULFile[]>(resolve=>{
-        socket.emit("restoreLessonFiles",lesson.lid,(files:ULFile[])=>{
-            if(!files){
+    let data = await new Promise<any>(resolve=>{
+        socket.emit("restoreLessonFiles",lesson.lid,(data:any)=>{
+            if(!data){
                 console.log("ERR while restoring files");
-                resolve([]);
+                resolve(null);
                 return;
             }
-            resolve(files);
+            resolve(data);
         });
     });
-    for(const f of files){
+    if(!data){
+        alert("Err: while trying to restore lesson files");
+        return;
+    }
+    for(const f of data.files){
         lesson.p.createFile(f.name,f.val);
     }
-    if(files.length) lesson.p.hasSavedOnce = true;
+    // if(data.tutFiles) for(const f of data.tutFiles){
+    //     lesson.tut.createFile(f.name,f.val);
+    // }
+    if(data.files.length) lesson.p.hasSavedOnce = true;
+
+    console.log("LESSON META",data);
+    lesson.progress.eventI = data.meta.eventI;
+    lesson.progress.taskI = data.meta.taskI;
+    
+    return data;
 }
 // 
 function old_uploadProjectFiles(project:Project){ // for refresh

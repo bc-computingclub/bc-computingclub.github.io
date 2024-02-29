@@ -344,10 +344,24 @@ class ProjRef{
     }
 }
 
+export class LessonMeta{
+    constructor(eventI:number,taskI:number){
+        this.eventI = eventI;
+        this.taskI = taskI;
+    }
+    eventI:number;
+    taskI:number;
+    static parse(data:any){
+        let m = new LessonMeta(data.eventI,data.taskI);
+        return m;
+    }
+}
+
 export const users = new Map<string,User>();
 const socks = new Map<string,string>();
 export const allProjects = new Map<string,Project>();
 const hasntFoundProject:string[] = [];
+export const lessonMetas = new Map<string,LessonMeta>();
 
 // for indexing, need to make a deloadProject at some point
 function loadProject(p:Project){

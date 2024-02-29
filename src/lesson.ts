@@ -254,7 +254,12 @@ class AddFileTask extends Task{
         let text2 = "Let's create "+this.name;
         let existingFile = lesson.tut.files.find(v=>v.name == this.name);
         let goesBack = false;
-        if(existingFile){
+        let doNothing = false;
+        if(existingFile && existingFile == lesson.tut.curFile){
+            text2 = "Let's get back to "+this.name;
+            doNothing = true;
+        }
+        else if(existingFile){
             text2 = "Let's go back to "+this.name;
             let fileElm = lesson.tut.d_files.children[lesson.tut.files.indexOf(existingFile)];
             rect = fileElm.getBoundingClientRect();
@@ -267,6 +272,12 @@ class AddFileTask extends Task{
             click:true
         });
         await b2.clickProm;
+        if(doNothing){
+            await wait(300);
+            this.canBeFinished = true;
+            this._resFinish();
+            return this.finish();
+        }
 
         await moveTutMouseTo(rect.x+rect.width/2,rect.y+rect.height/2);
         await wait(300);
@@ -637,6 +648,7 @@ class LE_AddGBubble extends LEvent{
     }
     // tasks:Task[];
     async run(): Promise<void> {
+        // if(lesson.events.indexOf(this) < lesson.progress.eventI) return;
         console.warn(`::: Started SUPER Task #${lesson._taskNum} :::`,this.text);
 
         // let res:()=>void;
@@ -664,8 +676,12 @@ class LE_AddGBubble extends LEvent{
         let tt = this;
         async function loop(start=0){
             for(let i = start; i < tt.tasks.length; i++){
+                // if(lesson.events.indexOf(tt) == lesson.progress.eventI){
+                //     if(i < lesson.progress.taskI) continue;
+                // }
                 let t = tt.tasks[i];
                 await wait(300);
+                lesson.progress.taskI = i;
                 let res = await t.start();
                 // new reset stuff
                 t._resFinish = null;
@@ -2042,7 +2058,7 @@ class Lesson{
         }
 
         // load initial tutor files
-        requestAnimationFrame(async ()=>{
+        if(data.isStart) requestAnimationFrame(async ()=>{
             if(data.initialFiles){
                 for(const file of data.initialFiles){
                     a.tut.createFile(file.name,file.data);
@@ -2154,15 +2170,61 @@ class Lesson{
         this.currentSubTask = null;
 
         await restoreLessonFiles(this);
+        let eventI = lesson.progress.eventI;
+        let taskI = lesson.progress.taskI;
         await wait(350);
+        let _eI = 0;
+        // let prog = this.progress;
         for(const e of this.events){
+            // if(_eI < prog.eventI) continue;
             for(const t of e.tasks){ // associate super task with sub task
                 t.supertask = e;
             }
             this._subTaskNum = 0;
+            this.progress.eventI = this.events.indexOf(e);
+            this.progress.taskI = -1;
             this.loadTask(e);
+
+            if(_eI == 0){
+                console.warn("RESUMING",eventI,taskI);
+                g_waitDelayScale = 0;
+                document.body.classList.add("hide-bubbles");
+                // resume
+                setTimeout(async ()=>{
+                    hideTutMouse();
+                    let delay = 0.1;
+                    for(let i = 0; i <= eventI; i++){
+                        await DWait(delay);
+                        let e = lesson.events[i];
+                        if(i == eventI && taskI == -1) break;
+                        console.log("---skip event: ",i);
+                        if(e._res) e._res();
+                        else console.log("---- failed to skip event: couldn't find _res");
+                        let len = (i == eventI ? taskI : e.tasks.length);
+                        for(let j = 0; j < len; j++){
+                            let t = e.tasks[j];
+                            let cur = lesson.currentSubTask;
+                            if(t._resFinish) t._resFinish();
+                            if(lesson.currentSubTask == cur) while(bubbles.length){
+                                // let bLen = bubbles.length;
+                                finishAllBubbles();
+                                await DWait(delay);
+                                if(t._resFinish) t._resFinish();
+                                // if(bubbles.length == bLen) break;
+                            }
+                        }
+                    }
+                    g_waitDelayScale = 1;
+                    console.error("FINISHED");
+                    hideTutMouse();
+                    await wait(100);
+                    document.body.classList.remove("hide-bubbles");
+                },0);
+            }
+
             await e.run();
             await wait(300);
+            _eI++;
         }
     }
 
@@ -2466,8 +2528,15 @@ type Bubble = {
     clickProm?:Promise<void>
 };
 let bubbles:Bubble[] = [];
+function finishAllBubbles(){
+    let list = [...bubbles];
+    for(const b of list){
+        if(b.clickRes) b.clickRes();
+    }
+}
 function closeBubble(b:Bubble){
     if(!b) return;
+    bubbles.splice(bubbles.indexOf(b),1);
     b.e.style.animation = "RemoveBubble forwards 0.15s ease-out";
     b.e.onanimationend = function(){
         b.e.parentElement.removeChild(b.e);
@@ -2481,8 +2550,11 @@ function addBubble(file:FFile,text:string="This is a text bubble and some more t
     // let start = marginOverlayers?.offsetWidth || 64;
 
     let b = document.createElement("div");
-    b.innerHTML = text;
+    let _text = document.createElement("div");
+    _text.innerHTML = text;
     file.bubbles_ov.appendChild(b);
+    b.innerHTML = "<div class='bg'></div>";
+    b.appendChild(_text);
     // let x = col*10;
     // let y = line*19;
     // x = 0;
@@ -2539,8 +2611,11 @@ function formatBubbleText(text:string,ops?:any){
 }
 function addBubbleAt(loc:BubbleLoc,text:string,dir?:string,ops?:any){
     let b = document.createElement("div");
-    b.innerHTML = formatBubbleText(text,ops);
+    let _text = document.createElement("div");
+    _text.innerHTML = formatBubbleText(text,ops);
     g_bubbles_ov.appendChild(b);
+    b.innerHTML = "<div class='bg'></div>";
+    b.appendChild(_text);
 
     let data = {
         e:b,
@@ -2607,7 +2682,13 @@ class BannerMenu extends Menu{
             lesson.start();
         };
 
-        setTimeout(()=>{if(dev.skipGetStarted) b_gettingStarted.click();},20);
+        if(dev.skipGetStarted){
+            document.body.classList.add("hide-menus");
+            setTimeout(()=>{
+                b_gettingStarted.click();
+                document.body.classList.remove("hide-menus");
+            },0);
+        }
         return this;
     }
 }

@@ -1,4 +1,4 @@
-import { io, server, CredentialResData, User, users, getUserBySock, sanitizeEmail, getProject, attemptToGetProject, access, readdir, read, mkdir, removeFile, write, ULFile, ProjectMeta, allProjects, UserChallengeData, Project, getProject2, ULItem, ULFolder, rename, removeFolder, getDefaultProjectMeta, getProjectFromHD } from "./connection";
+import { io, server, CredentialResData, User, users, getUserBySock, sanitizeEmail, getProject, attemptToGetProject, access, readdir, read, mkdir, removeFile, write, ULFile, ProjectMeta, allProjects, UserChallengeData, Project, getProject2, ULItem, ULFolder, rename, removeFolder, getDefaultProjectMeta, getProjectFromHD, lessonMetas, LessonMeta } from "./connection";
 import { CSubmission, Challenge, ChallengeData, ChallengeGet, challenges } from "./s_challenges";
 import {LessonData} from "./s_lesson";
 import fs from "fs";
@@ -107,7 +107,14 @@ io.on("connection",socket=>{
             call(2);
             return;
         }
+        if(!user.joinDate) user.joinDate = new Date().toISOString();
         user.lastLoggedIn = new Date().toISOString();
+
+        if(!await access("../users/"+user.uid)){
+            let path = "../users/"+user.uid;
+            await mkdir(path);
+            await mkdir(path+"/lesson");
+        }
 
         // login
         let _prevToken = user.getFirstToken();
@@ -170,14 +177,20 @@ io.on("connection",socket=>{
         }
 
         // Initial files (for tutor)
-        let initialFiles = await readdir(path+"initial_files");
-        if(initialFiles){
-            data.initialFiles = [];
-            for(const v of initialFiles){
-                data.initialFiles.push({
-                    name:v,
-                    data:await read(path+"initial_files/"+v,"utf8")
-                });
+        if(await access("../users/"+user.uid+"/lesson/"+lid)){
+            
+        }
+        else{
+            data.isStart = true;
+            let initialFiles = await readdir(path+"initial_files");
+            if(initialFiles){
+                data.initialFiles = [];
+                for(const v of initialFiles){
+                    data.initialFiles.push({
+                        name:v,
+                        data:await read(path+"initial_files/"+v,"utf8")
+                    });
+                }
             }
         }
         
@@ -195,13 +208,13 @@ io.on("connection",socket=>{
         console.log("uploading...");
 
         let path = "../lesson/"+user.uid+"/"+lessonId;
-        let filePath = path+"/files";
+        let filePath = path;
         if(!await access(path)){
             await mkdir(path);
             await mkdir(filePath);
         }
 
-        let curFiles = await readdir(path+"/files");
+        let curFiles = await readdir(path);
         if(!curFiles) return;
 
         curFiles = curFiles.filter(v=>!list.some(w=>w.name == v));
@@ -211,6 +224,30 @@ io.on("connection",socket=>{
         for(const f of list){
             await write(filePath+"/"+f.name,f.val,f.enc);
         }
+
+        let metaPath = "../users/"+user.uid+"/lesson/"+lessonId+"/";
+        if(!await access(metaPath)){
+            await mkdir(metaPath);
+            // await mkdir(metaPath+"tut");
+        }
+        // if(progress.tutFiles){ // need to check for type integrity later
+        //     for(const f of progress.tutFiles){
+        //         await write(metaPath+"tut/"+f.name,f.val,f.enc);
+        //     }
+        // }
+        let meta = lessonMetas.get(user.uid+":"+lessonId);
+        if(!meta){
+            if(!await access(metaPath+"meta.json")) meta = new LessonMeta(progress.eventI,progress.taskI);
+            else{
+                meta = LessonMeta.parse(await read(metaPath+"meta.json"));
+                lessonMetas.set(user.uid+":"+lessonId,meta);
+            }
+        }
+        else{
+            meta.eventI = progress.eventI;
+            meta.taskI = progress.taskI;
+        }
+        await write(metaPath+"meta.json",JSON.stringify(meta),"utf8");
 
         // todo - cache file values so if they're the same then they don't need to be reuploaded, or do this on the client maybe to speed it up
 
@@ -227,7 +264,7 @@ io.on("connection",socket=>{
 
         console.log("restoring lesson files...");
         let path = "../lesson/"+user.uid+"/"+lessonId;
-        let filePath = path+"/files";
+        let filePath = path;
         if(!await access(path)){
             await mkdir(path);
             await mkdir(filePath);
@@ -243,6 +280,8 @@ io.on("connection",socket=>{
             // return;
         }
         let curFiles = await readdir(filePath);
+        // let tutFilePath = "../users/"+user.uid+"/lesson/"+lessonId+"/tut";
+        // let tutCurFiles = await readdir(tutFilePath);
         if(!curFiles){
             console.log("Err: failed to find project curFiles");
             return;
@@ -251,7 +290,26 @@ io.on("connection",socket=>{
         for(const f of curFiles){
             files.push(new ULFile(f,await read(filePath+"/"+f,"utf8"),"","utf8"));
         }
-        call(files);
+        // let tutFiles:ULFile[] = [];
+        // if(tutCurFiles) for(const f of tutCurFiles){
+        //     tutFiles.push(new ULFile(f,await read(tutFilePath+"/"+f,"utf8"),"","utf8"));
+        // }
+
+        let metaPath = "../users/"+user.uid+"/lesson/"+lessonId+"/";
+        let meta = lessonMetas.get(user.uid+":"+lessonId);
+        if(!meta){
+            if(!await access(metaPath+"meta.json")) meta = new LessonMeta(0,0);
+            else{
+                meta = LessonMeta.parse(JSON.parse(await read(metaPath+"meta.json")));
+                lessonMetas.set(user.uid+":"+lessonId,meta);
+            }
+        }
+
+        call({
+            files,
+            // tutFiles,
+            meta
+        });
     });
     // editor
     socket.on("uploadProjectFiles",async (uid:string,pid:string,listData:any[],call:(data?:any)=>void)=>{

@@ -1,3 +1,9 @@
+body.hide-menus .menu{
+    visibility:hidden !important;
+    transition:none !important;
+    animation:none !important;
+}
+
 /* body.dragging{
     cursor:no-drop !important;
 } */
