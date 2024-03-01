@@ -1,11 +1,15 @@
 PAGE_ID = PAGEID.lesson;
 
+const lessonLoadCont = document.querySelector(".load-cont.lesson");
+
 const d_currentTasks = document.querySelector(".d-current-tasks");
 const d_task = document.querySelector(".d-task");
 const d_subTasks = document.querySelector(".d-sub-tasks");
 const b_imDone = d_lesson_confirm.querySelector(".b-im-done") as HTMLButtonElement;
 const b_replay = d_lesson_confirm.querySelector(".b-replay");
 const b_goBackStep = d_lesson_confirm.querySelector(".b-go-back-step");
+
+const l_progress = document.querySelector(".l-progress");
 
 d_lesson_confirm.classList.remove("none");
 
@@ -25,27 +29,62 @@ b_replay.addEventListener("click",e=>{
     if(lesson.currentSubTask){
         lesson.currentSubTask.replay(lesson.tut.getCurEditor()); // this needs to be fixed later; need to store on task _preTutFile and _prePFile to switch back to
         // ^^^ this has now been fixed but needs more fixing, need to store temporary state each time? uses a lot of ram but hmm
+        // ^^^ since the core change the system has been remastered but still may need the temporary state system
     }
 });
 b_goBackStep.addEventListener("click",e=>{
     if(lesson.currentSubTask){
-        let ind = lesson.currentTask.tasks.indexOf(lesson.currentSubTask);
-        let startInd = ind;
-        if(ind <= 0) return;
-        let t:Task;
-        while(ind >= 0){
-            ind--;
-            t = lesson.currentTask.tasks[ind];
-            if(t instanceof AddTutorSideText) continue;
-            if(t.requiresDoneConfirm) break;
+        let i = lesson.events.indexOf(lesson.currentEvent);
+        let j = lesson.currentEvent.tasks.indexOf(lesson.currentSubTask)-1;
+        let tt:Task;
+        console.log("...start",i,j);
+        let ignore = false;
+        function check(){
+            console.log("...check",i,j);
+            if(i < 0) return;
+            if(j <= 0){
+                ignore = true;
+                goToPointInLesson(i,-1);
+                return;
+                i--;
+                if(i < 0) return;
+                j = lesson.events[i].tasks.length-1;
+            }
+            let t = lesson.events[i].tasks[j];
+            let skip = false;
+            if(t instanceof AddTutorSideText) skip = true;
+            if(skip){
+                j--;
+                return check();
+            }
+            tt = t;
         }
-        let ct = lesson.currentTask.tasks[startInd-1];
-        if(ct instanceof AddFileTask){
-            ct.file.editor.setValue("");
-            ct.file.editor.setPosition(ct.file.editor.getPosition().with(1,1));
+        check();
+        if(ignore) return;
+        if(!tt){
+            alert("Err: couldn't find task to go back to");
+            return;
         }
-        t.replay(lesson.tut.getCurEditor()); // ^^^
-        // lesson._subTaskNum--;
+        tt.replay(lesson.tut.getCurEditor());
+
+        showLessonConfirm();
+        
+        // let ind = lesson.currentEvent.tasks.indexOf(lesson.currentSubTask);
+        // let startInd = ind;
+        // if(ind <= 0) return;
+        // let t:Task;
+        // while(ind >= 0){
+        //     ind--;
+        //     t = lesson.currentEvent.tasks[ind];
+        //     if(t instanceof AddTutorSideText) continue;
+        //     if(t.requiresDoneConfirm) break;
+        // }
+        // let ct = lesson.currentEvent.tasks[startInd-1];
+        // if(ct instanceof AddFileTask){
+        //     ct.file.editor.setValue("");
+        //     ct.file.editor.setPosition(ct.file.editor.getPosition().with(1,1));
+        // }
+        // t.replay(lesson.tut.getCurEditor()); // ^^^
     }
 });
 async function hideLessonConfirm(){
@@ -55,11 +94,11 @@ async function hideLessonConfirm(){
     await wait(1500);
 }
 async function showLessonConfirm(){
-    let preTask = lesson.currentTask;
+    let preTask = lesson.currentEvent;
     let preSubTask = lesson.currentSubTask;
     // await wait(2000);
     await wait(1000);
-    if(lesson.currentTask != preTask || lesson.currentSubTask != preSubTask){
+    if(lesson.currentEvent != preTask || lesson.currentSubTask != preSubTask){
         console.warn("Canceled opening LessonConfirm, task/subtask changed in the middle of opening");
         return;
     }
@@ -132,7 +171,7 @@ abstract class Task{
 
     requiresDoneConfirm = true;
 
-    preState:LessonState;
+    state:LessonState;
 
     addToHook(hook:Task[]){
         addHook(hook,this);
@@ -148,8 +187,25 @@ abstract class Task{
     check(data:any){
         return true;
     }
+    async endTask(){
+        // new reset stuff
+        this._resFinish = null;
+        this._prom = null;
+        this.canBeFinished = false;
+        this.hasStarted = false;
+        // t.isFinished = false;
+        this.cleanup();
+
+        let e = this.supertask;
+        if(!e) return;
+        let tI = e.tasks.indexOf(this);
+        lesson.finishSubTask(this);
+        e.startTask(e.tasks[tI+1]);
+        lesson.updateCurrentProgress();
+    }
     async start():Promise<string|void>{
-        lesson.loadSubTask(this);
+        lesson.updateCurrentProgress();
+        // lesson.loadSubTask(this);
         console.warn(`:: Started Task #${lesson._subTaskNum++} :: #${lesson._taskCount++}`,this.title,);
         let t = this;
         this._prom = new Promise<string|void>(resolve=>{this._resFinish = function(v){
@@ -158,6 +214,14 @@ abstract class Task{
                 return 1;
             }
         }});
+        if(lesson.isResuming) if(this.supertask){
+            if(lesson.resume.eventI == lesson.events.indexOf(this.supertask)) if(lesson.resume.taskI == this.supertask.tasks.indexOf(this)){
+                lesson.finishResume();
+                return;
+            }
+            this.canBeFinished = true;
+            if(this._resFinish) this._resFinish();
+        }
     }
     async finish():Promise<string|void>{
         this.canBeFinished = true;
@@ -169,34 +233,77 @@ abstract class Task{
         hideTutMouse();
         this.cleanup();
         if(this.finalDelay) await wait(this.finalDelay);
+
+        this.endTask();
+
         return res;
     }
     cleanup(){}
     async play(){}
-    async replay(editor:monaco.editor.IStandaloneCodeEditor){
-        // if(!this.canBeFinished) return;
-        if(!this.canBeFinished && !this.isFinished) return;
-        if(lesson.currentSubTask) lesson.currentSubTask._resFinish("rp_"+this.supertask.tasks.indexOf(this));
+    async replay(editor1:monaco.editor.IStandaloneCodeEditor){
+        // if(!this.canBeFinished && !this.isFinished) return;
+        // if(lesson.currentSubTask) lesson.currentSubTask._resFinish("rp_"+this.supertask.tasks.indexOf(this));
         // else // I don't know how I can restart it if it's completely finished 
+
+        // new method - without nested promises
+        if(lesson.currentSubTask){
+            lesson.isQuitting = true;
+            finishAllBubbles();
+            abortAllHooks();
+            lesson.currentSubTask._resFinish();
+            await DWait(100);
+            lesson.isQuitting = false;
+
+            let tt = this.supertask;
+            let newStart = this.supertask.tasks.indexOf(this);
+            let startT = tt.tasks[newStart];
+            
+            // if(lesson.tut.curFile != startT._preTutFile){
+            //     let fileElm = lesson.tut.d_files.children[lesson.tut.files.indexOf(startT._preTutFile)];
+            //     let rect = fileElm.getBoundingClientRect();
+            //     await showTutMouse();
+            //     await moveTutMouseTo(rect.x+rect.width/2,rect.y+rect.height/2);
+            //     await wait(300);
+            //     await fakeClickButton(fileElm);
+            //     startT._preTutFile.open();
+            //     await wait(500);
+            // }
+            // console.log("INCLUDES? ",lesson.tut.files.includes(startT._preTutFile));
+            // lesson.tut.curFile = startT._preTutFile;
+            // let editor = lesson.tut.getCurEditor();
+            // editor.setValue(startT._preVal);
+            // editor.setPosition({lineNumber:startT._preLine,column:startT._preCol});
+
+            await lesson.restoreFromState(this.state);
+            
+            let list = [...d_subTasks.children];
+            for(let i = newStart; i < list.length; i++){
+                d_subTasks.removeChild(list[i]);
+                tt.tasks[i].taskRef = null;
+            }
+            
+            console.error("...start again");
+            tt.startTask(this);
+        }
         return;
         
-        let t = this;
-        if(!t.canBeFinished) return;
-        t.cleanup();
-        editor.setValue(t._preVal);
-        editor.setPosition({lineNumber:t._preLine,column:t._preCol});
-        t.canBeFinished = false;
-        t.hasStarted = false;
-        t.isFinished = false;
-        let list = [...d_subTasks.children];
-        let ind = this.supertask.tasks.indexOf(t);
-        for(let i = ind; i < list.length; i++){
-            d_subTasks.removeChild(list[i]);
-            this.supertask.tasks[i].taskRef = null;
-        }
-        lesson.loadSubTask(t);
-        await t.play();
-        this.canBeFinished = true;
+        // let t = this;
+        // if(!t.canBeFinished) return;
+        // t.cleanup();
+        // editor.setValue(t._preVal);
+        // editor.setPosition({lineNumber:t._preLine,column:t._preCol});
+        // t.canBeFinished = false;
+        // t.hasStarted = false;
+        // t.isFinished = false;
+        // let list = [...d_subTasks.children];
+        // let ind = this.supertask.tasks.indexOf(t);
+        // for(let i = ind; i < list.length; i++){
+        //     d_subTasks.removeChild(list[i]);
+        //     this.supertask.tasks[i].taskRef = null;
+        // }
+        // lesson.loadSubTask(t);
+        // await t.play();
+        // this.canBeFinished = true;
     }
 
     static parse(data:any){
@@ -286,9 +393,9 @@ class AddFileTask extends Task{
             existingFile.open();
             lesson.tut.curFile = existingFile;
         }
-        this.file = lesson.tut.createFile(this.name,"");
+        if(!goesBack) this.file = lesson.tut.createFile(this.name,"");
         this.file.open();
-        await wait(500);
+        if(!goesBack) await wait(500);
 
         let alreadyFoundFile = lesson.p.files.find(v=>v.name == this.name);
         if(!alreadyFoundFile){
@@ -296,11 +403,13 @@ class AddFileTask extends Task{
             this.addToHook(listenHooks.addFile);
         }
         else if(!goesBack){
-            this.b = addBubbleAt(BubbleLoc.add_file,"Oh! I see you already have a "+this.name+" file! I'll switch you to it.",null,{click:true});
-            await this.b.clickProm;
-            await wait(100);
-            alreadyFoundFile.open();
-            await wait(300);
+            if(alreadyFoundFile != lesson.p.curFile){
+                this.b = addBubbleAt(BubbleLoc.add_file,"Oh! I see you already have a "+this.name+" file! I'll switch you to it.",null,{click:true});
+                await this.b.clickProm;
+                await wait(100);
+                alreadyFoundFile.open();
+                await wait(300);
+            }
             this.canBeFinished = true;
             this._resFinish();
         }
@@ -561,6 +670,7 @@ class PonderBoardTask extends Task{
         let b = lesson.boards.find(v=>v.bid == this.bid);
         lesson.board = b;
         
+        b.initEvents();
         b.init();
         b.show();
 
@@ -602,6 +712,29 @@ abstract class LEvent{
     getTaskText(){return ""}
     finish(){}
     _res:()=>void;
+
+    // state:LessonState;
+
+    async endEvent(from:Task){
+        await wait(300);
+        let eI = lesson.events.indexOf(this);
+        let e = lesson.events[eI+1];
+        console.info("*****ENDED EVENT: ",eI,from,lesson.isQuitting,lesson.isResuming);
+        lesson.loadEvent(e);
+        e.run();
+    }
+    async startTask(t:Task){
+        if(t) if(!t.state) t.state = lesson.getCurrentState();
+        if(lesson.isQuitting) return;
+        lesson.loadSubTask(t);
+        await wait(300);
+        if(t == null){
+            this.endEvent(t);
+            return;
+        }
+        lesson.progress.taskI = this.tasks.indexOf(t);
+        t.start();
+    }
 
     tasks:Task[];
 
@@ -648,6 +781,12 @@ class LE_AddGBubble extends LEvent{
     }
     // tasks:Task[];
     async run(): Promise<void> {
+        if(lesson.isQuitting) return;
+        if(lesson.isResuming) if(lesson.resume.taskI == -1){
+            if(lesson.resume.eventI == lesson.events.indexOf(this)){
+                await lesson.finishResume();
+            }
+        }
         // if(lesson.events.indexOf(this) < lesson.progress.eventI) return;
         console.warn(`::: Started SUPER Task #${lesson._taskNum} :::`,this.text);
 
@@ -669,9 +808,21 @@ class LE_AddGBubble extends LEvent{
         // TMP
         // b_confirm.click();
         // 
-        await prom;
+        let noClick = false;
+        if(lesson.isResuming){
+            if(lesson.resume.taskI == -1 ? lesson.resume.eventI != lesson.events.indexOf(this) : true){
+                console.log("skipped event");
+                noClick = true;
+                // this._res();
+                // this.endEvent();
+                // return;
+            }
+        }
+        if(!noClick) await prom;
 
         closeBubble(b);
+
+        this.startTask(this.tasks[0]);
 
         let tt = this;
         async function loop(start=0){
@@ -690,6 +841,7 @@ class LE_AddGBubble extends LEvent{
                 t.hasStarted = false;
                 // t.isFinished = false;
                 t.cleanup();
+                if(lesson.isQuitting) return;
                 if(typeof res == "string"){
                     if(res.startsWith("rp_")){
                         let newStart = parseInt(res.replace("rp_",""));
@@ -723,7 +875,9 @@ class LE_AddGBubble extends LEvent{
                 }
             }
         }
-        await loop(0);
+        // await loop(0);
+
+        // this.endEvent();
     }
     getTaskText(): string {
         return this.ogLines[this.ogLines.length-1];
@@ -766,7 +920,8 @@ class LessonState{
     constructor(){
 
     }
-    tutFiles:FileInstance[];
+    tutItems:ULItem[];
+    curFile:ULItem;
 }
 class Rect{
     constructor(x:number,y:number,w:number,h:number){
@@ -1554,6 +1709,7 @@ class BO_Circle extends BoardRenderObj{
         // ctx.strokeRect(0,0,can.width,can.height);
     }
     render(_ctx: CanvasRenderingContext2D, b: Board){
+        if(this.can.width == 0 || this.can.height == 0) return;
         let {x,y} = this.getAnchoredPos(this.can.width,this.can.height);
         _ctx.drawImage(this.can,x+this.r.w/2,y+this.r.h/2);
 
@@ -1864,6 +2020,14 @@ class Board{
         if(!this._pb) return;
         closeBubble(this._pb); // ponder bubble
         this._pb = null;
+        if(lesson.board == this) lesson.board = null;
+        await wait(2);
+        this.objs = [];
+        // this.events = [];
+
+        let paint = new BO_Paint();
+        this.objs.push(paint);
+        this.paint = paint;
     }
 
     /**
@@ -1913,6 +2077,7 @@ class Board{
     
     async waitForBubble(text:string,x:number,y:number,isCenter=true){
         let r = this._rect;
+        if(!r) r = new DOMRect(0,0,0,0);
         if(isCenter){
             x += r.width/2;
             y += r.height/2;
@@ -1933,14 +2098,17 @@ class Board{
         this.can = document.createElement("canvas");
         this.ctx = this.can.getContext("2d");
         this.render();
+        this.objs = [];
 
-        await wait(1500);
+        if(g_waitDelayScale == 0) await DWait(100);
+        else await DWait(1500);
         for(const e of this.events){
             await e.run(this);
             await wait(300);
         }
     }
     render(){
+        if(lesson.board != this) return;
         let t = this;
         requestAnimationFrame(()=>{
             t.render();
@@ -1997,11 +2165,21 @@ class Board{
         }
         console.log("Board Data",a);
     }
-    static parse(data:any){
-        let a = new Board(data.bid);
-        a.events = data.events.map(v=>BoardEvent.parseAny(a,v));
-        return a;
+    __data:any;
+    initEvents(){
+        let data = this.__data;
+        let b = this;
+        b.events = Function("data",data)({
+            board:b
+        });
+        if(b.events.length) if(!(b.events[b.events.length-1] instanceof BE_EndPonder)) b.events.push(new BE_EndPonder());
     }
+    // static parse(data:any){
+    //     let a = new Board(data.bid);
+    //     a.__data = data;
+    //     a.events = data.events.map((v:any)=>BoardEvent.parseAny(a,v));
+    //     return a;
+    // }
 }
 class Lesson{
     constructor(lid:string,title:string,parent:HTMLElement,tutParent:HTMLElement){
@@ -2024,7 +2202,7 @@ class Lesson{
     _subTaskNum = 0;
     _taskCount = 0;
 
-    currentTask:LEvent;
+    currentEvent:LEvent;
     currentSubTask:Task;
 
     _hasShownMarkDoneReminder = true; //false
@@ -2033,10 +2211,65 @@ class Lesson{
     board:Board;
     boards:Board[] = [];
 
+    hasLoaded = false;
+    _loadStart = 0;
+    async endLoading(isFirst=true){
+        if(isFirst){
+            let time = performance.now()-this._loadStart;
+            let limit = 1000;
+            if(time < limit){
+                await DWait(limit-time);
+            }
+            lessonLoadCont.classList.add("done");
+        }
+        console.warn("*** Finished loading lesson");
+        this.hasLoaded = true;
+    }
+
     progress = {
         eventI:0,
-        taskI:0
+        taskI:-1
     };
+    isResuming = false;
+    resume = {
+        eventI:0,
+        taskI:-1
+    };
+    async finishResume(){
+        console.warn("finish resume");
+        g_waitDelayScale = 1;
+        this.isResuming = false;
+        document.body.classList.remove("hide-bubbles");
+        await DWait(500);
+        tutMouse.style.visibility = null;
+    }
+
+    isQuitting = false;
+    async quit(){
+        g_waitDelayScale = 0;
+        this.isQuitting = true;
+        finishAllBubbles();
+        if(this.currentSubTask) if(this.currentSubTask._resFinish) this.currentSubTask._resFinish();
+        if(this.currentEvent) this.currentEvent._res();
+        await DWait(1);
+        if(this.currentSubTask) if(this.currentSubTask._resFinish) this.currentSubTask._resFinish();
+        g_waitDelayScale = 1;
+        let files = [...this.tut.files];
+        this.tut.files = [];
+        this.tut.items = [];
+        this.tut.curFile = null;
+        this.tut.openFiles = [];
+        this.tut.lastFolder = null;
+        // for(const f of files){
+        //     this.tut.files.splice(this.tut.files.indexOf(f),1);
+        // }
+        for(let i = 0; i < files.length; i++){
+            this.tut.d_files.removeChild(this.tut.d_files.children[0]);
+        }
+        this.tut.codeCont.children[0]?.remove();
+        // await DWait(1000);
+        // this.isQuitting = false;
+    }
 
     static parse(data:any,parent:HTMLElement,tutParent:HTMLElement){
         let a = new Lesson(data.lid,data.name,parent,tutParent);
@@ -2048,13 +2281,10 @@ class Lesson{
         data.boardData = data.boardData.map(v=>v.substring(v.indexOf("\n")+1));
         
         a.events = Function(data.events)();
-        a.boards = data.boards.map(v=>new Board(v));
+        a.boards = data.boards.map((v:any)=>new Board(v));
         for(let i = 0; i < a.boards.length; i++){
             let b = a.boards[i];
-            b.events = Function("data",data.boardData[i])({
-                board:b
-            });
-            if(b.events.length) if(!(b.events[b.events.length-1] instanceof BE_EndPonder)) b.events.push(new BE_EndPonder());
+            b.__data = data.boardData[i];
         }
 
         // load initial tutor files
@@ -2081,13 +2311,110 @@ class Lesson{
 
     getCurrentState(){
         let state = new LessonState();
-        state.tutFiles = this.tut.files.map(v=>new FileInstance(v.name,v.editor.getValue()));
+        // state.tutFiles = this.tut.files.map(v=>new FileInstance(v.name,v.editor.getValue()));
         // unfinished, not a priority right now, probably going to disable the go back system for now
+
+        // hey guess what the time to come back to it is now hahahha
+        function calcItems(list:FItem[]){
+            let ar = [];
+            for(const item of list){
+                if(item instanceof FFile) ar.push(new ULFile(item.name,item.editor.getValue(),"","utf8"));
+                else if(item instanceof FFolder) ar.push(new ULFolder(item.name,calcItems(item.items)));
+            }
+            return ar;
+        }
+        state.tutItems = calcItems(this.tut.items);
+        // tmp for now, no folder support yet in lesson
+        state.curFile = state.tutItems.find(v=>v.name == this.tut.curFile.name);
+
+        return state;
+    }
+    async restoreFromState(state:LessonState){
+        let t = this.tut;
+        let openItems = state.tutItems; // no folder support yet in lesson
+        for(const item of openItems){
+            if(item instanceof ULFile){
+                let existing = t.files.find(v=>v.name == item.name);
+                if(existing){
+                    existing.editor.setValue(item.val);
+                }
+            }
+        }
+        let tutOpenFiles = [...t.openFiles];
+        for(const item of tutOpenFiles){
+            if(!openItems.some(v=>v.name == item.name)){
+                let b_close = item.link.children[1];
+                let rect = b_close.getBoundingClientRect();
+                await showTutMouse();
+                await moveTutMouseTo(rect.x+rect.width/2,rect.y+rect.height/2);
+                await wait(300);
+                await fakeClickButton(b_close);
+                item.softDelete();
+                await wait(500);
+            }
+        }
+        for(const item of openItems){
+            if(item instanceof ULFile) if(!t.openFiles.some(v=>v.name == item.name)){
+                let elm = lesson.tut.parent.querySelector(".b-add-file");
+                let rect = elm.getBoundingClientRect();
+                await showTutMouse();
+                await moveTutMouseTo(rect.x+rect.width/2,rect.y+rect.height/2);
+                await wait(300);
+                await fakeClickButton(elm);
+                // item.open();
+                t.createFile(item.name,item.val);
+                await wait(500);
+            }
+        }
+        if(state.curFile) if(state.curFile && t.curFile) if(state.curFile?.name != t.curFile?.name){
+            let file = t.files.find(v=>v.name == state.curFile.name);
+            let ind = t.files.indexOf(file);
+            let fileElm = t.d_files.children[ind];
+            let rect = fileElm.getBoundingClientRect();
+            await showTutMouse();
+            await moveTutMouseTo(rect.x+rect.width/2,rect.y+rect.height/2);
+            await wait(300);
+            await fakeClickButton(fileElm);
+            file.open();
+            await wait(500);
+        }
     }
 
-    init(){
-        addBannerBubble(this);
-        addBannerPreviewBubble(this);
+    updateCurrentProgress(){
+        if(this.isComplete){
+            l_progress.textContent = "100%";
+            return;
+        }
+        let cur = this.currentSubTask;
+        if(!cur){
+            let ind = this.events.indexOf(this.currentEvent);
+            let e = this.events[ind-1];
+            if(e){
+                cur = e.tasks[e.tasks.length-1];
+            }
+            else{
+                l_progress.textContent = "0%";
+                return;
+            }
+        }
+
+        let taskI = 0;
+        let total = 0;
+        let found = false;
+        for(const e of this.events){
+            for(const t of e.tasks){
+                if(t == cur) found = true;
+                else if(!found) taskI++;
+                total++;
+            }
+        }
+        let r = taskI/total;
+        l_progress.textContent = (r*100).toFixed(0)+"%";
+    }
+
+    async init(){
+        // addBannerBubble(this);
+        // addBannerPreviewBubble(this);
         // this.board = new Board();
         if(false) this.board.events = [
             // "Let's take a closer look at this."
@@ -2161,36 +2488,65 @@ class Lesson{
 
         this.p.init();
         this.tut.init();
+
+        await restoreLessonFiles(lesson);
+        let eventI = lesson.progress.eventI;
+        let taskI = lesson.progress.taskI;
+        lesson.resume.eventI = eventI;
+        lesson.resume.taskI = taskI;
+
+        if(eventI == -1 && taskI == -1){
+            this.endLoading();
+            addBannerBubble(this);
+            addBannerPreviewBubble(this);
+        }
+        else this.start();
     }
-    async start(){
-        d_currentTasks.classList.toggle("closed");
+    async start(noDelay=false){
+        this._loadStart = performance.now();
+        d_currentTasks.classList.add("closed");
+        document.body.classList.add("hide-bubbles");
+        this.updateCurrentProgress();
         
         this._taskNum = 0;
         this.clearAllTasks();
         this.currentSubTask = null;
-
-        await restoreLessonFiles(this);
-        let eventI = lesson.progress.eventI;
-        let taskI = lesson.progress.taskI;
-        await wait(350);
+        
+        if(!noDelay) await wait(350);
         let _eI = 0;
-        // let prog = this.progress;
+
         for(const e of this.events){
-            // if(_eI < prog.eventI) continue;
             for(const t of e.tasks){ // associate super task with sub task
                 t.supertask = e;
             }
+        }
+
+        if(lesson.resume.eventI == -1) lesson.resume.eventI = 0;
+
+        let eventI = lesson.resume.eventI;
+        let taskI = lesson.resume.taskI;
+        
+        // let prog = this.progress;
+        // for(const e of this.events){
+        if(eventI == 0 && taskI == -1){
+            let e = this.events[0];
+            // if(_eI < prog.eventI) continue;
             this._subTaskNum = 0;
             this.progress.eventI = this.events.indexOf(e);
             this.progress.taskI = -1;
-            this.loadTask(e);
+            this.loadEvent(e);
 
             if(_eI == 0){
                 console.warn("RESUMING",eventI,taskI);
-                g_waitDelayScale = 0;
-                document.body.classList.add("hide-bubbles");
+                // g_waitDelayScale = 0;
+                // document.body.classList.add("hide-bubbles");
                 // resume
-                setTimeout(async ()=>{
+                // if(true) setTimeout(async ()=>{
+                //     g_waitDelayScale = 1;
+                //     document.body.classList.remove("hide-bubbles");
+                // },0);
+                // resume old
+                if(false) setTimeout(async ()=>{
                     hideTutMouse();
                     let delay = 0.1;
                     for(let i = 0; i <= eventI; i++){
@@ -2219,47 +2575,106 @@ class Lesson{
                     hideTutMouse();
                     await wait(100);
                     document.body.classList.remove("hide-bubbles");
+                    if(taskI == -1) if(lesson.currentEvent){
+                        for(const b of bubbles){
+                            g_bubbles_ov.appendChild(b.e);
+                        }
+                    }
                 },0);
             }
 
-            await e.run();
-            await wait(300);
+            g_waitDelayScale = 1;
+            document.body.classList.remove("hide-bubbles");
+            // await e.run();
+            e.run();
+
+            // await wait(300);
+            // if(this.isQuitting) return;
             _eI++;
+            this.endLoading();
+        }
+        else{
+            // new resume
+            console.log("RESUME",this.resume);
+            tutMouse.style.visibility = "hidden";
+            g_waitDelayScale = 0;
+            this.isResuming = true;
+            this.loadEvent(this.events[0]);
+            // await this.events[0].run();
+            this.events[0].run();
+            this.endLoading();
         }
     }
 
-    loadTask(e:LEvent){
-        this.currentTask = e;
-        if(e instanceof LE_AddGBubble){
-            if(!e.tasks.length) return;
+    isComplete = false;
+    loadEvent(e:LEvent){
+        if(!e){
+            this.currentEvent = null;
+            this.clearAllTasks();
+            this.isComplete = true;
+            // alert("Lesson complete!");
+            let b = addBubbleAt(BubbleLoc.global,"Lesson Complete!");
+            let btnCont = document.createElement("div");
+            b.e.classList.add("bu-lesson-complete");
+            b.e.children[1].classList.add("l-lesson-complete");
+            btnCont.className = "d-lesson-complete";
+            btnCont.innerHTML = `
+                <button class="icon-btn co-item" co-label="Copy into new project">
+                    <div class="material-symbols-outlined">auto_stories</div>
+                    <div>Return Home</div>
+                </button>
+                <button class="icon-btn co-item" co-label="Copy into new project">
+                    <div class="material-symbols-outlined">undo</div>
+                    <div>Play Again</div>
+                </button>
+                <button class="icon-btn co-item" co-label="Copy into new project">
+                    <div class="material-symbols-outlined">folder_copy</div>
+                    <div>Copy Files</div>
+                </button>
+            `;
+            b.e.appendChild(btnCont);
+
+            this.updateCurrentProgress();
+            return;
         }
+        this.currentEvent = e;
+        // if(e instanceof LE_AddGBubble){
+        //     if(!e.tasks.length) return;
+        // }
         this.clearAllTasks();
-        this.currentTask = e;
+        this.currentEvent = e;
+        this.currentSubTask = null;
+        console.log("... loaded event: ",this.events.indexOf(e));
+        this.progress.eventI = this.events.indexOf(e);
+        this.progress.taskI = -1;
         d_task.innerHTML = `<div>${formatBubbleText(e.getTaskText())}</div>`;
+
+        this.updateCurrentProgress();
     }
     clearAllTasks(){
-        this.currentTask = null;
+        this.currentEvent = null;
         // this.currentSubTask = null; // temporary?
         d_task.innerHTML = "";
         d_subTasks.innerHTML = "";
     }
     loadSubTask(t:Task){
+        if(!t) return;
         this.currentSubTask = t;
         b_imDone.disabled = false;
         t.hasStarted = true;
         let editor = lesson.tut.getCurEditor();
         let pos = editor?.getPosition();
-        if(t._preVal == null){
+        // if(t._preVal == null){
             t._preVal = editor?.getValue() || "";
             t._preLine = pos?.lineNumber || 1;
             t._preCol = pos?.column || 1;
             t._prePFile = lesson.p.curFile;
             t._preTutFile = lesson.tut.curFile;
-        }
+        // }
 
         let div = document.createElement("div");
         // div.className = "flx-sb c";
-        let ind = lesson.currentTask.tasks.indexOf(t);
+        let ind = lesson.currentEvent.tasks.indexOf(t);
         div.innerHTML = `<div class="flx-sb c"><div><span class="l-num">#${ind+1} </span><span>${t.title}</span></div><div class="material-symbols-outlined cb">check_box_outline_blank</div></div>`;
         let sects = t.getSections();
         d_subTasks.appendChild(div);
@@ -2296,7 +2711,7 @@ class Lesson{
     }
     finishSubTask(t:Task){
         // this.currentSubTask = null; // temporary?
-        let ind = lesson.currentTask.tasks.indexOf(t);
+        let ind = lesson.currentEvent.tasks.indexOf(t);
         if(ind != -1){
             let c = d_subTasks.children[ind];
             let cb = c?.querySelector(".cb");
@@ -2531,7 +2946,9 @@ let bubbles:Bubble[] = [];
 function finishAllBubbles(){
     let list = [...bubbles];
     for(const b of list){
-        if(b.clickRes) b.clickRes();
+        if(lesson.isQuitting) closeBubble(b);
+        else if(b.clickRes) b.clickRes();
+        else closeBubble(b);
     }
 }
 function closeBubble(b:Bubble){
@@ -2577,6 +2994,7 @@ function addBubble(file:FFile,text:string="This is a text bubble and some more t
     b.style.position = "absolute";
     b.classList.add("bubble");
     updateBubble(bubbles.length-1);
+    if(document.body.classList.contains("hide-bubbles")) b.remove();
 
     return data;
 }
@@ -2639,11 +3057,19 @@ function addBubbleAt(loc:BubbleLoc,text:string,dir?:string,ops?:any){
             data.clickRes();
         };
         b.classList.add("clickable");
+        if(lesson.isResuming){
+            b.remove();
+            data.clickRes();
+            closeBubble(data);
+            return data;
+        }
     }
 
     b.style.position = "absolute";
     b.classList.add("bubble");
     updateBubble(bubbles.length-1);
+
+    if(document.body.classList.contains("hide-bubbles")) b.remove();
 
     return data;
 }
@@ -2682,7 +3108,7 @@ class BannerMenu extends Menu{
             lesson.start();
         };
 
-        if(dev.skipGetStarted){
+        if(dev.skipGetStarted && false){
             document.body.classList.add("hide-menus");
             setTimeout(()=>{
                 b_gettingStarted.click();
@@ -2961,3 +3387,74 @@ setTimeout(()=>{
         e.preventDefault();
     });
 },3000);
+
+// newer stuff
+async function old_goToPointInLesson(eventI:number,taskI:number){
+    // this is crazy broken and only works for some reason among the first event but any task
+    lesson.progress.eventI = eventI;
+    lesson.progress.taskI = taskI;
+    await lesson.quit();
+    g_waitDelayScale = 1;
+    await wait(500);
+    lesson.tut.items = [];
+    lesson.tut.files = [];
+    lesson.start(false);
+}
+async function goToPointInLesson_full(eventI:number,taskI:number){
+    if(lesson.isResuming || lesson.isQuitting || !lesson.hasLoaded){
+        console.warn("Woah, too fast there");
+        return;
+    }
+    lesson.hasLoaded = false;
+    await lesson.quit();
+    lesson.isResuming = true;
+    await wait(500);
+    lesson.isQuitting = false;
+    lesson.resume.eventI = eventI;
+    lesson.resume.taskI = taskI;
+    lesson.progress.eventI = 0;
+    lesson.progress.taskI = -1;
+    lesson.start(true);
+}
+async function goToPointInLesson(eventI:number,taskI:number){
+    if(eventI == -1 && taskI == -1){
+        return;
+    }
+    if(lesson.isResuming || lesson.isQuitting || !lesson.hasLoaded){
+        console.warn("Woah, too fast there");
+        return;
+    }
+    lesson.isQuitting = true;
+    finishAllBubbles();
+    abortAllHooks();
+    if(lesson.currentSubTask) lesson.currentSubTask._resFinish();
+    await DWait(100);
+    lesson.isQuitting = false;
+
+    let e = lesson.events[eventI];
+    let _e = e;
+    let t = e.tasks[taskI];
+    if(taskI == -1){
+        if(!e.tasks.length){
+            e = lesson.events[eventI-1];
+            t = e.tasks[e.tasks.length-1];
+        }
+        else t = e.tasks[0];
+        await lesson.restoreFromState(t.state);    
+
+        lesson.loadEvent(_e);
+        _e.run();
+        return;
+    }
+    let newStart = e.tasks.indexOf(t);
+
+    await lesson.restoreFromState(t.state);
+    
+    let list = [...d_subTasks.children];
+    for(let i = newStart; i < list.length; i++){
+        d_subTasks.removeChild(list[i]);
+        e.tasks[i].taskRef = null;
+    }
+    
+    e.startTask(t);
+}

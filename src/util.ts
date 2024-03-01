@@ -526,7 +526,7 @@ function genHeader(i:number,isCompact=true,id:string){
             <button class="b-go-back-step hide"><div class="material-symbols-outlined">keyboard_double_arrow_left</div></button>
         </div>
         <div class="nav-links">
-            <a href="/learn/lesson/index.html" class="nav-link">Learn <span class="material-symbols-outlined">Auto_stories</span></a>
+            <a href="/learn/lesson/index.html?lid=0001" class="nav-link">Learn <span class="material-symbols-outlined">Auto_stories</span></a>
             <a href="/practice/index.html" class="nav-link">Practice <span class="material-symbols-outlined">Checkbook</span></a>
             <a href="/editor/index.html" class="nav-link">Experiment <span class="material-symbols-outlined">Experiment</span></a>
             <a class="h-profile"><span class="material-symbols-outlined">Person</span></a>
@@ -1437,8 +1437,18 @@ class FFile extends FItem{
             }
             this.editor.dispose();
             this.editor = null;
+            return 1;
         }
     }
+    // for lessons
+    softDelete(){
+        let res = this.close();
+        if(res == 1){
+            if(this.p.files.includes(this)) this.p.files.splice(this.p.files.indexOf(this),1);
+            if(this.p.items.includes(this)) this.p.items.splice(this.p.items.indexOf(this),1);
+        }
+    }
+
     isTemp = true;
     setTemp(v:boolean){
         this.isTemp = v;
@@ -1464,8 +1474,11 @@ class FFile extends FItem{
             b_close.innerHTML = "<div class='material-symbols-outlined'>close</div>";
             b_close.classList.add("file-close");
             b_close.addEventListener("click",e=>{
-                if(PAGE_ID == PAGEID.lesson) return;
                 if(this.p.readonly) return;
+                if(PAGE_ID == PAGEID.lesson){
+                    this.softDelete();
+                    return;
+                }
                 this.close();
             });
             link.appendChild(b_close);
@@ -1686,9 +1699,10 @@ let _icRef_state = true;
 let listenHooks = {
     addFile:[] as Task[],
     refresh:[] as Task[]
-};
+} as Record<string,Task[]>;
 let _hookCount = 0;
 async function waitForQuickHook(hook:Task[]){
+    if(lesson.isResuming) return;
     let t = new TmpTask();
     t.start();
     addHook(hook,t);
@@ -1718,6 +1732,18 @@ function resolveHook(hook:Task[],data:any){
         console.log("...resolved hook; Unresolved: "+_hookCount);
     }
     return result;
+}
+function abortAllHooks(){
+    let ok = Object.keys(listenHooks);
+    for(const key of ok){
+        let list = [...listenHooks[key]];
+        for(const c of list){
+            if(!c._resFinish){
+                listenHooks[key].slice(listenHooks[key].indexOf(c),1);
+            }
+            else c._resFinish();
+        }
+    }
 }
 
 // Setup Editor
@@ -1890,7 +1916,7 @@ async function refreshProject(){
         alert("No index.html file found! Please create a new file called index.html in the outer most folder of your project, this file will be used in the preview.");
         return;
     }
-    iframe.src = project.getURL();
+    iframe.contentWindow.location.replace(project.getURL());
     // let cs = (iframe.contentWindow as any).console as Console;
     // cs.log = function(...data:any[]){
     //     console.log("BOB");
@@ -1915,7 +1941,7 @@ async function refreshLesson(){
         alert("No index.html file found! Please create a new file called index.html, this file will be used in the preview.");
         return;
     }
-    iframe.src = serverURL+"/lesson/"+g_user.uid+"/"+socket.id+"/"+g_user.uid+"/"+lesson.lid;
+    iframe.contentWindow.location.replace(serverURL+"/lesson/"+g_user.uid+"/"+socket.id+"/"+g_user.uid+"/"+lesson.lid);
 
     icon_refresh.style.rotate = _icRef_state ? "360deg" : "0deg";
     _icRef_state = !_icRef_state;

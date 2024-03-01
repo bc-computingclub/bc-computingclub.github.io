@@ -1,5 +1,5 @@
 body.themestyle-light{
-    --bubble-bg:rgba(46, 70, 140, 0.7);
+    --bubble-bg:rgb(233, 231, 231);
     /* --bubble-bg-solid:rgb(46, 70, 140); */
     --bubble-bg-solid:var(--cta-btn-col);
     --third-bg-col:#f2f2f2;
@@ -21,7 +21,8 @@ body.themestyle-dark{
     --lighten:rgba(0,0,0,0.1);
     --lighten2:rgba(0,0,0,0.05);
 
-    /* --bubble-bg:rgba(46, 70, 140, 0.7); */
+    /* --bubble-bg:rgba(46, 70, 140, 0.9); */
+    --bubble-bg:rgb(27, 33, 50);
     --bubble-bg-solid:var(--cta-btn-col);
     --bubble-border:white;
 

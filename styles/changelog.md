@@ -228,3 +228,38 @@
 - various fixes
 - alt parallax thing
 - publish/submit challenge project hidden on non challenge projects
+
+## --- some stuff needs to be filled in here at some point
+
+### 2/29/24
+- fixed random bubbles popuping up sometimes when restoring lesson progress
+- redid most of the whole core linking of lesson system to use use the overarching nested promises and instead use linked function calls
+- resume progress with new system
+- go to any point in lesson with new system
+- replay current step with new system
+- loading screen
+- fixed welcome banner so that it comes up when you haven't started the lesson before instead of everytime and being skipped
+- finally fixed ponder board to be replayable without reloading the page
+- fixed soooo many bugs with the system
+- added ability to close opened files in the lesson page (it deletes them for the time being without a prompt so need to fix that later)
+- added status bar at the bottom of lesson page
+- added lesson progress in the status bar
+- made basic "Lesson Complete" with 3 buttons that don't do anything yet
++ [IDEAS]
+- lesson 1
+    - tutor shows how to create one button and then another one
+    - prompt the user to refresh to see how it looks after the first and second ones
+    - then show Review Board and prompt to create a third one
+- learn page
+    - this could be a sort of infinite canvas of different things like a web to everywhere you want to go
+    - skill tree sort of look still
+    - pannable (and zoomable...)
+    - light grid background like it's a blueprint or sketched piece of paper for ideas that are just flowing
+- review board
+    - should this show an example in HTML? if anything it probably shouldn't be a screenshot for consistancy and time sake
+    - or should it just be text describing what to do? I guess it could be either depending on how you set it up in the events/tasks
+
+### 3/1/24
+- added a much faster version of "goToPointInLesson" that uses task states instead of the resume system
+- fixed restoreLessonState so that when restoring to a state that needs files that aren't then, the tutor createst those files before going on
+- added support so that if you prefix a challenge json file with _ then the server will skip it when loading

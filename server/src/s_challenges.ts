@@ -141,6 +141,7 @@ async function initChallenges(){
     let names = await readdir("../challenges");
     if(!names) return;
     for(const id of names){
+        if(id.startsWith("_")) continue;
         let dataStr = await read("../challenges/"+id,"utf8") as string|null;
         let data:any;
         if(!dataStr) continue;

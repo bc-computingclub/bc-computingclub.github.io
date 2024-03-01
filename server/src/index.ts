@@ -298,7 +298,7 @@ io.on("connection",socket=>{
         let metaPath = "../users/"+user.uid+"/lesson/"+lessonId+"/";
         let meta = lessonMetas.get(user.uid+":"+lessonId);
         if(!meta){
-            if(!await access(metaPath+"meta.json")) meta = new LessonMeta(0,0);
+            if(!await access(metaPath+"meta.json")) meta = new LessonMeta(-1,-1);
             else{
                 meta = LessonMeta.parse(JSON.parse(await read(metaPath+"meta.json")));
                 lessonMetas.set(user.uid+":"+lessonId,meta);

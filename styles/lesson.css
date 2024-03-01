@@ -40,7 +40,9 @@ body.hide-bubbles .tut-mouse{
 }
 /* .pane-tutor-code .cont-js{ */
 .pane-tutor-code .monaco-editor{
+    /* filter:hue-rotate(-35deg); */
     filter:hue-rotate(45deg);
+    /* filter:hue-rotate(135deg); */
 }
 
 .bubble-overlay{
@@ -419,4 +421,65 @@ hr{
 }
 .cur-project-controls{
     margin-left:0px;
+}
+
+/* status bar */
+.pane-cont{
+    height:calc(100% - 36px);
+}
+.status-bar{
+    position:absolute;
+    font-family:monospace;
+    opacity:0.7;
+    font-size:16px;
+    bottom:2px;
+    left:5px;
+    width:calc(100% - 10px);
+    height:34px;
+    padding:5px 10px;
+    background-color:var(--bg);
+    border-radius:4px;
+}
+.d-progress{
+    display:flex;
+    align-items:center;
+    gap:8px;
+}
+.d-progress > .material-symbols-outlined{
+    color:limegreen;
+}
+.d-progress > .l-progress{
+    
+}
+.d-progress > :last-child{
+    opacity:0.8;
+    margin-left:5px;
+    font-size:14px;
+}
+
+.bu-lesson-complete{
+    
+}
+.l-lesson-complete{
+    font-size:22px;
+}
+.l-lesson-complete::before{
+    content:"🎉";
+    margin-right:5px;
+}
+.d-lesson-complete{
+    margin-top:24px;
+    display:flex;
+    flex-direction:column;
+    gap:5px;
+}
+.d-lesson-complete > button{
+    padding:14px 16px;
+    background-color:rgba(0, 0, 0, 0.4);
+    color:whitesmoke;
+    /* width:33%; */
+    /* text-align:right; */
+}
+.d-lesson-complete > button > .material-symbols-outlined{
+    margin-right:4px;
 }
