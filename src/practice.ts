@@ -57,18 +57,20 @@ window.addEventListener("load", async () => {
 });
 
 function toggleInProgressDiv(btn: HTMLElement, opening: boolean) {
-  if (opening == true) {
-    localStorage.setItem(`${lsUID}toggleState`, "open");
-    shouldBeOpen = true;
-    btn.classList.remove("point-down");
-    btn.classList.add("point-up");
-    outerInProgressDiv.classList.remove("collapse");
-  } else if (opening == false) {
-    localStorage.setItem(`${lsUID}toggleState`, "closed");
-    shouldBeOpen = false;
-    btn.classList.remove("point-up");
-    btn.classList.add("point-down");
-    outerInProgressDiv.classList.add("collapse");
+  if(btn) {
+    if (opening == true) {
+      localStorage.setItem(`${lsUID}toggleState`, "open");
+      shouldBeOpen = true;
+      btn.classList.remove("point-down");
+      btn.classList.add("point-up");
+      outerInProgressDiv.classList.remove("collapse");
+    } else if (opening == false) {
+      localStorage.setItem(`${lsUID}toggleState`, "closed");
+      shouldBeOpen = false;
+      btn.classList.remove("point-up");
+      btn.classList.add("point-down");
+      outerInProgressDiv.classList.add("collapse");
+    }
   }
   outerInProgressDiv.classList.remove("window-load");
 }
@@ -111,8 +113,7 @@ async function showChallenges(cArr: Challenge[], showAnim?: boolean) {
   // console.log("Showing Challenges. In Progress: " + ipCounter + " Browse: " + bCounter);
   if (ipCounter <= 0) {
     inProgressDiv.classList.add("empty");
-    inProgressDiv.innerHTML =
-      "<i>Start working on a challenge, and it'll show up here!</i>";
+    inProgressDiv.innerHTML = "<i>Start working on a challenge, and it'll show up here!</i>";
     if (cToggle) {
       cToggle.remove();
     }

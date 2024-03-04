@@ -229,11 +229,13 @@ body {
         grid-template-columns: 1fr 1fr 1fr;
         row-gap: 1em;
     }
+    &.empty {
+        padding-block: 1em;
+    }
 }
 
 .c-in-progress-container {
     overflow: hidden;
-
     &.empty {
         color: var(--secondary-col);
     }
@@ -285,6 +287,7 @@ body {
     .c-details {
         opacity: 0;
     }
+
     &:hover {
         .c-details{
             opacity: 1;
@@ -326,6 +329,7 @@ body {
 }
 
 .c-preview, .c-submissions {
+    padding: 0.7em;
     cursor: pointer;
     text-transform: uppercase;
     font-weight: bold;
