@@ -263,3 +263,14 @@
 - added a much faster version of "goToPointInLesson" that uses task states instead of the resume system
 - fixed restoreLessonState so that when restoring to a state that needs files that aren't then, the tutor createst those files before going on
 - added support so that if you prefix a challenge json file with _ then the server will skip it when loading
+- fixed error at the end of a lesson
+- fixed position of cursor with addGenericCodeTask
+- converted LessonComplete to be a Menu instead of bubble, with descriptions of the different buttons
+- maybe some other stuff I don't remember
+
+### 3/2/24
+- up till 3:45am solving zoom formulas for learn page...... but we did it
+
+### 3/3/24
+- added zoom option to submission preview (default 0.75x)
+- 

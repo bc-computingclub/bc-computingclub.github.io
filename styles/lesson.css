@@ -468,18 +468,68 @@ hr{
     margin-right:5px;
 }
 .d-lesson-complete{
-    margin-top:24px;
+    margin-top:40px;
+    margin-bottom:60px;
+    /* margin-top:24px; */
     display:flex;
     flex-direction:column;
     gap:5px;
 }
 .d-lesson-complete > button{
     padding:14px 16px;
-    background-color:rgba(0, 0, 0, 0.4);
-    color:whitesmoke;
+    background-color:var(--lighten0);
+    /* background-color:rgba(0, 0, 0, 0.4); */
+    /* background-color:var(--c); */
+    color:var(--col);
+    font-size:16px;
     /* width:33%; */
     /* text-align:right; */
+    --c:rgba(0, 0, 0, 0.4);
+    border-left:solid 4px var(--c);
+}
+/* .d-lesson-complete > button::after{
+    content:"";
+    position:absolute;
+    top:0px;
+    left:0px;
+    width:100%;
+    height:100%;
+    background-color:rgba(0, 0, 0, 0.25);
+    border-radius:inherit;
+} */
+/* .d-lesson-complete > button:hover::after{
+    background-color:var(--lighten);
+} */
+.d-lesson-complete > button:hover{
+    background-color:var(--c);
+    color:whitesmoke;
+}
+.d-lesson-complete > button:nth-child(1){
+    --c:var(--learn-col);
+}
+.d-lesson-complete > button:nth-child(2){
+    /* --c:rgb(164, 73, 57); */
+    --c:var(--practice-col);
+}
+.d-lesson-complete > button:nth-child(3){
+    --c:var(--experiment-col);
 }
 .d-lesson-complete > button > .material-symbols-outlined{
     margin-right:4px;
+}
+.d-lesson-complete > button > div:nth-child(2){
+    display:flex;
+    flex-direction:column;
+    align-items:start;
+    gap:10px;
+}
+.d-lesson-complete span{
+    font-size:14px;
+    text-transform:none;
+    text-align:left;
+    font-weight:normal;
+    opacity:0.6;
+}
+.menu-lesson-complete{
+    height:max-content;
 }

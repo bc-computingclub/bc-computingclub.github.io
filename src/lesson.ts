@@ -453,7 +453,8 @@ class AddGenericCodeTask extends Task{
 
         let pos = editor.getPosition();
         await showTutMouse();
-        await moveTutMouseTo(58 + pos.column*7.7,115 + pos.lineNumber*16.5);
+        // await moveTutMouseTo(58 + pos.column*7.7,115 + pos.lineNumber*16.5);
+        await moveTutMouseTo(60 + pos.column*7.7, 110 + pos.lineNumber*19);
 
         await wait(250);
         let r2 = tutMouse.getBoundingClientRect();
@@ -721,7 +722,7 @@ abstract class LEvent{
         let e = lesson.events[eI+1];
         console.info("*****ENDED EVENT: ",eI,from,lesson.isQuitting,lesson.isResuming);
         lesson.loadEvent(e);
-        e.run();
+        if(e) e.run();
     }
     async startTask(t:Task){
         if(t) if(!t.state) t.state = lesson.getCurrentState();
@@ -2409,7 +2410,7 @@ class Lesson{
             }
         }
         let r = taskI/total;
-        l_progress.textContent = (r*100).toFixed(0)+"%";
+        l_progress.textContent = (r*100).toFixed(1)+"%";
     }
 
     async init(){
@@ -2609,6 +2610,10 @@ class Lesson{
     isComplete = false;
     loadEvent(e:LEvent){
         if(!e){
+            new LessonCompleteMenu().load();
+            return;
+        }
+        if(!e) if(false){
             this.currentEvent = null;
             this.clearAllTasks();
             this.isComplete = true;
@@ -2633,6 +2638,9 @@ class Lesson{
                 </button>
             `;
             b.e.appendChild(btnCont);
+            setupCallout(btnCont.children[0]);
+            setupCallout(btnCont.children[1]);
+            setupCallout(btnCont.children[2]);
 
             this.updateCurrentProgress();
             return;
@@ -3457,4 +3465,58 @@ async function goToPointInLesson(eventI:number,taskI:number){
     }
     
     e.startTask(t);
+}
+
+// Lesson Complete Menu
+class LessonCompleteMenu extends Menu{
+    constructor(){
+        super("🎉 Lesson Complete!");
+    }
+    load(priority?: number): this {
+        super.load(priority);
+        this.menu.classList.add("menu-lesson-complete");
+
+        let l = lesson;
+        l.currentEvent = null;
+        l.clearAllTasks();
+        l.isComplete = true;
+        // alert("Lesson complete!");
+        // let b = addBubbleAt(BubbleLoc.global,"Lesson Complete!");
+        let btnCont = document.createElement("div");
+        // b.e.classList.add("bu-lesson-complete");
+        // b.e.children[1].classList.add("l-lesson-complete");
+        btnCont.className = "d-lesson-complete";
+        btnCont.innerHTML = `
+            <button class="icon-btn co-item" co-label="Copy into new project">
+                <div class="material-symbols-outlined">auto_stories</div>
+                <div>
+                    <div>Return Home</div>
+                    <span>Go back to look at some more lessons!</span>
+                </div>
+            </button>
+            <button class="icon-btn co-item" co-label="Copy into new project">
+                <div class="material-symbols-outlined">undo</div>
+                <div>
+                    <div>Play Again</div>
+                    <span>Reset and go through this lesson again.</span>
+                </div>
+            </button>
+            <button class="icon-btn co-item" co-label="Copy into new project">
+                <div class="material-symbols-outlined">folder_copy</div>
+                <div>
+                    <div>Clone Files</div>
+                    <span>Create a new project to experiment in from the files you created in this lesson.</span>
+                </div>
+            </button>
+        `;
+        this.body.appendChild(btnCont);
+        // b.e.appendChild(btnCont);
+        // setupCallout(btnCont.children[0]);
+        // setupCallout(btnCont.children[1]);
+        // setupCallout(btnCont.children[2]);
+
+        l.updateCurrentProgress();
+        
+        return this;
+    }
 }

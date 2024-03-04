@@ -1,1 +1,1 @@
-    consol.log("asd");
+consol.log("asd");

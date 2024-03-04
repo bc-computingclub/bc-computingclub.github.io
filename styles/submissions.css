@@ -443,10 +443,20 @@
     height: 100%;
 }
 
+/* got the zoom compat stuff from here: https://stackoverflow.com/questions/166160/how-can-i-scale-the-content-of-an-iframe */
 .s-popup-iframe {
-    width: 100%;
-    height: 100%;
+    --zoom:0.75;
+
     border-radius: 3px;
+    width:calc(100% / var(--zoom));
+    height:calc(100% / var(--zoom));
+    -ms-zoom: var(--zoom);
+    -moz-transform: scale(var(--zoom));
+    -moz-transform-origin: 0 0;
+    -o-transform: scale(var(--zoom));
+    -o-transform-origin: 0 0;
+    -webkit-transform: scale(var(--zoom));
+    -webkit-transform-origin: 0 0;
 }
 
 .s-popup-preview-details-item {

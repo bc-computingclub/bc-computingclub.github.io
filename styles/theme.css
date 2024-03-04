@@ -157,6 +157,8 @@ body.theme-dark{
 
     --theme-inv-filter:invert(0);
 
+    --experiment-col:#245;
+
     /* & iframe { */
         /* filter: invert(1) hue-rotate(180deg); */
         /*filter:brightness(0.9);*/

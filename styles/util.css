@@ -1074,6 +1074,7 @@ input[type="checkbox"]{
 /* Dropdowns */
 .sub-menus{
     position:absolute;
+    z-index:100;
 }
 .dropdown{
     /* border:solid 2px var(--secondary-bg-col);
