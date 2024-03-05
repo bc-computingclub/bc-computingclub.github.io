@@ -281,4 +281,6 @@
 ### 3/4/24
 - moved progress circle to start/continue button on learn page and make it dynamic
 - fixed creating folders within folders that weren't open wouldn't cause them to open
-- 
+- more work done on learn page
+- flags, progress percentages, action menu, resume working with action menu and play
+- better theme stuff on learn page

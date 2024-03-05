@@ -938,7 +938,7 @@ let hoverFolderListItems:FFolder[] = [];
 // let hoverFolderListItem:FFolder;
 function sortFiles(l:any[]){
     l.sort((a,b)=>{
-        let dif = ((a.val != null || a.curI != null) && (b.val == null && b.curI == null) ? 1 : ((a.val == null &&a.curI == null) && (b.val != null || b.curI != null) ? -1 : 0));
+        let dif = ((a.val != null || a.curI != null) && (b.val == null && b.curI == null) ? 1 : ((a.val == null && a.curI == null) && (b.val != null || b.curI != null) ? -1 : 0));
         if(dif == 0) dif = a.name.localeCompare(b.name);
         return dif;
     });

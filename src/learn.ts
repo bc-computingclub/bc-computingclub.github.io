@@ -57,14 +57,24 @@ let progressTree = {
     ] as TreeLesson[]
 };
 
+let openedLessonItems:LessonItem[] = [];
+function closeAllLessonItems(){
+    if(!openedLessonItems.length) return;
+    for(const l of openedLessonItems){
+        l.close();
+    }
+    openedLessonItems = [];
+}
+
 type ProgressData = {
-    id:string,
-    prog:number,
-    u:boolean
+    id:string, // lid
+    prog:number, // progress percentage
+    u:boolean, // unlocked
+    n:boolean // is new
 }
 class LessonItem{
     constructor(ldata:TreeLesson,e:HTMLElement,data?:ProgressData){
-        if(data == null) data = {id:ldata.lid,prog:0,u:false};
+        if(data == null) data = {id:ldata.lid,prog:0,u:false,n:false};
         this.lid = ldata.lid;
         this.l = ldata;
         this.e = e;
@@ -75,6 +85,43 @@ class LessonItem{
     lid:string;
     data:ProgressData;
 
+    private b_start:HTMLElement;
+    private d_actions:HTMLElement;
+    private tmp:string;
+    private isHovering:boolean;
+
+    close(){
+        if(!this.b_start) return;
+        this.b_start.classList.remove("open");
+        this.d_actions.classList.remove("open");
+        if(!this.isHovering){
+            this.b_start.textContent = this.tmp;
+            this.b_start.classList.remove("material-symbols-outlined");
+            if(this.data.prog != 0) this.b_start.classList.add("percent");
+        }
+    }
+    open(){
+        if(!this.b_start) return;
+        closeAllLessonItems();
+        openedLessonItems.push(this);
+        this.b_start.classList.add("open");
+        this.d_actions.classList.add("open");
+        this.b_start.classList.add("material-symbols-outlined");
+        this.b_start.classList.remove("percent");
+        this.b_start.textContent = "more_horiz";
+    }
+
+    addFlag(flag:"new"|"complete"|"inprogress"){
+        let cont = this.e.querySelector(".flags");
+        if(!cont) return;
+
+        let i = ["new","complete","inprogress"].indexOf(flag);
+        let f = document.createElement("div");
+        f.textContent = ["NEW","COMPLETE","IN PROGRESS"][i];
+        f.className = "item-flag flag-"+flag;
+        
+        cont.appendChild(f);
+    }
     update(){
         let e = this.e;
         let unlocked = this.data.u;
@@ -85,56 +132,136 @@ class LessonItem{
 
         if(unlocked) e.innerHTML = `
             <div>${this.l.name}</div>
-            <div class="btn-start material-symbols-outlined">
-                play_arrow
+            <div class="btn-start ${this.data.prog ? "percent" : "material-symbols-outlined"}">
+                ${this.data.prog ? this.data.prog+"%" : this.data.prog == 0 ? "play_arrow" : "more_horiz"}
             </div>
             <div class="prog-circle">
                 <canvas></canvas>
+            </div>
+            <!--${this.data.prog ? `
+            <div class="prog-label">
+                <span class="material-symbols-outlined" style="font-size:16px;margin-right:5px">check</span>
+                <span>${this.data.prog}% Complete</span>
+            </div>
+            `:""}-->
+            <div class="flags"></div>
+            <div class="item-actions">
+                <div>
+                    <div>play_arrow</div>
+                    <div>Resume</div>
+                </div>
+                <div>
+                    <div>replay</div>
+                    <div>Restart</div>
+                </div>
+                <div>
+                    <div>delete</div>
+                    <div>Clear</div>
+                </div>
             </div>
         `;
         else e.innerHTML = `
             <div class="lock-icon material-symbols-outlined">lock</div>
         `;
+        let b_start = e.querySelector(".btn-start") as HTMLElement;
+        this.b_start = b_start;
+        this.d_actions = e.querySelector(".item-actions") as HTMLElement;
+
+        if(this.data.n) this.addFlag("new");
+        if(this.data.prog != 0 && this.data.prog < 100) this.addFlag("inprogress");
+
+        if(b_start) if(this.data.prog){
+            this.tmp = b_start.textContent;
+            b_start.onmouseenter = ()=>{
+                this.isHovering = true;
+                b_start.classList.add("material-symbols-outlined");
+                b_start.classList.remove("percent");
+                b_start.textContent = (this.data.prog == 100 ? "more_horiz" : "more_horiz"); // play_arrow
+            };
+            b_start.onmouseleave = ()=>{
+                this.isHovering = false;
+                if(b_start.classList.contains("open")) return;
+                b_start.classList.remove("material-symbols-outlined");
+                b_start.classList.add("percent");
+                b_start.textContent = this.tmp;
+            };
+            // if(this.data.prog == 100) this.addFlag("complete"); // not sure if we want complete flags since there may be a bunch of complete missions and it might get cluttered
+        }
+        else{
+            this.tmp = b_start.textContent;
+            b_start.onmouseenter = ()=>{
+                this.isHovering = true;
+                b_start.textContent = "play_arrow";
+            };
+            b_start.onmouseleave = ()=>{
+                this.isHovering = false;
+                if(b_start.classList.contains("open")) return;
+                b_start.textContent = this.tmp;
+            };
+        }
 
         let can = e.querySelector("canvas");
         if(can){
-            let tarAng = Math.PI*1.5;
+            let PI2 = Math.PI*2+0.05; // extra offset so a completed circle is flush
+            let tarAng = this.data.prog/100*PI2;
             let ang = 0;
             function _update(){
                 can.width = 500;
                 can.height = 500;
                 let ctx = can.getContext("2d");
-                ctx.strokeStyle = "green";
                 let w = 40;
                 ctx.lineWidth = w;
-                ctx.beginPath();
                 let end = Math.PI/2;
-                // end = (performance.now()/300) % 6.28;
+
                 let norm = ang/tarAng;
-                let speed = 50*Math.cos((norm-0.44)*Math.PI*0.9);
-                // speed = Math.max(speed,6);
+                let speed = 50*Math.cos((norm-0.44)*Math.PI*0.9)*(tarAng/PI2);
                 ang += 0.004*speed;
-                // ang *= 1.05;
-                // ang *= 1.001;
+
                 end = ang;
-                if(ang >= tarAng || ang >= 6.28) end = tarAng;
+                if(ang >= tarAng || ang >= PI2) end = tarAng;
+
+                ctx.strokeStyle = "rgba(0,0,0,0.15)";
+                ctx.beginPath();
+                ctx.arc(can.width/2,can.height/2,can.width/2-w,0,Math.PI*2);
+                ctx.stroke();
+
+                ctx.strokeStyle = "green";
+                ctx.beginPath();
                 ctx.arc(can.width/2,can.height/2,can.width/2-w,0,end);
                 ctx.stroke();
 
-                if(ang >= tarAng || ang >= 6.28) return;
+                if(ang >= tarAng || ang >= PI2) return;
                 requestAnimationFrame(_update);
             }
             _update();
         }
 
-        let b_start = e.querySelector(".btn-start") as HTMLElement;
         if(b_start) b_start.addEventListener("click",e=>{
-            location.href = "/learn/lesson/index.html?lid="+this.lid;
+            if(this.data.prog == 0){
+                location.href = "/learn/lesson/index.html?lid="+this.lid;
+                return;
+            }
+
+            if(b_start.classList.contains("open")) this.close();
+            else this.open();
         });
     }
     init(){
         let e = this.e;
         let list = this.l.next.concat(this.l.prev);
+
+        if(this.d_actions){
+            this.d_actions.children[0].addEventListener("click",e=>{
+                location.href = "/learn/lesson/index.html?lid="+this.lid;
+            });
+            this.d_actions.children[1].addEventListener("click",e=>{
+
+            });
+            this.d_actions.children[2].addEventListener("click",e=>{
+
+            });
+        }
+
         if(false) for(const tar of list){ // on hover
             let pc = tar.pathCont;
             if(!pc) continue;
@@ -160,6 +287,17 @@ function loadProgressTree(){
             id:"0001", // lid
             prog:23.5, // progress percentage
             u:true // unlocked
+        },
+        {
+            id:"GUR5zKAcaZgObqWk",
+            prog:0,
+            u:true,
+            n:true
+        },
+        {
+            id:"_0",
+            prog:100,
+            u:true
         }
     ] as ProgressData[];
 
@@ -368,7 +506,10 @@ window.addEventListener("pointerdown",e=>{
     msy = e.clientY;
     mlx = msx;
     mly = msy;
-    if(canPan) isPanning = true;
+    if(canPan){
+        isPanning = true;
+        closeAllLessonItems();
+    }
 });
 window.addEventListener("pointerup",e=>{
     isPanning = false;
