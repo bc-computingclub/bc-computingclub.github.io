@@ -519,11 +519,6 @@ export function getUserBySock(sockId:string){
 }
 
 app.use("/public",(req,res,next)=>{
-    // let p = req.params;
-    // if(!p){
-    //     res.send("Invalid query");
-    //     return;
-    // }
     let arr = req.originalUrl.split("/");
     let project = getProject2(arr[2],arr[3]);
     if(!project){

@@ -1,7 +1,6 @@
 let mainCont = document.querySelector(".main") as HTMLElement;
 let pTree = document.querySelector(".p-tree") as HTMLElement;
 const panCont = document.querySelector(".pan-cont") as HTMLElement;
-// let svgCont = document.querySelector(".pt-svg") as SVGElement;
 let cont = document.querySelector(".cont") as HTMLElement;
 const ns = "http://www.w3.org/2000/svg";
 
@@ -12,6 +11,7 @@ class LessonTar{
     }
     id:string;
     bendOther:boolean;
+    pathCont:HTMLElement;
 }
 class TreeLesson{
     constructor(name:string,lid:string,x:number,y:number,next:LessonTar[]){
@@ -19,13 +19,15 @@ class TreeLesson{
         this.lid = lid;
         this.x = x;
         this.y = y;
-        this.next = next;
+        this.next = next || [];
+        this.prev = [];
     }
     name:string;
     lid:string;
     x:number;
     y:number;
     next:LessonTar[];
+    prev:LessonTar[];
     _x:number;
     _y:number;
 }
@@ -55,14 +57,116 @@ let progressTree = {
     ] as TreeLesson[]
 };
 
+type ProgressData = {
+    id:string,
+    prog:number,
+    u:boolean
+}
+class LessonItem{
+    constructor(ldata:TreeLesson,e:HTMLElement,data?:ProgressData){
+        if(data == null) data = {id:ldata.lid,prog:0,u:false};
+        this.lid = ldata.lid;
+        this.l = ldata;
+        this.e = e;
+        this.data = data;
+    }
+    e:HTMLElement;
+    l:TreeLesson;
+    lid:string;
+    data:ProgressData;
+
+    update(){
+        let e = this.e;
+        let unlocked = this.data.u;
+        if(!unlocked){
+            e.parentElement.classList.add("locked");
+            e.classList.add("locked");
+        }
+
+        if(unlocked) e.innerHTML = `
+            <div>${this.l.name}</div>
+            <div class="btn-start material-symbols-outlined">
+                play_arrow
+            </div>
+            <div class="prog-circle">
+                <canvas></canvas>
+            </div>
+        `;
+        else e.innerHTML = `
+            <div class="lock-icon material-symbols-outlined">lock</div>
+        `;
+
+        let can = e.querySelector("canvas");
+        if(can){
+            let tarAng = Math.PI*1.5;
+            let ang = 0;
+            function _update(){
+                can.width = 500;
+                can.height = 500;
+                let ctx = can.getContext("2d");
+                ctx.strokeStyle = "green";
+                let w = 40;
+                ctx.lineWidth = w;
+                ctx.beginPath();
+                let end = Math.PI/2;
+                // end = (performance.now()/300) % 6.28;
+                let norm = ang/tarAng;
+                let speed = 50*Math.cos((norm-0.44)*Math.PI*0.9);
+                // speed = Math.max(speed,6);
+                ang += 0.004*speed;
+                // ang *= 1.05;
+                // ang *= 1.001;
+                end = ang;
+                if(ang >= tarAng || ang >= 6.28) end = tarAng;
+                ctx.arc(can.width/2,can.height/2,can.width/2-w,0,end);
+                ctx.stroke();
+
+                if(ang >= tarAng || ang >= 6.28) return;
+                requestAnimationFrame(_update);
+            }
+            _update();
+        }
+
+        let b_start = e.querySelector(".btn-start") as HTMLElement;
+        if(b_start) b_start.addEventListener("click",e=>{
+            location.href = "/learn/lesson/index.html?lid="+this.lid;
+        });
+    }
+    init(){
+        let e = this.e;
+        let list = this.l.next.concat(this.l.prev);
+        if(false) for(const tar of list){ // on hover
+            let pc = tar.pathCont;
+            if(!pc) continue;
+            e.addEventListener("mouseenter",e=>{
+                pc.classList.add("hov");
+            });
+            e.addEventListener("mouseleave",e=>{
+                pc.classList.remove("hov");
+            });
+        }
+    }
+}
+let items:LessonItem[] = [];
+
 function loadProgressTree(){
     let cx = pTree.offsetWidth/2;
     let cy = pTree.offsetHeight/2;
     let moveScale = 10;
 
+    // User Data
+    let progress = [
+        {
+            id:"0001", // lid
+            prog:23.5, // progress percentage
+            u:true // unlocked
+        }
+    ] as ProgressData[];
+
     let lessonCont = document.createElement("div");
-    let lessonGroup = document.createElementNS(ns,"g");
     for(const l of progressTree.lessons){
+        let pdata = progress.find(v=>v.id == l.lid);
+
         let x = cx+l.x*moveScale;
         let y = cy+l.y*moveScale;
 
@@ -72,19 +176,28 @@ function loadProgressTree(){
         item.classList.add("circle");
         itemCont.style.left = x+"px";
         itemCont.style.top = y+"px";
-        item.innerHTML = `
-            <div>${l.name}</div>
-        `;
         l._x = x;
         l._y = y;
+
+        itemCont.addEventListener("mouseenter",e=>{
+            canPan = false;
+        });
+        itemCont.addEventListener("mouseleave",e=>{
+            canPan = true;
+        });
         
         itemCont.appendChild(item);
         lessonCont.appendChild(itemCont);
+
+        let ref = new LessonItem(l,item,pdata);
+        items.push(ref);
+        ref.update();
 
         let r = 50;
         if(l.next) setTimeout(()=>{
             for(const tar of l.next){
                 let next = progressTree.lessons.find(v=>v.lid == tar.id);
+                next.prev.push(tar);
                 if(next){
                     let test = document.createElement("div");
                     test.classList.add("test");
@@ -116,63 +229,16 @@ function loadProgressTree(){
                     let dist = Math.sqrt(dx**2+dy**2);
                     let dxo = dx;
                     let dyo = dy;
-                    // let horz = (Math.abs(dxo) > Math.abs(dyo));
                     let horz = tar.bendOther;
                     dx /= dist;
                     dy /= dist;
-                    // if(Math.abs(dx) < Math.abs(dy)) dx = 0;
-                    // else dy = 0;
-                    // x1 += dx*r;
-                    // y1 += dy*r;
-                    // x2 -= dx*r;
-                    // y2 -= dy*r;
-                    if(false){
-                        if(dxo > 0 && dyo > 0){
-                            if(horz){
-                                y2 -= r;
-                                x1 += r;
-                            }
-                            else{
-                                y1 += r;
-                                x2 -= r;
-                            }
-                        }
-                        if(dxo > 0 && dyo < 0){
-                            if(horz){
-                                x2 -= r;
-                                y1 -= r;
-                            }
-                            else{
-                                x1 += r;
-                                y2 += r;
-                            }
-                        }
-                        if(dxo < 0 && dyo > 0){
-    
-                        }
-                        if(dxo < 0 && dyo < 0){
-    
-                        }
-                    }
-
 
                     let dashArray = "40,20";
-                    // let dashArray = "";
-
-                    // let centerX2 = (x1+x2)/2;
-                    // let centerY2 = (y1+y2)/2;
-                    // let ang = Math.atan2(dyo,dxo);
-                    // let ang = Math.atan2(dyo,dxo)+Math.PI/2;
-                    // let tx = Math.cos(ang)*dist/2.8+centerX2;
-                    // let ty = Math.sin(ang)*dist/2.8+centerY2;
-
 
                     test.style.width = Math.abs(dxo)+"px";
                     test.style.height = Math.abs(dyo)+"px";
                     test.style.left = (sx)+"px";
                     test.style.top = (sy)+"px";
-                    // let scale = dxo/(pTree.offsetWidth);
-                    // let scale = 1000/Math.abs(dxo)*8;
                     let strokeWidth = "8";
                     let pad = 0; //8
                     let pad2 = 5;
@@ -223,7 +289,12 @@ function loadProgressTree(){
         }
     </svg>
                     `;
-                    cont.appendChild(test);
+                    let pathCont = document.createElement("div");
+                    pathCont.className = "path-cont";
+                    cont.appendChild(pathCont);
+                    tar.pathCont = pathCont;
+                    
+                    pathCont.appendChild(test);
 
                     let arrow = document.createElement("div");
                     arrow.className = "arrow";
@@ -251,7 +322,7 @@ function loadProgressTree(){
                             <path d="M 5,5 L 25,25 L 5,45" stroke-width="8" fill="none" stroke="var(--col)" stroke-linecap="round" stroke-linejoin="round"/>
                         </svg>
                     `;
-                    cont.appendChild(arrow);
+                    pathCont.appendChild(arrow);
 
                     // function update(){ // <---- for animated arrow
                     //     requestAnimationFrame(update);
@@ -262,10 +333,24 @@ function loadProgressTree(){
             }
         },0);
     }
-    // svg.appendChild(lessonGroup);
     cont.appendChild(lessonCont);
+    setTimeout(()=>{
+        for(const ref of items){
+            ref.init();
+        }
+    },50);
 }
 loadProgressTree();
+
+// Back pan blocking
+let canPan = true;
+// const back = document.querySelector(".back");
+// back.addEventListener("mousemove",e=>{
+//     canPan = true;
+// });
+// back.addEventListener("mouseleave",e=>{
+//     canPan = false;
+// });
 
 // Nav
 let msx = 0; // mouse start x
@@ -283,7 +368,7 @@ window.addEventListener("pointerdown",e=>{
     msy = e.clientY;
     mlx = msx;
     mly = msy;
-    isPanning = true;
+    if(canPan) isPanning = true;
 });
 window.addEventListener("pointerup",e=>{
     isPanning = false;
@@ -291,7 +376,7 @@ window.addEventListener("pointerup",e=>{
 let startTouches:Touch[];
 let startTouchDist = 1;
 window.addEventListener("touchstart",e=>{
-    if(e.touches.length == 2){
+    if(canPan) if(e.touches.length == 2){
         startTouches = [...e.touches];
         let dx = startTouches[1].clientX-startTouches[0].clientX;
         let dy = startTouches[1].clientY-startTouches[0].clientY;
@@ -345,14 +430,9 @@ window.addEventListener("mousemove",e=>{
     }
 });
 document.addEventListener("wheel",e=>{
-    // let scale = 0.002;
-    // let speed = 1;
     let speed = Math.abs(e.deltaY)/500;
     let scale = 1.001+speed; //1.1
     zoomBy(e.deltaY > 0 ? 1/scale : scale);
-    // zoomBy(1-e.deltaY*scale);
-    // let scale = 0.06;
-    // zoomBy(e.deltaY > 0 ? 1-scale : 1+scale);
 });
 function updatePan(){
     panCont.style.marginLeft = panX+"px";
@@ -364,66 +444,30 @@ function updatePan(){
     mainCont.style.backgroundPositionY = (_y)+"px";
 }
 function zoomBy(r:number){    
-    let szoom = zoom;
     zoom *= r;
     if(zoom < 0.1) zoom = 0.1;
     if(zoom > 5) zoom = 5; //3
-    let dif = zoom-szoom;
-    let scaleX = panX/innerWidth*dif;
-    let scaleY = panY/innerHeight*dif;
     let r1 = panCont.getBoundingClientRect();
-    // let scaleX = dif;
-    // let scaleY = dif;
-    // panX -= innerWidth*scaleX;
-    // panY -= innerHeight*scaleY;
-    let sw = szoom;
+
     panCont.style.scale = zoom.toString();
     mainCont.style.backgroundSize = (zoom*2)+"vw";
-    let fw = zoom;
-    let dw = fw-sw;
-    // console.log("SCALE CHANGE:",dw);
 
-    // panX += (panX*r - panX);
-    // panY += (panY*r - panY);
-
-    // FINAL!!!
+    // FINAL!!! (for center zooming only)
     // panX *= r;
     // panY *= r;
 
     let r2 = panCont.getBoundingClientRect();
-
-    // let offX = (mx)/innerWidth-0.5;
-    // let offX = (mx)/r1.width-0.5;
-    // let offY = (my-60)/(innerHeight-60)-0.5;
-    // let dif2 = r2.x-r1.x;
-
-    // panX += (innerWidth-r2.right)-(innerWidth-r1.right);
     
     let a1 = r2.width-r1.width;
     let b1 = r2.height-r1.height;
-    // let rat = (innerWidth-(r1.x+r1.width/2)) / r1.width - 0.5;
 
     let cxd = mx-(r1.x+r1.width/2);
     let cyd = my-(r1.y+r1.height/2);
     let cx = cxd/r1.width;
     let cy = cyd/r1.height;
     
-    // console.log(rat);
-    // console.log(offX+rat);
-    // panX -= a1*(offX+rat);
     panX -= a1*cx;
     panY -= b1*cy;
-
-    // let b1 = r2.height-r1.height;
-    // panX -= a1*offX;
-    // panY -= b1*offY;
-
-
-    // let amt = (offX*2 * (r2.x-r1.x));
-    // console.log(dif2,amt);
-    // panX += amt;
-    // panY += (offY*2 * (r2.y-r1.y));
-    // console.log(offX,offY);
 
     updatePan();
 }

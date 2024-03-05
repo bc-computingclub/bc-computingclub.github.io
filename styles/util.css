@@ -853,6 +853,10 @@ body .nav-links > .active{
 .icon-refresh{
     transition:rotate 0.3s ease-out;
 }
+/* not sure if I want this or not */
+/* .b-open-in-new{
+    cursor:pointer;
+} */
 
 .cont-js{
     padding-top:0px;

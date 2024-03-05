@@ -125,7 +125,7 @@ class SubmissionMenu extends Menu {
 
   load() {
     let p = this.data.p;
-    let url = getProjectURL(this.submission.uid,this.submission.pid);
+    let url = getPublicProjectURL(this.submission.uid,this.submission.pid);
 
     super.load();
     this.menu.innerHTML = `
@@ -182,14 +182,17 @@ class SubmissionMenu extends Menu {
     `;
 
     let b_refresh = this.menu.querySelector(".s-b-refresh") as HTMLButtonElement;
+    let b_openInNew = this.menu.querySelector(".b-open-in-new") as HTMLButtonElement;
     let icon_refresh = this.menu.querySelector(".icon-refresh") as HTMLElement;
     let frame = this.menu.querySelector(".s-popup-iframe") as HTMLIFrameElement;
 
     b_refresh.addEventListener("click",e=>{
-      console.log("click");
       frame.src = url;
       icon_refresh.style.rotate = _icRef_state ? "360deg" : "0deg";
       _icRef_state = !_icRef_state;
+    });
+    b_openInNew.addEventListener("click",e=>{
+      open(frame.src,"_blank");
     });
 
     let sPopupClose = document.querySelector(".s-popup-close") as HTMLElement;

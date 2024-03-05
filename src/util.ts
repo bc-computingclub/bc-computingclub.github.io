@@ -855,6 +855,24 @@ class Project{
             saveProject();
         }
         else f._fi.classList.toggle("close");
+
+        if(isNew) if(f._fi){
+            f._fi.classList.add("sel");
+            function check(folder:FFolder){
+                if(!folder) return;
+                if(folder._fiLabel.parentElement.classList.contains("close")){
+                    folder._fiLabel.click();
+                    folder.p.lastFolder = null;
+                    folder._fiLabel.parentElement.classList.remove("sel");
+                }
+                if(folder.folder) check(folder.folder);
+            }
+            check(f.folder);
+            this.deselectHLItems();
+            this.lastFolder = f;
+            f._fi.classList.add("sel");
+        }
+
         return f;
     }
 
@@ -873,8 +891,13 @@ class Project{
         return this.disableCopy;
     }
 }
+/**Gets the url (for iframes) to a `"private"` project */
 function getProjectURL(uid:string,pid:string){
     return serverURL+"/project/"+g_user.uid+"/"+socket.id+"/"+uid+"/"+pid;
+}
+/**Gets the url (for iframes) to a `"public"` project */
+function getPublicProjectURL(ownerUid:string,pid:string){
+    return serverURL+"/public/"+ownerUid+"/"+pid;
 }
 
 
@@ -942,7 +965,7 @@ let fclipboard = {
 
 let _multiSelLast:FItem;
 let _multiSelFolder:FFolder;
-function applyMultiSelectFI(e:MouseEvent,f:FItem){
+function applyMultiSelectFI(e:MouseEvent|any,f:FItem){
     let isMulti = (e.shiftKey || e.ctrlKey);
     let items = f.p.hlItems;
     // if(items.length) if(f.folder != _multiSelFolder) return true;
@@ -1887,7 +1910,6 @@ function closeTmpMenus(){
 document.addEventListener("mousedown",e=>{
     if(!isOverTmpMenu) closeTmpMenus();
     if(!overSubMenu){
-        console.log("...closing");
         closeAllSubMenus();
     }
 });

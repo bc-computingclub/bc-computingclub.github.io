@@ -3505,11 +3505,22 @@ class LessonCompleteMenu extends Menu{
                 <div class="material-symbols-outlined">folder_copy</div>
                 <div>
                     <div>Clone Files</div>
-                    <span>Create a new project to experiment in from the files you created in this lesson.</span>
+                    <!--<span>Create a new project to experiment in from the files you created in this lesson.</span>-->
+                    <span>Copy your files from this lesson into a new project.</span>
                 </div>
             </button>
         `;
         this.body.appendChild(btnCont);
+
+        btnCont.children[0].addEventListener("click",e=>{
+            location.href = "/learn";
+        });
+        btnCont.children[1].addEventListener("click",e=>{
+            // rest lesson and restart
+        });
+        btnCont.children[2].addEventListener("click",e=>{
+            // copy files into new project
+        });
         // b.e.appendChild(btnCont);
         // setupCallout(btnCont.children[0]);
         // setupCallout(btnCont.children[1]);

@@ -273,4 +273,12 @@
 
 ### 3/3/24
 - added zoom option to submission preview (default 0.75x)
+- started adding user data for learn page (client side only right now) and locked visuals & percentage visuals
+- fixed submissions so that it loads the public url instead of the private one so you can view submission previews that aren't yours
+- fixed submissions so that "open in new tab" button works now
+- worked some more with learn page
+
+### 3/4/24
+- moved progress circle to start/continue button on learn page and make it dynamic
+- fixed creating folders within folders that weren't open wouldn't cause them to open
 - 
