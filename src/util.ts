@@ -547,7 +547,7 @@ function genHeader(i:number,isCompact=true,id:string){
     b_publish = navCont.querySelector(".b-publish");
     setupCustomCallout(b_publish,div=>{
         div.classList.add("callout-no-color");
-        div.textContent = "test";
+        div.textContent = "Submit";
     });
 }
 
@@ -2699,3 +2699,46 @@ async function getChallenge(cid:string){
         });
     });
 } 
+
+/**
+ * Creates a confirm prompt. onCancel is called on close of menu.
+ */
+class ConfirmMenu extends Menu {
+    constructor(title:string, message:string, onConfirm:() => void, onCancel:() => void) {
+        super(title);
+        this.message = message;
+        this.onCancel = onCancel;
+        this.onConfirm = onConfirm;
+    }
+    message:string;
+    onConfirm:() => void;
+    onCancel:() => void;
+
+    load() {
+        super.load();
+        this.body.innerHTML = `<span class="confirm-menu-message">${this.message}</span>`
+        let temp = document.createElement("div");
+        temp.className = "confirm-menu-options";
+        this.body.appendChild(temp);
+
+        let btn1 = document.createElement("button");
+        btn1.textContent = "Confirm";
+        let btn2 = document.createElement("button");
+        btn2.textContent = "Cancel";
+        temp.appendChild(btn1);
+        temp.appendChild(btn2);
+        btn1.addEventListener("click", () => { this.confirmChoice(); })
+        btn2.addEventListener("click", () => { this.cancelChoice(); });
+        return this;
+    }
+    confirmChoice() {
+        this.onConfirm();
+        this.close();
+    }
+    cancelChoice() {
+        this.close(); // this will call onClose(), which in turn calls onCancel.
+    }
+    onClose(): void {
+        this.onCancel();
+    }
+}

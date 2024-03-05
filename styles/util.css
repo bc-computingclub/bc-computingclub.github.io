@@ -1473,3 +1473,12 @@ input[type="checkbox"]{
     padding:1rem;
     width:200%;
 }
+
+.confirm-menu-options{
+    display: flex;
+    align-items: center;
+    gap: 1em;
+    > * {
+        width: 100%;
+    }
+}

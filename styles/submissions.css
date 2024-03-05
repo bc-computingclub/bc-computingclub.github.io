@@ -464,12 +464,18 @@
     justify-content: space-between;
 }
 
-.s-popup-preview-details-contents {
+.s-popup-preview-details-contents { 
     display: grid;
     grid-template-rows: auto;
     gap: .8em;
     padding-inline-start: 1em;
     padding-block-start: 1em;
+}
+
+@media (max-width: 1600px) {
+    .s-home {
+        padding-inline: 2em;
+    }
 }
 
 /* Ultrawide screens */
