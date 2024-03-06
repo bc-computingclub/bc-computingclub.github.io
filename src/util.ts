@@ -1448,7 +1448,7 @@ class FFile extends FItem{
     close(){
         if(this.p.openFiles.includes(this)){
             if(!this._saved){
-                return;
+                // return; 
                 // if(!confirm("This file is unsaved, are you sure you want to close it?")) return
             }
             if(this._saved) this.text = this.editor.getValue();
@@ -2752,7 +2752,7 @@ class ConfirmMenu extends Menu {
         btn2.textContent = this.cancelText?? "Cancel";
         temp.appendChild(btn1);
         temp.appendChild(btn2);
-        btn1.addEventListener("click", () => { this.confirmChoice(); })
+        btn1.addEventListener("click", () => { this.confirmChoice(); });
         btn2.addEventListener("click", () => { this.cancelChoice(); });
         return this;
     }
@@ -2761,10 +2761,8 @@ class ConfirmMenu extends Menu {
         this.close();
     }
     cancelChoice() {
-        this.close(); // this will call onClose(), which in turn calls onCancel.
-    }
-    onClose(): void {
         this.onCancel();
+        this.close();
     }
 }
 
