@@ -220,7 +220,8 @@ button.icon-btn-single:hover{
 .inp-cont{
     display:flex;
     align-items:center;
-    gap:20px;
+    justify-content: start;
+    gap:auto;
     --c-bg:var(--darken2);
 }
 .inp-cont > div:first-child{

@@ -1531,14 +1531,14 @@ class FFile extends FItem{
                     this.softDelete();
                 }
                 if(!this._saved) new ConfirmMenu(
-                    "Unsaved file","This file is unsaved, are you sure you want to close it?",
-                    () => {
-                        this.close();
-                    },
-                    () => { 
-                        console.log("File close canceled");
-                    }
-                ).load();
+                        "Unsaved file","This file is unsaved, are you sure you want to close it?",
+                        () => {
+                            this.close();
+                        },
+                        () => { 
+                            console.log("File close canceled");
+                        }
+                    ).load();
                 else this.close();
             });
             link.appendChild(b_close);
@@ -2727,7 +2727,7 @@ async function hideLoadingAnim() {
 
 /**
  * Get a single challenge from the server. 
- * Calling challenge.submissions gives array with all submissions for that challenge.
+ * Using.submissions returns an array with all submissions for that challenge.
  */
 async function getChallenge(cid:string){
     return new Promise<Challenge>(resolve=>{
@@ -2792,54 +2792,52 @@ class ConfirmMenu extends Menu {
 }
 
 class InputMenu extends Menu {
-    constructor(title:string, message:string, onConfirm:() => void, onCancel:() => void, confirmText?:string, cancelText?:string) {
+    constructor(title:string, message:string, onConfirm:(data?:any) => void, onCancel:() => void, confirmText?:string, cancelText?:string) {
         super(title);
         this.message = message;
         this.onConfirm = onConfirm;
         this.onCancel = onCancel;
     }
     message:string;
-    onConfirm:() => void;
+    onConfirm:(data?:any) => void;
     onCancel:() => void;
     confirmText:string;
     cancelText:string;
-    userInput:string;
 
     load() {
         super.load();
-        this.body.innerHTML = `
-            <div class="input-menu-cont">
-                <span class="input-menu-message">${this.message}</span>
-                <span>
-                    <input class="input-menu-input" type="text" placeholder="Enter your response here">
-                </span>
-            </div>
-            `;
+        this.postLoad();
+        return this;
+    }
+    
+    async postLoad() {
+        this.body.innerHTML = `<div class="input-menu-cont"></div>`;
+        let inputObj = this.setupTextInput(".input-menu-cont", {label: this.message});
         let temp = document.createElement("div");
         temp.className = "confirm-menu-options";
         this.body.appendChild(temp);
-
+    
         let btn1 = document.createElement("button");
         btn1.textContent = this.confirmText?? "Submit";
         let btn2 = document.createElement("button");
         btn2.textContent = this.cancelText?? "Cancel";
         temp.appendChild(btn1);
         temp.appendChild(btn2);
-        btn1.addEventListener("click", () => { this.confirmChoice(); });
+        btn1.addEventListener("click", () => { this.confirmChoice(inputObj.inp.value); });
         btn2.addEventListener("click", () => { this.cancelChoice(); });
-
+        inputObj.inp.focus();
+    
         // when enter key is pressed, 
-        document.addEventListener("keydown", (e) => {
+        inputObj.inp.addEventListener("keydown", (e) => {
             if (e.key == "Enter") {
-                this.confirmChoice();
+                this.confirmChoice(inputObj.inp.value);
             }
         });
-        return this;
     }
-
-    confirmChoice() {
-        this.userInput = (this.body.querySelector(".input-menu-input") as HTMLInputElement).value;
-        this.onConfirm();
+    
+    confirmChoice(data?:any) {
+        console.log("data: " + data);
+        this.onConfirm(data);
         this.close();
     }
     
@@ -2848,3 +2846,5 @@ class InputMenu extends Menu {
         this.close();
     }
 }
+
+// new InputMenu("Name File","File name",()=>{},()=>{}).load();
