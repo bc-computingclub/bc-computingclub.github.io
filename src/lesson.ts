@@ -1349,7 +1349,7 @@ class TA_Text extends TA_Task{
         let b = this.b;
         await b.addObj(obj);
         if(this._preTags) obj.addTag(...this._preTags);
-        let amt = b.baseFontScale*(b.can.height/b.can.width)*0.55;
+        let amt = b.baseFontScale*(b.can.height/b.can.width)*this.b._fontWidthScale;
         this.e.tx += amt * this.code.length;
     }
     serialize():any{
@@ -1380,7 +1380,7 @@ class TA_ReplaceText extends TA_Text{
         this.obj = obj;
         let b = this.b;
         await b.replaceObj(refObj,obj);
-        let amt = b.baseFontScale*(b.can.height/b.can.width)*0.55;
+        let amt = b.baseFontScale*(b.can.height/b.can.width)*this.b._fontWidthScale;
         this.e.tx += amt * this.code.length;
     }
     getOffset(): number {
@@ -1408,7 +1408,7 @@ class TA_Move extends TA_Task{
     amtY:number;
     async run(): Promise<void> {
         let b = this.b;
-        let amt = b.baseFontScale*(b.can.height/b.can.width)*0.55;
+        let amt = b.baseFontScale*(b.can.height/b.can.width)*this.b._fontWidthScale;
         this.e.tx += amt * this.amtX;
         this.e.ty += amt * this.amtY;
     }
@@ -1477,7 +1477,7 @@ class BE_AddCode extends AnchoredBoardEvent{
         let y = this.y;
         // let len = getLongestLineLenSum(this.parts);
         let len = getLinesOffset(this.anim.tasks.filter(v=>v instanceof TA_Text) as TA_Text[]);
-        let amt = b.baseFontScale*(b.can.height/b.can.width)*0.55;
+        let amt = b.baseFontScale*(b.can.height/b.can.width)*b._fontWidthScale;
         if(this.ha == Anchor.CENTER) x -= amt*len/2;
         else if(this.ha == Anchor.END) x -= amt*len;
 
@@ -1528,7 +1528,7 @@ class BE_AddText extends AnchoredBoardEvent{
         let x = this.x;
         let y = this.y;
         let len = getLenTC(this.text);
-        let amt = b.baseFontScale*(b.can.height/b.can.width)*0.55;
+        let amt = b.baseFontScale*(b.can.height/b.can.width)*b._fontWidthScale;
         if(this.ha == Anchor.CENTER) x -= amt*len/2;
         else if(this.ha == Anchor.END) x -= amt*len;
 
@@ -1565,7 +1565,7 @@ class BO_Text extends AnchoredBoardObj{
     text:string;
     col:string;
     render(_ctx: CanvasRenderingContext2D, b:Board): void {
-        b.font = "monospace";
+        b.font = "Roboto Mono"; //monospace
         b.applyFont();
         _ctx.fillStyle = this.col;
         
@@ -1604,7 +1604,7 @@ class BO_Text extends AnchoredBoardObj{
         // let ctx = b.ctx;
         // let w = b.paint._ctx.measureText(this.text).width;
         // let w = ctx.measureText(this.text).width;
-        let amt = b.baseFontScale*(b.can.height/b.can.width)*0.55 * b.can.width;
+        let amt = b.baseFontScale*(b.can.height/b.can.width)*1.05 * b.can.width; //0.55
         let w = this.text.length*amt;
         let h = b.fontSize;
         w += this.extraPad.l+this.extraPad.r;
@@ -2035,13 +2035,14 @@ class Board{
     /**
      * Unit: percent
      */
+    _fontWidthScale = 0.6; // 0.55
     getCharWidth(){
         let b = this;
-        return b.baseFontScale*(b.can.height/b.can.width)*0.55;
+        return b.baseFontScale*(b.can.height/b.can.width)*this._fontWidthScale;
     }
     getCharWidthInPX(){
         let b = this;
-        return b.baseFontScale*(b.can.height/b.can.width)*0.55 * this.can.width;
+        return b.baseFontScale*(b.can.height/b.can.width)*this._fontWidthScale * this.can.width;
     }
 
     // objStore:Map<string,BoardObj>;
