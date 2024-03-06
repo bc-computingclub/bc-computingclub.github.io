@@ -542,37 +542,60 @@ function openCurProjSettingsMeta(meta:ProjectMeta,ops:any){
 
     let b_deleteProject = div.querySelector(".b-delete-project") as HTMLButtonElement;
     b_deleteProject.addEventListener("click",e=>{
-        if(!confirm(`Are you sure you want to delete project: "${meta.name}" ?\n\nThere is no reversing this option.`)) return;
-        socket.emit("deleteProject",meta.pid,(res:number)=>{
-            console.log("delete project res: ",res);
-            if(res != 0){
-                alert("There was an error deleting the project, error code: "+res);
-                return;
-            }
-            let item = document.querySelector(".pi-"+meta.pid);
-            if(item) item.remove();
-            div.remove();
-            if(project?.pid == meta.pid) location.reload();
-        });
+        new ConfirmMenu(
+            "Delete Project","Are you sure you want to delete project: \""+meta.name+"\" ?<br><br>There is no reversing this option.",
+            () => {
+                socket.emit("deleteProject",meta.pid,(res:number)=>{
+                    console.log("delete project res: ",res);
+                    if(res != 0){
+                        alert("There was an error deleting the project, error code: "+res);
+                        return;
+                    }
+                    let item = document.querySelector(".pi-"+meta.pid);
+                    if(item) item.remove();
+                    div.remove();
+                    if(project?.pid == meta.pid) location.reload();
+                });
+            },
+            () => { return; }
+        ).load();
+        // if(!confirm(`Are you sure you want to delete project: "${meta.name}" ?\n\nThere is no reversing this option.`)) return;
+        // socket.emit("deleteProject",meta.pid,(res:number)=>{
+        //     console.log("delete project res: ",res);
+        //     if(res != 0){
+        //         alert("There was an error deleting the project, error code: "+res);
+        //         return;
+        //     }
+        //     let item = document.querySelector(".pi-"+meta.pid);
+        //     if(item) item.remove();
+        //     div.remove();
+        //     if(project?.pid == meta.pid) location.reload();
+        // });
     });
     setupCallout(b_deleteProject,"Delete Project");
 
     let b_unlinkProject = div.querySelector(".b-unlink-project") as HTMLButtonElement;
     if(!meta.cid) b_unlinkProject.style.display = "none";
     b_unlinkProject.addEventListener("click",e=>{
-        if(!confirm(`Are you sure you want to unlink the challenge with this project: "${meta.name}" ?\n\nThere is no reversing this option.`)) return;
-        socket.emit("unlinkProject",meta.pid,(res:number)=>{
-            console.log("unlink project res: ",res);
-            if(res != 0){
-                alert("There was an error unlinking the project, error code: "+res);
-                return;
-            }
-            // let item = document.querySelector(".pi-"+meta.pid);
-            // if(item) item.remove();
-            // div.remove();
-            // if(project?.pid == meta.pid) location.reload();
-            location.reload();
-        });
+        // if(!confirm(`Are you sure you want to unlink the challenge with this project: "${meta.name}" ?\n\nThere is no reversing this option.`)) return;
+        new ConfirmMenu(
+            "Unlink Project","Are you sure you want to unlink the challenge with this project: \""+meta.name+"\" ?<br><br>There is no reversing this option.",
+            () => {
+                socket.emit("unlinkProject",meta.pid,(res:number)=>{
+                    console.log("unlink project res: ",res);
+                    if(res != 0){
+                        alert("There was an error unlinking the project, error code: "+res);
+                        return;
+                    }
+                    // let item = document.querySelector(".pi-"+meta.pid); // paul: i left these commented lines here caleb, idk if they're necessary. I implemented confirmMenu and it seems to work
+                    // if(item) item.remove();
+                    // div.remove();
+                    // if(project?.pid == meta.pid) location.reload();
+                    location.reload();
+                });
+            },
+            () => { return; }
+        ).load();
     });
 
     // 

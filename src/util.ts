@@ -543,7 +543,6 @@ function genHeader(i:number,isCompact=true,id:string){
     ][i]);
 
     d_lesson_confirm = document.querySelector(".d-lesson-confirm") as HTMLElement;
-
     b_publish = navCont.querySelector(".b-publish");
     setupCustomCallout(b_publish,div=>{
         div.classList.add("callout-no-color");
@@ -660,7 +659,20 @@ class Project{
             }
         }
         else list.push(f);
-        if(!confirm("Are you sure you want to delete: ["+list.map(v=>v.name).join(", ")+"] ?\n\nThere is no reversing this option!")) return;
+        let deleting = list.map(v=>v.name);
+        // if(!confirm("Are you sure you want to delete: ["+list.map(v=>v.name).join(", ")+"] ?\n\nThere is no reversing this option!")) return;
+        let confirmres = await new Promise<number>(resolve=>{
+            new ConfirmMenu(
+                "Are you sure you want to delete: ["+deleting.join(", ")+"] ?","There is no reversing this option!",
+                () => {
+                    resolve(0);
+                },
+                () => { 
+                    resolve(1);
+                }
+            ).load();
+        });
+        if(confirmres != 0) return;
         for(const f1 of list){
             let res = await new Promise<number>(resolve=>{
                 socket.emit("deleteFItem",f1.p.pid,calcFolderPath(f1.folder),f1.name,((res:number)=>{
@@ -2754,15 +2766,81 @@ class ConfirmMenu extends Menu {
         temp.appendChild(btn2);
         btn1.addEventListener("click", () => { this.confirmChoice(); });
         btn2.addEventListener("click", () => { this.cancelChoice(); });
+
+        // when enter key is pressed, confirm choice
+        document.addEventListener("keydown", (e) => {
+            if (e.key == "Enter") {
+                this.confirmChoice();
+            }
+        });
         return this;
     }
+
     confirmChoice() {
         this.onConfirm();
         this.close();
     }
+
     cancelChoice() {
         this.onCancel();
         this.close();
     }
 }
 
+class InputMenu extends Menu {
+    constructor(title:string, message:string, onConfirm:() => void, onCancel:() => void, confirmText?:string, cancelText?:string) {
+        super(title);
+        this.message = message;
+        this.onConfirm = onConfirm;
+        this.onCancel = onCancel;
+    }
+    message:string;
+    onConfirm:() => void;
+    onCancel:() => void;
+    confirmText:string;
+    cancelText:string;
+    userInput:string;
+
+    load() {
+        super.load();
+        this.body.innerHTML = `
+            <div class="input-menu-cont">
+                <span class="input-menu-message">${this.message}</span>
+                <span>
+                    <input class="input-menu-input" type="text" placeholder="Enter your response here">
+                </span>
+            </div>
+            `;
+        let temp = document.createElement("div");
+        temp.className = "confirm-menu-options";
+        this.body.appendChild(temp);
+
+        let btn1 = document.createElement("button");
+        btn1.textContent = this.confirmText?? "Submit";
+        let btn2 = document.createElement("button");
+        btn2.textContent = this.cancelText?? "Cancel";
+        temp.appendChild(btn1);
+        temp.appendChild(btn2);
+        btn1.addEventListener("click", () => { this.confirmChoice(); });
+        btn2.addEventListener("click", () => { this.cancelChoice(); });
+
+        // when enter key is pressed, 
+        document.addEventListener("keydown", (e) => {
+            if (e.key == "Enter") {
+                this.confirmChoice();
+            }
+        });
+        return this;
+    }
+
+    confirmChoice() {
+        this.userInput = (this.body.querySelector(".input-menu-input") as HTMLInputElement).value;
+        this.onConfirm();
+        this.close();
+    }
+    
+    cancelChoice() {
+        this.onCancel();
+        this.close();
+    }
+}
