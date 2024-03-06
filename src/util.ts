@@ -779,20 +779,33 @@ class Project{
     createFile(name:string,text:string,lang?:string,folder?:FFolder,isNew=false){
         let same = (folder ? folder.items : this.items).find(v=>v.name == name);
         if(same){
-            if(same instanceof FFile){
-                if(confirm("There is already a file in this folder with the name: "+name+".\n\nDo you want to override it?\n(Press cancel to skip)")){
-                    if(same.editor){
-                        same.editor.setValue(text);
+            new ConfirmMenu(
+                "File already exists","There is already a file in this folder with the name: "+name+".\n\nDo you want to override it?",
+                () => {
+                    if(same instanceof FFile) {
+                        if(same.editor){
+                            same.editor.setValue(text);
+                        }
+                        same.text = text;
+                        same.setSaved(false);
                     }
-                    same.text = text;
-                    same.setSaved(false);
+                },
+                () => { 
+                    console.log("File override canceled");
                 }
-                return;
-            }
-            else if(same instanceof FFolder){
+            ).load();
+            // if(confirm("There is already a file in this folder with the name: "+name+".\n\nDo you want to override it?\n(Press cancel to skip)")){
+            //     if(same.editor){
+            //         same.editor.setValue(text);
+            //     }
+            //     same.text = text;
+            //     same.setSaved(false);
+            // }
+            if(same instanceof FFolder){
                 alert("There is already a folder in this location with the name: "+name+", skipping...");
                 return;
             }
+            return;
         }
 
         let res = resolveHook(listenHooks.addFile,name);
@@ -1435,7 +1448,8 @@ class FFile extends FItem{
     close(){
         if(this.p.openFiles.includes(this)){
             if(!this._saved){
-                if(!confirm("This file is unsaved, are you sure you want to close it?")) return;
+                return;
+                // if(!confirm("This file is unsaved, are you sure you want to close it?")) return
             }
             if(this._saved) this.text = this.editor.getValue();
             this.p.d_files.removeChild(this.link);
@@ -1463,8 +1477,8 @@ class FFile extends FItem{
             return 1;
         }
     }
-    // for lessons
-    softDelete(){
+    
+    async softDelete(){
         let res = this.close();
         if(res == 1){
             if(this.p.files.includes(this)) this.p.files.splice(this.p.files.indexOf(this),1);
@@ -1500,9 +1514,16 @@ class FFile extends FItem{
                 if(this.p.readonly) return;
                 if(PAGE_ID == PAGEID.lesson){
                     this.softDelete();
-                    return;
                 }
-                this.close();
+                new ConfirmMenu(
+                    "Unsaved file","This file is unsaved, are you sure you want to close it?",
+                    () => {
+                        this.close();
+                    },
+                    () => { 
+                        console.log("File close canceled");
+                    }
+                ).load();
             });
             link.appendChild(b_close);
             link.className = "file-link";
@@ -2704,12 +2725,16 @@ async function getChallenge(cid:string){
  * Creates a confirm prompt. onCancel is called on close of menu.
  */
 class ConfirmMenu extends Menu {
-    constructor(title:string, message:string, onConfirm:() => void, onCancel:() => void) {
+    constructor(title:string, message:string, onConfirm:() => void, onCancel:() => void,confirmText?:string,cancelText?:string) {
         super(title);
         this.message = message;
         this.onCancel = onCancel;
         this.onConfirm = onConfirm;
+        this.confirmText = confirmText;
+        this.cancelText = cancelText;
     }
+    cancelText:string;
+    confirmText:string;
     message:string;
     onConfirm:() => void;
     onCancel:() => void;
@@ -2722,9 +2747,9 @@ class ConfirmMenu extends Menu {
         this.body.appendChild(temp);
 
         let btn1 = document.createElement("button");
-        btn1.textContent = "Confirm";
+        btn1.textContent = this.confirmText?? "Confirm";
         let btn2 = document.createElement("button");
-        btn2.textContent = "Cancel";
+        btn2.textContent = this.cancelText?? "Cancel";
         temp.appendChild(btn1);
         temp.appendChild(btn2);
         btn1.addEventListener("click", () => { this.confirmChoice(); })
@@ -2742,3 +2767,4 @@ class ConfirmMenu extends Menu {
         this.onCancel();
     }
 }
+
