@@ -25,7 +25,6 @@ export class Challenge{
         this.timespan = null;
         // this.hl = [];
         this.sub = [];
-        this.cnt = 0;
     }
     name:string;
     desc:string;
@@ -35,7 +34,7 @@ export class Challenge{
     timespan:Timespan|null;
     // hl:CSubmission[];
     sub:CSubmission[];
-    cnt:number; // submission count
+    // cnt:number; // submission count
 
     isCompleted(user:User){
         let p = user.pMeta.find(v=>v.cid == this.id);
@@ -67,7 +66,6 @@ export class Challenge{
             imgUrl:this.imgUrl,
             difficulty:this.difficulty,
             timespan:this.timespan,
-            cnt:this.cnt,
             sub:this.sub
         };
         await write("../challenges/"+this.id+".json",JSON.stringify(data));

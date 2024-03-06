@@ -551,9 +551,9 @@ io.on("connection",socket=>{
             switch(option) {
                 case "popularity":
                     if(desc) {
-                        return b.cnt - a.cnt;
+                        return b.sub.length - a.sub.length;
                     }
-                    return a.cnt - b.cnt;
+                    return a.sub.length - b.sub.length;
                 case "alphabetical":
                     if(desc) {
                         return a.name.localeCompare(b.name);
