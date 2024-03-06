@@ -1604,7 +1604,7 @@ class BO_Text extends AnchoredBoardObj{
         // let ctx = b.ctx;
         // let w = b.paint._ctx.measureText(this.text).width;
         // let w = ctx.measureText(this.text).width;
-        let amt = b.baseFontScale*(b.can.height/b.can.width)*1.05 * b.can.width; //0.55
+        let amt = b.baseFontScale*(b.can.height/b.can.width)*b._fontWidthScale * b.can.width; //0.55
         let w = this.text.length*amt;
         let h = b.fontSize;
         w += this.extraPad.l+this.extraPad.r;
