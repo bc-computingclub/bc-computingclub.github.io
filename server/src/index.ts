@@ -1082,8 +1082,9 @@ async function createProject(user:User,name:string,desc:string,isPublic=false){
     let pid = genPID();
     let meta = new ProjectMeta(user,pid,name,desc,isPublic,false);
     let p = user.createProject(meta,pid);
-    let path = "../project/"+user.uid+"/"+p.pid;
+    let path = "../project/"+user.uid;
     await mkdir(path);
+    await mkdir(path+"/"+p.pid);
     return p;
 }
 enum ProjectGroup{

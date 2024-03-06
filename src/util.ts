@@ -188,8 +188,10 @@ class Menu{
         `;
         let check = div.querySelector(".icon-check");
     
+        let _inp:HTMLInputElement;
         if(!ops.buttonText){
             let inp = div.querySelector("input");
+            _inp = inp;
             inp.spellcheck = !ops.noErrorCheck;
             if(check) inp.addEventListener("input",async e=>{
                 if(ops.validate){
@@ -217,6 +219,7 @@ class Menu{
                 if(ops.onClick) ops.onClick();
             });
         }
+        return {div,inp:_inp};
     }
 }
 
@@ -1527,7 +1530,7 @@ class FFile extends FItem{
                 if(PAGE_ID == PAGEID.lesson){
                     this.softDelete();
                 }
-                new ConfirmMenu(
+                if(!this._saved) new ConfirmMenu(
                     "Unsaved file","This file is unsaved, are you sure you want to close it?",
                     () => {
                         this.close();
@@ -1536,6 +1539,7 @@ class FFile extends FItem{
                         console.log("File close canceled");
                     }
                 ).load();
+                else this.close();
             });
             link.appendChild(b_close);
             link.className = "file-link";
