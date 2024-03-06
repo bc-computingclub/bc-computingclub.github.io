@@ -104,7 +104,7 @@ async function continueChallenge(cid: string) {
 }
 
 async function showChallenges(cArr: Challenge[], showAnim?: boolean) {
-  if (showAnim) await showLoadingAnim([browseDiv, inProgressDiv], "400");
+  if (showAnim) await showLoadingAnim([browseDiv, inProgressDiv], 400);
   for (let challenge of cArr) {
     setChallengeHTML(challenge);
   }

@@ -2697,7 +2697,7 @@ function resetChallengeBody() {
 }
   
   let loadingDiv: HTMLElement;
-  async function showLoadingAnim(loadThese: HTMLElement[], delay?: string) {
+  async function showLoadingAnim(loadThese: HTMLElement[], delay?: number) {
     // if no delay is passed in, loading animation wil loop until hideLoadingAnim() is called
     loadingDiv = document.createElement("div") as HTMLElement;
     loadingDiv.classList.add("loading-div");
@@ -2713,7 +2713,7 @@ function resetChallengeBody() {
     for (const c of loadThese) {
         c.appendChild(loadingDiv.cloneNode(true));
     }
-    await wait(parseInt(delay));
+    await wait(delay);
 }
   
 async function hideLoadingAnim() {
@@ -2772,7 +2772,7 @@ class ConfirmMenu extends Menu {
         btn2.addEventListener("click", () => { this.cancelChoice(); });
 
         // when enter key is pressed, confirm choice
-        document.addEventListener("keydown", (e) => {
+        temp.addEventListener("keydown", (e) => {
             if (e.key == "Enter") {
                 this.confirmChoice();
             }
@@ -2813,7 +2813,7 @@ class InputMenu extends Menu {
     async postLoad() {
         this.body.innerHTML = `<div class="input-menu-cont"></div>`;
         let inputObj = this.setupTextInput(".input-menu-cont", {label: this.message});
-        let temp = document.createElement("div");
+        let temp = document.createElement("div") as HTMLElement;
         temp.className = "confirm-menu-options";
         this.body.appendChild(temp);
     
@@ -2827,7 +2827,7 @@ class InputMenu extends Menu {
         btn2.addEventListener("click", () => { this.cancelChoice(); });
         inputObj.inp.focus();
     
-        // when enter key is pressed, 
+        // when enter key is pressed, send input to confirmChoice
         inputObj.inp.addEventListener("keydown", (e) => {
             if (e.key == "Enter") {
                 this.confirmChoice(inputObj.inp.value);
@@ -2835,12 +2835,14 @@ class InputMenu extends Menu {
         });
     }
     
+    // ran on click of "confirm" button, or on enter key press
     confirmChoice(data?:any) {
         console.log("data: " + data);
         this.onConfirm(data);
         this.close();
     }
     
+    // ran on click of "cancel" button
     cancelChoice() {
         this.onCancel();
         this.close();

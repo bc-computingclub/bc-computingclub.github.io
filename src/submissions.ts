@@ -28,7 +28,7 @@ window.onload = async () => {
 };
 
 async function displaySubmissions(submissionArray: Submission[],showAnim?:boolean) {
-  if (showAnim) await showLoadingAnim([sContainer], "400");
+  if (showAnim) await showLoadingAnim([sContainer], 400);
   for (const sub of submissionArray) {
     let tempSub: HTMLElement = getSubmissionElement(sub);
     sContainer.appendChild(tempSub);
