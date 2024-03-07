@@ -12,17 +12,35 @@ pane_preview = document.querySelector(".pane-preview") as HTMLElement;
 
 const b_newFolder = document.querySelector(".b-new-folder") as HTMLButtonElement;
 const b_newFile = document.querySelector(".b-new-file") as HTMLButtonElement;
+
 b_newFolder.addEventListener("click",e=>{
     if(!project) return;
-    let name = prompt("Enter folder name:");
-    if(!name) return;
-    project.createFolder(name,project.lastFolder ?? project.curFile?.folder);
+    // let name = prompt("Enter folder name:");
+    new InputMenu(
+        "New Folder","Enter folder name",
+        (v:string)=>{
+            if(!v) return;
+            project.createFolder(v,project.lastFolder ?? project.curFile?.folder);
+        },
+        () => {
+            console.log("Canceled new folder creation");
+        }
+    ).load();
 });
+
 b_newFile.addEventListener("click",e=>{
     if(!project) return;
-    let name = prompt("Enter file name:");
-    if(!name) return;
-    project.createFile(name,"",null,project.lastFolder ?? project.curFile?.folder,true);
+    // let name = prompt("Enter file name:");
+    new InputMenu(
+        "New File","Enter file name",
+        (inputname:string)=>{
+            if(!inputname) return;
+            project.createFile(inputname,"");
+        },
+        () => {
+            console.log("Canceled new file creation");
+        }
+    ).load();
 });
 
 async function loadProject(uid:string,pid:string){
@@ -306,9 +324,19 @@ class ProjectDashboard extends Menu{
         `;
         let b_newProject = this.body.querySelector(".b-new-project") as HTMLButtonElement;
         b_newProject.addEventListener("click",e=>{
-            let name = prompt("Enter project name:","New Project");
-            if(!name) return;
-            createNewProject(name);
+            // let name = prompt("Enter project name:","New Project");
+            let name = "New Project";
+            new InputMenu(
+                "New Project","Enter project name",
+                (projname:string)=>{
+                    name = projname;
+                    if(!name) return;
+                    createNewProject(name);
+                },
+                () => {
+                    console.log("Canceled new project creation");
+                }
+            ).load();
         });
         let navCont = this.body.querySelector(".edb-nav-cont");
         let content = this.body.querySelector(".edb-content-list");

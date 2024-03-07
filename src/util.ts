@@ -182,7 +182,7 @@ class Menu{
         div.classList.add("inp-cont");
         
         div.innerHTML = `
-            <div>${ops.label || ""}</div>
+            <div class="text-input-label">${ops.label || ""}</div>
             ${ops.buttonText ? `<button>${ops.buttonText}</button>` : '<input type="text">'}
             ${ops.buttonText ? "" : ops.hasCheck ? `<div><div class="material-symbols-outlined icon-check">progress_activity</div></div>` : ""}
         `;
@@ -631,27 +631,40 @@ class Project{
 
     renameFItem(f:FItem,close?:()=>void){
         if(!f) return;
-        let newName = prompt("Old name: "+f.name+"\n\nEnter new name: ",f.name);
-        if(newName == f.name || newName == null || newName == ""){
-            if(close) close();
-            return;
-        }
-        if(newName.includes("/") || newName.includes("..")){
-            alert("Invalid file/folder name");
-            if(close) close();
-            return;
-        }
-        socket.emit("renameFItem",f.p.pid,calcFolderPath(f.folder),f.name,newName,((res:number)=>{
-            console.log("RES RENAME: ",res);
-            if(res != 0) return;
-            f.name = newName;
-            if(f instanceof FFile){
-                if(f.link) f.link.children[0].textContent = newName;
-                if(f._fi) f._fi.textContent = newName;
-            }
-            else if(f._fi) f._fi.children[0].children[2].textContent = newName;
-            if(close) close();
-        }));
+        // let newName = prompt("Old name: "+f.name+"\n\nEnter new name: ",f.name);
+        let newName = f.name;
+        new InputMenu(
+            "Rename File","New name",
+            (data:string) => {
+                newName = data;
+                if(newName == f.name || newName == null || newName == ""){
+                    if(close) close();
+                    return;
+                }
+                if(newName.includes("/") || newName.includes("..")){
+                    alert("Invalid file/folder name");
+                    if(close) close();
+                    return;
+                }
+                socket.emit("renameFItem",f.p.pid,calcFolderPath(f.folder),f.name,newName,((res:number)=>{
+                    console.log("RES RENAME: ",res);
+                    if(res != 0) return;
+                    f.name = newName;
+                    if(f instanceof FFile){
+                        if(f.link) f.link.children[0].textContent = newName;
+                        if(f._fi) f._fi.textContent = newName;
+                    }
+                    else if(f._fi) f._fi.children[0].children[2].textContent = newName;
+                    if(close) close();
+                }));
+            },
+            () => {
+                console.log("Canceled file rename");
+            },
+            "Rename file",
+            "",
+            `Old name: ${f.name.substring(0,30) + (f.name.length > 30 ? "..." : "")}`
+        ).load();
     }
     async deleteFItem(f:FItem){
         if(!f) return;
@@ -666,7 +679,7 @@ class Project{
         // if(!confirm("Are you sure you want to delete: ["+list.map(v=>v.name).join(", ")+"] ?\n\nThere is no reversing this option!")) return;
         let confirmres = await new Promise<number>(resolve=>{
             new ConfirmMenu(
-                "Are you sure you want to delete: ["+deleting.join(", ")+"] ?","There is no reversing this option!",
+                "Delete Item","Are you sure you want to delete: ["+deleting.join(", ")+"] ?<br><br>There is no reversing this option!",
                 () => {
                     resolve(0);
                 },
@@ -1862,10 +1875,19 @@ function postSetupEditor(project:Project){
             return;
         }
         
-        let name = prompt("Enter file name:","index.html");
+        // let name = prompt("Enter file name:","index.html");\
+        let name = "index.html";
+        new InputMenu(
+            "New File","Enter file name",
+            (data?:string)=>{
+                project.createFile(data,"",null,project.lastFolder ?? project.curFile?.folder,true);
+            },
+            () => {
+                console.log("File Creation Canceled");
+            },
+            "Create File",
+        ).load();
         if(!name) return;
-
-        project.createFile(name,"",null,project.lastFolder ?? project.curFile?.folder,true);
     });
 
     // loadEditorTheme();
@@ -2792,17 +2814,23 @@ class ConfirmMenu extends Menu {
 }
 
 class InputMenu extends Menu {
-    constructor(title:string, message:string, onConfirm:(data?:any) => void, onCancel:() => void, confirmText?:string, cancelText?:string) {
+    constructor(title:string, inputMessage:string, onConfirm:(data?:any) => void, onCancel:() => void, confirmText?:string, cancelText?:string, beforeInputPrompt?:string, afterInputPrompt?:string) {
         super(title);
-        this.message = message;
+        this.inputMessage = inputMessage;
         this.onConfirm = onConfirm;
         this.onCancel = onCancel;
+        this.confirmText = confirmText || null;
+        this.cancelText = cancelText || null;
+        this.beforeInputPrompt = beforeInputPrompt || null;
+        this.afterInputPrompt = afterInputPrompt || null;
     }
-    message:string;
+    inputMessage:string;
     onConfirm:(data?:any) => void;
     onCancel:() => void;
     confirmText:string;
     cancelText:string;
+    beforeInputPrompt:string;
+    afterInputPrompt:string;
 
     load() {
         super.load();
@@ -2811,8 +2839,20 @@ class InputMenu extends Menu {
     }
     
     async postLoad() {
-        this.body.innerHTML = `<div class="input-menu-cont"></div>`;
-        let inputObj = this.setupTextInput(".input-menu-cont", {label: this.message});
+        this.body.innerHTML = `<div class="inputref"></div>`;
+        let inputObj = this.setupTextInput(".inputref", {label: this.inputMessage});
+        if (this.beforeInputPrompt) {
+            let  beforeElm = document.createElement("span");
+            beforeElm.style.fontSize = "15px";
+            beforeElm.textContent = this.beforeInputPrompt;
+            document.querySelector(".menu-body").insertBefore(beforeElm, inputObj.inp.parentElement); // this took like 4 years to figure out and is probably not optimal... sigh
+        }
+        if(this.afterInputPrompt){
+            let afterElm = document.createElement("span");
+            afterElm.style.fontSize = "15px";
+            afterElm.textContent = this.afterInputPrompt;
+            document.querySelector(".menu-body").appendChild(afterElm);
+        }
         let temp = document.createElement("div") as HTMLElement;
         temp.className = "confirm-menu-options";
         this.body.appendChild(temp);
@@ -2837,7 +2877,7 @@ class InputMenu extends Menu {
     
     // ran on click of "confirm" button, or on enter key press
     confirmChoice(data?:any) {
-        console.log("data: " + data);
+        console.log("Input data: " + data);
         this.onConfirm(data);
         this.close();
     }
@@ -2849,4 +2889,5 @@ class InputMenu extends Menu {
     }
 }
 
-// new InputMenu("Name File","File name",()=>{},()=>{}).load();
+// For testing input menu: this alerts the user's input. 
+// new InputMenu("Test Menu","Enter Data",(data?:any)=>{ alert(data) },()=>{ alert("No data found") }).load();

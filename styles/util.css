@@ -218,15 +218,21 @@ button.icon-btn-single:hover{
 }
 
 .inp-cont{
-    display:flex;
+    display:grid;
+    grid-template-columns: auto 1fr;
+    gap: 2em;
     align-items:center;
-    justify-content: start;
-    gap:auto;
+    justify-content: space-between;
     --c-bg:var(--darken2);
 }
+
+.text-input-label {
+    width: 350px;
+}
+
 .inp-cont > div:first-child{
     font-size:15px;
-    width:90px;
+    width:max-content;
     /* user-select:none; */
     /* -webkit-user-select:none; */
 }
@@ -1167,6 +1173,11 @@ input[type="checkbox"]{
     width: 80em;
     height: 40em;
     animation: AddBubble forwards 0.35s ease-out;
+}
+
+.menu-new-file {
+    width: 350px;
+    height: 220px;
 }
 
 .c-popup {
