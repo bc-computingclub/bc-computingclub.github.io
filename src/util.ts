@@ -529,7 +529,7 @@ function genHeader(i:number,isCompact=true,id:string){
             <button class="b-go-back-step hide"><div class="material-symbols-outlined">keyboard_double_arrow_left</div></button>
         </div>
         <div class="nav-links">
-            <a href="/learn/lesson/index.html?lid=0001" class="nav-link">Learn <span class="material-symbols-outlined">Auto_stories</span></a>
+            <a href="/learn/index.html" class="nav-link">Learn <span class="material-symbols-outlined">Auto_stories</span></a>
             <a href="/practice/index.html" class="nav-link">Practice <span class="material-symbols-outlined">Checkbook</span></a>
             <a href="/editor/index.html" class="nav-link">Experiment <span class="material-symbols-outlined">Experiment</span></a>
             <a class="h-profile"><span class="material-symbols-outlined">Person</span></a>

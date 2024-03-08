@@ -284,3 +284,14 @@
 - more work done on learn page
 - flags, progress percentages, action menu, resume working with action menu and play
 - better theme stuff on learn page
+
+### 3/6/24
+- fixed sorting by popularity
+
+### 3/7/24
+- added restartLessonProgress and button in learn page works with it
+- added deleteLessonProgress and button in learn page works with it
+- added prog property for progress percentage to be stored on the server side
+- fixed joinDate and lastLoggedIn (finally since the first day starting this project xD)
+- clicking the learn button in the header now goes to the learn instead of lesson page
+- fixed (probably) the issue where projects could not be deleted if they weren't first loaded from the editor / server restart

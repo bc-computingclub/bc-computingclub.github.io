@@ -1,4 +1,4 @@
-import { io, server, CredentialResData, User, users, getUserBySock, sanitizeEmail, getProject, attemptToGetProject, access, readdir, read, mkdir, removeFile, write, ULFile, ProjectMeta, allProjects, UserChallengeData, Project, getProject2, ULItem, ULFolder, rename, removeFolder, getDefaultProjectMeta, getProjectFromHD, lessonMetas, LessonMeta } from "./connection";
+import { io, server, CredentialResData, User, users, getUserBySock, sanitizeEmail, getProject, attemptToGetProject, access, readdir, read, mkdir, removeFile, write, ULFile, ProjectMeta, allProjects, UserChallengeData, Project, getProject2, ULItem, ULFolder, rename, removeFolder, getDefaultProjectMeta, getProjectFromHD, lessonMetas, LessonMeta, getLessonMeta, writeLessonMeta, deleteLessonMeta, loadProject } from "./connection";
 import { CSubmission, Challenge, ChallengeData, ChallengeGet, challenges } from "./s_challenges";
 import {LessonData} from "./s_lesson";
 import fs from "fs";
@@ -11,6 +11,11 @@ function valVar(v:any,type:string){
     return (typeof v == type);
 }
 function valVar2(v:any,type:string,f:any){
+    if(type == "path"){
+        let res = (typeof v == "string" && !v.includes("."));
+        if(!res) f();
+        return res;
+    }
     if(typeof f != "function") return false;
     if(v == null){
         f();
@@ -96,9 +101,9 @@ io.on("connection",socket=>{
                         call(u.getTransferData());
                         return;
                     }
-                    user = new User(data.uid,fdata.name,fdata.email,fdata.picture,fdata._joinDate,fdata._lastLoggedIn,socket.id,fdata.pMeta);
+                    user = new User(data.uid,fdata.name,fdata.email,fdata.picture,fdata.joinDate,fdata.lastLoggedIn,socket.id,fdata.pMeta);
                     user.challenges = (fdata.challenges as any[]||[]).map(v=>new UserChallengeData(v.i,v.cid,v.pid));
-                    user.saveToFile();
+                    // user.saveToFile();
                 }
                 if(user) users.set(user.uid,user);
             }
@@ -140,6 +145,46 @@ io.on("connection",socket=>{
     socket.on("getAvailableLessons",()=>{
 
     })
+    socket.on("restartLessonProgress",async (lid:string,f:(data:any)=>void)=>{
+        if(!valVar2(lid,"path",f)) return;
+        
+        let user = getUserBySock(socket.id);
+        if(!user){
+            f(-3);
+            return;
+        }
+
+        let meta = await getLessonMeta(user.uid,lid);
+        if(!meta){
+            f(1);
+            return;
+        }
+
+        meta.eventI = -1;
+        meta.taskI = -1;
+        await writeLessonMeta(user.uid,lid,meta);
+
+        f(0);
+    });
+    socket.on("deleteLessonProgress",async (lid:string,f:(data:any)=>void)=>{
+        if(!valVar2(lid,"path",f)) return;
+        
+        let user = getUserBySock(socket.id);
+        if(!user){
+            f(-3);
+            return;
+        }
+
+        let meta = await getLessonMeta(user.uid,lid);
+        if(!meta){
+            f(1);
+            return;
+        }
+        await deleteLessonMeta(user.uid,lid);
+        await removeFolder("../lesson/"+user.uid+"/"+lid);
+
+        f(0);
+    });
     socket.on("getLesson",async (lid:string,f:(data:any)=>void)=>{
         if(!valVar2(lid,"string",f)) return;
         if(lid.includes(".")){
@@ -148,7 +193,10 @@ io.on("connection",socket=>{
         }
         
         let user = getUserBySock(socket.id);
-        if(!user) return;
+        if(!user){
+            f(-3);
+            return;
+        }
 
         let path = "../lessons/"+lid+"/";
         let str = await read(path+"meta.json");
@@ -196,7 +244,7 @@ io.on("connection",socket=>{
         
         f(data);
     });
-    socket.on("uploadLessonFiles",async (lessonId:string,list:ULFile[],progress:any,call:()=>void)=>{
+    socket.on("uploadLessonFiles",async (lessonId:string,list:ULFile[],progress:LessonMeta,call:()=>void)=>{
         if(!valVar(list,"object")) return;
         if(!valVar(lessonId,"string")) return;
         if(!valVar(call,"function")) return;
@@ -237,15 +285,12 @@ io.on("connection",socket=>{
         // }
         let meta = lessonMetas.get(user.uid+":"+lessonId);
         if(!meta){
-            if(!await access(metaPath+"meta.json")) meta = new LessonMeta(progress.eventI,progress.taskI);
-            else{
-                meta = LessonMeta.parse(await read(metaPath+"meta.json"));
-                lessonMetas.set(user.uid+":"+lessonId,meta);
-            }
+            meta = await getLessonMeta(user.uid,lessonId);
         }
         else{
             meta.eventI = progress.eventI;
             meta.taskI = progress.taskI;
+            meta.prog = progress.prog;
         }
         await write(metaPath+"meta.json",JSON.stringify(meta),"utf8");
 
@@ -295,15 +340,7 @@ io.on("connection",socket=>{
         //     tutFiles.push(new ULFile(f,await read(tutFilePath+"/"+f,"utf8"),"","utf8"));
         // }
 
-        let metaPath = "../users/"+user.uid+"/lesson/"+lessonId+"/";
-        let meta = lessonMetas.get(user.uid+":"+lessonId);
-        if(!meta){
-            if(!await access(metaPath+"meta.json")) meta = new LessonMeta(-1,-1);
-            else{
-                meta = LessonMeta.parse(JSON.parse(await read(metaPath+"meta.json")));
-                lessonMetas.set(user.uid+":"+lessonId,meta);
-            }
-        }
+        let meta = await getLessonMeta(user.uid,lessonId);
 
         call({
             files,
@@ -446,6 +483,8 @@ io.on("connection",socket=>{
                 return;
             }
         }
+
+        if(!user.projects.includes(p)) user.projects.push(p);
 
         call(p.serializeGet(true),null,uid == user.uid);
 
@@ -734,7 +773,7 @@ io.on("connection",socket=>{
             return;
         }
 
-        let p = user.projects.find(v=>v.pid == m?.pid);
+        let p = user.pMeta.find(v=>v.pid == m?.pid);
         if(!p){
             f(3);
             return;
@@ -958,7 +997,7 @@ io.on("connection",socket=>{
             return;
         }
 
-        let p = user.projects.find(v=>v.pid == pid);
+        let p = user.pMeta.find(v=>v.pid == pid);
         if(!p){
             f(3);
             return;
@@ -1005,17 +1044,27 @@ io.on("connection",socket=>{
         f(0);
     });
 });
-async function deleteProject(user:User,p:Project,f:(res:number)=>void){
-    if(p){
-        user.projects.splice(user.projects.indexOf(p),1);
-        allProjects.delete(p.getRefStr());
+async function deleteProject(user:User,pMeta:ProjectMeta,f:(res:number)=>void){
+    console.log("... deleting project: ",pMeta.pid,pMeta.name);
+    if(!pMeta.user){
+        f(-3);
+        return;
     }
-    let pid = p.pid;
-    if(p.cid){
+    if(pMeta.user.uid != user.uid){
+        f(-2);
+        return;
+    }
+    if(pMeta){
+        user.projects.splice(user.projects.findIndex(v=>v.pid == pMeta.pid),1);
+        allProjects.delete(user.uid+":"+pMeta.pid);
+        // allProjects.delete(p.getRefStr());
+    }
+    let pid = pMeta.pid;
+    if(pMeta.cid){
         //remove from challenges
         user.challenges.splice(user.challenges.findIndex(v=>v.pid == pid),1);
         // remove from submissions
-        let ch = challenges.get(p.cid);
+        let ch = challenges.get(pMeta.cid);
         if(ch){
             let ind = ch.sub.findIndex(v=>v.pid == pid);
             if(ind != -1){
@@ -1023,7 +1072,7 @@ async function deleteProject(user:User,p:Project,f:(res:number)=>void){
                 await ch.save();
             }
         }
-        else console.log("warn: couldn't find challenge: ",p.cid);
+        else console.log("warn: couldn't find challenge: ",pMeta.cid);
     }
     user.pMeta.splice(user.pMeta.findIndex(v=>v.pid == pid),1);
     await user.saveToFile();
@@ -1066,7 +1115,9 @@ async function createChallengeProject(user:User,cid:string):Promise<Project|numb
 
     // setup/create project
     let p = new Project(pid,user.uid,getDefaultProjectMeta(user,pid,c.name));
-    allProjects.set(pid,p);
+    p._owner = user;
+    user.projects.push(p);
+    // allProjects.set(pid,p);
     p.meta.cid = cid;
     // let m = user.pMeta.find(v=>v.pid == pid);
     // if(m) m.cid = cid;
@@ -1076,6 +1127,7 @@ async function createChallengeProject(user:User,cid:string):Promise<Project|numb
     m.cid = p.cid;
     user.pMeta.push(m);
     user.saveToFile();
+    loadProject(p);
     return p;
 }
 async function createProject(user:User,name:string,desc:string,isPublic=false){

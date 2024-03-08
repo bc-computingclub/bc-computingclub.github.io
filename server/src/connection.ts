@@ -307,7 +307,6 @@ export class User{
             picture:this.picture,
             joinDate:this.joinDate,
             lastLoggedIn:this.lastLoggedIn,
-            // projects,
             pMeta:this.pMeta.map(v=>v.serialize()),
             challenges:this.challenges
         };
@@ -345,14 +344,16 @@ class ProjRef{
 }
 
 export class LessonMeta{
-    constructor(eventI:number,taskI:number){
+    constructor(eventI:number,taskI:number,prog:number){
         this.eventI = eventI;
         this.taskI = taskI;
+        this.prog = prog;
     }
     eventI:number;
     taskI:number;
+    prog:number;
     static parse(data:any){
-        let m = new LessonMeta(data.eventI,data.taskI);
+        let m = new LessonMeta(data.eventI,data.taskI,data.prog||"0");
         return m;
     }
 }
@@ -363,8 +364,29 @@ export const allProjects = new Map<string,Project>();
 const hasntFoundProject:string[] = [];
 export const lessonMetas = new Map<string,LessonMeta>();
 
+export async function getLessonMeta(uid:string,lid:string){
+    let metaPath = "../users/"+uid+"/lesson/"+lid+"/";
+    let meta = lessonMetas.get(uid+":"+lid);
+    if(!meta){
+        if(!await access(metaPath+"meta.json")) meta = new LessonMeta(-1,-1,0);
+        else{
+            meta = LessonMeta.parse(JSON.parse(await read(metaPath+"meta.json")));
+            lessonMetas.set(uid+":"+lid,meta);
+        }
+    }
+    return meta;
+}
+export async function writeLessonMeta(uid:string,lid:string,meta:LessonMeta){
+    let metaPath = "../users/"+uid+"/lesson/"+lid+"/";
+    await write(metaPath+"meta.json",JSON.stringify(meta),"utf8");
+}
+export async function deleteLessonMeta(uid:string,lid:string){
+    let metaPath = "../users/"+uid+"/lesson/"+lid+"/";
+    await removeFolder(metaPath);
+}
+
 // for indexing, need to make a deloadProject at some point
-function loadProject(p:Project){
+export function loadProject(p:Project){
     allProjects.set(p.getRefStr(),p);
     // extra catches when updating
     if(p.meta.cid != null){
@@ -404,7 +426,7 @@ export async function getProjectFromHD(uid:string,pid:string){
     }
     else{
         meta = realUser.pMeta.find((v:any)=>v.pid == pid);
-        if(!meta) return -9;
+        if(!meta) return -9.1;
     }
 
     let curFiles = await readdir(path);

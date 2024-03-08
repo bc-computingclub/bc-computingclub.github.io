@@ -2231,7 +2231,8 @@ class Lesson{
 
     progress = {
         eventI:0,
-        taskI:-1
+        taskI:-1,
+        prog:0
     };
     isResuming = false;
     resume = {
@@ -2412,7 +2413,8 @@ class Lesson{
             }
         }
         let r = taskI/total;
-        l_progress.textContent = (r*100).toFixed(1)+"%";
+        this.progress.prog = parseFloat((r*100).toFixed(1));
+        l_progress.textContent = this.progress.prog+"%";
     }
 
     async init(){

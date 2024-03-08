@@ -255,10 +255,25 @@ class LessonItem{
                 location.href = "/learn/lesson/index.html?lid="+this.lid;
             });
             this.d_actions.children[1].addEventListener("click",e=>{
-
+                socket.emit("restartLessonProgress",this.lid,(data:any)=>{
+                    if(data == 0){
+                        location.href = "/learn/lesson/index.html?lid="+this.lid;
+                    }
+                    else{
+                        alert("Err: while restarting lesson progress, error code: "+data);
+                    }
+                });
             });
             this.d_actions.children[2].addEventListener("click",e=>{
-
+                socket.emit("deleteLessonProgress",this.lid,(data:any)=>{
+                    if(data == 0){
+                        // location.href = "/learn/lesson/index.html?lid="+this.lid;
+                        alert("success");
+                    }
+                    else{
+                        alert("Err: while deleting lesson progress, error code: "+data);
+                    }
+                });
             });
         }
 

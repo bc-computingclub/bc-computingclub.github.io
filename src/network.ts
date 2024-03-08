@@ -89,6 +89,7 @@ function uploadLessonFiles(lesson:Lesson){ // for refresh
     let prog = {
         eventI:lesson.progress.eventI,
         taskI:lesson.progress.taskI,
+        prog:lesson.progress.prog
         // tutFiles:[]
     };
     // for(const f of lesson.tut.files){
