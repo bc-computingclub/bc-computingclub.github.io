@@ -103,6 +103,7 @@ io.on("connection",socket=>{
                     }
                     user = new User(data.uid,fdata.name,fdata.email,fdata.picture,fdata.joinDate,fdata.lastLoggedIn,socket.id,fdata.pMeta);
                     user.challenges = (fdata.challenges as any[]||[]).map(v=>new UserChallengeData(v.i,v.cid,v.pid));
+                    user.lesson = fdata.lesson || {};
                     // user.saveToFile();
                 }
                 if(user) users.set(user.uid,user);
@@ -184,6 +185,39 @@ io.on("connection",socket=>{
         await removeFolder("../lesson/"+user.uid+"/"+lid);
 
         f(0);
+    });
+    socket.on("startLesson",async (lid:string,call:(data:any)=>void)=>{
+        if(!valVar2(lid,"string",call)) return;
+
+        let user = getUserBySock(socket.id);
+        if(!user){
+            call(null);
+            return;
+        }
+        
+    });
+    socket.on("getLearnData",async (call:(data:any)=>void)=>{
+        if(!valVar(call,"function")) return;
+        
+        let user = getUserBySock(socket.id);
+        if(!user){
+            call(null);
+            return;
+        }
+        let ar = {} as Record<string,any>;
+        let startedLessons = await readdir("../users/"+user.uid);
+        if(!startedLessons){
+            call(null);
+            return;
+        }
+        console.log("amt: "+startedLessons.length);
+        for(const lid of startedLessons){
+            let data = lessonMetas.get(lid);
+            console.log(data);
+            ar[lid] = data;
+        }
+
+        call(ar);
     });
     socket.on("getLesson",async (lid:string,f:(data:any)=>void)=>{
         if(!valVar2(lid,"string",f)) return;
@@ -1182,6 +1216,12 @@ rl.on("line",async (line)=>{
         console.log(u);
         return;
     }
+    else if(s[0] == "email"){
+        let ar = [...users];
+        let u = ar.find(v=>v[1].email == s[1]);
+        console.log(u);
+        return;
+    }
     else if(s[0] == "projects"){
         console.log(allProjects);
         return;
@@ -1236,6 +1276,10 @@ rl.on("line",async (line)=>{
         }
         let lessonData = new LessonData(data);
         console.log("LESSON DATA",lessonData);
+        return;
+    }
+    else if(s[0] == "lessons"){
+        console.log(lessonMetas);
         return;
     }
     // CREATE cmd

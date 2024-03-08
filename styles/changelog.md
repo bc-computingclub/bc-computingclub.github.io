@@ -299,3 +299,6 @@
 - fixed resize bars so they are along the center of the groove
 - fixed resizing so they work a lot better (but no oversizing protection yet I couldn't get the formulas right)
 - adjusted proportions of panes in lesson to make them a little better
+
+### 3/8/24
+- 

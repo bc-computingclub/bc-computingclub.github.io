@@ -249,6 +249,13 @@ export class User{
     pMeta:ProjectMeta[];
     challenges:UserChallengeData[];
 
+    lesson = {} as Record<string,{
+        p:number, // prog
+        wu:string, // when unlocked
+        s:boolean, // started
+        n:boolean // is new
+    }>;
+
     addToken(token:string){
         if(this.tokens.includes(token)) return;
         this.tokens = []; // if on new login should we clear all the other tokens?
@@ -308,7 +315,8 @@ export class User{
             joinDate:this.joinDate,
             lastLoggedIn:this.lastLoggedIn,
             pMeta:this.pMeta.map(v=>v.serialize()),
-            challenges:this.challenges
+            challenges:this.challenges,
+            lesson:this.lesson
         };
         let res = await write(this.getPath(),JSON.stringify(data),"utf8");
         if(!res) console.log("Err: failed to save user to file");
