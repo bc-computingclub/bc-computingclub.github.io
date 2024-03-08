@@ -35,7 +35,7 @@ b_newFile.addEventListener("click",e=>{
         "New File","Enter file name",
         (inputname:string)=>{
             if(!inputname) return;
-            project.createFile(inputname,"");
+            project.createFile(inputname,"",null,project.lastFolder ?? project.curFile?.folder,true);
         },
         () => {
             console.log("Canceled new file creation");
