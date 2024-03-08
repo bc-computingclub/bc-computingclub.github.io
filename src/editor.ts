@@ -172,15 +172,69 @@ onResize = function(isFirst=false,who?:HTMLElement){
     if(isFirst){
         pane_code.style.width = (remainingWidth/2)+"px";
         pane_preview.style.width = (remainingWidth/2)+"px";
+        _paneFilesLastWidth = pane_files.getBoundingClientRect().width;
+        _paneCodeLastWidth = pane_code.getBoundingClientRect().width;
+        _panePreviewLastWidth = pane_preview.getBoundingClientRect().width;
     }
     else{
-        // if(who == )
-        pane_preview.style.width = (remainingWidth-pane_code.offsetWidth)+"px";
+        if(dragging){
+            if(dragging.elm == pane_files){
+                let w = pane_files.getBoundingClientRect().width;
+                let dif = w-_paneFilesLastWidth;
+                
+                // if(pane_preview.getBoundingClientRect().width > 320){
+                    _paneCodeLastWidth -= dif/2;
+                    pane_code.style.width = (_paneCodeLastWidth)+"px";
+
+                    _panePreviewLastWidth -= dif/2;
+                    pane_preview.style.width = (_panePreviewLastWidth)+"px"; // this is /2 so that both right panes scale, if only one is desired them changed from dif/2 to dif and comment out the other
+                // }
+                // else{
+                //     _paneCodeLastWidth -= dif;
+                //     pane_code.style.width = (_paneCodeLastWidth)+"px";
+                // }
+                
+                _paneFilesLastWidth = pane_files.getBoundingClientRect().width;
+            }
+            else if(dragging.elm == pane_code){
+                let w = pane_code.getBoundingClientRect().width;
+                let dif = w-_paneCodeLastWidth;
+                
+                _panePreviewLastWidth -= dif;
+                pane_preview.style.width = (_panePreviewLastWidth)+"px";
+                
+                _paneCodeLastWidth = pane_code.getBoundingClientRect().width;
+            }
+            let remain = getRemaining();
+            if(remain < 0){
+                // console.log(remain);
+                // _paneCodeLastWidth -= dif;
+                // pane_code.style.width = (_paneCodeLastWidth)+"px";
+                // _panePreviewLastWidth += dif;
+                // pane_preview.style.width = (_panePreviewLastWidth)+"px";
+
+                // pane_files.style.maxWidth = (centerCont.getBoundingClientRect().width-15-centerCont.children[1].getBoundingClientRect().width-centerCont.children[2].getBoundingClientRect().width)+"px";
+                // pane_code.style.maxWidth = (centerCont.getBoundingClientRect().width-15-centerCont.children[0].getBoundingClientRect().width-centerCont.children[2].getBoundingClientRect().width)+"px";
+                // pane_preview.style.maxWidth = (centerCont.getBoundingClientRect().width-15-centerCont.children[0].getBoundingClientRect().width-centerCont.children[1].getBoundingClientRect().width)+"px";
+            }
+            else{
+                // pane_files.style.maxWidth = null;
+                // pane_code.style.maxWidth = null;
+                // pane_preview.style.maxWidth = null;
+            }
+            // pane_files.style.maxWidth = (centerCont.getBoundingClientRect().width-15-150-550)+"px";
+        }
+        // pane_preview.style.width = (remainingWidth-pane_code.offsetWidth)+"px";
     }
     
     main.style.height = (innerHeight - 60)+"px";
     if(project?.hasEditor()) project.getCurEditor().layout();
 };
+
+function initNewResizes(){
+
+}
+
 onResize();
 
 icon_refresh = document.querySelector(".icon-refresh") as HTMLElement;

@@ -2922,19 +2922,86 @@ async function initLessonPage(){
     onResize(true);
 }
 
+// onResize = function(isFirst=false,who?:HTMLElement){
+//     let remainingWidth = innerWidth - pane_lesson.offsetWidth - 15;
+//     if(isFirst){
+//         pane_code.style.width = (remainingWidth/2)+"px";
+//         pane_preview.style.width = (remainingWidth/2)+"px";
+//     }
+//     else{
+//         // if(who == )
+//         pane_preview.style.width = (remainingWidth-pane_code.offsetWidth)+"px";
+//     }
+    
+//     main.style.height = (innerHeight - 60)+"px";
+//     if(lesson?.p.hasEditor()) lesson.p.getCurEditor().layout();
+//     if(PAGE_ID == PAGEID.lesson) if(lesson?.tut?.hasEditor()) lesson.tut.getCurEditor().layout();
+// };
 onResize = function(isFirst=false,who?:HTMLElement){
-    let remainingWidth = innerWidth - pane_lesson.offsetWidth - 15;
+    let pf = pane_tutor_code; //pane_files
+    if(isFirst) pane_tutor_code.style.width = (innerWidth*0.28)+"px";
+    let remainingWidth = innerWidth - pf.offsetWidth - 15;
     if(isFirst){
         pane_code.style.width = (remainingWidth/2)+"px";
         pane_preview.style.width = (remainingWidth/2)+"px";
+        _paneFilesLastWidth = pf.getBoundingClientRect().width;
+        _paneCodeLastWidth = pane_code.getBoundingClientRect().width;
+        _panePreviewLastWidth = pane_preview.getBoundingClientRect().width;
     }
     else{
-        // if(who == )
-        pane_preview.style.width = (remainingWidth-pane_code.offsetWidth)+"px";
+        if(dragging){
+            if(dragging.elm == pf){
+                let w = pf.getBoundingClientRect().width;
+                let dif = w-_paneFilesLastWidth;
+                
+                // if(pane_preview.getBoundingClientRect().width > 320){
+                    _paneCodeLastWidth -= dif/2;
+                    pane_code.style.width = (_paneCodeLastWidth)+"px";
+
+                    _panePreviewLastWidth -= dif/2;
+                    pane_preview.style.width = (_panePreviewLastWidth)+"px"; // this is /2 so that both right panes scale, if only one is desired them changed from dif/2 to dif and comment out the other
+                // }
+                // else{
+                //     _paneCodeLastWidth -= dif;
+                //     pane_code.style.width = (_paneCodeLastWidth)+"px";
+                // }
+                
+                _paneFilesLastWidth = pf.getBoundingClientRect().width;
+            }
+            else if(dragging.elm == pane_code){
+                let w = pane_code.getBoundingClientRect().width;
+                let dif = w-_paneCodeLastWidth;
+                
+                _panePreviewLastWidth -= dif;
+                pane_preview.style.width = (_panePreviewLastWidth)+"px";
+                
+                _paneCodeLastWidth = pane_code.getBoundingClientRect().width;
+            }
+            let remain = getRemaining();
+            if(remain < 0){
+                // console.log(remain);
+                // _paneCodeLastWidth -= dif;
+                // pane_code.style.width = (_paneCodeLastWidth)+"px";
+                // _panePreviewLastWidth += dif;
+                // pane_preview.style.width = (_panePreviewLastWidth)+"px";
+
+                // pane_files.style.maxWidth = (centerCont.getBoundingClientRect().width-15-centerCont.children[1].getBoundingClientRect().width-centerCont.children[2].getBoundingClientRect().width)+"px";
+                // pane_code.style.maxWidth = (centerCont.getBoundingClientRect().width-15-centerCont.children[0].getBoundingClientRect().width-centerCont.children[2].getBoundingClientRect().width)+"px";
+                // pane_preview.style.maxWidth = (centerCont.getBoundingClientRect().width-15-centerCont.children[0].getBoundingClientRect().width-centerCont.children[1].getBoundingClientRect().width)+"px";
+            }
+            else{
+                // pane_files.style.maxWidth = null;
+                // pane_code.style.maxWidth = null;
+                // pane_preview.style.maxWidth = null;
+            }
+            // pane_files.style.maxWidth = (centerCont.getBoundingClientRect().width-15-150-550)+"px";
+        }
+        // pane_preview.style.width = (remainingWidth-pane_code.offsetWidth)+"px";
     }
     
     main.style.height = (innerHeight - 60)+"px";
-    if(lesson?.p.hasEditor()) lesson.p.getCurEditor().layout();
+    if(project?.hasEditor()) project.getCurEditor().layout();
+    if(PAGE_ID == PAGEID.lesson) if(lesson?.tut?.hasEditor()) lesson.tut.getCurEditor().layout();
 };
 onResize();
 

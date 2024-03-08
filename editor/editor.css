@@ -47,6 +47,7 @@ body.is-challenge{
 }
 .pane-preview{
     width:calc(50% - 108px);
+    min-width:338px;
 }
 
 .main{
@@ -307,4 +308,10 @@ div.b-editor-dashboard .material-symbols-outlined{
     /* &::after{
         background-color:var(--experiment-col);
     } */ /* this tints the project dashboard to be green instead of purple, do we want this? */
+}
+
+.center-cont > div{
+    flex-grow:0;
+    flex-shrink:0;
+    overflow:visible;
 }

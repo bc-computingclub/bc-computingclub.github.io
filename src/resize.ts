@@ -43,31 +43,36 @@ for(const a of resizes){
         a.style.position = "relative";
         a.style.minWidth = "150px";
         a.style.minHeight = "150px";
-        let dist = 0; //5
+        // let dist = 0; //5
+        let dist = 7;
         d.setAttribute("style",{
             r:`
                 right:-${dist}px; 
                 width:10px;
                 height:100%;
                 cursor:ew-resize;
+                top:0px;
             `,
             l:`
                 left:-${dist}px;
                 width:10px;
                 height:100%;
                 cursor:ew-resize;
+                top:0px;
             `,
             d:`
                 bottom:-${dist}px;
                 height:10px;
                 width:100%;
                 cursor:ns-resize;
+                left:0px;
             `,
             u:`
                 top:-${dist}px;
                 height:10px;
                 width:100%;
                 cursor:ns-resize;
+                left:0px;
             `
         }[dir]);
         d.style.position = "absolute";

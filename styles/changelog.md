@@ -295,3 +295,7 @@
 - fixed joinDate and lastLoggedIn (finally since the first day starting this project xD)
 - clicking the learn button in the header now goes to the learn instead of lesson page
 - fixed (probably) the issue where projects could not be deleted if they weren't first loaded from the editor / server restart
+- added label for right click when to let you know how many files will be deleted for consistency
+- fixed resize bars so they are along the center of the groove
+- fixed resizing so they work a lot better (but no oversizing protection yet I couldn't get the formulas right)
+- adjusted proportions of panes in lesson to make them a little better

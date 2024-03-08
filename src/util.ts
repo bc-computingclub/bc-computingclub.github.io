@@ -583,6 +583,25 @@ let pane_tutor_code:HTMLElement;
 let pane_code:HTMLElement;
 let pane_preview:HTMLElement;
 
+let centerCont:HTMLElement;
+requestAnimationFrame(()=>{
+    centerCont = document.querySelector(".center-cont");
+});
+function getSum(){
+    let sum = 0;
+    for(const c2 of centerCont.children){
+        sum += c2.getBoundingClientRect().width;
+    }
+    return sum;
+}
+function getRemaining(){
+    let c = 15.4000244140625;
+    return centerCont.getBoundingClientRect().width - getSum() - c;
+}
+let _paneFilesLastWidth = 0;
+let _paneCodeLastWidth = 0;
+let _panePreviewLastWidth = 0;
+
 class Project{
     constructor(title:string,parent:HTMLElement,settings:{readonly?:boolean,disableCopy?:boolean}={}){
         this.title = title;
@@ -1128,14 +1147,17 @@ function createFileListItem(f:FFile){
 
 function setupFItemDropdown(f:FItem,div:HTMLElement){
     setupDropdown(div,()=>{
+        let del = "Delete";
         let cpy = "Copy";
         let cut = "Cut";
         let paste = "Paste";
 
         let p = f.p;
         if(p.hlItems.length){
-            cpy += " ("+p.hlItems.length+" items)";
-            cut += " ("+p.hlItems.length+" items)";
+            let str = " ("+p.hlItems.length+" items)";
+            del += str;
+            cpy += str;
+            cut += str;
         }
         if(fclipboard.files.length){
             paste += " ("+fclipboard.files.length+" items)";
@@ -1143,7 +1165,7 @@ function setupFItemDropdown(f:FItem,div:HTMLElement){
 
         return [
             "Rename",
-            "Delete",
+            del,
             cut,
             cpy,
             paste,
