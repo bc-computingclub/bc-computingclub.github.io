@@ -2668,7 +2668,9 @@ class ChallengeMenu extends Menu {
                           close
                       </div>
                       <div class="c-popup-img-div">
-                          <img class="c-popup-img" src="${this.c.imgURL}" alt="challenge image">
+                        <div class="c-popup-img-cont">
+                            <img class="c-popup-img" src="${this.c.imgURL}" alt="challenge image">
+                        </div>
                           <i class="c-popup-img-text">Sketch Mockup</i>
                       </div>
                       <div class="c-popup-bottom-right">

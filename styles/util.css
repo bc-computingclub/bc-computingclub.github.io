@@ -1238,6 +1238,11 @@ input[type="checkbox"]{
     height: 100%;
 }
 
+.c-popup-img-cont{
+    background-color: var(--secondary-bg-col);
+    border-radius: 3px;
+}
+
 .c-popup-img {
     aspect-ratio: 4/3;
     max-width: 100%;

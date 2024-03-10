@@ -270,7 +270,7 @@ body {
 
     display: grid;
     grid-template-rows: auto;
-    gap: .5em;
+    gap: .8em;
     background-color: var(--secondary-bg-col);
     border-radius: 4px;
     position: relative;
