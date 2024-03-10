@@ -152,6 +152,7 @@ abstract class Task{
     constructor(title:string){
         this.title = title;
     }
+    _i = -1;
     supertask:LEvent;
     title:string;
     hasStarted = false;
@@ -715,6 +716,8 @@ abstract class LEvent{
     finish(){}
     _res:()=>void;
 
+    _i = -1;
+
     // state:LessonState;
 
     async endEvent(from:Task){
@@ -783,6 +786,8 @@ class LE_AddGBubble extends LEvent{
     }
     // tasks:Task[];
     async run(): Promise<void> {
+        lesson.updateCurrentProgress();
+        
         if(lesson.isQuitting) return;
         if(lesson.isResuming) if(lesson.resume.taskI == -1){
             if(lesson.resume.eventI == lesson.events.indexOf(this)){
@@ -2214,6 +2219,7 @@ class Lesson{
     board:Board;
     boards:Board[] = [];
 
+    needsSave = false;
     hasLoaded = false;
     _loadStart = 0;
     async endLoading(isFirst=true){
@@ -2246,6 +2252,13 @@ class Lesson{
         document.body.classList.remove("hide-bubbles");
         await DWait(500);
         tutMouse.style.visibility = null;
+    }
+
+    // for going back to learn page
+    canLeave(){
+        if(this.needsSave) return false;
+        if(this.p.openFiles.some(v=>!v._saved)) return false;
+        return true;
     }
 
     isQuitting = false;
@@ -2290,6 +2303,17 @@ class Lesson{
             let b = a.boards[i];
             b.__data = data.boardData[i];
         }
+        // cache task/event numbers
+        let _i = 0;
+        for(const e of a.events){
+            e._i = _i;
+            _i++;
+            for(const t of e.tasks){
+                t._i = _i;
+                _i++;
+            }
+        }
+        a.totalParts = _i;
 
         // load initial tutor files
         if(data.isStart) requestAnimationFrame(async ()=>{
@@ -2384,11 +2408,42 @@ class Lesson{
         }
     }
 
+    totalParts = 0;
     updateCurrentProgress(){
+        if(this.hasLoaded) this.needsSave = true;
         if(this.isComplete){
             l_progress.textContent = "100%";
             return;
         }
+        // let cur = this.currentSubTask;
+        // if(!cur){
+        //     let ind = this.events.indexOf(this.currentEvent);
+        //     let e = this.events[ind-1];
+        //     if(e){
+        //         cur = e.tasks[e.tasks.length-1];
+        //     }
+        //     else{
+        //         l_progress.textContent = "0%";
+        //         return;
+        //     }
+        // }
+
+        // let taskI = 0;
+        // let total = 0;
+        // // let found = false;
+        // for(const e of this.events){
+        //     for(const t of e.tasks){
+        //         // if(t == cur) found = true;
+        //         // else if(!found) taskI++;
+        //         total++;
+        //     }
+        // }
+        let taskI = (this.currentSubTask?._i ?? this.currentEvent?._i ?? 0) + 1;
+        let r = taskI/this.totalParts;
+        this.progress.prog = parseFloat((r*100).toFixed(1));
+        l_progress.textContent = this.progress.prog+"%";
+    }
+    _getTotal(){
         let cur = this.currentSubTask;
         if(!cur){
             let ind = this.events.indexOf(this.currentEvent);
@@ -2397,11 +2452,10 @@ class Lesson{
                 cur = e.tasks[e.tasks.length-1];
             }
             else{
-                l_progress.textContent = "0%";
-                return;
+                // l_progress.textContent = "0%";
+                // return;
             }
         }
-
         let taskI = 0;
         let total = 0;
         let found = false;
@@ -2412,9 +2466,7 @@ class Lesson{
                 total++;
             }
         }
-        let r = taskI/total;
-        this.progress.prog = parseFloat((r*100).toFixed(1));
-        l_progress.textContent = this.progress.prog+"%";
+        return {taskI,total};
     }
 
     async init(){
@@ -2614,7 +2666,11 @@ class Lesson{
     isComplete = false;
     loadEvent(e:LEvent){
         if(!e){
-            new LessonCompleteMenu().load();
+            // lesson complete!
+            socket.emit("finishLesson",this.lid,(err:number)=>{
+                if(err != 0) alert(`Error ${err} while trying to finish lesson`);
+                new LessonCompleteMenu().load();
+            });
             return;
         }
         if(!e) if(false){
@@ -3602,3 +3658,12 @@ class LessonCompleteMenu extends Menu{
         return this;
     }
 }
+
+// Dashboard/Home button
+const b_home = document.querySelector(".b-editor-dashboard");
+b_home.addEventListener("click",e=>{
+    if(!lesson.canLeave()){
+        if(!confirm("You have unsaved changes!\n\nAre you sure you want to leave without saving?")) return;
+    }
+    location.href = "/learn";
+});

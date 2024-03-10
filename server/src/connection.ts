@@ -249,12 +249,14 @@ export class User{
     pMeta:ProjectMeta[];
     challenges:UserChallengeData[];
 
-    lesson = {} as Record<string,{
-        p:number, // prog
-        wu:string, // when unlocked
-        s:boolean, // started
-        n:boolean // is new
-    }>;
+    // lesson = new Map<string,LessonMeta>;
+    // saveLessonMeta(lid:string,meta:LessonMeta){
+    //     this.lesson.set(lid,meta);
+    // }
+    // startLesson(lid:string,mode:LessonMode){
+    //     let meta = new LessonMeta(-1,-1,0,mode,false);
+    //     this.lesson.set(lid,meta);
+    // }
 
     addToken(token:string){
         if(this.tokens.includes(token)) return;
@@ -316,7 +318,7 @@ export class User{
             lastLoggedIn:this.lastLoggedIn,
             pMeta:this.pMeta.map(v=>v.serialize()),
             challenges:this.challenges,
-            lesson:this.lesson
+            // lesson:this.lesson
         };
         let res = await write(this.getPath(),JSON.stringify(data),"utf8");
         if(!res) console.log("Err: failed to save user to file");
@@ -351,17 +353,39 @@ class ProjRef{
     }
 }
 
+export enum LessonMode{
+    lesson,
+    review
+}
 export class LessonMeta{
-    constructor(eventI:number,taskI:number,prog:number){
+    constructor(eventI=-1,taskI=-1,prog=0,mode:LessonMode=0){
         this.eventI = eventI;
         this.taskI = taskI;
         this.prog = prog;
+        this.mode = mode;
     }
     eventI:number;
     taskI:number;
     prog:number;
+    mode:number;
+    wu:string = ""; // when unlocked
+    s:boolean = false; // started
+    n:boolean = false; // is new
+    u:boolean = false;
+    times = 0;
+    ws = ""; // when started the first time
+    hf = false; // has finished once
+    _hp = 0; // has sent out post (like unlocks) - this is a version number if new updates come out in the future
     static parse(data:any){
-        let m = new LessonMeta(data.eventI,data.taskI,data.prog||"0");
+        let m = new LessonMeta(data.eventI,data.taskI,data.prog??0,data.mode??0);
+        m.wu = data.wu ?? "";
+        m.s = data.started??(m.prog != 0);
+        m.n = data.n ?? false;
+        m.u = data.u ?? false;
+        m.times = data.times ?? 0;
+        m.ws = data.ws ?? "";
+        m.hf = data.hf ?? false;
+        m._hp = data._hp ?? 0;
         return m;
     }
 }
@@ -376,7 +400,10 @@ export async function getLessonMeta(uid:string,lid:string){
     let metaPath = "../users/"+uid+"/lesson/"+lid+"/";
     let meta = lessonMetas.get(uid+":"+lid);
     if(!meta){
-        if(!await access(metaPath+"meta.json")) meta = new LessonMeta(-1,-1,0);
+        if(!await access(metaPath+"meta.json")){
+            meta = new LessonMeta();
+            lessonMetas.set(uid+":"+lid,meta);
+        }
         else{
             meta = LessonMeta.parse(JSON.parse(await read(metaPath+"meta.json")));
             lessonMetas.set(uid+":"+lid,meta);
@@ -384,13 +411,24 @@ export async function getLessonMeta(uid:string,lid:string){
     }
     return meta;
 }
-export async function writeLessonMeta(uid:string,lid:string,meta:LessonMeta){
+export async function writeLessonMeta(uid:string,lid:string,meta:LessonMeta,isNew=false){
     let metaPath = "../users/"+uid+"/lesson/"+lid+"/";
+    if(isNew) if(!await access(metaPath)) await mkdir(metaPath);
     await write(metaPath+"meta.json",JSON.stringify(meta),"utf8");
+    let id = uid+":"+lid;
+    if(!lessonMetas.has(id)) lessonMetas.set(id,meta);
 }
-export async function deleteLessonMeta(uid:string,lid:string){
+export async function deleteLessonMeta_old(uid:string,lid:string){
     let metaPath = "../users/"+uid+"/lesson/"+lid+"/";
     await removeFolder(metaPath);
+    lessonMetas.delete(uid+":"+lid);
+}
+export async function deleteLessonMeta(uid:string,lid:string,meta:LessonMeta){
+    meta.eventI = -1;
+    meta.taskI = -1;
+    meta.prog = 0;
+    meta.mode = 0;
+    await writeLessonMeta(uid,lid,meta);
 }
 
 // for indexing, need to make a deloadProject at some point
@@ -653,7 +691,7 @@ export function access(path:string){
     return new Promise<boolean>(resolve=>{
         fs.access(path,err=>{
             if(err){
-                console.log("err: ",err);
+                // console.log("err: ",err);
                 resolve(false);
             }
             else resolve(true);

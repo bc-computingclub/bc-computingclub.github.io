@@ -11,19 +11,19 @@ return [
     ],BubbleLoc.global,[
         new AddGenericCodeTask('\n\nconsole.log("hello");',"javascript")
     ]),
-    new LE_AddGBubble([
-        "This is the 3rd bubble"
-    ],BubbleLoc.global,[
-        new AddGenericCodeTask('\n\nconsole.log("hello");',"javascript")
-    ]),
-    new LE_AddGBubble([
-        "This is the 4th bubble"
-    ],BubbleLoc.global,[
-        new AddGenericCodeTask('\n\nconsole.log("hello");',"javascript")
-    ]),
-    new LE_AddGBubble([
-        "This is the 5th bubble"
-    ],BubbleLoc.global,[
-        new AddGenericCodeTask('\n\nconsole.log("hello");',"javascript")
-    ])
+    // new LE_AddGBubble([
+    //     "This is the 3rd bubble"
+    // ],BubbleLoc.global,[
+    //     new AddGenericCodeTask('\n\nconsole.log("hello");',"javascript")
+    // ]),
+    // new LE_AddGBubble([
+    //     "This is the 4th bubble"
+    // ],BubbleLoc.global,[
+    //     new AddGenericCodeTask('\n\nconsole.log("hello");',"javascript")
+    // ]),
+    // new LE_AddGBubble([
+    //     "This is the 5th bubble"
+    // ],BubbleLoc.global,[
+    //     new AddGenericCodeTask('\n\nconsole.log("hello");',"javascript")
+    // ])
 ]

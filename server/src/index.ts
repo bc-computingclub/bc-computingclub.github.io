@@ -1,6 +1,6 @@
-import { io, server, CredentialResData, User, users, getUserBySock, sanitizeEmail, getProject, attemptToGetProject, access, readdir, read, mkdir, removeFile, write, ULFile, ProjectMeta, allProjects, UserChallengeData, Project, getProject2, ULItem, ULFolder, rename, removeFolder, getDefaultProjectMeta, getProjectFromHD, lessonMetas, LessonMeta, getLessonMeta, writeLessonMeta, deleteLessonMeta, loadProject } from "./connection";
+import { io, server, CredentialResData, User, users, getUserBySock, sanitizeEmail, getProject, attemptToGetProject, access, readdir, read, mkdir, removeFile, write, ULFile, ProjectMeta, allProjects, UserChallengeData, Project, getProject2, ULItem, ULFolder, rename, removeFolder, getDefaultProjectMeta, getProjectFromHD, lessonMetas, LessonMeta, loadProject, LessonMode, getLessonMeta, writeLessonMeta, deleteLessonMeta } from "./connection";
 import { CSubmission, Challenge, ChallengeData, ChallengeGet, challenges } from "./s_challenges";
-import {LessonData} from "./s_lesson";
+import {LessonData, progressTree} from "./s_lesson";
 import fs from "fs";
 import { createInterface } from "readline";
 import crypto from "crypto";
@@ -67,7 +67,7 @@ io.on("connection",socket=>{
         // if(data.uid == null) data.uid = data.email;
 
         let user = users.get(data.uid);
-        console.log("... logging in ...",data.uid,data.email);
+        // console.log("... logging in ...",data.uid,data.email);
         if(!user){ // create account
             if(!users.has(data.uid)){
                 // let san = sanitizeEmail(data.email);
@@ -103,7 +103,7 @@ io.on("connection",socket=>{
                     }
                     user = new User(data.uid,fdata.name,fdata.email,fdata.picture,fdata.joinDate,fdata.lastLoggedIn,socket.id,fdata.pMeta);
                     user.challenges = (fdata.challenges as any[]||[]).map(v=>new UserChallengeData(v.i,v.cid,v.pid));
-                    user.lesson = fdata.lesson || {};
+                    // user.lesson = fdata.lesson || {};
                     // user.saveToFile();
                 }
                 if(user) users.set(user.uid,user);
@@ -131,7 +131,7 @@ io.on("connection",socket=>{
 
         call(user.getTransferData());
 
-        console.log(":: user logged in: ",user.uid,user.email,` (New session? ${user.getFirstToken() != _prevToken}) (SockIds: ${user.getSocketIds().join(", ")})`);
+        // console.log(":: user logged in: ",user.uid,user.email,` (New session? ${user.getFirstToken() != _prevToken}) (SockIds: ${user.getSocketIds().join(", ")})`);
     });
     socket.on("disconnect",()=>{
         let user = getUserBySock(socket.id);
@@ -163,6 +163,7 @@ io.on("connection",socket=>{
 
         meta.eventI = -1;
         meta.taskI = -1;
+        meta.prog = 0;
         await writeLessonMeta(user.uid,lid,meta);
 
         f(0);
@@ -181,39 +182,189 @@ io.on("connection",socket=>{
             f(1);
             return;
         }
-        await deleteLessonMeta(user.uid,lid);
+        // await deleteLessonMeta(user.uid,lid);
+        await deleteLessonMeta(user.uid,lid,meta);
         await removeFolder("../lesson/"+user.uid+"/"+lid);
 
         f(0);
     });
-    socket.on("startLesson",async (lid:string,call:(data:any)=>void)=>{
+    socket.on("finishLesson",async (lid:string,call:(data:any)=>void)=>{
         if(!valVar2(lid,"string",call)) return;
 
         let user = getUserBySock(socket.id);
         if(!user){
-            call(null);
+            call(-3);
+            return;
+        }
+
+        let meta = await getLessonMeta(user.uid,lid);
+        if(!meta){
+            call(1);
+            return;
+        }
+        meta.prog = 100;
+        meta.hf = true;
+        await writeLessonMeta(user.uid,lid,meta);
+        call(0);
+    });
+    socket.on("postFinishLesson",async (path:string,lid:string,call:(data:any)=>void)=>{
+        if(!valVar2(path,"string",call)) return;
+        if(!valVar2(lid,"string",call)) return;
+
+        let user = getUserBySock(socket.id);
+        if(!user){
+            call(-3);
+            return;
+        }
+
+        let meta = await getLessonMeta(user.uid,lid);
+        if(!meta){
+            call(2);
+            return;
+        }
+        if(meta._hp >= __maxHP){ // don't keep repeating after it's been done once
+            call(0);
+            return;
+        }
+
+        if(!meta.hf){
+            call(3); // criteria not met
             return;
         }
         
+        let list = path.split("/");
+        let folder = progressTree;
+        for(const key of list){
+            folder = folder.folders[key];
+            if(!folder){
+                call(1); // folder not found
+                return;
+            }
+        }
+
+        // for(const l of folder.lessons){
+        //     if(!l.ops) continue;
+        //     let wasChange = false;
+        //     let meta:LessonMeta|null = null;
+        //     if(l.ops.unlocked){
+        //         meta = await getLessonMeta(user.uid,l.lid);
+        //         if(!meta.u) wasChange = true;
+        //         meta.u = true;
+        //     }
+        //     if(wasChange) if(meta){
+        //         if(!await access("../users/"+user.uid+"/lesson/"+lid)) await mkdir("../users/"+user.uid+"/lesson/"+lid);
+        //         await writeLessonMeta(user.uid,l.lid,meta);
+        //     }
+        // }
+        
+        let data = folder.lessons.find(v=>v.lid == lid);
+        if(!data){
+            call(4); // couldn't find ptree data, not good!
+            return;
+        }
+        for(const l of data.links){
+            let meta = await getLessonMeta(user.uid,l.to);
+            meta.u = true;
+            // meta.n = true; // maybe this should only be client side?
+            await writeLessonMeta(user.uid,l.to,meta,true);
+        }
+
+        meta._hp = __maxHP;
+        await writeLessonMeta(user.uid,lid,meta);
+        
+        call(data.links.map(v=>v.to));
+    });
+    let __maxHP = 1; // max_HasPost xD
+    socket.on("startLesson",async (lid:string,mode:LessonMode,call:(data:any)=>void)=>{        
+        if(!valVar2(lid,"string",call)) return;
+        if(!valVar2(mode,"number",call)) return;
+        if(LessonMode[mode] == null){
+            call(1);
+            return;
+        }
+
+        let user = getUserBySock(socket.id);
+        if(!user){
+            call(-3);
+            return;
+        }
+
+        // if(user.lesson.has(lid)){
+        //     call(0);
+        //     return;
+        // }
+        // if(await access("../users/"+user.uid+"/lesson/"+lid)){
+        //     call(0); // lesson has already started so just continue to load
+        //     return;
+        // }
+
+        let meta = await getLessonMeta(user.uid,lid);
+        if(meta.times == 0) meta.ws = new Date().toISOString();
+        meta.times++;
+        meta.s = true;
+        meta.wu = new Date().toISOString();
+        await mkdir("../users/"+user.uid+"/lesson/"+lid);
+        await writeLessonMeta(user.uid,lid,meta);
+
+        // console.log("----started lesson");
+        // user.startLesson(lid,mode);
+        call(0);
+    });
+    socket.on("getProgressTree",async (path:string,call:(data:any)=>void)=>{     
+        if(!valVar2(path,"string",call)) return;
+
+        let user = getUserBySock(socket.id);
+        if(!user){
+            call(-3);
+            return;
+        }
+
+        let list = path.split("/");
+        let folder = progressTree;
+        for(const key of list){
+            folder = folder.folders[key];
+            if(!folder){
+                call(1); // folder not found
+                return;
+            }
+        }
+
+        for(const l of folder.lessons){
+            if(!l.ops) continue;
+            let wasChange = false;
+            let meta:LessonMeta|null = null;
+            if(l.ops.unlocked){
+                meta = await getLessonMeta(user.uid,l.lid);
+                if(!meta.u) wasChange = true;
+                meta.u = true;
+            }
+            if(wasChange) if(meta) await writeLessonMeta(user.uid,l.lid,meta);
+        }
+        
+        call(folder.lessons);
     });
     socket.on("getLearnData",async (call:(data:any)=>void)=>{
         if(!valVar(call,"function")) return;
         
         let user = getUserBySock(socket.id);
         if(!user){
-            call(null);
+            call(-3);
             return;
         }
         let ar = {} as Record<string,any>;
-        let startedLessons = await readdir("../users/"+user.uid);
-        if(!startedLessons){
-            call(null);
+        // let startedLessons = await readdir("../users/"+user.uid+"/lesson");
+        // if(!startedLessons){
+        //     call(1);
+        //     return;
+        // }
+        // for(const lid of startedLessons)
+        let list = await readdir("../lessons");
+        if(!list){
+            call(1);
             return;
         }
-        console.log("amt: "+startedLessons.length);
-        for(const lid of startedLessons){
-            let data = lessonMetas.get(lid);
-            console.log(data);
+        for(const lid of list){
+            let data = await getLessonMeta(user.uid,lid);
             ar[lid] = data;
         }
 
@@ -331,7 +482,6 @@ io.on("connection",socket=>{
         // todo - cache file values so if they're the same then they don't need to be reuploaded, or do this on the client maybe to speed it up
 
         console.log(":: done uploading");
-        console.log("progress:",progress);
         call();
     });
     socket.on("restoreLessonFiles",async (lessonId:string,call:(data:any)=>void)=>{
@@ -341,7 +491,7 @@ io.on("connection",socket=>{
         let user = getUserBySock(socket.id);
         if(!user) return;
 
-        console.log("restoring lesson files...");
+        // console.log("restoring lesson files...");
         let path = "../lesson/"+user.uid+"/"+lessonId;
         let filePath = path;
         if(!await access(path)){
@@ -408,7 +558,7 @@ io.on("connection",socket=>{
             return;
         }
         
-        console.log("uploading...");
+        // console.log("uploading...");
 
         let path = "../project/"+user.uid+"/"+pid;
         if(!await access(path)) await mkdir(path);

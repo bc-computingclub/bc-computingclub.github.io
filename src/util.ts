@@ -497,17 +497,29 @@ function genHeader(i:number,isCompact=true,id:string){
     if(id == "editor" || id == "lesson"){
         noLogo = true;
     }
+    let isLesson = (PAGE_ID == PAGEID.lesson);
     navCont.className = "nav-container";
     navCont.role = "navigation";
+    let logoI = 1;
     navCont.innerHTML = `
         ${!noLogo?`<div class="logo">
         <a href="/index.html">
-            <img src="/images/error.png" alt="Code Challenge Logo" class="logo-thumbnail">
+            <!--<img src="/images/error.png" alt="Code Challenge Logo" class="logo-thumbnail">-->
+            <!--<img src="/images/CodeOtterLogo_v1.7.svg" alt="Code Challenge Logo" class="logo-thumbnail">-->
+            <!--<img src="/images/${
+                [
+                    "CodeOtterLogo_alt.svg",
+                    "CO_logo_v2.svg",
+                    "CO_logo_v2.2.svg",
+                ][logoI]
+            }" alt="Code Challenge Logo" class="logo-thumbnail">-->
             <!-- Insert placeholder logo here -->
+            <!-- <span class="logo">Code Otter</span> -->
+            
         </a>
         </div>`:id=="editor"||id=="lesson"?`
         <div class="editor-menu-bar">
-            <div class="b-editor-dashboard icon-div"><div class="material-symbols-outlined co-item" co-label="Project Dashboard">home</div></div>
+            <div class="b-editor-dashboard icon-div"><div class="material-symbols-outlined co-item" co-label="${isLesson ? "View Lessons" : "Project Dashboard"}">home</div></div>
             <!--<div>File</div>
             <div>Edit</div>
             <div>View</div>-->
@@ -2085,23 +2097,19 @@ async function saveLesson(isQuick=false){
     _isSaving = true;
     b_save.children[0].textContent = "progress_activity";
     b_save.children[0].classList.add("progress-anim");
-    let start = performance.now();
     await uploadLessonFiles(lesson);
-    // let time = performance.now()-start;
-    // let delay = 0;
 
     lesson.p.hasSavedOnce = true;
     lesson.p.files.forEach(v=>v.setSaved(true));
 
     if(!isQuick){
-        // if(time < 50) delay = 300;
-        // await wait(delay);
         await wait(300);
     }
 
     b_save.children[0].textContent = "save";
     b_save.children[0].classList.remove("progress-anim");
     _isSaving = false;
+    lesson.needsSave = false;
 }
 
 type ProjectMeta = {

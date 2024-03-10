@@ -30,8 +30,31 @@ class TreeLesson{
     prev:LessonTar[];
     _x:number;
     _y:number;
+    root:TreeLesson[];
+    rootProg:ProgressData[];
+
+    animateUnlocks(lids:string[]){
+        for(const lid of lids){
+            let l = this.next.find(v=>v.id == lid);
+            if(!l){
+                console.warn("Err: couldn't find lid to animate unlock");
+                continue;
+            }
+
+            let to = items.find(v=>v.lid == lid);
+            if(!to){
+                console.warn("Err: to not found, not good!");
+                continue;
+            }
+
+            if(to.data.u) continue;
+            to.data.u = true;
+            to.data.n = true;
+            to.update();
+        }
+    }
 }
-let progressTree = {
+let progressTree_testing = {
     lessons:[
         new TreeLesson("The First Lesson","0001",-40,-20,[
             new LessonTar("GUR5zKAcaZgObqWk")
@@ -56,6 +79,29 @@ let progressTree = {
         ]),
     ] as TreeLesson[]
 };
+let progressTree_client = {
+    lessons:[
+        new TreeLesson("The First Lesson","0001",0,0,[
+            new LessonTar("GUR5zKAcaZgObqWk")
+        ]),
+        new TreeLesson("The Second","GUR5zKAcaZgObqWk",35,20,[
+            new LessonTar("RYRFcZXnLyJJm1Jc",true)
+        ]),
+        new TreeLesson("The Short Lesson","RYRFcZXnLyJJm1Jc",70,40,[
+            
+        ]),
+    ]
+};
+function parseProgTree(data:any){
+    console.log(data);
+    let ar:TreeLesson[] = [];
+    for(const l of data){
+        let t = new TreeLesson(l.name,l.lid,l.x,l.y,l.links?.map((v:any)=>new LessonTar(v.to,v.flip)??[]));
+        ar.push(t);
+    }
+    console.log(ar);
+    return ar;
+}
 
 let openedLessonItems:LessonItem[] = [];
 function closeAllLessonItems(){
@@ -67,14 +113,27 @@ function closeAllLessonItems(){
 }
 
 type ProgressData = {
-    id:string, // lid
-    prog:number, // progress percentage
-    u:boolean, // unlocked
-    n:boolean // is new
+    // id:string, // lid
+    // prog:number, // progress percentage
+    // u:boolean, // unlocked
+    // n:boolean // is new
+
+    lid:string;
+    eventI:number;
+    taskI:number;
+    prog:number;
+    mode:number;
+    wu:string;
+    s:boolean;
+    n:boolean;
+    u:boolean;
+    times:number;
+    ws:string;
+    hf:boolean;
 }
 class LessonItem{
     constructor(ldata:TreeLesson,e:HTMLElement,data?:ProgressData){
-        if(data == null) data = {id:ldata.lid,prog:0,u:false,n:false};
+        if(data == null) data = {lid:ldata.lid,eventI:-1,taskI:-1,prog:0,mode:0,wu:"",s:false,n:false,u:false,times:0,ws:"",hf:false};
         this.lid = ldata.lid;
         this.l = ldata;
         this.e = e;
@@ -97,7 +156,7 @@ class LessonItem{
         if(!this.isHovering){
             this.b_start.textContent = this.tmp;
             this.b_start.classList.remove("material-symbols-outlined");
-            if(this.data.prog != 0) this.b_start.classList.add("percent");
+            if(this.data.s) this.b_start.classList.add("percent");
         }
     }
     open(){
@@ -129,16 +188,20 @@ class LessonItem{
             e.parentElement.classList.add("locked");
             e.classList.add("locked");
         }
+        else{
+            e.parentElement.classList.remove("locked");
+            e.classList.remove("locked");
+        }
 
         if(unlocked) e.innerHTML = `
             <div>${this.l.name}</div>
-            <div class="btn-start ${this.data.prog ? "percent" : "material-symbols-outlined"}">
-                ${this.data.prog ? this.data.prog+"%" : this.data.prog == 0 ? "play_arrow" : "more_horiz"}
+            <div class="btn-start ${this.data.s ? "percent" : "material-symbols-outlined"}">
+                ${this.data.s ? this.data.prog+"%" : !this.data.s ? "play_arrow" : "more_horiz"}
             </div>
             <div class="prog-circle">
                 <canvas></canvas>
             </div>
-            <!--${this.data.prog ? `
+            <!--${this.data.s ? `
             <div class="prog-label">
                 <span class="material-symbols-outlined" style="font-size:16px;margin-right:5px">check</span>
                 <span>${this.data.prog}% Complete</span>
@@ -168,9 +231,9 @@ class LessonItem{
         this.d_actions = e.querySelector(".item-actions") as HTMLElement;
 
         if(this.data.n) this.addFlag("new");
-        if(this.data.prog != 0 && this.data.prog < 100) this.addFlag("inprogress");
+        if(this.data.s) this.addFlag("inprogress");
 
-        if(b_start) if(this.data.prog){
+        if(b_start) if(this.data.s){
             this.tmp = b_start.textContent;
             b_start.onmouseenter = ()=>{
                 this.isHovering = true;
@@ -237,27 +300,37 @@ class LessonItem{
         }
 
         if(b_start) b_start.addEventListener("click",e=>{
-            if(this.data.prog == 0){
-                location.href = "/learn/lesson/index.html?lid="+this.lid;
+            if(!this.data.s){
+                socket.emit("startLesson",this.lid,0,(data:any)=>{
+                    console.log("RES: ",data);
+                    if(data != 0){
+                        alert(`Error ${data} trying to start lesson`);
+                        return;
+                    }
+                    location.href = "/learn/lesson/index.html?lid="+this.lid;
+                });
                 return;
             }
 
             if(b_start.classList.contains("open")) this.close();
             else this.open();
         });
-    }
-    init(){
-        let e = this.e;
-        let list = this.l.next.concat(this.l.prev);
 
         if(this.d_actions){
             this.d_actions.children[0].addEventListener("click",e=>{
-                location.href = "/learn/lesson/index.html?lid="+this.lid;
+                let mode = 0; // Lesson Mode [lesson, review]
+                socket.emit("startLesson",this.lid,mode,(data:any)=>{
+                    if(data != 0){
+                        alert(`Error ${data}: while trying to start lesson`);
+                        return;
+                    }
+                    location.href = "/learn/lesson/index.html?lid="+this.lid;
+                });
             });
             this.d_actions.children[1].addEventListener("click",e=>{
                 socket.emit("restartLessonProgress",this.lid,(data:any)=>{
                     if(data == 0){
-                        location.href = "/learn/lesson/index.html?lid="+this.lid;
+                        this.resetProgress();
                     }
                     else{
                         alert("Err: while restarting lesson progress, error code: "+data);
@@ -267,8 +340,7 @@ class LessonItem{
             this.d_actions.children[2].addEventListener("click",e=>{
                 socket.emit("deleteLessonProgress",this.lid,(data:any)=>{
                     if(data == 0){
-                        // location.href = "/learn/lesson/index.html?lid="+this.lid;
-                        alert("success");
+                        this.deleteProgress();
                     }
                     else{
                         alert("Err: while deleting lesson progress, error code: "+data);
@@ -276,6 +348,10 @@ class LessonItem{
                 });
             });
         }
+    }
+    init(){
+        let e = this.e;
+        let list = this.l.next.concat(this.l.prev);
 
         if(false) for(const tar of list){ // on hover
             let pc = tar.pathCont;
@@ -288,38 +364,88 @@ class LessonItem{
             });
         }
     }
+
+    deleteProgress(){
+        this.data.eventI = -1;
+        this.data.taskI = -1;
+        this.data.prog = 0;
+        this.data.s = false;
+        this.update();
+    }
+    resetProgress(){
+        console.log(this);
+        this.data.eventI = -1;
+        this.data.taskI = -1;
+        this.data.prog = 0;
+        this.data.s = true;
+        this.update();
+        console.log(this);
+    }
 }
 let items:LessonItem[] = [];
 
-function loadProgressTree(){
+async function loadProgressTree(){
     let cx = pTree.offsetWidth/2;
     let cy = pTree.offsetHeight/2;
     let moveScale = 10;
 
     // User Data
-    let progress = [
-        {
-            id:"0001", // lid
-            prog:23.5, // progress percentage
-            u:true // unlocked
-        },
-        {
-            id:"GUR5zKAcaZgObqWk",
-            prog:0,
-            u:true,
-            n:true
-        },
-        {
-            id:"_0",
-            prog:100,
-            u:true
-        }
-    ] as ProgressData[];
+    // let progress = [
+    //     {
+    //         id:"0001", // lid
+    //         prog:23.5, // progress percentage
+    //         u:true // unlocked
+    //     },
+    //     {
+    //         id:"GUR5zKAcaZgObqWk",
+    //         prog:0,
+    //         u:true,
+    //         n:true
+    //     },
+    //     {
+    //         id:"_0",
+    //         prog:100,
+    //         u:true
+    //     }
+    // ] as ProgressData[];
+
+    let progressTree = await new Promise<TreeLesson[]>(resolve=>{
+        socket.emit("getProgressTree","theBeginnings",(data:any)=>{
+            if(typeof data == "number" || data == null){
+                alert(`Error ${data} while trying to get progress tree`);
+                return;
+            }
+            resolve(parseProgTree(data));
+        });
+    });
+
+    let progress = await new Promise<ProgressData[]>(resolve=>{
+        socket.emit("getLearnData",(data:any)=>{
+            if(typeof data == "number"){
+                alert(`Error ${data}: failed to retrieve learn progress`);
+                return;
+            }
+            let ar:ProgressData[] = [];
+            let ok = Object.keys(data);
+            for(const key of ok){
+                let v = data[key];
+                if(!v) continue;
+                v.lid = key;
+                ar.push(v);
+            }
+            resolve(ar);
+        });
+    });
+
+    for(const l of progressTree){
+        l.root = progressTree;
+        l.rootProg = progress;
+    }
 
     let lessonCont = document.createElement("div");
-    for(const l of progressTree.lessons){
-        let pdata = progress.find(v=>v.id == l.lid);
-
+    for(const l of progressTree){
+        let pdata = progress.find(v=>v.lid == l.lid);
+        console.log(pdata);
         let x = cx+l.x*moveScale;
         let y = cy+l.y*moveScale;
 
@@ -346,10 +472,24 @@ function loadProgressTree(){
         items.push(ref);
         ref.update();
 
+        if(ref.data.hf){
+            setTimeout(()=>{
+                socket.emit("postFinishLesson","theBeginnings",ref.lid,(data:any)=>{
+                    console.log("data: ",data);
+                    if(data == 0) return;
+                    if(typeof data == "number" || data == null){
+                        alert(`Error ${data} while post finishing lesson`);
+                        return;
+                    }
+                    l.animateUnlocks(data);
+                });
+            },1000);
+        }
+
         let r = 50;
         if(l.next) setTimeout(()=>{
             for(const tar of l.next){
-                let next = progressTree.lessons.find(v=>v.lid == tar.id);
+                let next = progressTree.find(v=>v.lid == tar.id);
                 next.prev.push(tar);
                 if(next){
                     let test = document.createElement("div");
@@ -493,7 +633,6 @@ function loadProgressTree(){
         }
     },50);
 }
-loadProgressTree();
 
 // Back pan blocking
 let canPan = true;
@@ -627,6 +766,12 @@ function zoomBy(r:number){
 
     updatePan();
 }
+
+async function initLearnPage(){
+    await loginProm;
+    loadProgressTree();
+}
+initLearnPage();
 
 // 1 -> 2
 // spx: -1380.0000610351562

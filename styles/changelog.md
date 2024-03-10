@@ -301,4 +301,22 @@
 - adjusted proportions of panes in lesson to make them a little better
 
 ### 3/8/24
-- 
+- something maybe?
+
+### 3/9/24
+- * decided on for now just reading individual files for lesson meta data
+- made a logo for now
+- removed a bunch of annoying log statements from the server
+- learn actually reads your own lesson meta data now (this was crazy complicated for some reason and took me like 4 hours)
+- some stuff here I can't remember
+- made projectTree read from the server
+- made finishing lessons unlock the next ones with a WIP unlock animation and stay unlocked with a support for the "new" flag
+
+# ideas
++ when clicking on a lesson that hasn't started yet it will give you two options: Lesson Mode & Review/Practice Mode (or hmm maybe this popup should only come up if you've already completed the lesson once?)
++ should probably use mongodb in the future but that is for a future update
++ need to change Tasks so that they take a reviewString/practiceString that will be displayed when the user is in the Review Mode
+    + the Review Mode will give the user instructions at each step but not show them the answer until after they've done it (like a reverse order of the Lesson Mode - so it prompts you what to do, you do it, then click Finish and then the tutor will complete the step and you can check whether or not you were right)
+    + I don't think it's good or easy to make a way where the user can freely switch between the modes so the choice will have to be selected before the lesson is started and in order to switch mode the user will have to reset their progress
++ project dashboard needs folder support with sorting (especially if someone likes to save all of their lesson files and then their projects become really cluttered)
+    + saved lessons should probably go into a "Lessons" folder by default

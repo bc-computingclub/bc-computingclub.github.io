@@ -79,16 +79,38 @@ a {
 }
 
 .logo-thumbnail {
-    height: 40px;
-    width: 40px;
+    height: 35px;
+    width: 35px;
     fill: cover;
     border-radius: 4px;
-    filter: grayscale(1);
+    /* filter: grayscale(1); */
 }
 
 .logo {
     margin-left: 1em;
     justify-self: self-start;
+
+    background-image:url(/images/CO_logo_v2.svg);
+    background-size:contain;
+    
+    width:35px;
+    height:35px;
+
+    font-family:"Arial";
+    /* font-weight:600; */
+    font-size:18px;
+    /* opacity:0.85; */
+    /* letter-spacing:4px; */
+    text-transform:uppercase;
+
+    transition:transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+.logo:hover{
+    transform:rotate(360deg);
+}
+body.themestyle-light .logo{
+    background-image:url(/images/CO_logo_v2-light.svg);
+    filter:brightness(1.2);
 }
 
 .nav-links {

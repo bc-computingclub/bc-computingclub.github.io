@@ -118,9 +118,9 @@ body.theme-light{
     --faded-col:rgb(150, 157, 184);
     
     /* Colors for cards */
-    --learn-col: rgb(56, 71, 119); 
-    --experiment-col: rgb(33, 103, 121); 
-    --practice-col:rgb(80, 62, 110); 
+    --learn-col: #384777; 
+    --experiment-col: #216779; 
+    --practice-col:#503e6e; 
 
     /* Secondary colors for cards */
     --learn-col-alt: rgb(113, 125, 170); 

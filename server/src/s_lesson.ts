@@ -98,3 +98,97 @@ export class LessonData{
 
     events:LessonEvent[] = [];
 }
+
+class PTreeLink{
+    constructor(to:string,flip=false){
+        this.to = to;
+        this.flip = flip;
+    }
+    to:string;
+    flip:boolean;
+}
+class PTreeLesson{
+    constructor(name:string,lid:string,x:number,y:number,links:PTreeLink[]=[],ops:PTLessonOps={}){
+        this.name = name;
+        this.lid = lid;
+        this.x = x;
+        this.y = y;
+        this.links = links;
+        this.ops = ops;
+    }
+    name:string;
+    lid:string;
+    x:number;
+    y:number;
+    links:PTreeLink[];
+    ops:PTLessonOps;
+}
+type PTLessonOps = {
+    unlocked?:boolean;
+};
+type PTreeOps = {
+    initialUnlocks?:string[]
+};
+class PTreeFolder{
+    constructor(name:string,lessons:PTreeLesson[]=[],folders:Record<string,PTreeFolder>={},ops:PTreeOps={}){
+        this.name = name;
+        this.lessons = lessons;
+        this.folders = folders;
+        this.ops = ops;
+
+        // if(ops){
+        //     if(ops.initialUnlocks)
+        // }
+    }
+    name:string;
+    lessons:PTreeLesson[];
+    folders:Record<string,PTreeFolder>;
+    ops:PTreeOps;
+}
+
+export const progressTree = new PTreeFolder("root",[],{
+    theBeginnings:new PTreeFolder("The Beginnings",[
+        new PTreeLesson("The First Lesson","0001",0,0,[
+            new PTreeLink("GUR5zKAcaZgObqWk")
+        ],{
+            unlocked:true
+        }),
+        new PTreeLesson("The Second","GUR5zKAcaZgObqWk",35,20,[
+            new PTreeLink("RYRFcZXnLyJJm1Jc",true)
+        ]),
+        new PTreeLesson("The Quick Lesson","RYRFcZXnLyJJm1Jc",70,40),
+    ])
+});
+const progressTree_raw = {
+    theBeginnings:{
+        lessons:[
+            {
+                name:"The First Lesson",
+                lid:"0001",
+                x:0,y:0,
+                links:[
+                    {
+                        to:"GUR5zKAcaZgObqWk",
+                    }
+                ]
+            },
+            {
+                name:"The Second",
+                lid:"GUR5zKAcaZgObqWk",
+                x:35,y:20,
+                links:[
+                    {
+                        to:"RYRFcZXnLyJJm1Jc",
+                        flip:true
+                    }
+                ]
+            },
+            {
+                name:"The First Lesson",
+                lid:"RYRFcZXnLyJJm1Jc",
+                x:70,y:40,
+                links:[]
+            }
+        ]
+    }
+};
