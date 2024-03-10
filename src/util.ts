@@ -2790,7 +2790,7 @@ async function getChallenge(cid:string){
 } 
 
 /**
- * Creates a confirm prompt. onCancel is called on close of menu.
+ * Creates a confirm prompt.
  */
 class ConfirmMenu extends Menu {
     constructor(title:string, message:string, onConfirm:() => void, onCancel:() => void,confirmText?:string,cancelText?:string) {
@@ -2843,6 +2843,9 @@ class ConfirmMenu extends Menu {
     }
 }
 
+/**
+ * Creates a prompt for user input. onConfirm needs to take a parameter, which the menu will pass in as the user's input.
+ */
 class InputMenu extends Menu {
     constructor(title:string, inputMessage:string, onConfirm:(data?:any) => void, onCancel:() => void, confirmText?:string, cancelText?:string, beforeInputPrompt?:string, afterInputPrompt?:string) {
         super(title);
@@ -2875,13 +2878,13 @@ class InputMenu extends Menu {
             let  beforeElm = document.createElement("span");
             beforeElm.style.fontSize = "15px";
             beforeElm.textContent = this.beforeInputPrompt;
-            document.querySelector(".menu-body").insertBefore(beforeElm, inputObj.inp.parentElement); // this took like 4 years to figure out and is probably not optimal... sigh
+            document.querySelector(".menu-body").insertBefore(beforeElm, inputObj.inp.parentElement); // this line took forever to figure out and is probably not optimal... sigh. 
         }
         if(this.afterInputPrompt){
             let afterElm = document.createElement("span");
             afterElm.style.fontSize = "15px";
             afterElm.textContent = this.afterInputPrompt;
-            document.querySelector(".menu-body").appendChild(afterElm);
+            this.body.appendChild(afterElm);
         }
         let temp = document.createElement("div") as HTMLElement;
         temp.className = "confirm-menu-options";
@@ -2907,7 +2910,7 @@ class InputMenu extends Menu {
     
     // ran on click of "confirm" button, or on enter key press
     confirmChoice(data?:any) {
-        console.log("Input data: " + data);
+        console.log("Choice confirmed. Input data: " + data);
         this.onConfirm(data);
         this.close();
     }
@@ -2918,6 +2921,3 @@ class InputMenu extends Menu {
         this.close();
     }
 }
-
-// For testing input menu: this alerts the user's input. 
-// new InputMenu("Test Menu","Enter Data",(data?:any)=>{ alert(data) },()=>{ alert("No data found") }).load();

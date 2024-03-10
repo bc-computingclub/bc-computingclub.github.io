@@ -190,9 +190,9 @@ button.icon-btn-single:hover{
     align-items:center;
     gap:10px;
 }
-.menu-header .material-symbols-outlined{
+/* .menu-header .material-symbols-outlined{
     
-}
+} */
 .menu-header .menu-title :last-child{
     margin-top:-3px;
 }
@@ -216,6 +216,24 @@ button.icon-btn-single:hover{
     gap:20px;
     height:100%;
 }
+
+.menu-challenge-menu {
+    width: 60em !important;
+    height: 35em !important;
+    animation: AddBubble forwards 0.35s ease-out;
+}
+
+.menu-submission-menu {
+    width: 80em;
+    height: 40em;
+    animation: AddBubble forwards 0.35s ease-out;
+}
+
+.menu-new-file, .menu-new-folder { /* New files and folders created will have this sizing*/
+    width: 350px;
+    height: 220px;
+}
+
 
 .inp-cont{
     display:grid;
@@ -259,9 +277,9 @@ button.icon-btn-single:hover{
     font-size:14px;
     width:179.5px;
 }
-.inp-cont button:hover{
-    /* filter:brightness(1.2); */
-}
+/* .inp-cont button:hover{
+    filter:brightness(1.2);
+} */
 
 @keyframes ProgressSpin {
     0%{
@@ -586,9 +604,9 @@ body .nav-links > .active{
     /* filter:invert(1); */
     color:white;
 }
-.file-link > .file-close:hover{
-    /* background-color:var(--lighten3); */
-}
+/* .file-link > .file-close:hover{
+    background-color:var(--lighten3);
+} */
 .file-link > .file-close > div{
     font-size:15px;
 }
@@ -1161,23 +1179,6 @@ input[type="checkbox"]{
 }
 .callout.no-color{
     background-color:var(--bg-col);
-}
-
-.menu-challenge-menu {
-    width: 60em !important;
-    height: 35em !important;
-    animation: AddBubble forwards 0.35s ease-out;
-}
-
-.menu-submission-menu {
-    width: 80em;
-    height: 40em;
-    animation: AddBubble forwards 0.35s ease-out;
-}
-
-.menu-new-file {
-    width: 350px;
-    height: 220px;
 }
 
 .c-popup {
