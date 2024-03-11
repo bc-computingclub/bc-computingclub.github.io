@@ -149,7 +149,7 @@ async function loadProject(uid:string,pid:string){
     }
 }
 
-async function init(){    
+async function init(){
     // @ts-ignore
     require.config({paths:{vs:"/lib/monaco/min/vs"}});
     await new Promise<void>(resolve=>{
@@ -320,6 +320,10 @@ let s_loader = document.getElementById("s-loader") as HTMLElement;
 s_loader.onload = async function(){
     console.log("loaded loader");
     await loginProm;
+    if(!g_user){
+        alertNotLoggedIn();
+        return;
+    }
     init();
 };
 
@@ -339,7 +343,7 @@ function updateBubbles(){}
 // Editor Dashboard
 class ProjectDashboard extends Menu{
     constructor(){
-        super("Project Dashboard","home");
+        super("Project Dashboard","list");
     }
     load(priority?: number){
         super.load(priority);

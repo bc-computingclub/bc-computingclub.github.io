@@ -3667,3 +3667,13 @@ b_home.addEventListener("click",e=>{
     }
     location.href = "/learn";
 });
+
+// window.onbeforeunload = function(){
+//     return "Do you want to leave?"
+// }
+window.addEventListener("beforeunload",e=>{
+    if(lesson) if(!lesson.canLeave()){
+        e.stopPropagation();
+        e.preventDefault();
+    }
+});

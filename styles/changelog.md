@@ -320,3 +320,17 @@
     + I don't think it's good or easy to make a way where the user can freely switch between the modes so the choice will have to be selected before the lesson is started and in order to switch mode the user will have to reset their progress
 + project dashboard needs folder support with sorting (especially if someone likes to save all of their lesson files and then their projects become really cluttered)
     + saved lessons should probably go into a "Lessons" folder by default
+
+### 3/10/24
+- client side now remembers your last pan and zoom values in learn
+- fixed up login menu to work good now
+- fixed login menu on index page
+- changed user account button to be a dropdown with switch account button or log in based on what you are
+- added theme toggle
+- added log out
+- if you go to learn or experiment while not being logged in then it will bring up the login menu automatically
+- it will now refresh once you've logged in or switch accounts or if you log out
+- fixed home button on lesson page so it says view lessons and is a home icon
+- changed editor page so it shows a list icon instead of home for the dashboard
+- some bug fixes in various util stuff
+- BUG: when preventing page leave during lesson, it loses connection to the server and doesn't recover

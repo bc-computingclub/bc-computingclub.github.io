@@ -26,17 +26,29 @@ socket.on("disconnect",()=>{
 
 // 
 
-function _logout(data:CredentialResData){
-    console.log("...starting logout");
-    socket.emit("logout",data,(data:CredentialResData)=>{
-        console.log("Log out successful");
+function _logout(){
+    socket.emit("logout",(data:number)=>{
+        if(data != 0){
+            alert(`Error ${data} failed to logout`);
+            return;
+        }
+        h_profile.classList.remove("logged-in");
+        h_profile.innerHTML = `<span class="material-symbols-outlined">Person</span>`;
+        localStorage.removeItem("logData");
+        localStorage.removeItem("token");
         g_user = null;
+        location.href = "/index.html";
+        google.accounts.id.disableAutoSelect();
     });
 }
 function _login(data:CredentialResData,token:string){
     console.log("...starting login");
     socket.emit("login",data,token,(data:CredentialResData)=>{
         console.log("Log in successful: ",data);
+        if(g_user || _hasAlertedNotLoggedIn){
+            location.reload();
+            return;
+        }
         if(g_user) if(g_user.email != data.email){
             location.reload();
             return;
@@ -52,8 +64,36 @@ function _login(data:CredentialResData,token:string){
 
 // header
 let h_profile = document.querySelector(".h-profile") as HTMLElement;
-h_profile.addEventListener("click",e=>{
-    new LogInMenu().load();
+h_profile.addEventListener("mousedown",e=>{
+    let labels = [
+        g_user ? "Switch Account" : "Log In",
+        g_user ? "Log Out" : " --- ",
+        "Switch Theme"
+    ];
+    openDropdown(h_profile,()=>labels,(i)=>{
+        let l = labels[i];
+        // if(l == "Switch Account" || l == "Log In"){
+        if(i == 0){
+            new LogInMenu().load();
+        }
+        // else if(l == "Log Out"){
+        if(i == 1 && g_user){
+            _logout();
+        }
+        // else if(l == "Switch Theme"){
+        if(i == 2){
+            setTheme(curTheme == "dark" ? "light" : "dark");
+            return;
+        }
+        
+        closeAllSubMenus();
+    },{
+        openToLeft:true,
+        getIcons(){
+            return ["person","logout","light"];
+        },
+        useHold:false // true doesn't quite work right yet
+    });
 });
 
 // lesson
@@ -96,8 +136,9 @@ function uploadLessonFiles(lesson:Lesson){ // for refresh
     //     prog.tutFiles.push(new ULFile(f.name,f.editor.getValue(),"","utf8"));
     // }
     return new Promise<void>(resolve=>{
+        console.log(".......uploading");
         socket.emit("uploadLessonFiles",lesson.lid,list,prog,(err:any)=>{
-            if(err) console.log("ERR while uploading files:",err);
+            if(err) alert("ERR while uploading files: "+err);
             resolve();
         });
     });

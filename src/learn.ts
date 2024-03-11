@@ -231,7 +231,7 @@ class LessonItem{
         this.d_actions = e.querySelector(".item-actions") as HTMLElement;
 
         if(this.data.n) this.addFlag("new");
-        if(this.data.s) this.addFlag("inprogress");
+        if(this.data.s && this.data.prog != 100) this.addFlag("inprogress");
 
         if(b_start) if(this.data.s){
             this.tmp = b_start.textContent;
@@ -307,6 +307,7 @@ class LessonItem{
                         alert(`Error ${data} trying to start lesson`);
                         return;
                     }
+                    localStorage.setItem("cc-lastLID",this.lid);
                     location.href = "/learn/lesson/index.html?lid="+this.lid;
                 });
                 return;
@@ -352,6 +353,14 @@ class LessonItem{
     init(){
         let e = this.e;
         let list = this.l.next.concat(this.l.prev);
+
+        // if(_loadLastLID == this.lid){
+        //     panX = this.l.x; // idk the formula for this
+        //     panY = this.l.y;
+        //     zoom = 1;
+        //     updatePan();
+        //     zoomBy(1);
+        // }
 
         if(false) for(const tar of list){ // on hover
             let pc = tar.pathCont;
@@ -661,11 +670,18 @@ window.addEventListener("pointerdown",e=>{
     mlx = msx;
     mly = msy;
     if(canPan){
+        if(menusOpen.length) return;
         isPanning = true;
         closeAllLessonItems();
     }
 });
 window.addEventListener("pointerup",e=>{
+    if(isPanning){
+        if(localStorage.getItem("cc-lastLID")) localStorage.removeItem("cc-lastLID");
+        localStorage.setItem("cc-panX",(panX||0).toString());
+        localStorage.setItem("cc-panY",(panY||0).toString());
+        localStorage.setItem("cc-zoom",(zoom||1).toString());
+    }
     isPanning = false;
 });
 let startTouches:Touch[];
@@ -725,6 +741,7 @@ window.addEventListener("mousemove",e=>{
     }
 });
 document.addEventListener("wheel",e=>{
+    if(menusOpen.length) return;
     let speed = Math.abs(e.deltaY)/500;
     let scale = 1.001+speed; //1.1
     zoomBy(e.deltaY > 0 ? 1/scale : scale);
@@ -765,13 +782,35 @@ function zoomBy(r:number){
     panY -= b1*cy;
 
     updatePan();
+
+    localStorage.setItem("cc-panX",(panX||0).toString());
+    localStorage.setItem("cc-panY",(panY||0).toString());
+    localStorage.setItem("cc-zoom",(zoom||1).toString());
+}
+function zoomToSimple(z:number){
+    zoom = z;
+    if(zoom < 0.1) zoom = 0.1;
+    if(zoom > 5) zoom = 5; //3
+    panCont.style.scale = zoom.toString();
+    mainCont.style.backgroundSize = (zoom*2)+"vw";
 }
 
 async function initLearnPage(){
     await loginProm;
+    if(!g_user){
+        alertNotLoggedIn();
+        return;
+    }
     loadProgressTree();
 }
 initLearnPage();
+
+panX = parseFloat(localStorage.getItem("cc-panX")) || 0;
+panY = parseFloat(localStorage.getItem("cc-panY")) || 0;
+zoom = parseFloat(localStorage.getItem("cc-zoom")) || 1;
+zoomToSimple(zoom);
+let _loadLastLID = localStorage.getItem("cc-lastLID");
+updatePan();
 
 // 1 -> 2
 // spx: -1380.0000610351562

@@ -1,4 +1,4 @@
-import { io, server, CredentialResData, User, users, getUserBySock, sanitizeEmail, getProject, attemptToGetProject, access, readdir, read, mkdir, removeFile, write, ULFile, ProjectMeta, allProjects, UserChallengeData, Project, getProject2, ULItem, ULFolder, rename, removeFolder, getDefaultProjectMeta, getProjectFromHD, lessonMetas, LessonMeta, loadProject, LessonMode, getLessonMeta, writeLessonMeta, deleteLessonMeta } from "./connection";
+import { io, server, CredentialResData, User, users, getUserBySock, sanitizeEmail, getProject, attemptToGetProject, access, readdir, read, mkdir, removeFile, write, ULFile, ProjectMeta, allProjects, UserChallengeData, Project, getProject2, ULItem, ULFolder, rename, removeFolder, getDefaultProjectMeta, getProjectFromHD, lessonMetas, LessonMeta, loadProject, LessonMode, getLessonMeta, writeLessonMeta, deleteLessonMeta, socks } from "./connection";
 import { CSubmission, Challenge, ChallengeData, ChallengeGet, challenges } from "./s_challenges";
 import {LessonData, progressTree} from "./s_lesson";
 import fs from "fs";
@@ -47,6 +47,25 @@ async function saveUserCache(){
 readAllUsers();
 
 io.on("connection",socket=>{
+    socket.on("logout",async (call:(data:any)=>void)=>{
+        if(!valVar(call,"function")) return;
+
+        let user = getUserBySock(socket.id);
+        if(!user){
+            call(-3);
+            return;
+        }
+
+        await user.saveToFile();
+
+        users.delete(user.uid);
+        socks.delete(user.uid);
+        
+        user.deleteTokens();
+        user.deleteSocketIds();
+
+        call(0);
+    });
     socket.on("login",async (data:CredentialResData,token:string,call:(data:any)=>void)=>{
         if(!valVar2(data,"object",call)) return;
         if(!valVar2(data.email,"string",call)) return;
@@ -134,9 +153,10 @@ io.on("connection",socket=>{
         // console.log(":: user logged in: ",user.uid,user.email,` (New session? ${user.getFirstToken() != _prevToken}) (SockIds: ${user.getSocketIds().join(", ")})`);
     });
     socket.on("disconnect",()=>{
+        console.log("...disconnect");
         let user = getUserBySock(socket.id);
         if(!user) return;
-        user.removeSocketId(socket.id);
+        // user.removeSocketId(socket.id);
     });
     socket.on("getUserLastLoggedIn",(token:string)=>{
 
@@ -429,13 +449,17 @@ io.on("connection",socket=>{
         
         f(data);
     });
-    socket.on("uploadLessonFiles",async (lessonId:string,list:ULFile[],progress:LessonMeta,call:()=>void)=>{
-        if(!valVar(list,"object")) return;
-        if(!valVar(lessonId,"string")) return;
-        if(!valVar(call,"function")) return;
+    socket.on("uploadLessonFiles",async (lessonId:string,list:ULFile[],progress:LessonMeta,call:(data:any)=>void)=>{
+        console.log(".......uploading");
+        
+        if(!valVar2(list,"array",call)) return;
+        if(!valVar2(lessonId,"string",call)) return;
         
         let user = getUserBySock(socket.id);
-        if(!user) return;
+        if(!user){
+            call(-3);
+            return;
+        }
         // need to validate type integrity here
         
         console.log("uploading...");
@@ -448,7 +472,10 @@ io.on("connection",socket=>{
         }
 
         let curFiles = await readdir(path);
-        if(!curFiles) return;
+        if(!curFiles){
+            call(1);
+            return;
+        }
 
         curFiles = curFiles.filter(v=>!list.some(w=>w.name == v));
         for(const f of curFiles){
@@ -482,7 +509,7 @@ io.on("connection",socket=>{
         // todo - cache file values so if they're the same then they don't need to be reuploaded, or do this on the client maybe to speed it up
 
         console.log(":: done uploading");
-        call();
+        call(0);
     });
     socket.on("restoreLessonFiles",async (lessonId:string,call:(data:any)=>void)=>{
         if(!valVar(lessonId,"string")) return;

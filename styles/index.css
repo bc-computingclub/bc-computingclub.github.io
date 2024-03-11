@@ -14,3 +14,13 @@ body{
         background-color: var(--experiment-col);
     }
 }
+
+.menu{
+    background-color:white;
+    color:#111;
+}
+.menu::after{
+    /* --cta-btn-col:#44444488; */
+    --cta-btn-col:#aaaaaa55;
+    backdrop-filter:blur(4px);
+}

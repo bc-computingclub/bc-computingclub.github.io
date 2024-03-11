@@ -105,6 +105,11 @@ a {
 
     transition:transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
+.logo > a{
+    display:block;
+    width:100%;
+    height:100%;
+}
 .logo:hover{
     transform:rotate(360deg);
 }
@@ -140,7 +145,8 @@ body.themestyle-light .logo{
     transition-duration: 0.15s;
 }
 
-.nav-links >*:hover {
+.nav-links >*:hover,
+.nav-links >*.hold {
     transform: scale(1.05);
 }
 
@@ -389,4 +395,16 @@ body.themestyle-light .logo{
     .h-title {
         font-size: 5em;
     }
+}
+
+/*  */
+
+.sign-in-btn{
+    display:flex;
+    justify-content:center;
+    width:100%;
+}
+.l-currently-logged-in{
+    font-size:14px;
+    opacity:0.6;
 }

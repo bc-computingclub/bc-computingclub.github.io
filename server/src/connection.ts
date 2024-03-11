@@ -287,6 +287,12 @@ export class User{
         this.sockIds.splice(this.sockIds.indexOf(sockId),1);
         socks.delete(sockId);
     }
+    deleteSocketIds(){
+        let list = [...this.sockIds];
+        for(const id of list){
+            this.removeSocketId(id);
+        }
+    }
 
     getTransferData(){
         return {
@@ -391,7 +397,7 @@ export class LessonMeta{
 }
 
 export const users = new Map<string,User>();
-const socks = new Map<string,string>();
+export const socks = new Map<string,string>();
 export const allProjects = new Map<string,Project>();
 const hasntFoundProject:string[] = [];
 export const lessonMetas = new Map<string,LessonMeta>();
