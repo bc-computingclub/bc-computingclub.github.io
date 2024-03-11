@@ -164,7 +164,9 @@ function setChallengeHTML(c: Challenge) {
         <h3 class="c-name">
             ${c.name}
         </h3>
-        <span class="c-text">${c.desc}</span>
+        <span class="c-text">
+        ${(c.desc.length > 120) ? c.desc.slice(0, 120) + "..." : c.desc}
+        </span>
         <div class="c-button-options">
             <button class="c-preview" onclick="setupButton(${c.cID});">
                 Details <span class="material-symbols-outlined">info</span>

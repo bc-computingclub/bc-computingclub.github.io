@@ -1,0 +1,9 @@
+{
+    "name": "Lightbulb",
+    "desc": "Create a lightbulb which can be toggled on and off using a light switch (or a simple button).",
+    "imgUrl": "/images/lightbulb.svg",
+    "difficulty": "easy",
+    "timespan": null,
+    "cnt": 0,
+    "sub": []
+}

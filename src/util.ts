@@ -2684,7 +2684,7 @@ class ChallengeMenu extends Menu {
                           close
                       </div>
                       <div class="c-popup-img-div">
-                        <div class="c-popup-img-cont">
+                        <div class="c-popup-img-cont" onclick="previewImg(${this.c.imgURL});">
                             <img class="c-popup-img" src="${this.c.imgURL}" alt="challenge image">
                         </div>
                           <i class="c-popup-img-text">Sketch Mockup</i>
@@ -2722,6 +2722,29 @@ class ChallengeMenu extends Menu {
         cBtn.onclick = () => {
             this.close();
         };
+        return this;
+    }
+}
+
+function previewImg(url: string) {
+    new ImagePreview(url).load();
+}
+
+class ImagePreview extends Menu {
+    constructor(url: string) {
+        super("Image Preview");
+        this.url = url;
+    }
+  
+    url: string;
+  
+    load() {
+        super.load();
+        this.menu.innerHTML = `
+            <div class="img-preview">
+                <img src="${this.url}" alt="challenge image">
+            </div>
+        `;
         return this;
     }
 }

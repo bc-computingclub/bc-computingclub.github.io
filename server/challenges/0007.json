@@ -1,0 +1,9 @@
+{
+    "name": "Umbrella (Rain)",
+    "desc": "Create an umbrella which can be opened and closed. Add a button that will start and stop rain. When the rain starts, the umbrella should interact with the raindrops that hit it.",
+    "imgUrl": "/images/umbrella.svg",
+    "difficulty": "hard",
+    "timespan": null,
+    "cnt": 0,
+    "sub": []
+}

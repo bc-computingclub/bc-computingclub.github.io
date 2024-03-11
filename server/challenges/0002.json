@@ -1,1 +1,16 @@
-{"name":"Combination Lock","desc":"Create a combination lock which reveals a secret message when the correct combination is entered.","imgUrl":"/images/combinationlock.svg","difficulty":"medium","timespan":null,"cnt":0,"sub":[{"url":"","who":"Paul Bauer","uid":"139500cc-c606-4ad2-b247-4e96a27a05db","pid":"55ccd6f0-a39c-40f7-aac9-c37a9ae7c9bc"}]}
+{
+    "name": "Combination Lock",
+    "desc": "Create a combination lock which reveals a secret message when the correct combination is entered.",
+    "imgUrl": "/images/combinationlock.svg",
+    "difficulty": "medium",
+    "timespan": null,
+    "cnt": 0,
+    "sub": [
+        {
+            "url": "",
+            "who": "Paul Bauer",
+            "uid": "139500cc-c606-4ad2-b247-4e96a27a05db",
+            "pid": "55ccd6f0-a39c-40f7-aac9-c37a9ae7c9bc"
+        }
+    ]
+}

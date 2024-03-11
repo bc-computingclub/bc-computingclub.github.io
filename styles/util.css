@@ -1241,6 +1241,7 @@ input[type="checkbox"]{
 .c-popup-img-cont{
     background-color: var(--secondary-bg-col);
     border-radius: 3px;
+    cursor: pointer;
 }
 
 .c-popup-img {
