@@ -47,6 +47,9 @@ async function saveUserCache(){
 readAllUsers();
 
 io.on("connection",socket=>{
+    socket.on("test",(msg:string)=>{
+        console.log("test: ",msg);
+    });
     socket.on("logout",async (call:(data:any)=>void)=>{
         if(!valVar(call,"function")) return;
 
@@ -100,6 +103,10 @@ io.on("connection",socket=>{
                 function newUser(){
                     if(data.uid == null) data.uid = crypto.randomUUID();
                     user = new User(data.uid,data.name,data.email,data.picture,data._joinDate,data._lastLoggedIn,socket.id,[]);
+                    let dat = data as any;
+                    user.recent = dat.recent ?? [];
+                    user.starred = dat.starred ?? [];
+                    
                     user.joinDate = new Date().toISOString();
                     user.saveToFile();
                     wasNewUser = true;
@@ -122,6 +129,9 @@ io.on("connection",socket=>{
                     }
                     user = new User(data.uid,fdata.name,fdata.email,fdata.picture,fdata.joinDate,fdata.lastLoggedIn,socket.id,fdata.pMeta);
                     user.challenges = (fdata.challenges as any[]||[]).map(v=>new UserChallengeData(v.i,v.cid,v.pid));
+                    let dat = fdata as any;
+                    user.recent = dat.recent ?? [];
+                    user.starred = dat.starred ?? [];
                     // user.lesson = fdata.lesson || {};
                     // user.saveToFile();
                 }
@@ -153,10 +163,9 @@ io.on("connection",socket=>{
         // console.log(":: user logged in: ",user.uid,user.email,` (New session? ${user.getFirstToken() != _prevToken}) (SockIds: ${user.getSocketIds().join(", ")})`);
     });
     socket.on("disconnect",()=>{
-        console.log("...disconnect");
         let user = getUserBySock(socket.id);
         if(!user) return;
-        // user.removeSocketId(socket.id);
+        user.removeSocketId(socket.id);
     });
     socket.on("getUserLastLoggedIn",(token:string)=>{
 
@@ -508,7 +517,7 @@ io.on("connection",socket=>{
 
         // todo - cache file values so if they're the same then they don't need to be reuploaded, or do this on the client maybe to speed it up
 
-        console.log(":: done uploading");
+        // console.log(":: done uploading");
         call(0);
     });
     socket.on("restoreLessonFiles",async (lessonId:string,call:(data:any)=>void)=>{
@@ -661,12 +670,12 @@ io.on("connection",socket=>{
     socket.on("restoreProjectFiles",async (uid:string,pid:string,call:(data:any,data2?:any,canEdit?:boolean)=>void)=>{
         if(!valVar2(uid,"string",call)) return;
         if(!valVar(pid,"string")){
-            console.log("Err: pid incorrect format");
+            // console.log("Err: pid incorrect format");
             call(null);
             return;
         }
         if(!valVar(call,"function")){
-            console.log("Err: call incorrect format");
+            // console.log("Err: call incorrect format");
             call(null);
             return;
         }
@@ -698,6 +707,8 @@ io.on("connection",socket=>{
         if(!user.projects.includes(p)) user.projects.push(p);
 
         call(p.serializeGet(true),null,uid == user.uid);
+
+        user.addToRecents(p.pid);
 
         return;
         
@@ -731,6 +742,12 @@ io.on("connection",socket=>{
             } break;
             case ProjectGroup.challenges:{
                 data = user.pMeta.filter(v=>v.cid != null).map(v=>v.serialize()); // probably need to optimize the filters at some point
+            } break;
+            case ProjectGroup.recent:{
+                data = user.pMeta.filter(v=>user?.recent.includes(v.pid)).map(v=>v.serialize());
+            } break;
+            case ProjectGroup.starred:{
+                data = user.pMeta.filter(v=>user?.starred.includes(v.pid)).map(v=>v.serialize());
             } break;
         }
         
@@ -1254,6 +1271,31 @@ io.on("connection",socket=>{
 
         f(0);
     });
+    socket.on("removeFromRecents",(pid:string,call:(data:any)=>void)=>{
+        if(!valVar2(pid,"string",call)) return;
+
+        let user = getUserBySock(socket.id);
+        if(!user){
+            call(-3);
+            return;
+        }
+        call(user.removeFromRecents(pid));
+    });
+    socket.on("starProject",(pid:string,v:boolean,call:(data:any)=>void)=>{
+        if(!valVar2(pid,"string",call)) return;
+        if(!valVar2(v,"boolean",call)) return;
+
+        let user = getUserBySock(socket.id);
+        if(!user){
+            call(-3);
+            return;
+        }
+
+        let res = true;
+        if(v) res = user.addToStarred(pid)
+        else res = user.removeFromStarred(pid);
+        call(res);
+    });
 });
 async function deleteProject(user:User,pMeta:ProjectMeta,f:(res:number)=>void){
     console.log("... deleting project: ",pMeta.pid,pMeta.name);
@@ -1344,6 +1386,7 @@ async function createChallengeProject(user:User,cid:string):Promise<Project|numb
 async function createProject(user:User,name:string,desc:string,isPublic=false){
     let pid = genPID();
     let meta = new ProjectMeta(user,pid,name,desc,isPublic,false);
+    meta.wc = new Date().toISOString();
     let p = user.createProject(meta,pid);
     let path = "../project/"+user.uid;
     await mkdir(path);
@@ -1354,7 +1397,7 @@ enum ProjectGroup{
     personal,
     challenges,
     recent,
-    saved,
+    starred,
     custom
 }
 type FilterType = {

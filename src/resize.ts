@@ -30,8 +30,7 @@ let resizeListeners = {
     }
 };
 
-for(const a of resizes){
-    if(!a.hasAttribute("resize")) continue;
+function setupResize(a:HTMLElement){
     let list = a.getAttribute("resize").split(" ");
     for(const dir of list){
         a.style.position = "relative";
@@ -93,6 +92,10 @@ for(const a of resizes){
             }
         };
     }
+}
+for(const a of resizes){
+    if(!a.hasAttribute("resize")) continue;
+    setupResize(a);
 }
 
 // listeners

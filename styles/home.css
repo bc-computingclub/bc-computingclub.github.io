@@ -1,3 +1,5 @@
+/* @import url(https://fonts.googleapis.com/icon?family=Material+Icons|Material+Icons+Outlined); */
+@import url(https://fonts.googleapis.com/icon?family=Material+Icons);
 @import url(https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0);
 @import url(/styles/theme.css);
 @import url(/styles/util.css);
@@ -90,7 +92,7 @@ a {
     margin-left: 1em;
     justify-self: self-start;
 
-    background-image:url(/images/CO_logo_v2.svg);
+    background-image:url(/images/CO_logo_v3.svg);
     background-size:contain;
     
     width:35px;
@@ -114,7 +116,7 @@ a {
     transform:rotate(360deg);
 }
 body.themestyle-light .logo{
-    background-image:url(/images/CO_logo_v2-light.svg);
+    background-image:url(/images/CO_logo_v3-light.svg);
     filter:brightness(1.2);
 }
 

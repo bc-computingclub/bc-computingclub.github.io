@@ -31,6 +31,14 @@ function loadTheme(){
     document.body.classList.remove("themestyle-dark","themestyle-light");
     document.body.classList.add("themestyle-"+tData.style,"theme-"+curTheme);
 
+    // page icon
+    // let allLinks = document.querySelectorAll("link");
+    // for(const link of allLinks){
+    //     if(!link.hasAttribute("icon")) continue;
+    //     // link.setAttribute("href","/images/icon.svg");
+    //     link.setAttribute("href","/images/CO_logo_v2-light");
+    // }
+
     loadEditorTheme(tData);
 }
 function loadEditorTheme(tData?:any){

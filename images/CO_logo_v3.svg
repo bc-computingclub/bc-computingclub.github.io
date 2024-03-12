@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Generator: Adobe Illustrator 23.1.0, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->
+<svg version="1.1"
+	 id="svg990" xmlns:cc="http://creativecommons.org/ns#" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd" xmlns:svg="http://www.w3.org/2000/svg"
+	 xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" viewBox="0 0 72 72"
+	 style="enable-background:new 0 0 72 72;" xml:space="preserve">
+<style type="text/css">
+	.st0{fill:#FFFFFF;}
+	.st1{fill:#503E6E;}
+	.st2{fill:#384777;}
+	.st3{fill:#216779;}
+</style>
+<sodipodi:namedview  bordercolor="#666666" borderopacity="1.0" id="base" inkscape:current-layer="layer1" inkscape:cx="61.899539" inkscape:cy="44.263973" inkscape:document-units="mm" inkscape:pageopacity="0.0" inkscape:pageshadow="2" inkscape:window-height="2093" inkscape:window-maximized="1" inkscape:window-width="3840" inkscape:window-x="-9" inkscape:window-y="-9" inkscape:zoom="11.2" pagecolor="#ffffff" showgrid="false" units="in">
+	</sodipodi:namedview>
+<g id="layer1" transform="translate(0,-271.59998)" inkscape:groupmode="layer" inkscape:label="Layer 1">
+	<circle id="path992" class="st0" cx="36.1" cy="307.6" r="35.8"/>
+	
+		<path id="path996" sodipodi:cx="210.04971" sodipodi:cy="192.02364" sodipodi:end="2.0943951" sodipodi:rx="12" sodipodi:ry="12" sodipodi:start="0" sodipodi:type="arc" class="st1" d="
+		M60.2,331.7c-8.6,8.6-21.1,11.9-32.9,8.8S6.4,328.2,3.3,316.4l32.9-8.8L60.2,331.7z"/>
+	
+		<path id="path996-0" sodipodi:cx="61.272484" sodipodi:cy="-277.9202" sodipodi:end="2.0943951" sodipodi:rx="12" sodipodi:ry="12" sodipodi:start="0" sodipodi:type="arc" class="st2" d="
+		M3.3,316.4c-3.1-11.7,0.2-24.3,8.8-32.9s21.1-11.9,32.9-8.8l-8.8,32.9L3.3,316.4z"/>
+	
+		<path id="path996-0-7" sodipodi:cx="-271.3222" sodipodi:cy="85.896568" sodipodi:end="2.0943951" sodipodi:rx="12" sodipodi:ry="12" sodipodi:start="0" sodipodi:type="arc" class="st3" d="
+		M44.9,274.8c11.7,3.1,20.9,12.3,24.1,24.1s-0.2,24.3-8.8,32.9l-24.1-24.1L44.9,274.8z"/>
+	<ellipse id="path1571" cx="36.3" cy="307.7" rx="22.2" ry="22.2"/>
+</g>
+</svg>

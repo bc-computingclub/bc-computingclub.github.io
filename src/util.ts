@@ -506,7 +506,7 @@ function genHeader(i:number,isCompact=true,id:string){
     let isLesson = (id == "lesson");
     navCont.className = "nav-container";
     navCont.role = "navigation";
-    let logoI = 1;
+    let logoI = 3;
     navCont.innerHTML = `
         ${!noLogo?`<div class="logo">
         <a href="/index.html">
@@ -517,6 +517,7 @@ function genHeader(i:number,isCompact=true,id:string){
                     "CodeOtterLogo_alt.svg",
                     "CO_logo_v2.svg",
                     "CO_logo_v2.2.svg",
+                    "CO_logo_v3.svg"
                 ][logoI]
             }" alt="Code Challenge Logo" class="logo-thumbnail">-->
             <!-- Insert placeholder logo here -->
@@ -620,6 +621,25 @@ let _paneFilesLastWidth = 0;
 let _paneCodeLastWidth = 0;
 let _panePreviewLastWidth = 0;
 
+async function _star(pid:string,v:boolean){
+    return await new Promise<boolean>(resolve=>{
+        socket.emit("starProject",pid,v,(data:any)=>{
+            if(typeof data == "number" || data == null){
+                alert(`Error ${data} while starring/unstarring project`);
+                resolve(null);
+                return;
+            }
+            resolve(data);
+        });
+    });
+}
+async function starProject(pid:string){
+    return await this._star(pid,true);
+}
+async function unstarProject(pid:string){
+    return await this._star(pid,false);
+}
+
 class Project{
     constructor(title:string,parent:HTMLElement,settings:{readonly?:boolean,disableCopy?:boolean}={}){
         this.title = title;
@@ -683,7 +703,13 @@ class Project{
                     if(close) close();
                     return;
                 }
-                socket.emit("renameFItem",f.p.pid,calcFolderPath(f.folder),f.name,newName,((res:number)=>{
+                /*if(f.isNew && f instanceof FFile){
+                    f.name = newName;
+                    if(f.link) f.link.children[0].textContent = newName;
+                    if(f._fi) f._fi.textContent = newName;
+                    close();
+                }
+                else */socket.emit("renameFItem",f.p.pid,calcFolderPath(f.folder),f.name,newName,((res:number)=>{
                     console.log("RES RENAME: ",res);
                     if(res != 0) return;
                     f.name = newName;
@@ -886,6 +912,7 @@ class Project{
             }
         }
         let f = new FFile(this,name,text,folder,lang);
+        // f.isNew = true;
         this.files.push(f);
         if(folder) folder.items.push(f);
         else this.items.push(f);
@@ -902,6 +929,8 @@ class Project{
             f.setSaved(true);
             f.setTemp(false);
         }
+
+        if(isNew) saveProject();
         return f;
     }
     createFolder(name:string,folder?:FFolder,isNew=true){
@@ -1192,24 +1221,22 @@ function setupFItemDropdown(f:FItem,div:HTMLElement){
         function close(){
             closeAllSubMenus();
         }
+        close();
         if(i == 0){ // rename
             f.p.renameFItem(f,close);
         }
         else if(i == 1){ // delete
             await f.p.deleteFItem(f);
-            close();
         }
         else if(i == 2){ // cut
             f.p.cutFItems(f);
-            close();
         }
         else if(i == 3){ // copy
             f.p.copyFItems(f);
-            close();
         }
         else if(i == 4){ // paste
             await f.p.pasteFItems(f,()=>{
-                close();
+                // close();
             },close);
         }
     },{
@@ -1418,6 +1445,7 @@ class FItem{
     name:string;
     folder:FFolder;
     _fi:HTMLElement;
+    // isNew = false;
 }
 class FFolder extends FItem{
     constructor(p:Project,name:string,folder:FFolder){
@@ -1474,6 +1502,7 @@ class FFile extends FItem{
     _saved = true;
     setSaved(v:boolean,noChange=false){
         this._saved = v;
+        // if(this.isNew && v) this.isNew = false;
         if(v) if(this.editor) this.text = this.editor.getValue();
         if(this.link){
             // this.link.children[0].textContent = this.name+(v?"":"*");
@@ -2128,6 +2157,7 @@ type ProjectMeta = {
     cid?:string;
     submitted:boolean;
     owner?:string;
+    starred?:boolean;
 };
 
 // screenshot util
@@ -2278,7 +2308,7 @@ function closeAllSubMenus(){
 function areSubMenus(){
     return _areSubs;
 }
-async function openDropdown(btn:HTMLElement,getLabels:()=>string[],onclick:(i:number)=>void,ops?:DropdownOptions){
+async function openDropdown(btn:HTMLElement,getLabels:()=>string[],onclick:(i:number)=>void,ops:DropdownOptions={}){
     let labels = getLabels();
     let icons = (ops?.getIcons ? ops?.getIcons() : []) as string[];
     // if(e.button != 2) return;
@@ -2319,6 +2349,7 @@ async function openDropdown(btn:HTMLElement,getLabels:()=>string[],onclick:(i:nu
         d.className = "dd-item";
         dd.appendChild(d);
         d.addEventListener("click",function(e){
+            closeAllSubMenus(); // for now (might need an op to disable this)
             onclick(i);
         });
     }
@@ -2662,7 +2693,7 @@ class ChallengeMenu extends Menu {
                           <h2 class="c-popup-title">${this.c.name}</h2>
                           <i class="c-attempted"> ${this.c.submitted ? "Attempted" : "Not Attempted"}</i>
                       </div>
-                      <div class="c-popup-body">
+                      <div class="c-popup-body resize" resize="r">
                           <div class ="c-popup-task">
                               <h3 class="c-popup-sub-title">Task</h3>
                               <span class="c-popup-task-text">${this.c.desc}</span>
@@ -2698,6 +2729,9 @@ class ChallengeMenu extends Menu {
                   </div>
               </div>
         `;
+        // let _body = this.menu.querySelector(".c-popup-body") as HTMLElement;
+        // setupResize(_body);
+
         if (this.c.sub_highlights?.length) {
             for (let i = 0; i < this.c.sub_highlights.length; i++) {
                 let temp = getSubmissionElement(this.c.sub_highlights[i],this.c.cID);

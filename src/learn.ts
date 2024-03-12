@@ -329,24 +329,28 @@ class LessonItem{
                 });
             });
             this.d_actions.children[1].addEventListener("click",e=>{
-                socket.emit("restartLessonProgress",this.lid,(data:any)=>{
-                    if(data == 0){
-                        this.resetProgress();
-                    }
-                    else{
-                        alert("Err: while restarting lesson progress, error code: "+data);
-                    }
-                });
+                new ConfirmMenu("Reset Progress",`Are you sure you want<br> to reset lesson progress for "${this.l.name}" ?`,()=>{
+                    socket.emit("restartLessonProgress",this.lid,(data:any)=>{
+                        if(data == 0){
+                            this.resetProgress();
+                        }
+                        else{
+                            alert("Err: while restarting lesson progress, error code: "+data);
+                        }
+                    });
+                },()=>{}).load();
             });
             this.d_actions.children[2].addEventListener("click",e=>{
-                socket.emit("deleteLessonProgress",this.lid,(data:any)=>{
-                    if(data == 0){
-                        this.deleteProgress();
-                    }
-                    else{
-                        alert("Err: while deleting lesson progress, error code: "+data);
-                    }
-                });
+                new ConfirmMenu("Delete Progress",`Are you sure you want<br> to delete lesson progress for "${this.l.name}" ?`,()=>{
+                    socket.emit("deleteLessonProgress",this.lid,(data:any)=>{
+                        if(data == 0){
+                            this.deleteProgress();
+                        }
+                        else{
+                            alert("Err: while deleting lesson progress, error code: "+data);
+                        }
+                    });
+                },()=>{}).load();
             });
         }
     }
@@ -742,10 +746,11 @@ window.addEventListener("mousemove",e=>{
 });
 document.addEventListener("wheel",e=>{
     if(menusOpen.length) return;
+    e.preventDefault();
     let speed = Math.abs(e.deltaY)/500;
     let scale = 1.001+speed; //1.1
     zoomBy(e.deltaY > 0 ? 1/scale : scale);
-});
+},{passive:false});
 function updatePan(){
     panCont.style.marginLeft = panX+"px";
     panCont.style.marginTop = panY+"px";
@@ -783,10 +788,9 @@ function zoomBy(r:number){
 
     updatePan();
 
-    localStorage.setItem("cc-panX",(panX||0).toString());
-    localStorage.setItem("cc-panY",(panY||0).toString());
-    localStorage.setItem("cc-zoom",(zoom||1).toString());
+    _locNeedsSaved = true;
 }
+let _locNeedsSaved = false;
 function zoomToSimple(z:number){
     zoom = z;
     if(zoom < 0.1) zoom = 0.1;
@@ -811,6 +815,35 @@ zoom = parseFloat(localStorage.getItem("cc-zoom")) || 1;
 zoomToSimple(zoom);
 let _loadLastLID = localStorage.getItem("cc-lastLID");
 updatePan();
+
+setInterval(()=>{
+    if(_locNeedsSaved){
+        localStorage.setItem("cc-panX",(panX||0).toString());
+        localStorage.setItem("cc-panY",(panY||0).toString());
+        localStorage.setItem("cc-zoom",(zoom||1).toString());
+    }
+},500);
+
+function resetView(){
+    panX = 0;
+    panY = 0;
+    updatePan();
+    zoomToSimple(1);
+    _locNeedsSaved = true;
+}
+
+const b_viewOptions = document.querySelector(".view-options") as HTMLElement;
+b_viewOptions.addEventListener("mousedown",e=>{
+    let list = [
+        "Reset Camera/View"
+    ];
+    openDropdown(b_viewOptions,()=>list,i=>{
+        if(i == 0){
+            resetView();
+        }
+        closeAllSubMenus();
+    });
+});
 
 // 1 -> 2
 // spx: -1380.0000610351562

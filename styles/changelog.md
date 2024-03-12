@@ -334,3 +334,17 @@
 - changed editor page so it shows a list icon instead of home for the dashboard
 - some bug fixes in various util stuff
 - BUG: when preventing page leave during lesson, it loses connection to the server and doesn't recover
+
+### 3/11/24
+- fixed leaving lesson when unsaved will alert and on hitting cancel you will reconnect properly back to the server
+- added recent projects support
+- added star projects support
+- added whenCreated (wc) and time (time spent) properties for future use
+- fixed deleteingLessonProgress didn't actually remember on save
+- added confirm menus to Reset and Delete lesson progress
+- added View Options hamburger menu button to learn view and gave it one option for now: Reset View
+- fixed weird glitch where learn item actions were clickable when the menu wasn't even open
+- removed some more error log messages from server
+- fixed renaming/deleting files in editor so that the right click menu is closed right after an option is clicked
+- fixed bug with renaming files after just being created (without saving) makes the rename fail -> now the project is saved when files are created just like folders
+- fixed bug with trying to delete progress from the challenge page, the dropdown stays appearing and is on top of the confirmation menu

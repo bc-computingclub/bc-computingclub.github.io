@@ -1,1 +1,32 @@
-{"name":"Claeb Productions","email":"irexasaurus@gmail.com","picture":"https://lh3.googleusercontent.com/a/ACg8ocK4bLPNQj8N4sezjEJXlni-HREGu1Emtoc8AYwO6bYonCE=s96-c","joinDate":"2024-03-07T21:59:28.054Z","lastLoggedIn":"2024-03-10T20:46:44.807Z","pMeta":["{\"pid\":\"25066f2c-be48-4572-9471-547c4a853aa4\",\"name\":\"Test 13\",\"desc\":\"A project for experiments.\",\"isPublic\":false,\"sub\":false}"],"challenges":[]}
+{
+    "name": "Claeb Productions",
+    "email": "irexasaurus@gmail.com",
+    "picture": "https://lh3.googleusercontent.com/a/ACg8ocK4bLPNQj8N4sezjEJXlni-HREGu1Emtoc8AYwO6bYonCE=s96-c",
+    "joinDate": "2024-03-07T21:59:28.054Z",
+    "lastLoggedIn": "2024-03-12T05:42:45.351Z",
+    "pMeta": [
+        "{\"pid\":\"25066f2c-be48-4572-9471-547c4a853aa4\",\"name\":\"Test 13\",\"desc\":\"A project for experiments.\",\"isPublic\":false,\"sub\":false,\"starred\":false,\"wc\":\"2024-03-12T02:27:25.342Z\",\"time\":0}",
+        "{\"pid\":\"4dea34e5-7711-49eb-957f-43b7cd1955ee\",\"name\":\"Color Wheel\",\"desc\":\"A project for experiments.\",\"isPublic\":true,\"cid\":\"0001\",\"sub\":true,\"starred\":true,\"wc\":\"2024-03-12T02:27:25.342Z\",\"time\":0}",
+        "{\"pid\":\"a680bfff-4797-45b8-b8a7-1618d86e28d7\",\"name\":\"Water Wheel\",\"desc\":\"A project for experiments.\",\"isPublic\":false,\"cid\":\"0004\",\"sub\":false,\"starred\":false,\"wc\":\"\",\"time\":0}"
+    ],
+    "challenges": [
+        {
+            "i": 0,
+            "cid": "0001",
+            "pid": "4dea34e5-7711-49eb-957f-43b7cd1955ee"
+        },
+        {
+            "i": 0,
+            "cid": "0004",
+            "pid": "a680bfff-4797-45b8-b8a7-1618d86e28d7"
+        }
+    ],
+    "recent": [
+        "25066f2c-be48-4572-9471-547c4a853aa4",
+        "4dea34e5-7711-49eb-957f-43b7cd1955ee",
+        "a680bfff-4797-45b8-b8a7-1618d86e28d7"
+    ],
+    "starred": [
+        "4dea34e5-7711-49eb-957f-43b7cd1955ee"
+    ]
+}

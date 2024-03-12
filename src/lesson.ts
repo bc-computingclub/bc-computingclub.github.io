@@ -3673,7 +3673,10 @@ b_home.addEventListener("click",e=>{
 // }
 window.addEventListener("beforeunload",e=>{
     if(lesson) if(!lesson.canLeave()){
+        _usedConfirmLeavePopup = true;
+        socket.disconnect();
         e.stopPropagation();
         e.preventDefault();
+        socket.connect();
     }
 });

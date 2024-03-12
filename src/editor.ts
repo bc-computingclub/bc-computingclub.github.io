@@ -365,7 +365,7 @@ class ProjectDashboard extends Menu{
                         </button>
                         <button class="icon-btn regular">
                             <div class="material-symbols-outlined">star_rate</div>
-                            <div>Saved</div>
+                            <div>Starred</div>
                         </button>
                     </div>
                     <div class="edb-nav-cont">
@@ -429,7 +429,7 @@ class ProjectDashboard extends Menu{
             div.classList.add("pi-"+meta.pid);
             div.innerHTML = `
                 <div class="project-info">
-                    <div class="l-project-name">${meta.name}</div>
+                    <div class="l-project-name"><div class="star">star</div>${meta.name}</div>
                     <div class="l-project-desc">${meta.desc}</div>
                 </div>
                 <div class="flx-sb" style="gap:5px">
@@ -463,6 +463,26 @@ class ProjectDashboard extends Menu{
                 // b_ops.parentElement.insertAdjacentElement("afterend",cur);
                 if(cur) div.insertAdjacentElement("beforebegin",cur);
             });
+
+            let b_star = div.querySelector(".star");
+            b_star.addEventListener("click",async e=>{
+                if(!meta.starred){
+                    let res = await starProject(meta.pid);
+                    if(res){
+                        div.classList.add("starred");
+                        meta.starred = true;
+                    }
+                }
+                else{
+                    let res = await unstarProject(meta.pid);
+                    if(res){
+                        div.classList.remove("starred");
+                        meta.starred = false;
+                    }
+                }
+            });
+            if(meta.starred) div.classList.add("starred");
+            console.log(meta.name,meta.starred);
             // setupDropdown(b_ops,()=>[
             //     "Rename",
             //     "Delete"

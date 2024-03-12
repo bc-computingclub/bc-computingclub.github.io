@@ -41,18 +41,22 @@ function _logout(){
         google.accounts.id.disableAutoSelect();
     });
 }
+let _usedConfirmLeavePopup = false;
 function _login(data:CredentialResData,token:string){
     console.log("...starting login");
     socket.emit("login",data,token,(data:CredentialResData)=>{
         console.log("Log in successful: ",data);
-        if(g_user || _hasAlertedNotLoggedIn){
-            location.reload();
-            return;
+        if(!_usedConfirmLeavePopup){
+            if(g_user || _hasAlertedNotLoggedIn){
+                location.reload();
+                return;
+            }
+            if(g_user) if(g_user.email != data.email){
+                location.reload();
+                return;
+            }
         }
-        if(g_user) if(g_user.email != data.email){
-            location.reload();
-            return;
-        }
+        _usedConfirmLeavePopup = false;
         g_user = data;
         if(loginProm){
             _loginRes();

@@ -283,12 +283,28 @@ div.b-editor-dashboard .material-symbols-outlined{
 .project-item .project-info{
     display:flex;
     flex-direction:column;
+    gap:5px;
 }
 .project-item .l-project-name{
     font-size:16px;
+    display:flex;
+    align-items:center;
+    gap:8px;
 }
 .project-item .l-project-desc{
     opacity:0.9;
+}
+.star{
+    font-family:"Material Symbols Outlined";
+    /* font-family:"Material Icons"; */
+    cursor:pointer;
+    font-size:18px;
+    user-select:none;
+    -webkit-user-select:none;
+}
+.project-item.starred .star{
+    font-family:"Material Icons";
+    color:gold;
 }
 
 /*  */

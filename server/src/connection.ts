@@ -123,7 +123,8 @@ export class Project{
             // files:this.files,
             items:this.items,
             cid:this.meta.cid,
-            submitted:this.meta.submitted
+            submitted:this.meta.submitted,
+            starred:(this._owner ? this._owner.starred.includes(this.pid) : null)
         };
     }
     serialize(){
@@ -179,6 +180,8 @@ export class ProjectMeta{
     desc:string;
     isPublic:boolean;
     submitted:boolean;
+    wc:string = ""; // when created
+    time = 0;
 
     cid?:string;
     
@@ -192,13 +195,19 @@ export class ProjectMeta{
             isPublic:this.isPublic,
             // cid:challenge?.cid
             cid:this.cid,
-            sub:this.submitted
+            sub:this.submitted,
+
+            starred:(this.user ? this.user.starred.includes(this.pid) : null),
+            wc:this.wc,
+            time:this.time
         });
     }
     static deserialize(user:User,str:string){
         let o = JSON.parse(str);
         let p = new ProjectMeta(user,o.pid,o.name,o.desc,o.isPublic,o.sub);
         p.cid = o.cid;
+        p.wc = o.wc ?? new Date().toISOString();
+        p.time = o.time ?? 0;
         // console.log("DESEL",o,p);
         return p;
     }
@@ -248,6 +257,45 @@ export class User{
     projects:Project[];
     pMeta:ProjectMeta[];
     challenges:UserChallengeData[];
+
+    recent:string[] = [];
+    starred:string[] = [];
+
+    addToRecents(pid:string){
+        let _maxRecentsLength = 16;
+        if(this.recent.length >= _maxRecentsLength) this.recent.splice(0,1);
+        if(!this.recent.includes(pid)) this.recent.push(pid);
+        this.saveToFile();
+    }
+    removeFromRecents(pid:string){
+        let i = this.recent.indexOf(pid);
+        if(i != -1){
+            this.recent.splice(i,1);
+            this.saveToFile();
+            return true;
+        }
+        return false;
+    }
+    addToStarred(pid:string){
+        let res = true;
+        let _maxStarredLength = 512;
+        if(this.starred.length >= _maxStarredLength){
+            this.starred.splice(0,1);
+            res = false;
+        }
+        if(!this.starred.includes(pid)) this.starred.push(pid);
+        this.saveToFile();
+        return res;
+    }
+    removeFromStarred(pid:string){
+        let i = this.starred.indexOf(pid);
+        if(i != -1){
+            this.starred.splice(i,1);
+            this.saveToFile();
+            return true;
+        }
+        return false;
+    }
 
     // lesson = new Map<string,LessonMeta>;
     // saveLessonMeta(lid:string,meta:LessonMeta){
@@ -324,9 +372,11 @@ export class User{
             lastLoggedIn:this.lastLoggedIn,
             pMeta:this.pMeta.map(v=>v.serialize()),
             challenges:this.challenges,
+            recent:this.recent,
+            starred:this.starred
             // lesson:this.lesson
         };
-        let res = await write(this.getPath(),JSON.stringify(data),"utf8");
+        let res = await write(this.getPath(),JSON.stringify(data,null,4),"utf8");
         if(!res) console.log("Err: failed to save user to file");
     }
 
@@ -434,6 +484,7 @@ export async function deleteLessonMeta(uid:string,lid:string,meta:LessonMeta){
     meta.taskI = -1;
     meta.prog = 0;
     meta.mode = 0;
+    meta.s = false;
     await writeLessonMeta(uid,lid,meta);
 }
 

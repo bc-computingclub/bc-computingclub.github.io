@@ -330,10 +330,12 @@ body.themestyle-light .btn-start.open{
     height:100%;
     transition:all 0.1s ease-out, opacity 0.05s ease-out;
     translate:-20px 0px;
+    pointer-events:none;
 }
 .item-actions.open{
     opacity:1;
     translate:0px 0px;
+    pointer-events:all;
 }
 .item-actions > div{
     min-width:35px;
@@ -369,6 +371,22 @@ body.themestyle-light .item-actions > div:hover{
     background-color:var(--col);
     color:var(--secondary-bg-col);
     outline:none;
+}
+
+.view-options{
+    width:1em;
+    height:1em;
+    margin:1rem;
+    margin-left:23px;
+    transform-origin:center center;
+    transform:scale(1);
+    transition:all 0.2s ease-out;
+}
+.view-options:hover{
+    transform:scale(1.3);
+}
+.view-options.opened{
+
 }
 
 /* .cont path{

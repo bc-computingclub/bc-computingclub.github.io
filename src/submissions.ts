@@ -72,6 +72,7 @@ cBack.addEventListener("click", () => {
 async function getSubmission(uid:string,pid:string){
   return new Promise<any>(resolve=>{
     socket.emit("getSubmission",uid,pid,(data:any)=>{
+      console.log("data:",data,uid,pid);
       resolve(data);
     });
   });
