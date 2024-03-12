@@ -247,6 +247,7 @@ body {
 }
 
 .c-img {
+    object-fit: cover;
     aspect-ratio: 4/3;
     width: 100%;
     height: 100%;

@@ -176,28 +176,16 @@
 
 .s-container {
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 1em;
+    grid-template-columns: 1fr;
+    justify-content: space-between;
+    gap: 5px;
     padding-block-start: 1em;
+    width: 100%;
     align-content: start;
     &.empty {
         color: var(--secondary-col);
         grid-template-columns: 1fr;
     }
-}
-
-.s-card {
-    display: grid;
-    grid-template-rows: auto auto;
-    align-content: space-between;
-    padding: .5em;
-    gap: 2em;
-    background-color: var(--secondary-bg-col);
-    border-radius: 3px;
-    height: min-content;
-    position: relative;
-
-    animation: card-intro 0.3s ease-out;
 }
 
 @keyframes card-intro {
@@ -230,6 +218,12 @@
 
 .s-open-preview {
     cursor: pointer;
+    height: 100%;
+}
+
+.s-card {
+    padding: .3em;
+    /* ANY STYLING FOR S-CARD SHOULD GO IN UTIL UNLESS SPECIFIC TO SUBMISSIONS.HTML */
 }
 
 .s-card-info {
