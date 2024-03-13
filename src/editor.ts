@@ -434,6 +434,15 @@ class ProjectDashboard extends Menu{
             });
         });
         let list = raw.map(v=>JSON.parse(v) as ProjectMeta);
+
+        // sorting
+        console.log(list);
+        list = list.sort((a,b)=>{
+            let aTime = a.wc ? new Date(a.wc).getTime() : 0;
+            let bTime = b.wc ? new Date(b.wc).getTime() : 0;
+            return aTime-bTime;
+        });
+        
         for(const c of list){
             this.loadItem(c);
         }
@@ -444,7 +453,11 @@ class ProjectDashboard extends Menu{
         div.classList.add("pi-"+meta.pid);
         div.innerHTML = `
             <div class="project-info">
-                <div class="l-project-name"><div class="star">star</div><div>${meta.name}</div></div>
+                <div class="l-project-name">
+                    <div class="star">star</div>
+                    <div co-label="${meta.sub ? "Submitted" : "In Progress"}" class="p-icon ic-submitted ${meta.cid != null ? "" : "hide"}">${meta.sub ? "cloud_done" : "pending"}</div>
+                    <div>${meta.name}</div>
+                </div>
                 <div class="l-project-desc">${meta.desc}</div>
             </div>
             <div class="flx-sb" style="gap:5px">
@@ -500,6 +513,10 @@ class ProjectDashboard extends Menu{
         });
         if(meta.starred) div.classList.add("starred");
         console.log(meta.name,meta.starred);
+
+        // setupCallout(b_star,"Star Project"); // might be annoying to have this
+        setupCallout(div.querySelector(".ic-submitted"),null);
+
         // setupDropdown(b_ops,()=>[
         //     "Rename",
         //     "Delete"

@@ -68,7 +68,7 @@ export class Challenge{
             timespan:this.timespan,
             sub:this.sub
         };
-        await write("../challenges/"+this.id+".json",JSON.stringify(data));
+        await write("../challenges/"+this.id+".json",JSON.stringify(data,null,4));
     }
 
     get ongoing(){

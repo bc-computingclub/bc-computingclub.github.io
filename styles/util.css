@@ -148,6 +148,8 @@ div.menu.force-hidden{
     flex-direction:column;
     justify-content:stretch;
 
+    /* animation:AddBubble forwards 0.35s ease-out; */
+
     /* & input{
         background-color:var(--c-bg);
         border:none;

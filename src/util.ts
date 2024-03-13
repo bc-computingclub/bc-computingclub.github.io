@@ -2201,11 +2201,15 @@ type ProjectMeta = {
     items:ULItem[],
     cid?:string;
     submitted:boolean;
+    sub?:boolean;
     owner?:string;
     starred?:boolean;
 
     canEdit?:boolean;
     isOwner?:boolean;
+
+    wc?:string;
+    time?:number;
 };
 
 // screenshot util
@@ -2457,11 +2461,12 @@ function setupDropdown(btn:HTMLElement,getLabels:()=>string[],onclick:(i:number)
 
 // callouts
 function setupCallout(ele:Element,label?:string){
-    if(label == null) label = ele.getAttribute("co-label");
+    if(!ele) return;
     let d:HTMLElement;
     let isOver = false;
     let flag = false;
     ele.addEventListener("mouseenter",async (e:MouseEvent)=>{
+        if(label == null) label = ele.getAttribute("co-label");
         if(isOver || flag){
             if(d?.parentElement) d.remove();
             return;

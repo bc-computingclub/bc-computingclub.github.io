@@ -184,6 +184,7 @@ export class ProjectMeta{
     time = 0;
 
     cid?:string;
+    ws:string = ""; // when submitted
     
     hasLoaded = false;
     serialize(){
@@ -200,6 +201,7 @@ export class ProjectMeta{
             starred:(this.user ? this.user.starred.includes(this.pid) : null),
             wc:this.wc,
             time:this.time,
+            ws:this.ws,
 
             canEdit:(this.user ? this.user.canEdit(this) : false),
             isOwner:(this.user ? this.user.isOwner(this) : false),
@@ -211,7 +213,7 @@ export class ProjectMeta{
         p.cid = o.cid;
         p.wc = o.wc ?? new Date().toISOString();
         p.time = o.time ?? 0;
-        // console.log("DESEL",o,p);
+        p.ws = o.ws ?? "";
         return p;
     }
 }

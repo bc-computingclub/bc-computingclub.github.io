@@ -930,6 +930,7 @@ io.on("connection",socket=>{
         await ch.save();
         p.meta.submitted = true;
         p.meta.isPublic = true;
+        p.meta.ws = new Date().toISOString();
         p.validateMetaLink();
         await user.saveToFile();
 
@@ -1364,6 +1365,11 @@ async function deleteProject(user:User,pMeta:ProjectMeta,f:(res:number)=>void){
         else console.log("warn: couldn't find challenge: ",pMeta.cid);
     }
     user.pMeta.splice(user.pMeta.findIndex(v=>v.pid == pid),1);
+
+    // remove from recents & starred
+    user.recent.splice(user.recent.indexOf(pid),1);
+    user.starred.splice(user.starred.indexOf(pid),1);
+    
     await user.saveToFile();
 
     let res = await removeFolder("../project/"+user.uid+"/"+pid);

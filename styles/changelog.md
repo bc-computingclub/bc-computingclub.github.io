@@ -372,3 +372,8 @@
 
 ### 3/13/24
 - added overflow handling to list of projects in Project Dashboard
+- changed challenges to be saved formatted on server for betting merging
+- fixed overflow again with project dashboard menu
+- fixed deleting projects so if they were starred or in recents they would be deleted from that too
+- added ws (when submitted) property to projectMeta
+- made project dashboard sort by when created
