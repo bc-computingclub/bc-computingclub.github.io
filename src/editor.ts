@@ -15,6 +15,7 @@ const b_newFile = document.querySelector(".b-new-file") as HTMLButtonElement;
 
 b_newFolder.addEventListener("click",e=>{
     if(!project) return;
+    if(!project.canEdit) return;
     // let name = prompt("Enter folder name:");
     new InputMenu(
         "New Folder","Enter folder name",
@@ -30,6 +31,7 @@ b_newFolder.addEventListener("click",e=>{
 
 b_newFile.addEventListener("click",e=>{
     if(!project) return;
+    if(!project.canEdit) return;
     // let name = prompt("Enter file name:");
     new InputMenu(
         "New File","Enter file name",
@@ -59,12 +61,12 @@ async function loadProject(uid:string,pid:string){
     }
 
     project = new Project(meta.name,pane_code);
-    project.canEdit = canEdit;
     project.meta = meta;
     project.pid = pid;
     project.desc = meta.desc;
     project.isPublic = meta.isPublic;
-    console.log("FOUND PID: ",pid);
+    project.meta.isOwner = (project.meta.owner == g_user.uid);
+    project.meta.canEdit = canEdit;
     if(!pid) project.pid = "tmp_project";
     setupEditor(pane_code,EditorType.self);
     postSetupEditor(project);
@@ -143,8 +145,8 @@ async function loadProject(uid:string,pid:string){
     let index = project.items.find(v=>v.name == "index.html") as FFile;
     if(index) index.open();
 
-    if(!canEdit){
-        b_save.style.display = "none";
+    if(!project.canEdit) b_save.style.display = "none";
+    if(!project.isOwner){
         b_publish.style.display = "none";
     }
 }
@@ -345,6 +347,9 @@ class ProjectDashboard extends Menu{
     constructor(){
         super("Project Dashboard","list");
     }
+    navCont:Element;
+    content:Element;
+    _sectionI:number;
     load(priority?: number){
         super.load(priority);
         this.body.innerHTML = `
@@ -398,114 +403,123 @@ class ProjectDashboard extends Menu{
         });
         let navCont = this.body.querySelector(".edb-nav-cont");
         let content = this.body.querySelector(".edb-content-list");
+        this.navCont = navCont;
+        this.content = content;
         for(let i = 0; i < navCont.children.length; i++){
             let b = navCont.children[i];
             b.addEventListener("mousedown",e=>{
-                loadSection(i);
+                this.loadSection(i);
             });
         }
-        async function loadSection(i:number){
-            let b = navCont.children[i];
-            for(const c of navCont.children){
-                c.classList.remove("sel");
-            }
-            b.classList.add("sel");
-            curProjectSettingsMeta = null;
-            curProjectSettingsMetaPID = null;
-            content.textContent = "";
-            let raw = await new Promise<string[]>(resolve=>{
-                socket.emit("user-getProjectList",i,(data:string[])=>{
-                    resolve(data || []);
-                });
-            });
-            let list = raw.map(v=>JSON.parse(v) as ProjectMeta);
-            for(const c of list){
-                loadItem(c);
-            }
-        }
-        function loadItem(meta:ProjectMeta){
-            let div = document.createElement("div");
-            div.className = "project-item";
-            div.classList.add("pi-"+meta.pid);
-            div.innerHTML = `
-                <div class="project-info">
-                    <div class="l-project-name"><div class="star">star</div>${meta.name}</div>
-                    <div class="l-project-desc">${meta.desc}</div>
-                </div>
-                <div class="flx-sb" style="gap:5px">
-                    <button class="icon-btn accent smaller b-open-project">
-                        <div class="material-symbols-outlined">edit</div>
-                        <div>Tinker</div>
-                    </button>
-                    <button class="icon-btn-single accent smaller b-ops">
-                        <div class="material-symbols-outlined">discover_tune</div>
-                    </button>
-                </div>
-            `;
-            content.appendChild(div);
-            let l_pname = div.querySelector(".l-project-name");
-            let b_openProject = div.querySelector(".b-open-project");
-            b_openProject.addEventListener("click",e=>{
-                openProjectSuper(meta.pid);
-            });
-            if(meta.cid != null){
-                b_openProject.classList.add("challenge");
-                b_openProject.children[1].textContent = "Practice";
-            }
-
-            let b_ops = div.querySelector(".b-ops") as HTMLButtonElement;
-            b_ops.addEventListener("click",e=>{
-                let cur = openCurProjSettingsMeta(meta,{
-                    onrename(v:string){
-                        l_pname.textContent = v;
-                    }
-                });
-                // b_ops.parentElement.insertAdjacentElement("afterend",cur);
-                if(cur) div.insertAdjacentElement("beforebegin",cur);
-            });
-
-            let b_star = div.querySelector(".star");
-            b_star.addEventListener("click",async e=>{
-                if(!meta.starred){
-                    let res = await starProject(meta.pid);
-                    if(res){
-                        div.classList.add("starred");
-                        meta.starred = true;
-                    }
-                }
-                else{
-                    let res = await unstarProject(meta.pid);
-                    if(res){
-                        div.classList.remove("starred");
-                        meta.starred = false;
-                    }
-                }
-            });
-            if(meta.starred) div.classList.add("starred");
-            console.log(meta.name,meta.starred);
-            // setupDropdown(b_ops,()=>[
-            //     "Rename",
-            //     "Delete"
-            // ],(i)=>{
-            //     if(i == 0){
-            //         let name = prompt(`Old project name: ${meta.name}\n\nEnter new project name:`,meta.name);
-            //         if(!name) return;
-            //         if(name == "") return;
-            //         socket.emit("renameProject",meta.pid,name,(res:number)=>{
-            //             if(res != 0) return;
-            //             l_pname.textContent = name;
-            //         });
-            //     }
-            //     else if(i == 1){
-                    
-            //     }
-            // });
-            // div.addEventListener("click",e=>{
-
-            // });
-        }
-        loadSection(project ? (project.meta?.cid != null ? 1 : 0) : 0);
+        this.loadSection(project ? (project.meta?.cid != null ? 1 : 0) : 0);
         return this;
+    }
+    async reloadSection(){
+        await this.loadSection(this._sectionI);
+    }
+    async loadSection(i:number){
+        this._sectionI = i;
+        let navCont = this.navCont;
+        let b = navCont.children[i];
+        for(const c of navCont.children){
+            c.classList.remove("sel");
+        }
+        b.classList.add("sel");
+        curProjectSettingsMeta = null;
+        curProjectSettingsMetaPID = null;
+        this.content.textContent = "";
+        let raw = await new Promise<string[]>(resolve=>{
+            socket.emit("user-getProjectList",i,(data:string[])=>{
+                resolve(data || []);
+            });
+        });
+        let list = raw.map(v=>JSON.parse(v) as ProjectMeta);
+        for(const c of list){
+            this.loadItem(c);
+        }
+    }
+    loadItem(meta:ProjectMeta){
+        let div = document.createElement("div");
+        div.className = "project-item";
+        div.classList.add("pi-"+meta.pid);
+        div.innerHTML = `
+            <div class="project-info">
+                <div class="l-project-name"><div class="star">star</div><div>${meta.name}</div></div>
+                <div class="l-project-desc">${meta.desc}</div>
+            </div>
+            <div class="flx-sb" style="gap:5px">
+                <button class="icon-btn accent smaller b-open-project">
+                    <div class="material-symbols-outlined">edit</div>
+                    <div>Tinker</div>
+                </button>
+                <button class="icon-btn-single accent smaller b-ops">
+                    <div class="material-symbols-outlined">discover_tune</div>
+                </button>
+            </div>
+        `;
+        this.content.appendChild(div);
+        let l_pname = div.querySelector(".l-project-name").children[1];
+        let b_openProject = div.querySelector(".b-open-project");
+        b_openProject.addEventListener("click",e=>{
+            openProjectSuper(meta.pid);
+        });
+        if(meta.cid != null){
+            b_openProject.classList.add("challenge");
+            b_openProject.children[1].textContent = "Practice";
+        }
+
+        let b_ops = div.querySelector(".b-ops") as HTMLButtonElement;
+        b_ops.addEventListener("click",e=>{
+            new ProjSettingsMenu(meta,this,div).load();
+            return;
+            let cur = openCurProjSettingsMeta(meta,{
+                onrename(v:string){
+                    l_pname.textContent = v;
+                }
+            });
+            // b_ops.parentElement.insertAdjacentElement("afterend",cur);
+            if(cur) div.insertAdjacentElement("beforebegin",cur);
+        });
+
+        let b_star = div.querySelector(".star");
+        b_star.addEventListener("click",async e=>{
+            if(!meta.starred){
+                let res = await starProject(meta.pid);
+                if(res){
+                    div.classList.add("starred");
+                    meta.starred = true;
+                }
+            }
+            else{
+                let res = await unstarProject(meta.pid);
+                if(res){
+                    div.classList.remove("starred");
+                    meta.starred = false;
+                }
+            }
+        });
+        if(meta.starred) div.classList.add("starred");
+        console.log(meta.name,meta.starred);
+        // setupDropdown(b_ops,()=>[
+        //     "Rename",
+        //     "Delete"
+        // ],(i)=>{
+        //     if(i == 0){
+        //         let name = prompt(`Old project name: ${meta.name}\n\nEnter new project name:`,meta.name);
+        //         if(!name) return;
+        //         if(name == "") return;
+        //         socket.emit("renameProject",meta.pid,name,(res:number)=>{
+        //             if(res != 0) return;
+        //             l_pname.textContent = name;
+        //         });
+        //     }
+        //     else if(i == 1){
+                
+        //     }
+        // });
+        // div.addEventListener("click",e=>{
+
+        // });
     }
 }
 
@@ -541,7 +555,8 @@ b_editorDashboard.addEventListener("click",e=>{
     projDash.load();
 });
 d_curProject.addEventListener("click",e=>{
-    openCurProjSettings();
+    // openCurProjSettings();
+    new ProjSettingsMenu(project.meta).load();
 });
 
 function openCurProjSettings(){   
@@ -590,6 +605,54 @@ function openCurProjSettings(){
 
     return div;
 }
+
+async function deleteProject(meta:ProjectMeta,div?:HTMLElement){
+    return new Promise<boolean>(resolve=>{
+        new ConfirmMenu(
+            "Delete Project","Are you sure you want to delete project:<br>\""+meta.name+"\" ?<br><br>There is no reversing this option.",
+            () => {
+                socket.emit("deleteProject",meta.pid,(res:number)=>{
+                    if(res != 0){
+                        resolve(false);
+                        alert("There was an error deleting the project, error code: "+res);
+                        return;
+                    }
+                    let item = document.querySelector(".pi-"+meta.pid);
+                    if(item) item.remove();
+                    if(div) div.remove();
+                    resolve(true);
+                    if(project?.pid == meta.pid) location.reload();
+                });
+            },
+            () => { return; }
+        ).load();
+    })
+}
+async function unlinkProject(meta:ProjectMeta){
+    return new Promise<boolean>(resolve=>{
+        new ConfirmMenu(
+            "Unlink Project","Are you sure you want to unlink the challenge with this project:<br>\""+meta.name+"\" ?<br><br>There is no reversing this option.",
+            () => {
+                socket.emit("unlinkProject",meta.pid,(res:number)=>{
+                    if(res != 0){
+                        resolve(false);
+                        alert("There was an error unlinking the project, error code: "+res);
+                        return;
+                    }
+                    // let item = document.querySelector(".pi-"+meta.pid); // paul: i left these commented lines here caleb, idk if they're necessary. I implemented confirmMenu and it seems to work
+                    // if(item) item.remove();
+                    // div.remove();
+                    resolve(true);
+                    if(project?.pid == meta.pid) location.reload(); // caleb: I put this one back since you don't want to reload when unlinking a project that isn't open right now
+    
+                    // location.reload();
+                });
+            },
+            () => { return; }
+        ).load();
+    });
+}
+
 let curProjectSettingsMetaPID:string;
 let curProjectSettingsMeta:HTMLElement;
 function openCurProjSettingsMeta(meta:ProjectMeta,ops:any){
@@ -648,23 +711,7 @@ function openCurProjSettingsMeta(meta:ProjectMeta,ops:any){
 
     let b_deleteProject = div.querySelector(".b-delete-project") as HTMLButtonElement;
     b_deleteProject.addEventListener("click",e=>{
-        new ConfirmMenu(
-            "Delete Project","Are you sure you want to delete project: \""+meta.name+"\" ?<br><br>There is no reversing this option.",
-            () => {
-                socket.emit("deleteProject",meta.pid,(res:number)=>{
-                    console.log("delete project res: ",res);
-                    if(res != 0){
-                        alert("There was an error deleting the project, error code: "+res);
-                        return;
-                    }
-                    let item = document.querySelector(".pi-"+meta.pid);
-                    if(item) item.remove();
-                    div.remove();
-                    if(project?.pid == meta.pid) location.reload();
-                });
-            },
-            () => { return; }
-        ).load();
+        deleteProject(meta,div);
         // if(!confirm(`Are you sure you want to delete project: "${meta.name}" ?\n\nThere is no reversing this option.`)) return;
         // socket.emit("deleteProject",meta.pid,(res:number)=>{
         //     console.log("delete project res: ",res);
@@ -684,24 +731,7 @@ function openCurProjSettingsMeta(meta:ProjectMeta,ops:any){
     if(!meta.cid) b_unlinkProject.style.display = "none";
     b_unlinkProject.addEventListener("click",e=>{
         // if(!confirm(`Are you sure you want to unlink the challenge with this project: "${meta.name}" ?\n\nThere is no reversing this option.`)) return;
-        new ConfirmMenu(
-            "Unlink Project","Are you sure you want to unlink the challenge with this project: \""+meta.name+"\" ?<br><br>There is no reversing this option.",
-            () => {
-                socket.emit("unlinkProject",meta.pid,(res:number)=>{
-                    console.log("unlink project res: ",res);
-                    if(res != 0){
-                        alert("There was an error unlinking the project, error code: "+res);
-                        return;
-                    }
-                    // let item = document.querySelector(".pi-"+meta.pid); // paul: i left these commented lines here caleb, idk if they're necessary. I implemented confirmMenu and it seems to work
-                    // if(item) item.remove();
-                    // div.remove();
-                    // if(project?.pid == meta.pid) location.reload();
-                    location.reload();
-                });
-            },
-            () => { return; }
-        ).load();
+        unlinkProject(meta);
     });
 
     // 
@@ -709,4 +739,171 @@ function openCurProjSettingsMeta(meta:ProjectMeta,ops:any){
     div.style.marginLeft = "10px";
 
     return div;
+}
+
+class ProjSettingsMenu extends Menu{
+    constructor(meta:ProjectMeta,dash?:ProjectDashboard,divItem?:Element){
+        super("Project Settings","settings");
+        this.meta = meta;
+        this.dash = dash;
+        this.divItem = divItem;
+    }
+    meta:ProjectMeta;
+    dash:ProjectDashboard;
+    divItem:Element;
+    load(priority?: number): this {
+        if(!this.meta){
+            console.warn("Failed to open project settings menu, no project specified");
+            return;
+        }
+        super.load(priority,true);
+
+        if(this.meta.cid == null) this.menu.classList.add("experiment-menu");
+        else this.menu.classList.add("practice-menu");
+        this.body.innerHTML = `
+            <div class="op-div">General</div>
+            <div class="op-cont ps-general">
+                <div>
+                    <div>
+                        <div class="title">Name</div>
+                        <input type="text" class="i-name">
+                    </div>
+                    <button class="b-save-changes load-btn icon-btn normal" disabled>
+                        <div class="material-symbols-outlined">save</div>
+                        <div>Save Changes</div>
+                    </button>
+                </div>
+                <div>
+                    <div class="title">Description</div>
+                    <textarea class="i-desc" style="resize:none"></textarea>
+                </div>
+            </div>
+
+            <div class="op-div">Privacy</div>
+            <div class="op-cont">
+                <div>
+                    <div class="title">Visibility</div>
+                    <div class="text">Whether or not other users are allowed to view your project.</div>
+                </div>
+                <button class="b-toggle-privacy icon-btn-v load-btn left">
+                    <div class="material-symbols-outlined">lock</div>
+                    <div>Private</div>
+                </button>
+            </div>
+
+            <div class="op-div full-width">
+                <span>Dangerous</span>
+                <span class="text">These options are irreversible.</span>
+            </div>
+            <div class="op-cont">
+                <button class="b-delete-project icon-btn warn">
+                    <div class="material-symbols-outlined">delete</div>
+                    <div>Delete Project</div>
+                </button>
+                ${
+                    this.meta.cid != null ? `
+                    <button class="b-unlink-project icon-btn warn">
+                        <div class="material-symbols-outlined">link_off</div>
+                        <div>Unlink From Challenge</div>
+                    </button>
+                    `:""
+                }
+            </div>
+        `;
+
+        let i_name = this.body.querySelector(".i-name") as HTMLInputElement;
+        let i_desc = this.body.querySelector(".i-desc") as HTMLTextAreaElement;
+        let b_save = this.body.querySelector(".b-save-changes") as HTMLButtonElement;
+        let b_privacy = this.body.querySelector(".b-toggle-privacy") as HTMLButtonElement;
+        let b_deleteProject = this.body.querySelector(".b-delete-project") as HTMLButtonElement;
+        let b_unlinkProject = this.body.querySelector(".b-unlink-project") as HTMLButtonElement;
+
+        i_name.value = this.meta.name;
+        i_desc.value = this.meta.desc;
+
+        i_name.addEventListener("input",e=>{
+            if(i_name.value == "" || i_name.value == this.meta.name) b_save.disabled = true;
+            else b_save.disabled = false;
+        });
+        i_desc.addEventListener("input",e=>{
+            if(i_desc.value == this.meta.desc) b_save.disabled = true;
+            else b_save.disabled = false;
+        });
+
+        let updatePrivacy = ()=>{
+            b_privacy.children[0].textContent = (this.meta.isPublic?"public":"lock");
+            b_privacy.children[1].textContent = (this.meta.isPublic?"Public":"Private");
+        }
+        updatePrivacy();
+
+        b_save.addEventListener("click",e=>{
+            b_save.classList.add("loading");
+            let _starTime = performance.now();
+            socket.emit("updatePMeta",this.meta.pid,{
+                name:(i_name.value || null),
+                desc:(i_desc.value || null)
+            },async (res:any,name:string,desc:string)=>{
+                let time = performance.now()-_starTime;
+                let timeLimit = 300;
+                if(time < timeLimit) await wait(timeLimit-time);
+                b_save.classList.remove("loading");
+
+                if(res != 0){
+                    alert(`Error ${res} while trying to save changes to project info`);
+                    return;
+                }
+                
+                d_curProject.textContent = name;
+                b_save.disabled = true;
+
+                if(this.divItem){
+                    let l_name = this.divItem.querySelector(".l-project-name");
+                    let l_desc = this.divItem.querySelector(".l-project-desc");
+                    if(l_name) l_name.textContent = name;
+                    if(l_desc) l_desc.textContent = desc;
+                }
+
+                this.meta.name = name;
+                this.meta.desc = desc;
+            });
+        });
+        b_privacy.addEventListener("click",e=>{
+            b_privacy.classList.add("loading");
+            let _starTime = performance.now();
+            socket.emit("setProjVisibility",this.meta.pid,!this.meta.isPublic,async (res:any,v:boolean)=>{
+                let time = performance.now()-_starTime;
+                let timeLimit = 300;
+                if(time < timeLimit) await wait(timeLimit-time);
+                b_privacy.classList.remove("loading");
+
+                if(res != 0){
+                    alert(`Error ${res} while trying to change project visibility`);
+                    return;
+                }
+
+                this.meta.isPublic = v;
+                updatePrivacy();
+            });
+        });
+        b_deleteProject.addEventListener("click",async e=>{
+            await deleteProject(this.meta,this.divItem as HTMLElement);
+            if(this.dash) this.dash.reloadSection();
+            this.close();
+        });
+        if(b_unlinkProject) b_unlinkProject.addEventListener("click",async e=>{
+            await unlinkProject(this.meta);
+            if(this.dash) this.dash.reloadSection();
+            this.close();
+        });
+
+        if(!this.meta.canEdit){
+            b_privacy.disabled = true;
+            b_deleteProject.disabled = true;
+            if(b_unlinkProject) b_unlinkProject.disabled = true;
+            i_name.disabled = true;
+            i_desc.disabled = true;
+        }
+        
+        return this;
+    }
 }

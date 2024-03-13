@@ -15,22 +15,22 @@ b_publish.addEventListener("click",e=>{
     // else unsubmitChallenge(project.pid);
     if(!project.meta.submitted) {
         new ConfirmMenu(
-            "Submit Challenge", "Are you sure you want to submit your code?<br><br> You will have to un-submit it to make any changes in the future.",
+            "Submit Challenge", "Are you sure you want to submit your code?<br><br> You will have to un-submit it to make any changes in the future.<br><br><span class='note'>Submitted projects are publically viewable by anyone.</span>",
             () => {
                 submitChallenge(project.pid)
             },
             () => { 
-                console.log("Submission canceled");
+                // console.log("Submission canceled");
             }
         ).load();
     } else {
         new ConfirmMenu(
-            "Remove submission","Are you sure you'd like to un-submit your challenge?<br><br> You'll have to re-submit in order for it to appear in the submissions page",
+            "Remove submission","Are you sure you'd like to un-submit your challenge?<br><br> You'll have to re-submit in order for it to appear in the submissions page.",
             () => {
                 unsubmitChallenge(project.pid);
             },
             () => { 
-                console.log("Un-submission canceled");
+                // console.log("Un-submission canceled");
             }
         ).load();
     }

@@ -29,6 +29,10 @@ body.hide-menus .menu{
     text-transform:uppercase;
     font-weight:bold;
 }
+.icon-btn.normal{
+    background-color:var(--col);
+    color:var(--secondary-bg-col);
+}
 /* .icon-btn:hover::after{
     content:"";
     position:absolute;
@@ -128,6 +132,9 @@ button.icon-btn-single:hover{
     backdrop-filter:blur(3px);
     background-color:rgba(0,0,0,0.3);
 }
+div.menu.force-hidden{
+    display:none !important;
+}
 .menu{
     width:400px;
     height:250px;
@@ -168,7 +175,7 @@ button.icon-btn-single:hover{
     left:-15px;
     width:100%;
     height:100%;
-    background-color:var(--cta-btn-col);
+    background-color:var(--accent,var(--cta-btn-col));
     z-index:-1;
     border-radius:inherit;
 }
@@ -230,10 +237,14 @@ button.icon-btn-single:hover{
 }
 
 .menu-new-file, .menu-new-folder { /* New files and folders created will have this sizing*/
-    width: 350px;
+    /* width: 350px; */
+    width: 370px;
     height: 220px;
 }
 
+.menu-submit-challenge{
+    height:max-content;
+}
 
 .inp-cont{
     display:grid;
@@ -317,8 +328,32 @@ button{
     border-radius:3px;
     position:relative;
 }
+/* might not want this, idk if it's good for accessibility or not */
+button:focus:not(:hover)::after{
+    content:"";
+    position:absolute;
+    inset:1px;
+    border-radius:inherit;
+    border:dashed 2px currentColor;
+    opacity:0.5;
+    /* border:dashed 2px var(--cta-btn-col); */
+}
+button.icon-btn-v{
+    text-transform:uppercase;
+    font-weight:bold;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    flex-direction:column;
+    gap:7px;
+}
 button.accent:active{
     outline:solid 2px var(--col);
+}
+button.warn{
+    /* background-color:rgba(200,70,50,0.7); */
+    background-color:#94392B;
+    color:whitesmoke;
 }
 *.disabled{
     opacity:0.4;
@@ -1556,4 +1591,32 @@ input[type="checkbox"]{
     position: relative;
 
     animation: card-intro 0.3s ease-out;
+}
+
+/* publish */
+button.b-publish{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    padding:4px 12px;
+    padding-right:16px;
+    opacity:0.8;
+    text-transform:uppercase;
+    font-weight:bold;
+    margin-left:8px;
+}
+button.b-publish:hover{
+    opacity:1;
+}
+
+/*  */
+.note{
+    font-style:italic;
+    font-size:14px;
+    opacity:0.6;
+}
+.note::before{
+    content:"info";
+    font-family:"Material Symbols Outlined";
+    margin-right:5px;
 }

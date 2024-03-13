@@ -92,7 +92,7 @@ a {
     margin-left: 1em;
     justify-self: self-start;
 
-    background-image:url(/images/CO_logo_v3.svg);
+    background-image:url(/images/CO_logo_v2.svg);
     background-size:contain;
     
     width:35px;
@@ -116,7 +116,7 @@ a {
     transform:rotate(360deg);
 }
 body.themestyle-light .logo{
-    background-image:url(/images/CO_logo_v3-light.svg);
+    background-image:url(/images/CO_logo_v2-light.svg);
     filter:brightness(1.2);
 }
 

@@ -664,7 +664,7 @@ io.on("connection",socket=>{
 
         // todo - cache file values so if they're the same then they don't need to be reuploaded, or do this on the client maybe to speed it up
 
-        console.log(":: done uploading");
+        // console.log(":: done uploading");
         call(0);
     });
     socket.on("restoreProjectFiles",async (uid:string,pid:string,call:(data:any,data2?:any,canEdit?:boolean)=>void)=>{
@@ -706,7 +706,7 @@ io.on("connection",socket=>{
 
         if(!user.projects.includes(p)) user.projects.push(p);
 
-        call(p.serializeGet(true),null,uid == user.uid);
+        call(p.serializeGet(true),null,user.canEdit(p.meta));
 
         user.addToRecents(p.pid);
 
@@ -1178,7 +1178,7 @@ io.on("connection",socket=>{
         m.name = newName;
         f(0);
     });
-    socket.on("updatePMeta",async (pid:string,data:any,f:(res:number)=>void)=>{
+    socket.on("updatePMeta",async (pid:string,data:any,f:(res:number,name?:string,desc?:string)=>void)=>{
         if(!valVar2(pid,"string",f)) return;
         if(!valVar2(data,"object",f)) return;
 
@@ -1208,7 +1208,7 @@ io.on("connection",socket=>{
         await user.saveToFile();
 
         // m.name = newName;
-        f(0);
+        f(0,data.name,data.desc);
     });
     socket.on("deleteProject",async (pid:string,f:(res:number)=>void)=>{
         if(!valVar2(pid,"string",f)) return;
@@ -1222,6 +1222,11 @@ io.on("connection",socket=>{
         let m = user.pMeta.find(v=>v.pid == pid);
         if(!m){
             f(2);
+            return;
+        }
+
+        if(!user.canEdit(m)){
+            f(-5); // can't edit
             return;
         }
 
@@ -1248,15 +1253,22 @@ io.on("connection",socket=>{
             return;
         }
 
+        if(!user.canEdit(m)){
+            f(-5); // can't edit
+            return;
+        }
+
+        let cid = m.cid;
         let p = user.projects.find(v=>v.pid == pid);
         if(p){
             p.meta.cid = undefined;
         }
-        if(m.cid){
+        if(cid){
             //remove from challenges
-            user.challenges.splice(user.challenges.findIndex(v=>v.pid == pid),1);
+            let ind = user.challenges.findIndex(v=>v.pid == pid);
+            user.challenges.splice(ind,1);
             // remove from submissions
-            let ch = challenges.get(m.cid);
+            let ch = challenges.get(cid);
             if(ch){
                 let ind = ch.sub.findIndex(v=>v.pid == pid);
                 if(ind != -1){
@@ -1296,9 +1308,33 @@ io.on("connection",socket=>{
         else res = user.removeFromStarred(pid);
         call(res);
     });
+    socket.on("setProjVisibility",async (pid:string,v:boolean,call:(data:any,v?:boolean)=>void)=>{
+        if(!valVar2(pid,"string",call)) return;
+        if(!valVar2(v,"boolean",call)) return;
+
+        let user = getUserBySock(socket.id);
+        if(!user){
+            call(-3);
+            return;
+        }
+
+        if(!user.pMeta.some(v=>v.pid == pid)){
+            call(-4); // you don't own this project
+            return;
+        }
+
+        let m = user.pMeta.find(v=>v.pid == pid);
+        if(!m){
+            call(1);
+            return;
+        }
+        m.isPublic = v;
+        await user.saveToFile();
+
+        call(0,v);
+    });
 });
 async function deleteProject(user:User,pMeta:ProjectMeta,f:(res:number)=>void){
-    console.log("... deleting project: ",pMeta.pid,pMeta.name);
     if(!pMeta.user){
         f(-3);
         return;
@@ -1368,6 +1404,7 @@ async function createChallengeProject(user:User,cid:string):Promise<Project|numb
 
     // setup/create project
     let p = new Project(pid,user.uid,getDefaultProjectMeta(user,pid,c.name));
+    p.meta.desc = `An attempt at the ${c.name} challenge.`;
     p._owner = user;
     user.projects.push(p);
     // allProjects.set(pid,p);

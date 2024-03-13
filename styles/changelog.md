@@ -348,3 +348,27 @@
 - fixed renaming/deleting files in editor so that the right click menu is closed right after an option is clicked
 - fixed bug with renaming files after just being created (without saving) makes the rename fail -> now the project is saved when files are created just like folders
 - fixed bug with trying to delete progress from the challenge page, the dropdown stays appearing and is on top of the confirmation menu
+- also slowed down the save speed to prevent lag when panning in the learn page
+
+### 3/12/24
+- fixed bug where renaming a project from the dashboard would make the star disappear
+- changed color of star on light theme to have better contrast
+- added support for menu layers
+- redid Project Settings/Info to make it a menu
+- added dashed border for focused buttons for accessibility possibly
+- fixed creating new challenge project so that the default description reflects the challenge instead of being for experiments
+- added delete project and unlink project to project settings menu
+- (probably more things I did here but can't remember)
+- fixed up submit button to actually say submit or submitted
+- added note to confirm submit to say that your project will become public after submitting
+- tweaked minor things with confirm menus
+- fixed dedicated file/folder ops not working with folders
+- fixed file/folder ops to not be usable when you don't have edit permissions
+- kept publish button when you don't have edit permissions but you do have ownership
+- added protections on server to prevent deleting or unlinking project if you can't edit it (this may change in the future as you are allowed to delete a project that is currently submitted)
+- disabled buttons in project settings menu if you don't have edit access
+- (many fixes and things I need to add here)
+- BUG: when deleting projects it doesn't delete from starred or recents
+
+### 3/13/24
+- added overflow handling to list of projects in Project Dashboard

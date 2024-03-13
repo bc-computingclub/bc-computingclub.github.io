@@ -65,7 +65,8 @@ let menuCont = document.createElement("div");
 menuCont.className = "menu-cont";
 document.body.insertBefore(menuCont,document.body.children[0]);
 
-let menusOpen:Menu[] = [];
+let menuLayers:Menu[][] = [[]];
+let menusOpen:Menu[] = menuLayers[0];
 function closeAllMenus(){
     let list = [...menusOpen];
     for(const m of list){
@@ -94,7 +95,15 @@ class Menu{
 
     _priority = 0;
 
-    load(priority=0){
+    load(priority=0,newLayer=false){
+        if(newLayer){
+            for(const m of menusOpen){
+                m.menu.classList.add("force-hidden");
+            }
+            menuLayers.push([]);
+            menusOpen = menuLayers[menuLayers.length-1];
+        }
+
         let list = [...menusOpen];
         for(const m of list){
             // if(m._priority < priority) m.close();
@@ -149,6 +158,17 @@ class Menu{
             this.reset();
 
             menusOpen.splice(menusOpen.indexOf(this),1);
+            if(!menusOpen.length){
+                menuLayers.pop();
+                menusOpen = menuLayers[menuLayers.length-1];
+                if(!menusOpen){
+                    menuLayers.push([]);
+                    menusOpen = menuLayers[0];
+                }
+                else for(const m of menusOpen){
+                    m.menu.classList.remove("force-hidden");
+                }
+            }
 
             // restore other menus
 
@@ -534,7 +554,11 @@ function genHeader(i:number,isCompact=true,id:string){
         <div class="cur-project-controls">
             <div class="d-current-project">[No Project Loaded]</div>
             <div class="b-save icon-div"><div class="material-symbols-outlined co-item" co-label="Save Project">save</div></div>
-            <div class="b-publish icon-div hide"><div class="material-symbols-outlined"></div></div>
+            <!--<div class="b-publish icon-div hide"><div class="material-symbols-outlined"></div></div>-->
+            <button class="b-publish hide">
+                <div class="material-symbols-outlined"></div>
+                <div></div>
+            </button>
             <div class="icon-div hide"><div class="material-symbols-outlined">play_arrow</div></div>
         </div>
         `:""}
@@ -566,10 +590,10 @@ function genHeader(i:number,isCompact=true,id:string){
 
     d_lesson_confirm = document.querySelector(".d-lesson-confirm") as HTMLElement;
     b_publish = navCont.querySelector(".b-publish");
-    setupCustomCallout(b_publish,div=>{
-        div.classList.add("callout-no-color");
-        div.textContent = "Submit";
-    });
+    // setupCustomCallout(b_publish,div=>{
+    //     div.classList.add("callout-no-color");
+    //     div.textContent = "Submit";
+    // });
 }
 
 // Add General Scripts
@@ -662,7 +686,15 @@ class Project{
     lastFolder:FFolder;
     desc:string;
     isPublic:boolean;
-    canEdit = true;
+    // canEdit = true;
+    // isOwner = true;
+
+    get canEdit(){
+        return this.meta.canEdit;
+    }
+    get isOwner(){
+        return this.meta.isOwner;
+    }
 
     parent:HTMLElement;
     d_files:HTMLElement;
@@ -678,7 +710,8 @@ class Project{
     setPublished(v:boolean){
         if(!this.meta) return;
         this.meta.submitted = v;
-        b_publish.children[0].textContent = (v ? "public" : "lock");
+        b_publish.children[0].textContent = (v ? "cloud_done" : "cloud_upload");
+        b_publish.children[1].textContent = (v ? "Submitted" : "Submit");
     }
     isPublished(){
         return this.meta.submitted;
@@ -688,6 +721,7 @@ class Project{
 
     renameFItem(f:FItem,close?:()=>void){
         if(!f) return;
+        if(!f.p.canEdit) return;
         // let newName = prompt("Old name: "+f.name+"\n\nEnter new name: ",f.name);
         let newName = f.name;
         new InputMenu(
@@ -731,6 +765,7 @@ class Project{
     }
     async deleteFItem(f:FItem){
         if(!f) return;
+        if(!f.p.canEdit) return;
         let list:FItem[] = [];
         if(f.p.hlItems.length){
             for(const f1 of f.p.hlItems){
@@ -770,6 +805,7 @@ class Project{
     }
     cutFItems(f:FItem){
         if(!f) return;
+        if(!f.p.canEdit) return;
         fclipboard.files = [];
         if(f.p.hlItems.length) for(const f1 of f.p.hlItems){
             fclipboard.files.push(f1);
@@ -781,6 +817,7 @@ class Project{
     }
     copyFItems(f:FItem){
         if(!f) return;
+        if(!f.p.canEdit) return;
         fclipboard.files = [];
         if(f.p.hlItems.length) for(const f1 of f.p.hlItems){
             fclipboard.files.push(f1);
@@ -792,6 +829,7 @@ class Project{
     }
     async pasteFItems(f:FItem,cb:(list:FItem[])=>void,close?:()=>void){
         if(!f) return;
+        if(!f.p.canEdit) return;
         if(!fclipboard.files.length) return;
         let folder = (f instanceof FFolder ? f : f.folder);
         // let folder = f.p.lastFolder;
@@ -1011,6 +1049,7 @@ function getPublicProjectURL(ownerUid:string,pid:string){
 // submitting challenges
 
 async function submitChallenge(pid:string){
+    await saveProject(true);
     let res = await new Promise<number>(resolve=>{
         socket.emit("submitChallenge",pid,(res:number)=>{
             resolve(res);
@@ -1022,8 +1061,11 @@ async function submitChallenge(pid:string){
     }
     console.log(">> submitted challenge");
     project.setPublished(true);
+    project.meta.isPublic = false;
+    location.reload();
 }
 async function unsubmitChallenge(pid:string){
+    await saveProject(true);
     let res = await new Promise<number>(resolve=>{
         socket.emit("unsubmitChallenge",pid,(res:number)=>{
             resolve(res);
@@ -1035,6 +1077,8 @@ async function unsubmitChallenge(pid:string){
     }
     console.log(">> unsubmitted challenge");
     project.setPublished(false);
+    project.meta.isPublic = true;
+    location.reload();
 }
 
 // filtering
@@ -1939,6 +1983,7 @@ function postSetupEditor(project:Project){
 
     let add_file = parent.querySelector(".b-add-file");
     add_file.addEventListener("click",e=>{
+        if(!project.canEdit) return;
         if(project.isTutor){
             alert("Sorry! You can't add files to the tutor's project!");
             return;
@@ -1986,19 +2031,19 @@ function postSetupEditor(project:Project){
         });
         ops_delete.addEventListener("click",e=>{
             if(!project) return;
-            project.deleteFItem(project.curFile);
+            project.deleteFItem(project.lastFolder??project.curFile);
         });
         ops_cut.addEventListener("click",e=>{
             if(!project) return;
             let items = project.hlItems.length ? project.hlItems : [project.lastFolder??project.curFile];
             for(const c of items) flashHL(c);
-            project.cutFItems(project.curFile);
+            project.cutFItems(project.lastFolder??project.curFile);
         });
         ops_copy.addEventListener("click",e=>{
             if(!project) return;
             let items = project.hlItems.length ? project.hlItems : [project.lastFolder??project.curFile];
             for(const c of items) flashHL(c);
-            project.copyFItems(project.curFile);
+            project.copyFItems(project.lastFolder??project.curFile);
         });
         ops_paste.addEventListener("click",e=>{
             if(!project) return;
@@ -2158,6 +2203,9 @@ type ProjectMeta = {
     submitted:boolean;
     owner?:string;
     starred?:boolean;
+
+    canEdit?:boolean;
+    isOwner?:boolean;
 };
 
 // screenshot util
@@ -2890,7 +2938,7 @@ class ConfirmMenu extends Menu {
     onCancel:() => void;
 
     load() {
-        super.load();
+        super.load(0,true);
         this.body.innerHTML = `<span class="confirm-menu-message">${this.message}</span>`
         let temp = document.createElement("div");
         temp.className = "confirm-menu-options";

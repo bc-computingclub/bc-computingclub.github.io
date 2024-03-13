@@ -284,6 +284,7 @@ div.b-editor-dashboard .material-symbols-outlined{
     display:flex;
     flex-direction:column;
     gap:5px;
+    width:100%;
 }
 .project-item .l-project-name{
     font-size:16px;
@@ -293,6 +294,10 @@ div.b-editor-dashboard .material-symbols-outlined{
 }
 .project-item .l-project-desc{
     opacity:0.9;
+    text-overflow:ellipsis;
+    overflow:hidden;
+    white-space:nowrap;
+    max-width:calc(100% - 30px);
 }
 .star{
     font-family:"Material Symbols Outlined";
@@ -305,6 +310,9 @@ div.b-editor-dashboard .material-symbols-outlined{
 .project-item.starred .star{
     font-family:"Material Icons";
     color:gold;
+}
+body.themestyle-light .project-item.starred .star{
+    color:goldenrod;
 }
 
 /*  */
@@ -330,4 +338,143 @@ div.b-editor-dashboard .material-symbols-outlined{
     flex-grow:0;
     flex-shrink:0;
     overflow:visible;
+}
+
+/* Project Settings Menu */
+.menu.experiment-menu{
+    --accent:var(--experiment-col);
+}
+.menu.practice-menu{
+    --accent:var(--practice-col);
+}
+.menu-project-settings{
+    width:600px;
+    height:min-content;
+}
+.op-cont{
+    display:flex;
+    justify-content:space-between;
+    padding:16px 18px;
+    border:solid 1px gray;
+    /* background-color:var(--darken); */
+    background-color:var(--udarken);
+    border-radius:3px;
+    margin:0px 2px;
+    margin-bottom:16px;
+}
+.op-cont .title{
+    margin-bottom:5px;
+    font-size:17px;
+}
+.menu .text{
+    font-size:14px;
+    opacity:0.7;
+}
+.op-div{
+    /* width:100%; */
+    width:max-content;
+    justify-self:flex-end;
+    align-items:center;
+    /* font-size:22px; */
+    text-transform:uppercase;
+    letter-spacing:4px;
+}
+.op-div.full-width{
+    justify-self:start;
+}
+.op-div .text{
+    /* margin-left:16px; */
+    justify-self:flex-end;
+    text-transform:none;
+    letter-spacing:normal;
+}
+.op-div::before{
+    left:0px;
+    position:absolute;
+    content:"";
+    display:inline-block;
+    width:100%;
+    height:5px;
+    /* background-color:red; */
+    border-top:solid 1px gray;
+}
+.ps-general{
+    gap:32px;
+}
+.ps-general textarea{
+    width:100%;
+    height:100%;
+    padding:4px;
+    font-size:13px;
+    font-family:var(--font);
+}
+.ps-general input[type="text"]{
+    width:100%;
+}
+.ps-general > div{
+    width:50%;
+    display:flex;
+    flex-direction:column;
+}
+.ps-general > div:first-child button{
+    margin-top:16px;
+    width:max-content;
+}
+.b-toggle-privacy{
+    width:88px;
+}
+
+/*  */
+.menu input[type="text"]{
+    padding:6px;
+    font-size:15px;
+    border-radius:3px;
+    outline:solid 1px gray;
+    border:none;
+    transition:outline 0.1s ease-out, background-color 0.1s ease-out;
+}
+body.themestyle-light .menu input[type="text"]:focus{
+    outline:solid 3px var(--accent,var(--cta-btn-col));
+}
+body.themestyle-dark .menu input[type="text"]:focus{
+    background-color:var(--accent,var(--cta-btn-col));
+}
+.menu textarea{
+    padding:6px;
+    font-size:15px;
+    border-radius:3px;
+    outline:solid 1px gray;
+    border:none;
+    transition:outline 0.1s ease-out;
+}
+body.themestyle-light .menu textarea:focus{
+    outline:solid 3px var(--accent,var(--cta-btn-col));
+}
+body.themestyle-dark .menu textarea:focus{
+    background-color:var(--accent,var(--cta-btn-col));
+}
+
+/*  */
+button.load-btn::before{
+    content:"progress_activity";
+    font-family:"Material Symbols Outlined";
+    position:absolute;
+    top:50%;
+    right:-42px;
+    color:var(--col);
+    font-size:20px;
+    translate:-50% -50%;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    display:none;
+    font-weight:normal;
+}
+button.load-btn.left::before{
+    right:unset;
+    left:-22px;
+}
+button.load-btn.loading::before{
+    display:block;
+    animation:ProgressAnim infinite 0.5s cubic-bezier(0.445, 0.05, 0.55, 0.95);
 }

@@ -199,7 +199,10 @@ export class ProjectMeta{
 
             starred:(this.user ? this.user.starred.includes(this.pid) : null),
             wc:this.wc,
-            time:this.time
+            time:this.time,
+
+            canEdit:(this.user ? this.user.canEdit(this) : false),
+            isOwner:(this.user ? this.user.isOwner(this) : false),
         });
     }
     static deserialize(user:User,str:string){
@@ -295,6 +298,16 @@ export class User{
             return true;
         }
         return false;
+    }
+
+    canEdit(meta:ProjectMeta){
+        let canEdit = true;
+        if(meta.user.uid != this.uid) canEdit = false;
+        if(meta.submitted) canEdit = false;
+        return canEdit;
+    }
+    isOwner(meta:ProjectMeta){
+        return this.uid == meta.user.uid;
     }
 
     // lesson = new Map<string,LessonMeta>;

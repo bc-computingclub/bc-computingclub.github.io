@@ -5,6 +5,7 @@ body.themestyle-light{
     --third-bg-col:#f2f2f2;
     --fourth-bg-col:#e3e3e3;
     --bubble-border:transparent;
+    --udarken:rgba(0,0,0,0.1);
 
     /* --secondary-bg-col:rgb(255, 255, 255) !important;  just a placeholder */
 /* 
@@ -20,6 +21,7 @@ body.themestyle-dark{
     --lighten0:rgba(0,0,0,0.25);
     --lighten:rgba(0,0,0,0.1);
     --lighten2:rgba(0,0,0,0.05);
+    --udarken:rgba(0,0,0,0.2);
 
     /* --bubble-bg:rgba(46, 70, 140, 0.9); */
     --bubble-bg:rgb(27, 33, 50);
