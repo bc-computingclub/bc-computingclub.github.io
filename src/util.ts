@@ -2686,6 +2686,7 @@ class ChallengeMenu extends Menu {
     load() {
         super.load();
         let areSubmissions: boolean = this.c.submission_count <= 0 ? false : true;
+        let cDesc = getChallengeDescription(this.c.desc) as HTMLSpanElement;
         this.menu.innerHTML = `
               <div class="c-popup">
                   <div class ="c-popup-left">
@@ -2695,8 +2696,8 @@ class ChallengeMenu extends Menu {
                       </div>
                       <div class="c-popup-body resize" resize="r">
                           <div class ="c-popup-task">
-                              <h3 class="c-popup-sub-title">Task</h3>
-                              <span class="c-popup-task-text">${this.c.desc}</span>
+                            <h3 class="c-popup-sub-title">Task</h3>
+                            ${cDesc.innerHTML || '<span class="popup-class-text"> There is currently no description for this challenge. Please check back later!'}
                           </div>
                           <div class ="c-popup-implementations">
                               <div class="c-popup-implementations-header">
@@ -2754,8 +2755,21 @@ class ChallengeMenu extends Menu {
     }
 }
 
+function getChallengeDescription(desc: string) {
+    let challDesc = document.createElement("span");
+    challDesc.className = "popup-class-text";
+    let inputStr:string[] = desc.split("\n",4);
+    for(let i = 0; i < inputStr.length; i++) {
+        let t = document.createElement("span")
+        t.textContent = inputStr[i];
+        challDesc.append(t);
+    }
+    return challDesc;
+}
+
 function previewImg(url: string) {
-    new ImagePreview(url).load();
+    console.log("Attempting to preview image");
+    // new ImagePreview(url).load();
 }
 
 class ImagePreview extends Menu {
@@ -2763,7 +2777,6 @@ class ImagePreview extends Menu {
         super("Image Preview");
         this.url = url;
     }
-  
     url: string;
   
     load() {

@@ -222,7 +222,8 @@
 }
 
 .s-card {
-    padding: .3em;
+    /* padding: .3em; */
+    padding-inline: .5em;
     /* ANY STYLING FOR S-CARD SHOULD GO IN UTIL UNLESS SPECIFIC TO SUBMISSIONS.HTML */
 }
 
@@ -259,7 +260,7 @@
     background-color: var(--secondary-bg-col);
     padding: 1em;
     border-radius: 3px;
-    height: calc(100dvh - (92px + 3em));
+    height: calc(100dvh - (95px + 3em));
     position: sticky;
     top: 1em;
 

@@ -1,6 +1,6 @@
 {
     "name": "Combination Lock",
-    "desc": "Create a combination lock which reveals a secret message when the correct combination is entered.",
+    "desc": "Create a combination lock with three different numbers which can be set (eg by text input, or by pressing 'up' and 'down' arrows, etc). \nWhen the correct combination is entered, the lock opens and reveals some kind of secret. \nMake sure to have some way for the user to figure out the combination!",
     "imgUrl": "/images/combinationlock.svg",
     "difficulty": "medium",
     "timespan": null,

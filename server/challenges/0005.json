@@ -1,6 +1,6 @@
 {
     "name": "Dropdown Menu",
-    "desc": "Create a menu which can be opened and closed, toggling a list of items.",
+    "desc": "Create a button which will serve as a menu toggle. \nWhen the button is clicked and the menu is opened, a list of links should be displayed.",
     "imgUrl": "/images/dropdownmenu.svg",
     "difficulty": "easy",
     "timespan": null,

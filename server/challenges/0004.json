@@ -1,8 +1,8 @@
 {
     "name": "Water Wheel",
-    "desc": "Design a button which can be dragged around a circle, controlling the water level in a cup.",
+    "desc": "Design a button which can be dragged around a circle. \nIf the button is dragged clockwise, the water level should increase. \nIf the button is dragged counterclockwise, the water level should decrease.",
     "imgUrl": "/images/waterwheel.svg",
-    "difficulty": "code-wizard",
+    "difficulty": "hard",
     "timespan": null,
     "cnt": 0,
     "sub": [

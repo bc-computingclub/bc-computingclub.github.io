@@ -1272,13 +1272,9 @@ input[type="checkbox"]{
 .c-implementations {
     display: grid;
     grid-template-rows: 1fr;
-    gap: 1em;
-
-    &.empty {
-        grid-template-columns: 1fr;
-        height: 8em;
-        align-items: start;
-    }
+    gap: .5em;
+    min-height: calc(156px + 1em);
+    align-items: start;
 }
 
 .c-implementation {
@@ -1335,6 +1331,10 @@ input[type="checkbox"]{
     display: grid;
     grid-template-rows: auto auto;
     gap: 1em;
+}
+
+.c-popup-task-text{
+    color: inherit;
 }
 
 .c-popup-close {
@@ -1505,8 +1505,6 @@ input[type="checkbox"]{
 .s-languages {
     display: flex;
     gap: .5em;
-    background-color: var(--darken0);
-    padding: 5px;
     border-radius: 4px;
 
     > * {
