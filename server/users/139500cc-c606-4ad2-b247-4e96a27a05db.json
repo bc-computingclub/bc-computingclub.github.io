@@ -1,0 +1,31 @@
+{
+    "name": "Paul Bauer",
+    "email": "paulalexisbauer04@gmail.com",
+    "picture": "https://lh3.googleusercontent.com/a/ACg8ocKzwkUDA3hrny7DmbcQ2zH6K4w1pkJ5tcXmh44FwJyBMvs=s96-c",
+    "joinDate": "2024-03-07T16:46:30.826Z",
+    "lastLoggedIn": "2024-03-12T17:37:12.266Z",
+    "pMeta": [
+        "{\"pid\":\"tmp_project\",\"name\":\"Showcase\",\"desc\":\"A project description!\",\"isPublic\":false,\"sub\":false,\"starred\":false,\"wc\":\"2024-03-12T16:06:23.618Z\",\"time\":0}",
+        "{\"pid\":\"55ccd6f0-a39c-40f7-aac9-c37a9ae7c9bc\",\"name\":\"Combination Lock Renamed\",\"desc\":\"A project for experiments.\",\"isPublic\":true,\"cid\":\"0002\",\"sub\":true,\"starred\":false,\"wc\":\"2024-03-12T16:06:23.618Z\",\"time\":0,\"ws\":\"2024-03-14T03:25:32.360Z\"}",
+        "{\"pid\":\"13826870-1dc6-468c-818c-583b8ae803b8\",\"name\":\"To-Do List\",\"desc\":\"A project for experiments.\",\"isPublic\":true,\"cid\":\"0003\",\"sub\":true,\"starred\":false,\"wc\":\"2024-03-12T16:06:23.618Z\",\"time\":0}",
+        "{\"pid\":\"305dc4f6-46bd-43e9-8481-b7a895073f84\",\"name\":\"Water Wheel\",\"desc\":\"A project for experiments.\",\"isPublic\":false,\"sub\":false,\"starred\":false,\"wc\":\"2024-03-12T16:06:23.618Z\",\"time\":0}",
+        "{\"pid\":\"4cc75641-d5ed-40b0-a3b5-f55c4bc44eee\",\"name\":\"ExperimentalProject\",\"desc\":\"A project for experiments.\",\"isPublic\":false,\"sub\":false,\"starred\":false,\"wc\":\"2024-03-12T16:06:23.618Z\",\"time\":0}"
+    ],
+    "challenges": [
+        {
+            "i": 0,
+            "cid": "0002",
+            "pid": "55ccd6f0-a39c-40f7-aac9-c37a9ae7c9bc"
+        },
+        {
+            "i": 0,
+            "cid": "0003",
+            "pid": "13826870-1dc6-468c-818c-583b8ae803b8"
+        }
+    ],
+    "recent": [
+        "4cc75641-d5ed-40b0-a3b5-f55c4bc44eee",
+        "57f90caf-d281-4826-b0eb-04bdda2b0637"
+    ],
+    "starred": []
+}

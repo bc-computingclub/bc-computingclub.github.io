@@ -1,0 +1,172 @@
+body.themestyle-light{
+    --bubble-bg:rgb(233, 231, 231);
+    /* --bubble-bg-solid:rgb(46, 70, 140); */
+    --bubble-bg-solid:var(--cta-btn-col);
+    --third-bg-col:#f2f2f2;
+    --fourth-bg-col:#e3e3e3;
+    --bubble-border:transparent;
+    --udarken:rgba(0,0,0,0.1);
+
+    /* --secondary-bg-col:rgb(255, 255, 255) !important;  just a placeholder */
+/* 
+    & pre.code{
+        filter:invert(0);
+    } */
+}
+body.themestyle-dark{
+    color-scheme:dark;
+    --darken0:rgba(255,255,255,0.25);
+    --darken:rgba(255,255,255,0.1);
+    --darken2:rgba(255,255,255,0.05);
+    --lighten0:rgba(0,0,0,0.25);
+    --lighten:rgba(0,0,0,0.1);
+    --lighten2:rgba(0,0,0,0.05);
+    --udarken:rgba(0,0,0,0.2);
+
+    /* --bubble-bg:rgba(46, 70, 140, 0.9); */
+    --bubble-bg:rgb(27, 33, 50);
+    --bubble-bg-solid:var(--cta-btn-col);
+    --bubble-border:white;
+
+    --secondary-bg-col:rgb(32, 32, 32) !important; /* just a placeholder */
+
+    --learn-col-alt: rgb(33, 43, 81); 
+    --experiment-col-alt: rgb(23, 54, 62); 
+    --practice-col-alt:rgb(56, 42, 77);  
+}
+iframe{
+    transition:filter 0.1s ease-out;
+}
+iframe.invert{
+    filter:invert(1) hue-rotate(180deg) !important;
+}
+.b-invert-colors{
+    color:var(--col);
+    background-color:var(--bg);
+    border-radius:3px;
+    transition:all 0.3s ease-out;
+    position:relative;
+}
+.b-invert-colors.invert{
+    color:var(--bg);
+    background-color:var(--col);
+    /* width:52px; */
+    /* margin-right:4px; */
+    /* margin-right:28px; */
+}
+body.themestyle-dark .b-invert-colors{
+    filter:invert(1);
+}
+body.themestyle-dark .b-invert-colors::before{
+    filter:invert(1);
+}
+.b-invert-colors::before{
+    content:"LIGHT";
+    position:absolute;
+    top:5.5px;
+    left:-8px;
+    font-family:'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    font-weight:bold;
+    font-size:14px;
+    transform:translateX(-100%);
+    /* font-family:"Material Symbols Outlined"; */
+    color:var(--col);
+    opacity:0.9;
+}
+.b-invert-colors.invert::before{
+    content:"DARK";
+    position:absolute;
+    top:5.5px;
+    left:-8px;
+    font-family:'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    font-weight:bold;
+    font-size:14px;
+    transform:translateX(-100%);
+    /* font-family:"Material Symbols Outlined"; */
+}
+/* .b-invert-colors.invert::before{
+    content:"check";
+    position:absolute;
+    top:0px;
+    left:-28px;
+    font-family:"Material Symbols Outlined";
+    color:green;
+} */
+
+/* Themes */
+
+body.learn-page{
+    /* --learn-col:#3060dd; */
+    /* --learn-col:#405599 !important; */
+    --cta-btn-col:var(--learn-col) !important;
+}
+body.practice-page{
+    --cta-btn-col:var(--practice-col) !important;
+}
+body.experiment-page{
+    /* --experiment-col:#228882 !important; */
+    --cta-btn-col:var(--experiment-col) !important;
+    /* --cta-btn-col:var(--experiment-col) !important; */
+}
+
+body.theme-light{
+    --cta-btn-col:#228882;
+
+    --bg-col: rgb(216, 216, 216);
+    --secondary-bg-col:white;
+    --col: black;
+    --secondary-col:rgb(255, 255, 255);
+    --font: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    --faded-col:rgb(150, 157, 184);
+    
+    /* Colors for cards */
+    --learn-col: #384777; 
+    --experiment-col: #216779; 
+    --practice-col:#503e6e; 
+
+    /* Secondary colors for cards */
+    --learn-col-alt: rgb(113, 125, 170); 
+    --experiment-col-alt: rgb(98, 147, 160); 
+    --practice-col-alt:rgb(143, 125, 172); 
+
+    --menu-btn-bg:black;
+
+    --lighten0:rgba(255,255,255,0.25);
+    --lighten:rgba(255,255,255,0.1);
+    --lighten2:rgba(255,255,255,0.05);
+    --darken0:rgba(0,0,0,0.25);
+    --darken:rgba(0,0,0,0.1);
+    --darken2:rgba(0,0,0,0.05);
+
+    --dark-text:black;
+    color-scheme:light;
+
+    --theme-inv-filter:invert(1);
+}
+body.theme-dark{
+    --secondary-bg-col:rgb(22, 25, 40);
+
+    --bg:#111;
+    --col:whitesmoke;
+    --secondary-col:lightgray;
+    --editor-bg:#1e1e1e;
+    --secondary-bg-col:#000;
+    --border:#333;
+    --bg-col:#050505;
+    --cta-btn-col:#245;
+
+    --menu-btn-bg:var(--bg-col);
+
+    --theme-inv-filter:invert(0);
+
+    --experiment-col:#245;
+
+    /* & iframe { */
+        /* filter: invert(1) hue-rotate(180deg); */
+        /*filter:brightness(0.9);*/
+        /*background-color:var(--bg-col);*/
+    /* } */
+}
+body.theme-dark .menu .inp-cont{
+    --c-bg:rgba(255,255,255,0.15);
+}

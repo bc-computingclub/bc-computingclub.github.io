@@ -1,0 +1,24 @@
+{
+    "name": "Combination Lock",
+    "desc": "Create a combination lock with three different numbers which can be set (eg by text input, or by pressing 'up' and 'down' arrows, etc). \nWhen the correct combination is entered, the lock opens and reveals some kind of secret. \nMake sure to have some way for the user to figure out the combination!",
+    "imgUrl": "/images/combinationlock.svg",
+    "difficulty": "medium",
+    "timespan": null,
+    "sub": [
+        {
+            "url": "",
+            "who": "Paul Bauer",
+            "uid": "139500cc-c606-4ad2-b247-4e96a27a05db",
+            "pid": "55ccd6f0-a39c-40f7-aac9-c37a9ae7c9bc",
+            "cc": 2522,
+            "lc": 136,
+            "lang": [
+                "html",
+                "css",
+                "js"
+            ],
+            "ws": "2024-02-24T21:45:23.950Z",
+            "t": 0
+        }
+    ]
+}

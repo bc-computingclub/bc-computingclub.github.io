@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lesson</title>
+    <link rel="stylesheet" href="/styles/home.css">
+    <link rel="stylesheet" href="/editor/editor.css">
+    <link rel="stylesheet" href="/styles/lesson.css">
+    <link rel="stylesheet" href="/lib/prism/prism.css">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,100..700;1,100..700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <script src="/out/pre_init.js"></script>
+    <script src="/out/util.js"></script>
+    <script>genHeader(0,true,"lesson");</script>
+
+    <div class="load-cont lesson">
+        <div class="items">
+            <div class="material-symbols-outlined loading">progress_activity</div>
+            <!-- <div class="material-symbols-outlined loading">donut_small</div> -->
+            <div>Loading Lesson</div>
+            <div class="tip">Did you know that Java and JavaScript are not the same programming languages?</div>
+            <!-- <div class="tip">Some elements like <link> and <img> don't have closing tags...because they don't display text!</div> -->
+        </div>
+    </div>
+    <div class="status-bar">
+        <div class="d-progress">
+            <div class="material-symbols-outlined">check</div>
+            <div class="l-progress">23%</div>
+            <div>Completed</div>
+        </div>
+    </div>
+
+    <div class="sub-menus"></div>
+    <div class="global-bubble-overlay"></div>
+    <div class="flx-v main">
+        <div class="flx-h pane-cont center-cont">
+            <div class="pane-lesson pane resize" resize="r">
+                <div class="header flx-sb">
+                    <div>Lesson</div>
+                    <div>
+                        <button class="icon-btn-single">
+                            <div class="material-symbols-outlined">more_horiz</div>
+                        </button>
+                        <!-- <button class="icon-btn-single">
+                            <div class="material-symbols-outlined">note_add</div>
+                        </button> -->
+                    </div>
+                </div>
+                <div class="file-list">
+                    <div class="file-item">index.html</div>
+                    <div class="file-item">style.css</div>
+                    <div class="file-item">script.js</div>
+                </div>
+            </div>
+            <div class="pane-tutor-code pane flx-v resize" resize="r"></div>
+            <div class="pane-code pane flx-v resize" resize="r">
+                <!-- <div class="d-open-files pane"></div> -->
+                <!-- <div class="cont-js cont pane"></div> -->
+                <!-- <div class="bubbles-overlay"></div> -->
+            </div>
+            <div class="pane-preview pane">
+                <div class="d-preview-controls header flx" style="gap:20px">
+                    <div>Preview</div>
+                    <button class="b-refresh icon-btn">
+                        <div class="icon-refresh material-symbols-outlined">sync</div>
+                        <div class="label">Refresh</div>
+                    </button>
+                    <div style="margin-left:auto;gap:10px" class="flx-h flx-al">
+                        <div class="material-symbols-outlined b-invert-colors">invert_colors</div>
+                        <div class="material-symbols-outlined b-open-in-new">open_in_new</div>
+                    </div>
+                </div>
+                <iframe frameborder="0"></iframe>
+            </div>
+        </div>
+    </div>
+    <div class="d-current-tasks">
+        <div class="header" style="padding:0px !important;height:30px">Current Tasks</div>
+        <hr>
+        <div class="lower-cont">
+            <div class="d-task"></div>
+            <div class="d-sub-tasks"></div>
+        </div>
+    </div>
+
+    <script>var exports = {};</script>
+    <script src="/out/socket.io.min.js"></script>
+    <script src="/out/network.js"></script>
+    <script src="/lib/prism/prism.js"></script>
+    <script src="/out/resize.js"></script>
+    <script id="s-loader" src="/lib/monaco/min/vs/loader.js"></script>
+    <script src="/out/lesson.js"></script>
+    <script src="/out/post_editor.js"></script>
+    <script src="/out/post_lesson.js"></script>
+</body>
+</html>

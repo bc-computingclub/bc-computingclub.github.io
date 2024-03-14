@@ -1,0 +1,40 @@
+{
+    "challenges": [
+        {
+            "name": "",
+            "desc": "",
+            "inProgress": true,
+            "imgURL": "",
+            "pid": "",
+            "submitted": false,
+            "cID": "",
+            "difficulty": "",
+            "ongoing": true,
+            "submission_count": 0,
+            "timespan": {
+                "start": "2024-01-01",
+                "end": "2028-09-30"
+            },
+            "sub_highlights": [],
+            "submissions": []
+        },
+        {
+            "name": "",
+            "desc": "",
+            "inProgress": false,
+            "imgURL": "",
+            "pid": "",
+            "submitted": true,
+            "cID": "",
+            "difficulty": "",
+            "ongoing": false,
+            "submission_count": 0,
+            "timespan": {
+                "start": "2024-01-01",
+                "end": "2028-09-28"
+            },
+            "sub_highlights": [],
+            "submissions": []
+        }
+    ]
+}

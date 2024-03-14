@@ -1,0 +1,26 @@
+body{
+    position: relative;
+    height: 100%;
+    transition: background-color 0.3s ease-in-out;
+    height: 100dvh;
+
+    &[section="1"] {
+        background-color: var(--learn-col);
+    }
+    &[section="2"] {
+        background-color: var(--practice-col);
+    }
+    &[section="3"] {
+        background-color: var(--experiment-col);
+    }
+}
+
+.menu{
+    background-color:white;
+    color:#111;
+}
+.menu::after{
+    /* --cta-btn-col:#44444488; */
+    --cta-btn-col:#aaaaaa55;
+    backdrop-filter:blur(4px);
+}

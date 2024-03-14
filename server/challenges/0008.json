@@ -1,0 +1,9 @@
+{
+    "name": "Side Scroller",
+    "desc": "Create a 2D environment in which a sprite can move left, move right, and jump. \nIn this 2D environment, the sprite should be able to place square blocks. \nThese blocks should be interactable - the sprite can stand on them, and will not be able to walk through them.",
+    "imgUrl": "/images/side-scroller.svg",
+    "difficulty": "hard",
+    "timespan": null,
+    "cnt": 0,
+    "sub": []
+}

@@ -1,0 +1,348 @@
+{
+    "ver":"0",
+    "name":"The Beginnings",
+    "banner":{
+        "sections":[
+            {
+                "head":"What Will We Be Doing in This Lesson?",
+                "text":[
+                    "Want to start coding?"
+                ]
+            }
+        ]
+    },
+    "finalInstance":null,
+
+    "boards":[
+        "board0"
+    ],
+
+
+    "OLD1__events":[
+        {
+            "text":[
+                "Hello!",
+                "In order to do anything, we first need to create an HTML document."
+            ],
+            "tasks":[
+                {
+                    "id":"addFile",
+                    "name":"index.html",
+                    "required":false
+                }
+            ]
+        },
+        {
+            "text":[
+                "Cool! Now you have an HTML document!",
+                "Note: Using the name \"index\" for our file name means the browser will automatically pick this page when someone tries to go to your site!",
+                "i[So what even is an HTML document and what can we do with it?]"
+            ]
+        },
+        {
+            "text":[
+                "An HTML document defines what is h[in the page.]",
+                "For example, this is where you would put b[buttons, text, and images.]",
+                "i[Let's try adding a button.]"
+            ],
+            "tasks":[
+                {
+                    "id":"addCode",
+                    "text":"<button>Click Me!</button>",
+                    "lang":"html"
+                },
+                {
+                    "id":"refresh",
+                    "text":"Refresh the preview to see how it looks.",
+                    "com":"Refresh the preview"
+                },
+                {
+                    "id":"board",
+                    "bid":"board0",
+                    "text":"Alright, let's look a little closer at this."
+                },
+                {
+                    "id":"sideText",
+                    "text":"\n\n",
+                    "com":"Add some space"
+                },
+                {
+                    "id":"addCode",
+                    "text":"<button>Click</button>\n\n<div></div>\n<h1>Test</h1>\n<p>Test paragrph</p>",
+                    "lang":"html"
+                },
+                {
+                    "id":"addFile",
+                    "name":"main.js",
+                    "required":false
+                }
+            ]
+        },
+        {
+            "text":[
+                "Awesome!"
+            ]
+        }
+    ],
+    "OLD2__boards":{
+        "board0":{
+            "events": [
+                {
+                    "id": "addCode",
+                    "com": null,
+                    "x": 0.5,
+                    "y": 0.5,
+                    "ha": 1,
+                    "va": 1,
+                    "anim": [
+                        {
+                            "id": "text",
+                            "text": "<",
+                            "colId": 0,
+                            "tags": [
+                                "<>"
+                            ]
+                        },
+                        {
+                            "id": "text",
+                            "text": "button",
+                            "colId": 2,
+                            "tags": [
+                                "tagName",
+                                "fullTag"
+                            ]
+                        },
+                        {
+                            "id": "text",
+                            "text": ">",
+                            "colId": 0,
+                            "tags": [
+                                "<>"
+                            ]
+                        },
+                        {
+                            "id": "text",
+                            "text": "         ",
+                            "colId": 3,
+                            "tags": []
+                        },
+                        {
+                            "id": "text",
+                            "text": "<",
+                            "colId": 0,
+                            "tags": [
+                                "<>"
+                            ]
+                        },
+                        {
+                            "id": "text",
+                            "text": "/",
+                            "colId": 3,
+                            "tags": [
+                                "closingTagMark",
+                                "fullTag"
+                            ]
+                        },
+                        {
+                            "id": "text",
+                            "text": "button",
+                            "colId": 2,
+                            "tags": [
+                                "tagName",
+                                "fullTag",
+                                "closingTagName"
+                            ]
+                        },
+                        {
+                            "id": "text",
+                            "text": ">",
+                            "colId": 0,
+                            "tags": [
+                                "<>"
+                            ]
+                        },
+                        {
+                            "id": "wait",
+                            "val": 500
+                        },
+                        {
+                            "id": "move",
+                            "x": -18,
+                            "y": 0
+                        },
+                        {
+                            "id": "replaceText",
+                            "tag": "textContent",
+                            "text": "Click Me!",
+                            "colId": 3
+                        }
+                    ]
+                },
+                {
+                    "com": "This line adds a button to the page with \"Click Me!\" as the button's text.\nLet's break down it's structure."
+                },
+                {
+                    "id": "setOpacity",
+                    "refs": [
+                        "textContent",
+                        "fullTag"
+                    ],
+                    "val": 0,
+                    "time": 500
+                },
+                {
+                    "id": "wait",
+                    "val": 300
+                },
+                {
+                    "id": "circleObj",
+                    "refs": [
+                        "tagName"
+                    ]
+                },
+                {
+                    "com": "Notice, we have two groups here.\nTwo sets of \"< >\"\nThese symbols are called angle brackets.\n"
+                },
+                {
+                    "com": "i[NOTE: This is similar to how you would call $$SB as square brackets, { } as curly braces, and ( ) as parenthesis.]\nAngle Brackets are just grouping symbols like: < some text >"
+                },
+                {
+                    "com": "So what are they even grouping here?"
+                },
+                {
+                    "id": "removeObj",
+                    "refs": [
+                        "<>_circle"
+                    ],
+                    "fadeOut": true,
+                    "fadeTime": 500
+                },
+                {
+                    "id": "setOpacity",
+                    "refs": [
+                        "fullTag"
+                    ],
+                    "val": 1,
+                    "time": 500
+                },
+                {
+                    "com": "In HTML, we use angle brackets to specify what type of element we want in our page.\nFor example, a button!"
+                },
+                {
+                    "com": "Did you notice something special about the second group of angle brackets?\nLet's hide the tag names."
+                },
+                {
+                    "id": "setOpacity",
+                    "refs": [
+                        "tagName"
+                    ],
+                    "val": 0,
+                    "time": 500
+                },
+                {
+                    "id": "wait",
+                    "val": 500
+                },
+                {
+                    "id": "circleObj",
+                    "refs": [
+                        "closingTagMark"
+                    ]
+                },
+                {
+                    "com": "Elements need an \"opening\" and \"closing\" tag.\nWe can use a / slash in the closing tag to say we're done creating the element."
+                },
+                {
+                    "id": "removeObj",
+                    "refs": [
+                        "circle"
+                    ],
+                    "fadeOut": true,
+                    "fadeTime": 500
+                },
+                {
+                    "id": "setOpacity",
+                    "refs": [
+                        "tagName"
+                    ],
+                    "val": 1,
+                    "time": 500
+                },
+                {
+                    "id": "wait",
+                    "val": 250
+                },
+                {
+                    "com": "So what goes in the middle?"
+                },
+                {
+                    "id": "setOpacity",
+                    "refs": [
+                        "textContent"
+                    ],
+                    "val": 1,
+                    "time": 500
+                },
+                {
+                    "com": "Anything in between the opening and closing tag of the element will be used as text!"
+                },
+                {
+                    "id": "endBoard"
+                }
+            ]
+        }
+    },
+
+    "____boards":{
+        "board0":{
+            "events":[
+                {
+                    "id":"addCode",
+                    "x":0.5,
+                    "y":0.5,
+                    "ha":"c",
+                    "va":"c",
+                    "anim":[
+                        {
+                            "id":"parseCode",
+                            "code":"<$button$>$         $<$/$button$>",
+                            "colIds":[0,2,0,3,0,3,2,0],
+                            "delimter":"$",
+                            "tags":[
+                                "<>",
+                                "tagName fullTag",
+                                "<>",
+                                "textContent",
+                                "<>",
+                                "closingTagMark fullTag",
+                                "tagName fullTag closingTagName",
+                                "<>"
+                            ]
+                        },
+                        {
+                            "id":"wait",
+                            "val":500
+                        },
+                        {
+                            "id":"move",
+                            "x":-18,
+                            "y":0
+                        },
+                        {
+                            "id":"replaceText",
+                            "tag":"textContent",
+                            "text":"Click Me!",
+                            "colId":3
+                        }
+                    ]
+                },
+                {
+                    "com":"This line adds a button to the page with \"Click Me!\" as the button's text.\nLet's break down it's structure."
+                },
+                {
+
+                }
+            ]
+        }
+    }
+}

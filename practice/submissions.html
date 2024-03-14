@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Submissions</title>
+    <link rel="shortcut icon" href="/images/icon.svg" type="image/x-icon">
+    <link rel="stylesheet" href="/styles/home.css">
+    <link rel="stylesheet" href="/styles/submissions.css">
+</head>
+
+<body class="body">
+    <script src="/out/pre_init.js"></script>
+    <script src="/out/util.js"></script>
+    <script>genHeader(1);</script>
+
+    <div class="sub-menus"></div>
+
+    <div class="s-home">
+        <div class="s-top">
+            <div class="c-title-left">
+                <h1 class="c-title">
+                    Challenge<!--Title will be tweaked by typescript-->
+                </h1>
+            </div>
+            <div class="c-title-right">
+                <button class="c-details">Challenge Details</button>
+                <button class="c-back"><span class="material-symbols-outlined">arrow_back</span>Back</button>
+            </div>
+        </div>
+        <div class="s-bottom">
+            <div class="c-filter-div">
+                <h3 style="display: flex; justify-content: center;">
+                    FILTERS
+                </h3>
+                <div class="filter-section">
+                    <button class="clear-filters">
+                        Clear Filters
+                        <!-- <span class="material-symbols-outlined">refresh</span> -->
+                    </button>
+                </div>
+                <div class="filter-section">
+                    <h4 class="f-title">
+                        SOMETHING
+                    </h4>
+                    <div class="f-options">
+                        <div class="f-option">
+                            <input type="checkbox" name="difficulty" id="easy" value="easy">
+                            <label for="easy">My Submission(s)</label>
+                        </div>
+                        <div class="f-option">
+                            <input type="checkbox" name="difficulty" id="medium" value="medium">
+                            <label for="medium">Medium</label>
+                        </div>
+                        <div class="f-option">
+                            <input type="checkbox" name="difficulty" id="hard" value="hard">
+                            <label for="hard">Hard</label>
+                        </div>
+                        <div class="f-option">
+                            <input type="checkbox" name="difficulty" id="code-wizard" value="code-wizard">
+                            <label for="code-wizard">Code Wizard</label>
+                        </div>
+                    </div>
+                </div>
+                <div class="filter-section">
+                    <h4 class="f-title">
+                        OPTIONS
+                    </h4>
+                    <div class="f-options">
+                        <div class="f-option">
+                            <input type="checkbox" name="show-lines-of-code" id="show-lines-of-code" value="show-lines-of-code">
+                            <label for="show-lines-of-code">Show lines of code</label>
+                        </div>
+                    </div>
+                    <div class="f-options">
+                        <div class="f-option">
+                            <input type="checkbox" name="completed" id="completed" value="completed">
+                            <label for="completed">Completed</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="s-container-outer">
+                <div class="s-container-top">
+                    <h2 class="s-title">
+                        Submissions
+                    </h2>
+                    <div class="c-sort-div">
+                        <button class="c-sort-btn c-search">
+                            Sort By <span class="material-symbols-outlined c-sort-toggle">arrow_drop_down</span>
+                        </button>
+                    </div>
+                </div>
+                <div class="s-container">
+                    <!--Submissions will be filled by typescript-->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="/out/socket.io.min.js"></script>
+    <script src="/lib/html2canvas/html2canvas.min.js"></script>
+    <script id="s-loader" src="../lib/monaco/min/vs/loader.js" async></script>
+    <script src="/out/network.js"></script>
+    <script src="/out/submissions.js"></script>
+</body>
+
+</html>

@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Editor</title>
+    <link rel="shortcut icon" href="/images/icon.svg" type="image/x-icon">
+    <link rel="stylesheet" href="/styles/home.css">
+    <link rel="stylesheet" href="editor.css">
+</head>
+<body>
+    <script src="/out/pre_init.js"></script>
+    <script src="/out/util.js"></script>
+    <script>genHeader(2,true,"editor")</script>
+    <!-- <script src="https://accounts.google.com/gsi/client" async></script> -->
+    <!-- <script src="../out/pre_init.js"></script> -->
+    
+    <div class="sub-menus"></div>
+    <div class="flx-v main">
+        <div class="flx-h center-cont">
+            <div class="pane-files pane resize" resize="r">
+                <div class="header flx-sb">
+                    <div>Files</div>
+                    <div>
+                        <button class="icon-btn-single b-new-file co-item" co-label="Create file">
+                            <div class="material-symbols-outlined">note_add</div>
+                        </button>
+                        <button class="icon-btn-single b-new-folder co-item" co-label="Create folder">
+                            <div class="material-symbols-outlined">create_new_folder</div>
+                        </button>
+                    </div>
+                </div>
+                <div class="file-list">
+                    <!-- <div class="file-item">index.html</div> -->
+                    <!-- <div class="file-item">style.css</div> -->
+                    <!-- <div class="file-item">script.js</div> -->
+                </div>
+                <div class="file-ops">
+                    <button class="icon-btn-single ops-rename">
+                        <div class="material-symbols-outlined">edit</div>
+                    </button>
+                    <button class="icon-btn-single ops-delete">
+                        <div class="material-symbols-outlined">delete</div>
+                    </button>
+                    <button class="icon-btn-single ops-cut">
+                        <div class="material-symbols-outlined">content_cut</div>
+                    </button>
+                    <button class="icon-btn-single ops-copy">
+                        <div class="material-symbols-outlined">content_copy</div>
+                    </button>
+                    <button class="icon-btn-single ops-paste">
+                        <div class="material-symbols-outlined">content_paste</div>
+                    </button>
+                </div>
+            </div>
+            <div class="pane-code pane flx-v resize" resize="r">
+                <!-- <div class="d-open-files pane"></div> -->
+                <!-- <div class="cont-js cont pane"></div> -->
+            </div>
+            <div class="pane-preview pane">
+                <div class="d-preview-controls header flx" style="gap:20px">
+                    <div>Preview</div>
+                    <button class="b-refresh icon-btn">
+                        <div class="icon-refresh material-symbols-outlined">sync</div>
+                        <div class="label">Refresh</div>
+                    </button>
+                    <div style="margin-left:auto;gap:10px" class="flx-h flx-al">
+                        <div class="material-symbols-outlined b-invert-colors co-item" co-label="Invert contrast">invert_colors</div>
+                        <div class="material-symbols-outlined b-open-in-new co-item" co-label="Open in new tab">open_in_new</div>
+                    </div>
+                </div>
+                <iframe frameborder="0"></iframe>
+            </div>
+        </div>
+    </div>
+    <script>var exports = {};</script>
+    <script src="/lib/html2canvas/html2canvas.min.js"></script>
+    <script src="/out/socket.io.min.js"></script>
+    <script src="../out/network.js"></script>
+    <script src="../out/resize.js"></script>
+    <script id="s-loader" src="../lib/monaco/min/vs/loader.js" async></script>
+    <script src="../out/editor.js"></script>
+    <script src="/out/post_editor.js"></script>
+</body>
+</html>

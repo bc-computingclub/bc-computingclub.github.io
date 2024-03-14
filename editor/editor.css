@@ -1,0 +1,501 @@
+:root{
+    --bg:whitesmoke;
+    --border:darkgray;
+
+    --editor-gap:4px;
+
+    /* filter:invert(1); */
+
+    --editor-bg:white;
+
+    /* --vscode-editorGutter-background:var(--bg) !important; */
+}
+
+.cont{
+    /* padding-top:1rem; */
+    background-color:var(--editor-bg);
+    margin:0px;
+    /* width:800px; */
+    padding-top:10px;
+    /* margin-top:-5px; */
+    /* height:600px; */
+    /* border:1px solid gray; */
+    /* flex-grow:1; */
+    /* min-height:500px; */;
+    height:100%;
+}
+
+body{
+    height:100vh;
+    overflow:hidden;
+}
+body.is-challenge{
+    --cta-btn-col:var(--practice-col) !important;
+}
+/* a.nav-link:nth-child(2){
+    
+} */
+
+.pane-files{
+    width:200px;
+    border-left:none;
+    background-color:var(--bg);
+    margin:var(--editor-gap);
+}
+.pane-code{
+    width:calc(50% - 108px);
+}
+.pane-preview{
+    width:calc(50% - 108px);
+    min-width:338px;
+}
+
+.main{
+    /* height:calc(100% - 60px); */
+}
+
+/*  */
+.editor-type-self{
+    filter:brightness(1.5);
+    --c:var(--cta-btn-col);
+}
+
+.editor-menu-bar{
+    display:flex;
+    align-items:center;
+    gap:4px;
+}
+.editor-menu-bar > div{
+    padding:7px 12px;
+    font-size:14px;
+    user-select:none;
+    -webkit-user-select:none;
+    border-radius:3px;
+    filter:brightness(0.85);
+}
+.editor-menu-bar > div.icon-div,
+
+.cur-project-controls > div.icon-div{
+    padding:5px;
+    margin:0px 10px;
+    filter:none;
+}
+.editor-menu-bar > div:hover{
+    background-color:var(--darken);
+}
+div.b-editor-dashboard{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    background-color:var(--darken2);
+}
+div.b-editor-dashboard .material-symbols-outlined{
+    font-size:24px;
+}
+.d-current-project{
+    border:solid 1px var(--darken0);
+    background-color:var(--darken2);
+    /* margin-right:10px; */
+    cursor:pointer;
+    white-space:nowrap;
+    overflow:hidden;
+    max-width:200px;
+    text-overflow:ellipsis;
+}
+.cur-project-controls{
+    display:flex;
+    align-items:center;
+    /* margin-left:auto; */
+    height:100%;
+    gap:5px;
+}
+.cur-project-controls > div{
+    padding:7px 12px;
+    font-size:14px;
+    user-select:none;
+    -webkit-user-select:none;
+    border-radius:3px;
+    filter:brightness(0.85);
+}
+.cur-project-controls > div.icon-div{
+    padding:5px;
+    filter:none;
+}
+.cur-project-controls > div:hover{
+    background-color:var(--darken);
+    filter:none;
+}
+
+/* Project Settings */
+.proj-settings{
+    position:absolute;
+    top:0px;
+    left:0px;
+    padding:10px;
+    background-color:var(--bg);
+    color:var(--col);
+    z-index:6;
+    border:solid 1px var(--darken0);
+    border-radius:3px;
+    /* width:200px; */
+    font-size:14px;
+    /* filter:brightness(0.9); */
+
+    display:flex;
+    flex-direction:column;
+    gap:5px;
+
+    box-shadow:0px 4px 10px rgba(0,0,0,0.1);
+
+    animation:OpenProjSettings 0.15s ease-out;
+}
+.proj-settings > div{
+    display:flex;
+    align-items:center;
+    gap:10px;
+}
+
+.progress-anim{
+    animation:ProgressAnim infinite 0.5s cubic-bezier(0.445, 0.05, 0.55, 0.95);
+    /* animation:ProgressAnim infinite 0.5s ease-in; */
+}
+@keyframes ProgressAnim {
+    0%{
+        rotate:0deg;
+    }
+    0%{
+        rotate:-360deg;
+    }
+}
+
+/* Navbar fix for editors */
+.nav-container{
+    display:flex;
+    /* justify-content:space-between; */
+}
+.nav-links{
+    margin-left:auto;
+}
+
+/* NavLink Compression */
+/* kinda looks cool but failed lol */
+/* .nav-link:not(.active){
+    color:transparent;
+    width:30px;
+    height:30px;
+    border-radius:50%;
+    overflow:hidden;
+    transition:color 0s, width 0.5s, border-radius 0.25s;
+    opacity:0.1;
+    margin:0px 10px;
+}
+.nav-link:not(.active):hover{
+    width:150px;
+    translate:50% 0px;
+    height:38px;
+    border-radius:3px;
+    opacity:1;
+    color:var(--secondary-col) !important;
+} */
+
+/* Editor Dash Board */
+.menu-project-dashboard{
+    width:800px;
+    height:600px;
+
+    & .menu-body{
+        margin-top:4px;
+    }
+    & .menu-title{
+        font-size:20px;
+    }
+}
+.edb-body{
+    width:100%;
+    height:100%;
+    display:flex;
+    justify-content:stretch;
+    gap:8px;
+}
+.edb-nav{
+    display:flex;
+    flex-direction:column;
+    justify-content:space-between;
+    width:200px;
+    flex-shrink:0;
+}
+.edb-nav-cont{
+    background-color:var(--bg);
+    border-radius:3px;
+    display:flex;
+    flex-direction:column;
+    gap:3px;
+    padding:10px;
+    & > button.icon-btn.regular{
+        background-color:var(--bg);
+        color:var(--col);
+        padding:6px 12px;
+        margin:2px 4px;
+    }
+    & > button.sel{
+        /* background-color:var(--secondary-bg-col) !important; */
+        /* background-color:var(--darken2) !important; */
+        background-color:var(--col) !important;
+        color:var(--bg) !important;
+    }
+    & > button::before{
+        height:0%;
+        opacity:0;
+        transition:all 0.1s ease-out;
+        content:"";
+        background-color:var(--col);
+        border-radius:5rem;
+        width:5px;
+        position:absolute;
+        top:50%;
+        /* left:-14px; */
+        /* left:-3px; */
+        left:-6px;
+        transform:translate(0px,-50%);
+    }
+    & > button.sel::before{
+        opacity:1;
+        height:65%;
+    }
+}
+.edb-content{
+    background-color:var(--bg);
+    border-radius:3px;
+    height:535px;
+    width:100%;
+    overflow-y:scroll;
+}
+.edb-content-list{
+    display:flex;
+    flex-direction:column-reverse;
+    gap:10px;
+    padding:10px;
+}
+.project-item{
+    padding:12px;
+    border-radius:5px;
+    background-color:var(--darken2);
+    font-size:14px;
+    width:100%;
+    display:flex;
+    justify-content:space-between;
+}
+.project-item .project-info{
+    display:flex;
+    flex-direction:column;
+    gap:5px;
+    width:100%;
+}
+.project-item .l-project-name{
+    font-size:16px;
+    display:flex;
+    align-items:center;
+    gap:8px;
+}
+.project-item .l-project-name-label{
+    margin-right:auto;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+    max-width:255px;
+}
+.project-item .l-project-desc{
+    opacity:0.9;
+    text-overflow:ellipsis;
+    overflow:hidden;
+    white-space:nowrap;
+    /* max-width:calc(100% - 30px); */
+    max-width:325px;
+}
+.star{
+    font-family:"Material Symbols Outlined";
+    /* font-family:"Material Icons"; */
+    cursor:pointer;
+    font-size:18px;
+    user-select:none;
+    -webkit-user-select:none;
+}
+.p-icon{
+    font-family:"Material Symbols Outlined";
+    /* font-family:"Material Icons"; */
+    cursor:pointer;
+    font-size:18px;
+    user-select:none;
+    -webkit-user-select:none;
+}
+.project-item.starred .star{
+    font-family:"Material Icons";
+    color:gold;
+}
+body.themestyle-light .project-item.starred .star{
+    color:goldenrod;
+}
+
+/*  */
+
+.menu-project-dashboard{
+    &{
+        .b-new-project{
+            background-color:var(--experiment-col) !important;
+        }
+        .b-open-project{
+            background-color:var(--experiment-col) !important;
+        }
+        .b-open-project.challenge{
+            background-color:var(--practice-col) !important;
+        }
+    }
+    /* &::after{
+        background-color:var(--experiment-col);
+    } */ /* this tints the project dashboard to be green instead of purple, do we want this? */
+}
+
+.center-cont > div{
+    flex-grow:0;
+    flex-shrink:0;
+    overflow:visible;
+}
+
+/* Project Settings Menu */
+.menu.experiment-menu{
+    --accent:var(--experiment-col);
+}
+.menu.practice-menu{
+    --accent:var(--practice-col);
+}
+.menu-project-settings{
+    width:600px;
+    height:min-content;
+}
+.op-cont{
+    display:flex;
+    justify-content:space-between;
+    padding:16px 18px;
+    border:solid 1px gray;
+    /* background-color:var(--darken); */
+    background-color:var(--udarken);
+    border-radius:3px;
+    margin:0px 2px;
+    margin-bottom:16px;
+}
+.op-cont .title{
+    margin-bottom:5px;
+    font-size:17px;
+}
+.menu .text{
+    font-size:14px;
+    opacity:0.7;
+}
+.op-div{
+    /* width:100%; */
+    width:max-content;
+    justify-self:flex-end;
+    align-items:center;
+    /* font-size:22px; */
+    text-transform:uppercase;
+    letter-spacing:4px;
+}
+.op-div.full-width{
+    justify-self:start;
+}
+.op-div .text{
+    /* margin-left:16px; */
+    justify-self:flex-end;
+    text-transform:none;
+    letter-spacing:normal;
+}
+.op-div::before{
+    left:0px;
+    position:absolute;
+    content:"";
+    display:inline-block;
+    width:100%;
+    height:5px;
+    /* background-color:red; */
+    border-top:solid 1px gray;
+}
+.ps-general{
+    gap:32px;
+}
+.ps-general textarea{
+    width:100%;
+    height:100%;
+    padding:4px;
+    font-size:13px;
+    font-family:var(--font);
+}
+.ps-general input[type="text"]{
+    width:100%;
+}
+.ps-general > div{
+    width:50%;
+    display:flex;
+    flex-direction:column;
+}
+.ps-general > div:first-child button{
+    margin-top:16px;
+    width:max-content;
+}
+.b-toggle-privacy{
+    width:88px;
+}
+
+/*  */
+.menu input[type="text"]{
+    padding:6px;
+    font-size:15px;
+    border-radius:3px;
+    outline:solid 1px gray;
+    border:none;
+    transition:outline 0.1s ease-out, background-color 0.1s ease-out;
+}
+body.themestyle-light .menu input[type="text"]:focus{
+    outline:solid 3px var(--accent,var(--cta-btn-col));
+}
+body.themestyle-dark .menu input[type="text"]:focus{
+    background-color:var(--accent,var(--cta-btn-col));
+}
+.menu textarea{
+    padding:6px;
+    font-size:15px;
+    border-radius:3px;
+    outline:solid 1px gray;
+    border:none;
+    transition:outline 0.1s ease-out;
+}
+body.themestyle-light .menu textarea:focus{
+    outline:solid 3px var(--accent,var(--cta-btn-col));
+}
+body.themestyle-dark .menu textarea:focus{
+    background-color:var(--accent,var(--cta-btn-col));
+}
+
+/*  */
+button.load-btn::before{
+    content:"progress_activity";
+    font-family:"Material Symbols Outlined";
+    position:absolute;
+    top:50%;
+    right:-42px;
+    color:var(--col);
+    font-size:20px;
+    translate:-50% -50%;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    display:none;
+    font-weight:normal;
+}
+button.load-btn.left::before{
+    right:unset;
+    left:-22px;
+}
+button.load-btn.loading::before{
+    display:block;
+    animation:ProgressAnim infinite 0.5s cubic-bezier(0.445, 0.05, 0.55, 0.95);
+}

@@ -1,0 +1,16 @@
+{
+    "ver": "0",
+    "name": "The First Lesson",
+    "banner": {
+        "sections": [
+            {
+                "head": "What Will We Be Doing in This Lesson?",
+                "text": [
+                    "Looking at the basics of html by using &lt;h1&gt;, &lt;button&gt;, and &lt;br&gt; elements."
+                ]
+            }
+        ]
+    },
+    "finalInstance": null,
+    "boards": ["board0"]
+}
