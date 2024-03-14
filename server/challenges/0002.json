@@ -4,13 +4,21 @@
     "imgUrl": "/images/combinationlock.svg",
     "difficulty": "medium",
     "timespan": null,
-    "cnt": 0,
     "sub": [
         {
             "url": "",
             "who": "Paul Bauer",
             "uid": "139500cc-c606-4ad2-b247-4e96a27a05db",
-            "pid": "55ccd6f0-a39c-40f7-aac9-c37a9ae7c9bc"
+            "pid": "55ccd6f0-a39c-40f7-aac9-c37a9ae7c9bc",
+            "cc": 2522,
+            "lc": 136,
+            "lang": [
+                "html",
+                "css",
+                "js"
+            ],
+            "ws": "2024-02-24T21:45:23.950Z",
+            "t": 0
         }
     ]
 }

@@ -78,9 +78,10 @@ h_profile.addEventListener("mousedown",e=>{
     let labels = [
         g_user ? "Switch Account" : "Log In",
         g_user ? "Log Out" : " --- ",
-        "Switch Theme"
+        "Switch Theme",
+        "Reconnect to Server"
     ];
-    openDropdown(h_profile,()=>labels,(i)=>{
+    openDropdown(h_profile,()=>labels,async (i)=>{
         let l = labels[i];
         // if(l == "Switch Account" || l == "Log In"){
         if(i == 0){
@@ -95,12 +96,17 @@ h_profile.addEventListener("mousedown",e=>{
             setTheme(curTheme == "dark" ? "light" : "dark");
             return;
         }
+        else if(i == 3){
+            socket.disconnect();
+            await wait(500);
+            socket.connect();
+        }
         
         closeAllSubMenus();
     },{
         openToLeft:true,
         getIcons(){
-            return ["person","logout","light"];
+            return ["person","logout","light","wifi"];
         },
         useHold:false // true doesn't quite work right yet
     });

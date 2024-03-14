@@ -381,6 +381,10 @@ body.themestyle-light .item-actions > div:hover{
     transform-origin:center center;
     transform:scale(1);
     transition:all 0.2s ease-out;
+    position:absolute;
+    top:60px;
+    left:0px;
+    z-index:99;
 }
 .view-options:hover{
     transform:scale(1.3);

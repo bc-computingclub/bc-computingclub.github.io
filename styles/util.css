@@ -234,7 +234,7 @@ div.menu.force-hidden{
 
 .menu-submission-menu {
     width: 80em;
-    height: 40em;
+    height: 43em;
     animation: AddBubble forwards 0.35s ease-out;
 }
 
@@ -1654,7 +1654,7 @@ div.s-popup-code{
     height:calc(100% - 50px);
 }
 .menu-submission-menu .js-cont{
-    height:calc(100% - 5px);
+    height:calc(100% - 0px);
 }
 body.themestyle-light .menu-submission-menu{
     --bg:whitesmoke;

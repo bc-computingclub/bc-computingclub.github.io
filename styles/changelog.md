@@ -229,7 +229,7 @@
 - alt parallax thing
 - publish/submit challenge project hidden on non challenge projects
 
-## --- some stuff needs to be filled in here at some point
+### --- some stuff needs to be filled in here at some point
 
 ### 2/29/24
 - fixed random bubbles popuping up sometimes when restoring lesson progress
@@ -312,7 +312,7 @@
 - made projectTree read from the server
 - made finishing lessons unlock the next ones with a WIP unlock animation and stay unlocked with a support for the "new" flag
 
-# ideas
+[IDEAS]
 + when clicking on a lesson that hasn't started yet it will give you two options: Lesson Mode & Review/Practice Mode (or hmm maybe this popup should only come up if you've already completed the lesson once?)
 + should probably use mongodb in the future but that is for a future update
 + need to change Tasks so that they take a reviewString/practiceString that will be displayed when the user is in the Review Mode
@@ -405,7 +405,30 @@
 - some small bug fixes with server side
 - fixed lesson bug when ending lesson it wouldn't let you go back because it said you have unsaved progress
 - added "are you sure you want to leave" box to editor page with proper server rejoining
+- don't remember when but added scroll support to project dashboard
 [BUGS]
 - on submissions page when you close view submission and open it again the editor won't load any of the files
 - start challenge doesn't work from the submissions page
 - error code 1 when clicking start on a challenge that you've already submitted to, not sure what the intended behavior should be here
+
+*Total Line Count as of this point: 18,289*
+
+### 3/14/24
+- added line count to submission
+- fixed editor submission menu so that it's flush and is still flush after going in and out of fullscreen
+- added syntax highlighting support for .md, .ts, and .rs files in editor
+- wrote a new "The First Lesson" that is pretty much complete
+- made a new learn tree but only the first lesson is complete
+- added BubbleTask, InstructTask, InfiniteTask, MoveCursorTo
+- added control characters for move line up/down, delete left, move home/end
+- fixed formatting bubble text a bit
+- added optionally to not have the bubble show up with addGenericCode
+- added customText on addGenericCode
+- brought addTutorSideText with the control characters of addGenericCode
+- added "reconnect to server" to the user dropdown
+- made ProjectDashboard open quicker on editor page
+- fixed view options wasn't position absolute
+- flipped the position of add file and add folder in editor to be like vscode
+- flipped the position of line count to be above char count
+[BUGS]
+- when opening the first file in the submission editor it places it on the wrong side of the add button

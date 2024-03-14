@@ -1076,7 +1076,8 @@ async function submitChallenge(pid:string){
     console.log(">> submitted challenge");
     project.setPublished(true);
     project.meta.isPublic = false;
-    location.reload();
+    // location.reload();
+    location.href = `/practice/submissions.html?cid=${project.meta.cid}&pid=${project.meta.pid}`;
 }
 async function unsubmitChallenge(pid:string){
     await saveProject(true);
@@ -1548,7 +1549,10 @@ class FFile extends FItem{
             let map = {
                 "html":"html",
                 "css":"css",
-                "js":"javascript"
+                "js":"javascript",
+                "ts":"typescript",
+                "rs":"rust",
+                "md":"markdown"
             };
             lang = map[ext] || "text";
         }
@@ -2637,6 +2641,7 @@ class Submission {
     pid: string;
     uid: string;
     cc:number;
+    lc:number;
     lang:string[];
     ws:string;
     t:number;
@@ -3372,6 +3377,10 @@ class SubmissionMenu extends Menu {
                 <h3 class="s-popup-preview-details-title">Details</h3>
                 <div class="s-popup-preview-details-contents">
                   <div class="s-popup-preview-details-item">
+                    <h4 class="s-popup-preview-details-item-title">Line Count</h4>
+                    <div class="s-popup-preview-details-item-contents">${this.submission.lc}</div>
+                  </div>
+                  <div class="s-popup-preview-details-item">
                     <h4 class="s-popup-preview-details-item-title">Char. Count</h4>
                     <div class="s-popup-preview-details-item-contents">${this.submission.cc/*calcSubmissionCharCount(p)*/}</div>
                   </div>
@@ -3384,7 +3393,7 @@ class SubmissionMenu extends Menu {
                     <div class="s-popup-preview-details-item-contents">${new Date(this.submission.ws).toLocaleDateString()/*getWhenSubmitted(p)*/}</div>
                   </div>
                   <div class="s-popup-preview-details-item">
-                    <h4 class="s-popup-preview-details-item-title">Time Taken</h4>
+                    <h4 class="s-popup-preview-details-item-title">Time Taken (WIP)</h4>
                     <div class="s-popup-preview-details-item-contents">${getTimeTaken(this.submission.t)}</div>
                   </div>
                 </div>

@@ -47,9 +47,6 @@ async function saveUserCache(){
 readAllUsers();
 
 io.on("connection",socket=>{
-    socket.on("test",(msg:string)=>{
-        console.log("test: ",msg);
-    });
     socket.on("logout",async (call:(data:any)=>void)=>{
         if(!valVar(call,"function")) return;
 
@@ -251,10 +248,10 @@ io.on("connection",socket=>{
             call(2);
             return;
         }
-        if(meta._hp >= __maxHP){ // don't keep repeating after it's been done once
-            call(0);
-            return;
-        }
+        // if(meta._hp >= __maxHP){ // don't keep repeating after it's been done once // // might need to disable this until I find a more efficient solution
+        //     call(0);
+        //     return;
+        // }
 
         if(!meta.hf){
             call(3); // criteria not met
@@ -458,9 +455,7 @@ io.on("connection",socket=>{
         
         f(data);
     });
-    socket.on("uploadLessonFiles",async (lessonId:string,list:ULFile[],progress:LessonMeta,call:(data:any)=>void)=>{
-        console.log(".......uploading");
-        
+    socket.on("uploadLessonFiles",async (lessonId:string,list:ULFile[],progress:LessonMeta,call:(data:any)=>void)=>{        
         if(!valVar2(list,"array",call)) return;
         if(!valVar2(lessonId,"string",call)) return;
         
@@ -470,8 +465,6 @@ io.on("connection",socket=>{
             return;
         }
         // need to validate type integrity here
-        
-        console.log("uploading...");
 
         let path = "../lesson/"+user.uid+"/"+lessonId;
         let filePath = path;
@@ -535,7 +528,7 @@ io.on("connection",socket=>{
             await mkdir(filePath);
             let path2 = "../lessons/"+lessonId+"/initial_files";
             let initialFiles = await readdir(path2);
-            console.log("$ initial files: ",initialFiles);
+            // console.log("$ initial files: ",initialFiles);
             if(initialFiles){
                 for(const name of initialFiles){
                     await write(filePath+"/"+name,await read(path2+"/"+name));
@@ -720,8 +713,6 @@ io.on("connection",socket=>{
         call(p.serializeGet(true),null,user.canEdit(p.meta));
 
         user.addToRecents(p.pid);
-
-        console.log(p.meta);
 
         return;
         
@@ -975,9 +966,9 @@ io.on("connection",socket=>{
             return lang;
             // return lang.length ? lang.sort((a,b)=>a.localeCompare(b)).join(", ") : "None";
         }
+        let allowed = ["html","css","js"];
         function calcSubmissionCharCount(){
             if(!p) return 0;
-            let allowed = ["html","css","js"];
             let amt = 0;
             function search(list:ULItem[]){
                 for(const item of list){
@@ -998,7 +989,30 @@ io.on("connection",socket=>{
             if(p.items) search(p.items);
             return amt;
         }
+        function calcLineCount(){
+            if(!p) return 0;
+            let amt = 0;
+            function search(list:ULItem[]){
+                for(const item of list){
+                    if(item instanceof ULFolder){
+                        search(item.items);
+                        continue;
+                    }
+                    let it = item as ULFile;
+                    let ind = item.name.lastIndexOf(".");
+                    if(ind == -1) continue;
+                    let ext = item.name.substring(ind+1);
+                    if(allowed.includes(ext)){
+                        let v = it.val.match(/\n/g);
+                        amt += (v ? v.length : 0);
+                    }
+                }
+            }
+            if(p.items) search(p.items);
+            return amt;
+        }
         c.cc = calcSubmissionCharCount();
+        c.lc = calcLineCount();
         c.lang = calcSubmissionLang();
         c.t = meta.time;
 
@@ -1615,6 +1629,18 @@ rl.on("line",async (line)=>{
     }
     else if(s[0] == "lessons"){
         console.log(lessonMetas);
+        return;
+    }
+    else if(s[0] == "reload"){
+        if(s[1] == "lessons"){
+            let list = [...lessonMetas];
+            lessonMetas.clear();
+            for(const c of list){
+                let spl = c[0].split(":");
+                getLessonMeta(spl[0],spl[1]);
+            }
+            console.log("done");
+        }
         return;
     }
     // CREATE cmd

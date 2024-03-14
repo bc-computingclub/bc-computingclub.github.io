@@ -162,6 +162,11 @@ async function init(){
     });
 
     let url = new URL(location.href);
+    if(!url.searchParams.has("pid")){
+        new ProjectDashboard().load();
+        onResize(true);
+        return;
+    }
     let uid = url.searchParams.get("uid");
     let pid = url.searchParams.get("pid");
     await loadProject(url.searchParams.has("uid")?uid:g_user.uid,pid);

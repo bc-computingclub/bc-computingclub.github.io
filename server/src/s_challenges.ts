@@ -12,12 +12,14 @@ export class CSubmission{
     uid:string;
     pid:string;
     cc = 0; // char count
+    lc = 0; // line count
     lang:string[] = [];
     ws = ""; // when submitted
     t = 0; // time taken
     static from(data:any){
         let c = new CSubmission(data.url,data.who,data.uid,data.pid);
         c.cc = data.cc ?? 0;
+        c.lc = data.lc ?? 0;
         c.lang = data.lang ?? [];
         c.ws = data.ws ?? new Date().toISOString();
         c.t = data.t ?? 0;

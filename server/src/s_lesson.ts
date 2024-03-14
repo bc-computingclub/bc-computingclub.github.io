@@ -148,15 +148,24 @@ class PTreeFolder{
 
 export const progressTree = new PTreeFolder("root",[],{
     theBeginnings:new PTreeFolder("The Beginnings",[
-        new PTreeLesson("The First Lesson","0001",0,0,[
-            new PTreeLink("GUR5zKAcaZgObqWk")
-        ],{
-            unlocked:true
-        }),
-        new PTreeLesson("The Second","GUR5zKAcaZgObqWk",35,20,[
-            new PTreeLink("RYRFcZXnLyJJm1Jc",true)
+        new PTreeLesson("The First Lesson","AqCOreapkT8uu8sC",0,0,[
+            new PTreeLink("yX0zoNI7fjG0MgtQ")
+        ],{unlocked:true}),
+        new PTreeLesson("Simple Styling","yX0zoNI7fjG0MgtQ",35,20,[
+            new PTreeLink("_dummy03",true),
+            new PTreeLink("_dummy04"),
         ]),
-        new PTreeLesson("The Quick Lesson","RYRFcZXnLyJJm1Jc",70,40),
+        new PTreeLesson("Dummy","_dummy03",70,40,[]), // javascript intro
+        new PTreeLesson("Dummy","_dummy04",75,-5,[]) // transitions - more intermediate css
+        // new PTreeLesson("The First Lesson","0001",0,0,[
+        //     new PTreeLink("GUR5zKAcaZgObqWk")
+        // ],{
+        //     unlocked:true
+        // }),
+        // new PTreeLesson("The Second","GUR5zKAcaZgObqWk",35,20,[
+        //     new PTreeLink("RYRFcZXnLyJJm1Jc",true)
+        // ]),
+        // new PTreeLesson("The Quick Lesson","RYRFcZXnLyJJm1Jc",70,40),
     ])
 });
 const progressTree_raw = {

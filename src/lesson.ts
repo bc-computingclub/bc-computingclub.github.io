@@ -1,6 +1,12 @@
 PAGE_ID = PAGEID.lesson;
 
 const lessonLoadCont = document.querySelector(".load-cont.lesson");
+const tip = document.querySelector(".tip");
+const tips = [
+    "Did you know that Java and JavaScript are not the same programming languages?",
+    "Some elements like <br> and <img> don't have closing tags...because they don't display text!"
+];
+tip.textContent = tips[Math.floor(Math.random()*tips.length)];
 
 const d_currentTasks = document.querySelector(".d-current-tasks");
 const d_task = document.querySelector(".d-task");
@@ -54,6 +60,8 @@ b_goBackStep.addEventListener("click",e=>{
             let t = lesson.events[i].tasks[j];
             let skip = false;
             if(t instanceof AddTutorSideText) skip = true;
+            if(t instanceof MoveCursorTo) skip = true;
+            if(t instanceof BubbleTask) skip = true;
             if(skip){
                 j--;
                 return check();
@@ -437,15 +445,26 @@ class SubMsg{
     }
 }
 class AddGenericCodeTask extends Task{
-    constructor(code:string,lang:string,submsgs:SubMsg[]=[]){
+    // constructor(code:string,lang:string,hasPreMsg=true,submsgs:SubMsg[]=[]){
+    constructor(code:string,lang:string,customText:string=null,hasPreMsg=true,line:number|null=null,col:number|null=null,dir:string="top"){
         super("Add the following code:");
         this.code = code;
         this.lang = lang;
+        this.hasPreMsg = hasPreMsg;
+        this.customText = customText;
+        this.line = line;
+        this.col = col;
+        this.dir = dir;
 
         // this.finalDelay = 2600;
     }
     code:string;
     lang:string;
+    hasPreMsg:boolean;
+    customText:string;
+    line:number;
+    col:number;
+    dir:string;
     async play(){
         let editor = lesson.tut.getCurEditor();
         // editor.getSupportedActions().forEach((value: monaco.editor.IEditorAction) => {
@@ -458,21 +477,27 @@ class AddGenericCodeTask extends Task{
         // await moveTutMouseTo(58 + pos.column*7.7,115 + pos.lineNumber*16.5);
         await moveTutMouseTo(60 + pos.column*7.7, 110 + pos.lineNumber*19);
 
-        await wait(250);
-        let r2 = tutMouse.getBoundingClientRect();
-        let preText = "Let's add some code here.";
-        if(!lesson._hasShownFollowAlong){
-            preText += "<br><br>i[Follow along! But feel free to make your own changes and experiment!]";
-            lesson._hasShownFollowAlong = true;
+        if(this.hasPreMsg){
+            await wait(250);
+            if(this.line != null && this.col != null){
+                await showTutMouse();
+                await moveTutMouseTo(60 + this.col*7.7, 110 + this.line*19);
+                await wait(150);
+            }
+            let r2 = tutMouse.getBoundingClientRect();
+            let preText = this.customText ?? "Let's add some code here.";
+            if(!lesson._hasShownFollowAlong){
+                preText += "<br><br>i[Follow along! But feel free to make your own changes and experiment!]";
+                lesson._hasShownFollowAlong = true;
+            }
+            let b2 = addBubbleAt(BubbleLoc.xy,preText,this.dir,{
+                x:r2.x+r2.width/2 + 17,
+                y:r2.y+r2.height/2 - 22,
+                click:true
+            });
+            await b2.clickProm;
+            await wait(150);
         }
-        let b2 = addBubbleAt(BubbleLoc.xy,preText,"top",{
-            x:r2.x+r2.width/2 + 17,
-            y:r2.y+r2.height/2 - 22,
-            click:true
-        });
-        await b2.clickProm;
-
-        await wait(150);
         await hideTutMouse();
         await wait(200);
         let list = document.querySelectorAll(".custom-cursor");
@@ -493,6 +518,33 @@ class AddGenericCodeTask extends Task{
             else if(key == "\x02"){
                 let pos = editor.getPosition();
                 editor.setPosition(pos.with(pos.lineNumber,pos.column+1));
+                continue;
+            }
+            else if(key == "\x03"){
+                let pos = editor.getPosition();
+                editor.setPosition(pos.with(pos.lineNumber-1,pos.column));
+                continue;
+            }
+            else if(key == "\x04"){
+                let pos = editor.getPosition();
+                editor.setPosition(pos.with(pos.lineNumber+1,pos.column));
+                continue;
+            }
+            else if(key == "\x06"){
+                // editor.trigger('keyboard','deleteLeft',null);
+            }
+            else if(key == "\x07"){
+                editor.updateOptions({readOnly:false});
+                editor.trigger("keyboard","cursorHome",null);
+                editor.updateOptions({readOnly:true});
+                await wait(Math.ceil(30+Math.random()*100));
+                continue;
+            }
+            else if(key == "\x08"){
+                editor.updateOptions({readOnly:false});
+                editor.trigger("keyboard","cursorEnd",null);
+                editor.updateOptions({readOnly:true});
+                await wait(Math.ceil(30+Math.random()*100));
                 continue;
             }
             
@@ -576,9 +628,42 @@ class AddTutorSideText extends Task{
             (c as HTMLElement).style.display = "block";
         }
         for(let i = 0; i < this.text.length; i++){
+            let key = this.text.substring(i,i+1);
+            if(key == "\x05"){
+                await wait(250);
+                continue;
+            }
+            else if(key == "\x01"){
+                let pos = editor.getPosition();
+                editor.setPosition(pos.with(pos.lineNumber,pos.column-1));
+                continue;
+            }
+            else if(key == "\x02"){
+                let pos = editor.getPosition();
+                editor.setPosition(pos.with(pos.lineNumber,pos.column+1));
+                continue;
+            }
+            else if(key == "\x03"){
+                let pos = editor.getPosition();
+                editor.setPosition(pos.with(pos.lineNumber-1,pos.column));
+                continue;
+            }
+            else if(key == "\x04"){
+                let pos = editor.getPosition();
+                editor.setPosition(pos.with(pos.lineNumber+1,pos.column));
+                continue;
+            }
+            else if(key == "\x06"){
+                editor.updateOptions({readOnly:false});
+                editor.trigger('keyboard','deleteLeft',null);
+                editor.updateOptions({readOnly:true});
+                await wait(getTypeSpeed(this.text.length));
+                continue;
+            }
+            
             editor.updateOptions({readOnly:false});
             editor.trigger("keyboard","type",{
-                text:this.text.substring(i,i+1)
+                text:key
             });
             editor.updateOptions({readOnly:true});
             await wait(getTypeSpeed(this.text.length));
@@ -592,6 +677,40 @@ class AddTutorSideText extends Task{
         lesson.tut.curFile.blockPosChange = true;
 
         moveTutMouseTo(58 + pos.column*7.7,115 + pos.lineNumber*16.5);
+
+        this.canBeFinished = true;
+        this._resFinish();
+        return await this.finish();
+    }
+}
+class MoveCursorTo extends Task{
+    constructor(line:number,col:number){
+        super("Move Tutor's Cursor");
+        this.line = line;
+        this.col = col;
+    }
+    line:number;
+    col:number;
+    async start(){
+        super.start();
+        
+        let editor = lesson.tut.getCurEditor();
+        lesson.tut.curFile.blockPosChange = false;
+
+        // let pos = editor.getPosition();
+        await showTutMouse();
+        // await moveTutMouseTo(58 + this.col*7.7,115 + this.line*16.5);
+        await moveTutMouseTo(60 + this.col*7.7 - editor.getScrollLeft(), 110 + this.line*19);
+        await wait(150);
+        await hideTutMouse();
+        await wait(200);
+        editor.setPosition(editor.getPosition().with(this.line,this.col));
+        let pos = editor.getPosition();
+        lesson.tut.curFile.curRow = pos.lineNumber;
+        lesson.tut.curFile.curCol = pos.column;
+        lesson.tut.curFile.blockPosChange = true;
+
+        // moveTutMouseTo(58 + pos.column*7.7,115 + pos.lineNumber*16.5);
 
         this.canBeFinished = true;
         this._resFinish();
@@ -684,6 +803,78 @@ class PonderBoardTask extends Task{
             lesson.board.exit();
             lesson.board = null;
         }
+    }
+}
+class BubbleTask extends Task{
+    constructor(title:string,line:number|null,col:number|null,dir="top"){
+        super(title);
+        this.requiresDoneConfirm = false;
+        this.line = line;
+        this.col = col;
+        this.dir = dir;
+    }
+    b:Bubble;
+    line:number;
+    col:number;
+    dir:string;
+    async start(): Promise<string | void> {
+        super.start();
+
+        await wait(250);
+        if(this.line != null && this.col != null){
+            await showTutMouse();
+            await moveTutMouseTo(60 + this.col*7.7, 110 + this.line*19);
+            await wait(150);
+        }
+        let r2 = tutMouse.getBoundingClientRect();
+        this.b = addBubbleAt(BubbleLoc.xy,this.title,this.dir,{
+            x:r2.x+r2.width/2 + 17,
+            y:r2.y+r2.height/2 - 22,
+            click:true
+        });
+        await this.b.clickProm;
+
+        let prom = this.finish();
+        this._resFinish();
+        await prom;
+    }
+    cleanup(): void {
+        closeBubble(this.b);
+    }
+}
+class InstructTask extends Task{
+    constructor(text:string){
+        super(text);
+        this.requiresDoneConfirm = true;
+    }
+    b:Bubble;
+    async start(): Promise<string | void> {
+        super.start();
+
+        await wait(250);
+        let r2 = tutMouse.getBoundingClientRect();
+        this.b = addBubbleAt(BubbleLoc.xy,this.title,"top",{
+            x:r2.x+r2.width/2 + 17,
+            y:r2.y+r2.height/2 - 22
+        });
+
+        await wait(750);
+        await this.finish();
+    }
+    cleanup(): void {
+        closeBubble(this.b);
+    }
+}
+class InfiniteTask extends Task{
+    constructor(){
+        super("Infinite Task");
+    }
+    async start(): Promise<string | void> {
+        super.start();
+        await new Promise(resolve=>{
+            // to infinity
+        });
+        await this.finish();
     }
 }
 
@@ -3141,6 +3332,7 @@ enum BubbleLoc{
     xy
 }
 function formatBubbleText(text:string,ops?:any){
+    // text = escapeMarkup(text);
     // while(text.includes("[") && text[text.indexOf("[")-1] != "0"){
     while(text.includes("[")){
         let ind = text.indexOf("[");
