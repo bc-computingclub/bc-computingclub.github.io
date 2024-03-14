@@ -430,5 +430,6 @@
 - fixed view options wasn't position absolute
 - flipped the position of add file and add folder in editor to be like vscode
 - flipped the position of line count to be above char count
+- added redirection to submissions after submitting
 [BUGS]
 - when opening the first file in the submission editor it places it on the wrong side of the add button
