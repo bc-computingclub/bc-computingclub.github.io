@@ -1,6 +1,3 @@
-let serverURL = "http://localhost:3000";
-// let serverURL = "http://claebcode.top:3000";
-// let serverURL = "http://157.245.10.20:3000" // DigitalOcean URL
 let lesson:Lesson;
 let project:Project;
 
@@ -690,10 +687,12 @@ class Project{
     // isOwner = true;
 
     get canEdit(){
-        return this.meta.canEdit;
+        if(PAGE_ID == PAGEID.lesson) return true;
+        return this.meta?.canEdit;
     }
     get isOwner(){
-        return this.meta.isOwner;
+        if(PAGE_ID == PAGEID.lesson) return true;
+        return this.meta?.isOwner;
     }
 
     parent:HTMLElement;
@@ -715,6 +714,12 @@ class Project{
     }
     isPublished(){
         return this.meta.submitted;
+    }
+
+    canLeave(){
+        if(this.needsSave) return false;
+        if(this.openFiles.some(v=>!v._saved)) return false;
+        return true;
     }
 
     // right click actions
@@ -896,10 +901,17 @@ class Project{
 
     getURL(){
         if(PAGE_ID == PAGEID.editor){
-            if(!this.canEdit) return serverURL+"/public/"+project.meta.owner+"/"+project.pid;
-            return serverURL+"/project/"+g_user.uid+"/"+socket.id+"/"+project.meta.owner+"/"+project.pid;
+            if(!this.canEdit) return serverURL+"/public/"+this.meta.owner+"/"+this.pid;
+            return serverURL+"/project/"+g_user.uid+"/"+socket.id+"/"+this.meta.owner+"/"+this.pid;
         }
         else if(PAGE_ID == PAGEID.lesson) return serverURL+"/lesson/"+g_user.uid+"/"+socket.id+"/"+g_user.uid+"/"+lesson.lid;
+    }
+    getExternalURL(){
+        if(PAGE_ID == PAGEID.editor){
+            if(!this.canEdit) return location.origin+"/viewer.html?a="+this.meta.owner+"&b="+this.pid+"/index.html";
+            return location.origin+`/viewer.html?t=p&a=${g_user.uid}&b=${socket.id}&c=${this.meta.owner}&d=${this.pid}/index.html`;
+        }
+        else return location.origin+`/viewer.html?t=l&a=${g_user.uid}&b=${socket.id}&c=${lesson.lid}/index.html`;
     }
 
     findFile(name:string){
@@ -968,7 +980,7 @@ class Project{
             f.setTemp(false);
         }
 
-        if(isNew) saveProject();
+        if(isNew) if(PAGE_ID == PAGEID.editor) saveProject();
         return f;
     }
     createFolder(name:string,folder?:FFolder,isNew=true){
@@ -1038,11 +1050,13 @@ class Project{
 }
 /**Gets the url (for iframes) to a `"private"` project */
 function getProjectURL(uid:string,pid:string){
+    // return location.origin+"/viewer.html?t=p&a="+uid+"&b="+pid+"/index.html";
     return serverURL+"/project/"+g_user.uid+"/"+socket.id+"/"+uid+"/"+pid;
 }
 /**Gets the url (for iframes) to a `"public"` project */
 function getPublicProjectURL(ownerUid:string,pid:string){
-    return serverURL+"/public/"+ownerUid+"/"+pid;
+    return location.origin+"/viewer.html?a="+ownerUid+"&b="+pid+"/index.html";
+    // return serverURL+"/public/"+ownerUid+"/"+pid;
 }
 
 
@@ -1159,6 +1173,29 @@ function applyMultiSelectFI(e:MouseEvent|any,f:FItem){
     return true;
 }
 
+// function createFileListItemSimple(f:ULFile,folder:ULFolder|null,root:ULItem[]){
+//     if(!fileList){
+//         fileList = document.querySelector(".file-list");
+//         if(!fileList) return;
+//         fileList.oncontextmenu = function(e){
+//             e.preventDefault();
+//         };
+//     }
+//     let div = document.createElement("div");
+//     div.className = "file-item";
+//     div.textContent = f.name;
+
+//     let list = [...(folder?.items ?? root)];
+//     if(list.includes(f)) list.splice(list.indexOf(f),1);
+//     list.push(f);
+//     sortFiles(list);
+
+//     let i1 = list.indexOf(f);
+//     let fiList:HTMLElement;
+//     if(folder) fiList = folder._fiList;
+//     else fiList = fileList;
+//     fiList.insertBefore(div,fiList.children[i1]);
+// }
 function createFileListItem(f:FFile){
     if(!fileList){
         fileList = document.querySelector(".file-list");
@@ -1652,7 +1689,11 @@ class FFile extends FItem{
             b_close.innerHTML = "<div class='material-symbols-outlined'>close</div>";
             b_close.classList.add("file-close");
             b_close.addEventListener("click",e=>{
-                if(this.p.readonly) return;
+                if(this.p.isTutor) return;
+                if(this.p.readonly){
+                    this.close();
+                    return;
+                }
                 if(PAGE_ID == PAGEID.lesson){
                     this.softDelete();
                 }
@@ -1777,7 +1818,7 @@ class FFile extends FItem{
             this.p.curFile = this;
 
             // @ts-ignore
-            editor.onDidScrollChange(function(){
+            if(PAGE_ID == PAGEID.lesson) editor.onDidScrollChange(function(){
                 t.scrollOffset = editor.getScrollTop();
                 t.scrollOffsetX = editor.getScrollLeft();
                 updateBubbles();
@@ -1953,7 +1994,7 @@ function setupEditor(parent:HTMLElement,type:EditorType){
 
     if(type != EditorType.none){
         let label = document.createElement("div");
-        label.innerHTML = `<div class="material-symbols-outlined">menu</div><div>${(type == EditorType.tutor ? "TUTOR" : "YOU")}</div>`;
+        label.innerHTML = `<!--<div class="material-symbols-outlined">menu</div>--><div>${(type == EditorType.tutor ? "TUTOR" : "YOU")}</div>`; // disabled the menu icon
         // label.textContent = (type == EditorType.tutor ? "Tutor's Code" : "Your Code");
         label.className = (type == EditorType.tutor ? "editor-type-tutor" : "editor-type-self");
         d_files.appendChild(label);
@@ -2146,6 +2187,7 @@ async function refreshLesson(){
 
 let _isSaving = false;
 async function saveProject(isQuick=false){
+    if(PAGE_ID == PAGEID.lesson) return;
     if(!project) return;
     if(_isSaving) return;
     if(!project.canEdit) return;
@@ -2210,6 +2252,10 @@ type ProjectMeta = {
 
     wc?:string;
     time?:number;
+    wls?:string;
+    ws?:string;
+
+    meta?:any;
 };
 
 // screenshot util
@@ -2232,7 +2278,13 @@ function goToProject(pid:string){
 document.addEventListener("keydown",e=>{
     // let active = document.activeElement;
     // if(active) if(active.className.endsWith("cursor-text")){
-    
+    let k = e.key.toLowerCase();
+    if(menusOpen.length) if(!document.fullscreenElement){
+        if(k == "escape"){
+            closeAllMenus();
+        }
+        return;
+    }
 });
 document.addEventListener("keyup",e=>{
     {
@@ -2574,18 +2626,20 @@ function alertNotLoggedIn(){
 
 // Paul transfered stuff
 class Submission {
-    constructor(previewURL: string, sentBy: string, lineCount: string, pid: string, uid: string) {
-        this.previewURL = previewURL;
-        this.sentBy = sentBy;
-        this.lineCount = lineCount;
+    constructor(previewURL: string, sentBy: string, pid: string, uid: string) {
+        this.url = previewURL;
+        this.who = sentBy;
         this.pid = pid;
         this.uid = uid;
     }
-    previewURL: string;
-    sentBy: string;
-    lineCount: string;
+    url: string;
+    who: string;
     pid: string;
     uid: string;
+    cc:number;
+    lang:string[];
+    ws:string;
+    t:number;
     // add fields. note: make sure to add to Challenge where relevant
 }
 
@@ -2644,26 +2698,28 @@ class Challenge {
             data.submission_count
         );
         c.timespan = data.timespan;
-        c.submissions = data.sub?.map(
-            (v: any) =>
-            new Submission(
-                v.url || "/images/fillerthumbnail.png",
-                v.who,
-                v.lineCount,
-                v.pid,
-                v.uid
-            ),
-        );
-        c.sub_highlights = data.hl?.map(
-            (v: any) =>
-            new Submission(
-                v.url || "/images/fillerthumbnail.png",
-                v.who,
-                v.lineCount,
-                v.pid,
-                v.uid
-            ),
-        );
+        c.submissions = data.sub;
+        // c.submissions = data.sub?.map(
+        //     (v: any) =>
+        //     new Submission(
+        //         v.url || "/images/fillerthumbnail.png",
+        //         v.who,
+        //         v.lineCount,
+        //         v.pid,
+        //         v.uid
+        //     ),
+        // );
+        data.sub_highlights = data.hl;
+        // c.sub_highlights = data.hl?.map(
+        //     (v: any) =>
+        //     new Submission(
+        //         v.url || "/images/fillerthumbnail.png",
+        //         v.who,
+        //         v.lineCount,
+        //         v.pid,
+        //         v.uid
+        //     ),
+        // );
         c.inProgress = data.inProgress;
         c.submitted = data.completed;
         return c;
@@ -3064,7 +3120,7 @@ function getSubmissionElement(submission: Submission, cid?:string): HTMLElement 
     /* Submitted by */
     let name = document.createElement("span");
     name.className = "s-name";
-    name.textContent = submission.sentBy;
+    name.textContent = submission.who;
     subDiv.appendChild(name);
   
     /* Right hand container */
@@ -3074,7 +3130,7 @@ function getSubmissionElement(submission: Submission, cid?:string): HTMLElement 
   
     /* Languages used */
     // let languages = submission.languages as string[];
-    let languages = ["html","css","js"] as string[];
+    let languages = submission.lang as string[];
     let languageCont = document.createElement("div");
     languageCont.className = "s-languages";
     submissionRight.appendChild(languageCont);
@@ -3092,8 +3148,9 @@ function getSubmissionElement(submission: Submission, cid?:string): HTMLElement 
     charCountSymbol.className = "material-symbols-outlined char-count-symbol";
     charCountSymbol.textContent = "tag";
     let charCountText = document.createElement("span");
-    // charCountText.textContent = submission.charCount || "0";
-    charCountText.textContent = '34,598';
+    charCountText.textContent = submission.cc.toLocaleString() || "0";
+    // charCountText.textContent = '34,598';
+    console.log(submission);
     charCount.appendChild(charCountSymbol);
     charCount.appendChild(charCountText);
     submissionRight.appendChild(charCount);
@@ -3105,7 +3162,8 @@ function getSubmissionElement(submission: Submission, cid?:string): HTMLElement 
     dateSymbol.className = "material-symbols-outlined date-symbol";
     dateSymbol.textContent = "schedule";
     let timeTakenText = document.createElement("span");
-    timeTakenText.textContent = "4h";
+    // timeTakenText.textContent = "4h";
+    timeTakenText.textContent = getTimeTaken(submission.t);
     timeTaken.appendChild(dateSymbol);
     timeTaken.appendChild(timeTakenText);
     submissionRight.appendChild(timeTaken);
@@ -3136,15 +3194,78 @@ async function createSubmissionMenu(sub: Submission) {
     curSubMenu = new SubmissionMenu(subData,sub);
     curSubMenu.load();
 }
-  class SubmissionData{
+class SubmissionData{
     p:ProjectMeta;
     lines:number;
     lang:string[];
     date_submitted:string;
-  }
+}
+
+function calcSubmissionLang(data:ProjectMeta){
+    let lang:string[] = [];
+    let allowed = ["html","css","js"];
+    function search(list:ULItem[]){
+        for(const item of list){
+            if(item instanceof ULFolder){
+                search(item.items);
+                continue;
+            }
+            let ind = item.name.lastIndexOf(".");
+            if(ind == -1) continue;
+            let ext = item.name.substring(ind+1);
+            if(allowed.includes(ext)) lang.push(ext);
+        }
+    }
+    if(data.items) search(data.items);
+    return lang.length ? lang.sort((a,b)=>a.localeCompare(b)).join(", ") : "None";
+}
+function calcSubmissionCharCount(data:ProjectMeta){
+    let allowed = ["html","css","js"];
+    let amt = 0;
+    function search(list:ULItem[]){
+        for(const item of list){
+            if(item instanceof ULFolder){
+                search(item.items);
+                continue;
+            }
+            let it = item as ULFile;
+            let ind = item.name.lastIndexOf(".");
+            if(ind == -1) continue;
+            let ext = item.name.substring(ind+1);
+            if(allowed.includes(ext)){
+                let after = it.val.replace(/\s/g,"");
+                amt += after.length;
+            }
+        }
+    }
+    if(data.items) search(data.items);
+    return amt.toLocaleString();
+}
+function getWhenSubmitted(data:ProjectMeta){
+    return data.meta.ws ? new Date(data.meta.ws).toLocaleDateString() : "-.-";
+}
+function getTimeTaken(v:number){
+    if(v == null) return "-.-";
+    // time in seconds?
+    let unit = "s";
+    let units = [
+        {u:"m",s:60},
+        {u:"h",s:60},
+        {u:"d",s:24},
+    ];
+    for(let i = 0; i < units.length; i++){
+        let d = units[i];
+        if(v >= d.s){
+            unit = d.u;
+            v /= d.s;
+        }
+        else break;
+    }
+    return v+unit;
+}
   
-  let curSubMenu: SubmissionMenu;
-  class SubmissionMenu extends Menu {
+let curSubMenu: SubmissionMenu;
+class SubmissionMenu extends Menu {
     constructor(data: SubmissionData, sub:Submission) {
       super("Submission Menu");
       this.data = data;
@@ -3155,6 +3276,62 @@ async function createSubmissionMenu(sub: Submission) {
     data:SubmissionData;
     submission: Submission;
   
+    async load2(){
+        let p = this.data.p;
+        await loadMonaco();
+        
+        // load items
+        
+        let par = this.menu.querySelector(".submission-editor > .editor-cont") as HTMLElement;
+        let tmpp = new Project("__tmp",par,{
+            readonly:false
+        });
+        setupEditor(tmpp.parent,EditorType.none);
+        tmpp.init();
+        // // @ts-ignore
+        // window.tmpp = tmpp;
+        function run(l:any[],cur:FFolder){
+            sortFiles(l);
+            let list = [];
+            for(const f of l){
+                if(f.val != null){
+                    let ff = tmpp.createFile(f.name,f.val,null,cur);
+                    createFileListItem(ff);
+                    list.push(ff);
+                }
+                else if(f.items != null){
+                    let ff = tmpp.createFolder(f.name,cur,false);
+                    createFolderListItem(ff);
+                    list.push(ff);
+                    ff.items = run(f.items,ff);
+                }
+            }
+            return list;
+        }
+        run(p.items,null);
+        let height = par.getBoundingClientRect().height;
+        par.parentElement.style.height = height+"px";
+        let b_openInFull = par.parentElement.querySelector(".b-fullscreen") as HTMLButtonElement;
+        b_openInFull.onclick = async function(){
+            b_openInFull.blur();
+            if(!document.fullscreenElement){
+                await par.parentElement.requestFullscreen();
+                b_openInFull.children[0].textContent = "collapse_content";
+                await wait(100);
+                tmpp.getCurEditor()?.layout();
+            }
+            else{
+                await document.exitFullscreen();
+            }
+        };
+        par.parentElement.onfullscreenchange = async function(e){
+            if(!document.fullscreenElement){
+                b_openInFull.children[0].textContent = "open_in_full";
+                await wait(100);
+                tmpp.getCurEditor()?.layout();
+            }
+        };
+    }
     load() {
       let p = this.data.p;
       let url = getPublicProjectURL(this.submission.uid,this.submission.pid);
@@ -3163,12 +3340,16 @@ async function createSubmissionMenu(sub: Submission) {
       this.menu.innerHTML = `
         <div class="s-popup">
           <div class="s-popup-header">
-            <h1 class="s-popup-title">${this.submission.sentBy}'s Submission</h1>
+            <h1 class="s-popup-title">${this.submission.who}'s Submission</h1>
             <span class="s-popup-close material-symbols-outlined">close</span>
           </div>
           <div class="s-popup-body">
             <div class="s-popup-code">
-              <h2 class="s-popup-code-title">Code</h2>
+              <!--<h2 class="s-popup-code-title">Code</h2>-->
+              <div class="submission-editor">
+                <div class="pane-files pane">${genFilesPane()}</div>
+                <div class="editor-cont pane"></div>
+              </div>
               <div class="s-popup-code-contents">${p.name}<br><br>${p.desc}<!--I'm starting to wonder how far I'm willing to take these class names, it's getting bad...--></div>
             </div>
             <div class="s-popup-preview">
@@ -3191,20 +3372,20 @@ async function createSubmissionMenu(sub: Submission) {
                 <h3 class="s-popup-preview-details-title">Details</h3>
                 <div class="s-popup-preview-details-contents">
                   <div class="s-popup-preview-details-item">
-                    <h4 class="s-popup-preview-details-item-title">Line Count</h4>
-                    <div class="s-popup-preview-details-item-contents">${this.submission.lineCount || 0}</div>
+                    <h4 class="s-popup-preview-details-item-title">Char. Count</h4>
+                    <div class="s-popup-preview-details-item-contents">${this.submission.cc/*calcSubmissionCharCount(p)*/}</div>
                   </div>
                   <div class="s-popup-preview-details-item">
                     <h4 class="s-popup-preview-details-item-title">Language(s)</h4>
-                    <div class="s-popup-preview-details-item-contents">${this.data.lang?.join(", ") || "None"}<!--JavaScript--></div>
+                    <div class="s-popup-preview-details-item-contents">${this.submission.lang?this.submission.lang.join(", "):"None"/*calcSubmissionLang(p)*/}<!--JavaScript--></div>
                   </div>
                   <div class="s-popup-preview-details-item">
                     <h4 class="s-popup-preview-details-item-title">Date Submitted</h4>
-                    <div class="s-popup-preview-details-item-contents">2021-09-09</div>
+                    <div class="s-popup-preview-details-item-contents">${new Date(this.submission.ws).toLocaleDateString()/*getWhenSubmitted(p)*/}</div>
                   </div>
                   <div class="s-popup-preview-details-item">
-                    <h4 class="s-popup-preview-details-item-title">Detail Field</h4>
-                    <div class="s-popup-preview-details-item-contents">Detail Contents Test</div>
+                    <h4 class="s-popup-preview-details-item-title">Time Taken</h4>
+                    <div class="s-popup-preview-details-item-contents">${getTimeTaken(this.submission.t)}</div>
                   </div>
                 </div>
               </div>
@@ -3212,25 +3393,41 @@ async function createSubmissionMenu(sub: Submission) {
           </div>
         </div>
       `;
+
+        this.load2();
   
-      let b_refresh = this.menu.querySelector(".s-b-refresh") as HTMLButtonElement;
-      let b_openInNew = this.menu.querySelector(".b-open-in-new") as HTMLButtonElement;
-      let icon_refresh = this.menu.querySelector(".icon-refresh") as HTMLElement;
-      let frame = this.menu.querySelector(".s-popup-iframe") as HTMLIFrameElement;
-  
-      b_refresh.addEventListener("click",e=>{
+        let b_refresh = this.menu.querySelector(".s-b-refresh") as HTMLButtonElement;
+        let b_openInNew = this.menu.querySelector(".b-open-in-new") as HTMLButtonElement;
+        let icon_refresh = this.menu.querySelector(".icon-refresh") as HTMLElement;
+        let frame = this.menu.querySelector(".s-popup-iframe") as HTMLIFrameElement;
+
+        b_refresh.addEventListener("click",e=>{
         frame.src = url;
         icon_refresh.style.rotate = _icRef_state ? "360deg" : "0deg";
         _icRef_state = !_icRef_state;
-      });
-      b_openInNew.addEventListener("click",e=>{
-        open(frame.src,"_blank");
-      });
-  
-      let sPopupClose = document.querySelector(".s-popup-close") as HTMLElement;
-      sPopupClose.onclick = () => {
-        this.close();
-      };
-      return this;
+        });
+        b_openInNew.addEventListener("click",e=>{
+            open(frame.src,"_blank");
+        });
+
+        let sPopupClose = document.querySelector(".s-popup-close") as HTMLElement;
+        sPopupClose.onclick = () => {
+            this.close();
+        };
+        return this;
     }
-  }
+}
+
+let _hasLoadedMonaco = false;
+async function loadMonaco(){
+    if(_hasLoadedMonaco) return;
+    // @ts-ignore
+    require.config({paths:{vs:"/lib/monaco/min/vs"}});
+    await new Promise<void>(resolve=>{
+        // @ts-ignore
+        require(['vs/editor/editor.main'], function () {
+            resolve();
+        });
+    });
+    _hasLoadedMonaco = true;
+}

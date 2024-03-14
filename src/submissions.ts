@@ -22,7 +22,7 @@ window.onload = async () => {
   cTitle.textContent = `${currentChallenge.name} Challenge`;
   await displaySubmissions(submissionArray,true);
   if(popupPid) {
-    console.log("Creating popup with " + submissionArray.find((v) => v.pid == popupPid)?.sentBy + "'s Submission details");
+    console.log("Creating popup with " + submissionArray.find((v) => v.pid == popupPid)?.who + "'s Submission details");
     createSubmissionMenu(submissionArray.find((v) => v.pid == popupPid));
   }
 };

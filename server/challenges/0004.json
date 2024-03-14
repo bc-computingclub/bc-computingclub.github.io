@@ -4,13 +4,17 @@
     "imgUrl": "/images/waterwheel.svg",
     "difficulty": "hard",
     "timespan": null,
-    "cnt": 0,
-    "sub":[
+    "sub": [
         {
-            "url":"",
-            "who":"Claeb Productions",
-            "uid":"b49000e0-ae3e-4d27-9b7e-cc1006ba6cd4",
-            "pid":"9b76b99a-1c74-4466-a1dc-b4f62e7514a1"
+            "url": "",
+            "who": "Claeb Productions",
+            "uid": "b49000e0-ae3e-4d27-9b7e-cc1006ba6cd4",
+            "pid": "9b76b99a-1c74-4466-a1dc-b4f62e7514a1",
+            "cc": 4,
+            "lang": [
+                "html"
+            ],
+            "ws": "2024-03-14T05:07:36.050Z"
         }
     ]
 }

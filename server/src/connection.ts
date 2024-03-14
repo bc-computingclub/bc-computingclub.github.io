@@ -3,9 +3,13 @@ import express, { NextFunction, Request, Response } from "express";
 import {Server, Socket} from "socket.io";
 import fs from "fs";
 import { challenges } from "./s_challenges";
+// import cors from "cors";
 
 console.log("started...");
 const app = express();
+// app.use(cors({
+//     origin:"http://localhost:5501"
+// }));
 export const server = http.createServer(app);
 export const io = new Server(server,{
     cors:{
@@ -96,7 +100,7 @@ export class Project{
             console.log("$ err: cannot validate meta link (no owner loaded)");
             return;
         }
-        console.log(this._owner.pMeta.includes(this.meta));
+        // console.log(this._owner.pMeta.includes(this.meta));
     }
     canUserEdit(uid:string){
         // tmp for now as there is no sharing projects with others or allowing specific access yet
@@ -124,6 +128,7 @@ export class Project{
             items:this.items,
             cid:this.meta.cid,
             submitted:this.meta.submitted,
+            meta:this.meta.serialize(),
             starred:(this._owner ? this._owner.starred.includes(this.pid) : null)
         };
     }
@@ -166,15 +171,15 @@ export interface CredentialResData{
     _lastLoggedIn:string;
 }
 export class ProjectMeta{
-    constructor(user:User,pid:string,name:string,desc:string,isPublic:boolean,submitted:boolean){
+    constructor(user:User|null,pid:string,name:string,desc:string,isPublic:boolean,submitted:boolean){
         this.user = user;
         this.pid = pid;
         this.name = name;
         this.desc = desc;
         this.isPublic = isPublic;
-        this.submitted = submitted || false;
+        this.submitted = submitted ?? false;
     }
-    user:User;
+    user:User|null;
     pid:string;
     name:string;
     desc:string;
@@ -182,6 +187,7 @@ export class ProjectMeta{
     submitted:boolean;
     wc:string = ""; // when created
     time = 0;
+    wls:string = ""; // when last saved
 
     cid?:string;
     ws:string = ""; // when submitted
@@ -189,7 +195,8 @@ export class ProjectMeta{
     hasLoaded = false;
     serialize(){
         // let challenge = this.user.challenges.find(v=>v.pid == this.pid);
-        return JSON.stringify({
+        // return JSON.stringify({
+        return {
             pid:this.pid,
             name:this.name,
             desc:this.desc,
@@ -202,18 +209,25 @@ export class ProjectMeta{
             wc:this.wc,
             time:this.time,
             ws:this.ws,
+            wls:this.wls,
+            owner:(this.user ? this.user.uid : null),
 
             canEdit:(this.user ? this.user.canEdit(this) : false),
             isOwner:(this.user ? this.user.isOwner(this) : false),
-        });
+        };
     }
-    static deserialize(user:User,str:string){
-        let o = JSON.parse(str);
+    static deserialize(user:User,str:string|any){
+        let o = (typeof str == "string" ? JSON.parse(str) : str);
+        return this.deserialize2(user,o);
+    }
+    static deserialize2(user:User|null,o:any){
+        if(o instanceof ProjectMeta) return o;
         let p = new ProjectMeta(user,o.pid,o.name,o.desc,o.isPublic,o.sub);
         p.cid = o.cid;
         p.wc = o.wc ?? new Date().toISOString();
         p.time = o.time ?? 0;
         p.ws = o.ws ?? "";
+        p.wls = o.wls ?? "";
         return p;
     }
 }
@@ -304,12 +318,12 @@ export class User{
 
     canEdit(meta:ProjectMeta){
         let canEdit = true;
-        if(meta.user.uid != this.uid) canEdit = false;
+        if(meta.user?.uid != this.uid) canEdit = false;
         if(meta.submitted) canEdit = false;
         return canEdit;
     }
     isOwner(meta:ProjectMeta){
-        return this.uid == meta.user.uid;
+        return this.uid == meta.user?.uid;
     }
 
     // lesson = new Map<string,LessonMeta>;
@@ -391,7 +405,7 @@ export class User{
             starred:this.starred
             // lesson:this.lesson
         };
-        let res = await write(this.getPath(),JSON.stringify(data,null,4),"utf8");
+        let res = await write(this.getPath(),JSON.stringify(data,null,4),"utf8"); // this is formatted for now but won't be for production
         if(!res) console.log("Err: failed to save user to file");
     }
 
@@ -447,6 +461,7 @@ export class LessonMeta{
     ws = ""; // when started the first time
     hf = false; // has finished once
     _hp = 0; // has sent out post (like unlocks) - this is a version number if new updates come out in the future
+    wls = ""; // when last save
     static parse(data:any){
         let m = new LessonMeta(data.eventI,data.taskI,data.prog??0,data.mode??0);
         m.wu = data.wu ?? "";
@@ -457,6 +472,7 @@ export class LessonMeta{
         m.ws = data.ws ?? "";
         m.hf = data.hf ?? false;
         m._hp = data._hp ?? 0;
+        m.wls = data.wls ?? "";
         return m;
     }
 }
@@ -539,13 +555,14 @@ export async function getProjectFromHD(uid:string,pid:string){
         let userData = await read("../users/"+uid+".json");
         if(!userData) return -7;
         user = JSON.parse(userData);
-        meta = user.pMeta.map((v:any)=>JSON.parse(v)).find((v:any)=>v.pid == pid);
+        meta = user.pMeta.map((v:any)=>(typeof v == "string" ? JSON.parse(v) : v)).find((v:any)=>v.pid == pid);
         if(!meta) return -9;
     }
     else{
         meta = realUser.pMeta.find((v:any)=>v.pid == pid);
         if(!meta) return -9.1;
     }
+    if(meta) meta = ProjectMeta.deserialize2(null,meta);
 
     let curFiles = await readdir(path);
     if(!curFiles) return -8;
@@ -658,9 +675,30 @@ export function getUserBySock(sockId:string){
     return users.get(email);
 }
 
-app.use("/public",(req,res,next)=>{
+app.use("/public",async (req,res,next)=>{
     let arr = req.originalUrl.split("/");
-    let project = getProject2(arr[2],arr[3]);
+    // let project = getProject2(arr[2],arr[3]);
+    let project = await getProjectFromHD(arr[2],arr[3]);
+    if(typeof project == "number"){
+        res.send("Error getting project, code "+project);
+        return;
+    }
+    // let pid = arr[2];
+    // let owner = arr[3];
+    // let user = users.get(owner);
+    // let meta:ProjectMeta;
+    // if(!user){
+    //     let data = await read("../users/"+owner+".json");
+    //     if(!data){
+    //         res.send("Project or User not found");
+    //         return;
+    //     }
+    //     meta = ProjectMeta.deserialize(null as any,data); // hopefully not too problematic
+    // }
+    // if(!pid || !owner){
+    //     res.send("Error getting project, query invalid");
+    //     return;
+    // }
     if(!project){
         res.send("Project not found or loaded");
         return;
@@ -681,7 +719,7 @@ app.use("/project/:userId/:auth",(req,res,next)=>{
         return;
     }
     if(!user.getSocketIds().includes(p.auth)){
-        res.send("Auth incorrect");
+        res.send("Auth incorrect (try closing this page and reopening it from the project page)");
         return;
     }
     let arr = req.originalUrl.split("/");
@@ -707,7 +745,7 @@ app.use("/lesson/:userId/:auth/",(req,res,next)=>{
     // }
     // todo - add token system instead of using socketIds
     if(!user.getSocketIds().includes(p.auth)){
-        res.send("Auth incorrect");
+        res.send("Auth incorrect (try closing this page and reopening it from the lesson page)");
         return;
     }
     let arr = req.originalUrl.split("/");

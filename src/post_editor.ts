@@ -40,8 +40,8 @@ let b_openInNew = document.querySelector(".b-open-in-new") as HTMLElement;
 let b_invertColors = document.querySelector(".b-invert-colors") as HTMLElement;
 
 b_openInNew.addEventListener("click",e=>{
-    if(PAGE_ID == PAGEID.editor) open(project.getURL(),"_blank");
-    else if(PAGE_ID == PAGEID.lesson) open(lesson.p.getURL(),"_blank");
+    if(PAGE_ID == PAGEID.editor) open(project.getExternalURL(),"_blank");
+    else if(PAGE_ID == PAGEID.lesson) open(lesson.p.getExternalURL(),"_blank");
 });
 function updateIFrameContrast(){
     // iframe.classList.toggle("invert");

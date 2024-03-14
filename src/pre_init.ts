@@ -1,3 +1,7 @@
+let serverURL = "http://localhost:3000";
+// let serverURL = "http://claebcode.top:3000";
+// let serverURL = "http://157.245.10.20:3000" // DigitalOcean URL
+
 let themes:Record<string,{style:string}> = {
     light:{
         style:"light"
@@ -50,6 +54,7 @@ function loadEditorTheme(tData?:any){
     if("monaco" in window && editorThemeNeedsReload){
         monaco.editor.setTheme("vs-"+tData.style);
         editorThemeNeedsReload = false;
+        console.log("set theme");
     }
     else editorThemeNeedsReload = true;
 }
@@ -64,3 +69,52 @@ function setTheme(theme:string){
     loadTheme();
 }
 loadTheme();
+
+
+// 
+
+function genFilesPane(hasOps=false,hasAdds=false){
+    return `
+        <div class="pane-files pane resize" resize="r">
+            <div class="header flx-sb">
+                <div>Files</div>
+                <div>
+                    ${hasAdds?`
+                        <button class="icon-btn-single b-new-folder co-item" co-label="Create folder">
+                            <div class="material-symbols-outlined">create_new_folder</div>
+                        </button>
+                        <button class="icon-btn-single b-new-file co-item" co-label="Create file">
+                            <div class="material-symbols-outlined">note_add</div>
+                        </button>
+                    `:`
+                        <button class="icon-btn-single b-fullscreen co-item" co-label="Fullscreen">
+                            <div class="material-symbols-outlined">open_in_full</div>
+                        </button>
+                    `}
+                </div>
+            </div>
+            <div class="file-list">
+                <!-- <div class="file-item">index.html</div> -->
+                <!-- <div class="file-item">style.css</div> -->
+                <!-- <div class="file-item">script.js</div> -->
+            </div>
+            ${hasOps?`<div class="file-ops">
+                <button class="icon-btn-single ops-rename">
+                    <div class="material-symbols-outlined">edit</div>
+                </button>
+                <button class="icon-btn-single ops-delete">
+                    <div class="material-symbols-outlined">delete</div>
+                </button>
+                <button class="icon-btn-single ops-cut">
+                    <div class="material-symbols-outlined">content_cut</div>
+                </button>
+                <button class="icon-btn-single ops-copy">
+                    <div class="material-symbols-outlined">content_copy</div>
+                </button>
+                <button class="icon-btn-single ops-paste">
+                    <div class="material-symbols-outlined">content_paste</div>
+                </button>
+            </div>`:""}
+        </div>
+    `;
+}

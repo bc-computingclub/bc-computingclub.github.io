@@ -3489,13 +3489,6 @@ document.addEventListener("keydown",async e=>{
 
     if(e.shiftKey && e.ctrlKey) g_waitDelayScale = 0;
 
-    if(menusOpen.length){
-        if(k == "escape"){
-            closeAllMenus();
-        }
-        return;
-    }
-
     if(e.ctrlKey || e.metaKey){
         if(k == "r"){
             e.preventDefault();
@@ -3639,7 +3632,8 @@ class LessonCompleteMenu extends Menu{
         `;
         this.body.appendChild(btnCont);
 
-        btnCont.children[0].addEventListener("click",e=>{
+        btnCont.children[0].addEventListener("click",async e=>{
+            await saveLesson(true);
             location.href = "/learn";
         });
         btnCont.children[1].addEventListener("click",e=>{

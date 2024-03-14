@@ -299,13 +299,6 @@ document.addEventListener("keydown",e=>{
     if(!e.key) return;
     let k = e.key.toLowerCase();
 
-    if(menusOpen.length){
-        if(k == "escape"){
-            closeAllMenus();
-        }
-        return;
-    }
-
     if(e.ctrlKey){
         if(k == "r"){
             e.preventDefault();
@@ -415,7 +408,9 @@ class ProjectDashboard extends Menu{
         return this;
     }
     async reloadSection(){
+        let top = this.content.parentElement.scrollTop;
         await this.loadSection(this._sectionI);
+        this.content.parentElement.scrollTop = top;
     }
     async loadSection(i:number){
         this._sectionI = i;
@@ -428,18 +423,27 @@ class ProjectDashboard extends Menu{
         curProjectSettingsMeta = null;
         curProjectSettingsMetaPID = null;
         this.content.textContent = "";
-        let raw = await new Promise<string[]>(resolve=>{
-            socket.emit("user-getProjectList",i,(data:string[])=>{
-                resolve(data || []);
+        async function tryGet(){
+            return new Promise<any[]>(resolve=>{
+                socket.emit("user-getProjectList",i,(data:any[])=>{
+                    resolve(data || []);
+                });
             });
-        });
-        let list = raw.map(v=>JSON.parse(v) as ProjectMeta);
+        }
+        let raw = await tryGet();
+        // if(raw == -3){ // might need this because of weird chromium browser cache
+
+        // }
+        // let list = raw.map(v=>JSON.parse(v) as ProjectMeta);
+        let list = raw.map(v=>v as ProjectMeta);
 
         // sorting
         console.log(list);
         list = list.sort((a,b)=>{
-            let aTime = a.wc ? new Date(a.wc).getTime() : 0;
-            let bTime = b.wc ? new Date(b.wc).getTime() : 0;
+            // let aTime = a.wc ? new Date(a.wc).getTime() : 0;
+            // let bTime = b.wc ? new Date(b.wc).getTime() : 0;
+            let aTime = a.wls ? new Date(a.wls).getTime() : 0;
+            let bTime = b.wls ? new Date(b.wls).getTime() : 0;
             return aTime-bTime;
         });
         
@@ -455,8 +459,11 @@ class ProjectDashboard extends Menu{
             <div class="project-info">
                 <div class="l-project-name">
                     <div class="star">star</div>
-                    <div co-label="${meta.sub ? "Submitted" : "In Progress"}" class="p-icon ic-submitted ${meta.cid != null ? "" : "hide"}">${meta.sub ? "cloud_done" : "pending"}</div>
-                    <div>${meta.name}</div>
+                    <div class="l-project-name-label">${meta.name}</div>
+                    <div co-label="${meta.sub ? "Submitted" : "In Progress"}" class="p-icon ic-submitted ${meta.cid != null ? "" : "hide"}">${meta.sub ? "cloud_done" : "fitness_center"}</div>
+                    <div co-label="${meta.isPublic ? "Public" : "Private"}" class="p-icon ic-vis ${meta.isPublic ? "" : "hide"}">${meta.isPublic ? "public" : "lock"}</div>
+                    <!--<div co-label="${meta.isPublic ? "Public" : "Private"}" class="p-icon ic-vis ${meta.isPublic && !meta.sub ? "" : "hide"}">${meta.isPublic ? "public" : "lock"}</div>-->
+                    <div style="margin-right:10px"></div>
                 </div>
                 <div class="l-project-desc">${meta.desc}</div>
             </div>
@@ -471,7 +478,7 @@ class ProjectDashboard extends Menu{
             </div>
         `;
         this.content.appendChild(div);
-        let l_pname = div.querySelector(".l-project-name").children[1];
+        let l_pname = div.querySelector(".l-project-name-label");
         let b_openProject = div.querySelector(".b-open-project");
         b_openProject.addEventListener("click",e=>{
             openProjectSuper(meta.pid);
@@ -515,7 +522,18 @@ class ProjectDashboard extends Menu{
         console.log(meta.name,meta.starred);
 
         // setupCallout(b_star,"Star Project"); // might be annoying to have this
-        setupCallout(div.querySelector(".ic-submitted"),null);
+        let ic_sub = div.querySelector(".ic-submitted");
+        let ic_vis = div.querySelector(".ic-vis");
+        setupCallout(ic_sub,null);
+        setupCallout(ic_vis,null);
+
+        ic_sub.addEventListener("click",e=>{
+            // location.href = "/practice/index.html?cid="+meta.cid;
+            open("/practice/index.html?cid="+meta.cid,"_blank");
+        });
+        ic_vis.addEventListener("click",e=>{
+            open(getPublicProjectURL(meta.owner,meta.pid),"_blank");
+        });
 
         // setupDropdown(b_ops,()=>[
         //     "Rename",
@@ -850,6 +868,7 @@ class ProjSettingsMenu extends Menu{
         let updatePrivacy = ()=>{
             b_privacy.children[0].textContent = (this.meta.isPublic?"public":"lock");
             b_privacy.children[1].textContent = (this.meta.isPublic?"Public":"Private");
+            if(this.dash) this.dash.reloadSection();
         }
         updatePrivacy();
 
@@ -874,7 +893,7 @@ class ProjSettingsMenu extends Menu{
                 b_save.disabled = true;
 
                 if(this.divItem){
-                    let l_name = this.divItem.querySelector(".l-project-name");
+                    let l_name = this.divItem.querySelector(".l-project-name-label");
                     let l_desc = this.divItem.querySelector(".l-project-desc");
                     if(l_name) l_name.textContent = name;
                     if(l_desc) l_desc.textContent = desc;
@@ -924,3 +943,13 @@ class ProjSettingsMenu extends Menu{
         return this;
     }
 }
+
+window.addEventListener("beforeunload",e=>{
+    if(project) if(!project.canLeave()){
+        _usedConfirmLeavePopup = true;
+        socket.disconnect();
+        e.stopPropagation();
+        e.preventDefault();
+        socket.connect();
+    }
+});

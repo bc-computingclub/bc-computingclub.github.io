@@ -368,6 +368,7 @@
 - added protections on server to prevent deleting or unlinking project if you can't edit it (this may change in the future as you are allowed to delete a project that is currently submitted)
 - disabled buttons in project settings menu if you don't have edit access
 - (many fixes and things I need to add here)
+- fixed zoom so that you can pinch but it's slow
 - BUG: when deleting projects it doesn't delete from starred or recents
 
 ### 3/13/24
@@ -377,3 +378,34 @@
 - fixed deleting projects so if they were starred or in recents they would be deleted from that too
 - added ws (when submitted) property to projectMeta
 - made project dashboard sort by when created
+- added wls (when last save) property to ProjectMeta and LessonMeta
+- changed project dashboard to sort by when last save
+- changed layout of extra icons on projects in project dashboard to be more clear
+- added overflow support for very long project names
+- fixed changing project name remove star and icons
+- added overflow support to project name in editor
+- clicking on progress indicator takes you to the corresponding challenge info page
+- clicking on visibility indicator takes you to the public url of the project (which is sharable)
+- changed submitted icon in project dashboard so it wasn't as similar to public
+- changed viewing public projects to load from the hard drive for now so the project doesn't have to be loaded first
+- added Project Viewer and changed the open in external to use that
+- disabled the menu icon from editors
+- fixed lesson page as it was broken with newer updates
+- fixed some data that gets sent back and forth
+- changed user data pMeta to be stored as an object instead of string array
+- added Char Count, Langs, Date Submitted to view submission
+- added fullscreen mode for editor in view submission
+- added Editor with files in submission window
+- moved char count and langs to the server side
+- moved a lot of the submission meta data into the submission itself
+- changed client side submission class to coincide with back end
+- added submission properties to the table list of submissions (time, char count, lang)
+- brought editor light theme properties to the submissions page
+- fixed escape to close menu so that it works anywhere now that has util.ts
+- some small bug fixes with server side
+- fixed lesson bug when ending lesson it wouldn't let you go back because it said you have unsaved progress
+- added "are you sure you want to leave" box to editor page with proper server rejoining
+[BUGS]
+- on submissions page when you close view submission and open it again the editor won't load any of the files
+- start challenge doesn't work from the submissions page
+- error code 1 when clicking start on a challenge that you've already submitted to, not sure what the intended behavior should be here

@@ -26,6 +26,12 @@ socket.on("disconnect",()=>{
 
 // 
 
+function reconnectUser(){
+    _usedConfirmLeavePopup = true;
+    socket.disconnect();
+    socket.connect();
+}
+
 function _logout(){
     socket.emit("logout",(data:number)=>{
         if(data != 0){

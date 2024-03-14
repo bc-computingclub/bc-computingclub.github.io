@@ -130,10 +130,11 @@ type ProgressData = {
     times:number;
     ws:string;
     hf:boolean;
+    wls:string;
 }
 class LessonItem{
     constructor(ldata:TreeLesson,e:HTMLElement,data?:ProgressData){
-        if(data == null) data = {lid:ldata.lid,eventI:-1,taskI:-1,prog:0,mode:0,wu:"",s:false,n:false,u:false,times:0,ws:"",hf:false};
+        if(data == null) data = {lid:ldata.lid,eventI:-1,taskI:-1,prog:0,mode:0,wu:"",s:false,n:false,u:false,times:0,ws:"",hf:false,wls:""};
         this.lid = ldata.lid;
         this.l = ldata;
         this.e = e;

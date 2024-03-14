@@ -97,6 +97,10 @@ div.b-editor-dashboard .material-symbols-outlined{
     background-color:var(--darken2);
     /* margin-right:10px; */
     cursor:pointer;
+    white-space:nowrap;
+    overflow:hidden;
+    max-width:200px;
+    text-overflow:ellipsis;
 }
 .cur-project-controls{
     display:flex;
@@ -292,6 +296,13 @@ div.b-editor-dashboard .material-symbols-outlined{
     display:flex;
     align-items:center;
     gap:8px;
+}
+.project-item .l-project-name-label{
+    margin-right:auto;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+    max-width:255px;
 }
 .project-item .l-project-desc{
     opacity:0.9;

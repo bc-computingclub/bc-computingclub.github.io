@@ -562,6 +562,11 @@ io.on("connection",socket=>{
 
         let meta = await getLessonMeta(user.uid,lessonId);
 
+        if(meta){
+            meta.wls = new Date().toISOString();
+            await writeLessonMeta(user.uid,lessonId,meta);
+        }
+
         call({
             files,
             // tutFiles,
@@ -634,9 +639,9 @@ io.on("connection",socket=>{
                             ff.name = item.name;
                             ff.val = item.val;
                         }
-                        else console.log("$ err: ff wasn't a file..?",ff.name,item.name);
+                        // else console.log("$ err: ff wasn't a file..?",ff.name,item.name);
                     }
-                    else console.log("$ err: no ff ref found");
+                    // else console.log("$ err: no ff ref found");
                 }
                 else if(item instanceof ULFolder){
                     await mkdir(path+"/"+pth+"/"+item.name);
@@ -661,6 +666,12 @@ io.on("connection",socket=>{
             if(p) console.log("$ found");
             else console.log("$ still failed to find project");
         }
+
+        if(p) if(p.meta){
+            p.meta.wls = new Date().toISOString();
+            await user.saveToFile();
+        }
+        
 
         // todo - cache file values so if they're the same then they don't need to be reuploaded, or do this on the client maybe to speed it up
 
@@ -709,6 +720,8 @@ io.on("connection",socket=>{
         call(p.serializeGet(true),null,user.canEdit(p.meta));
 
         user.addToRecents(p.pid);
+
+        console.log(p.meta);
 
         return;
         
@@ -876,7 +889,7 @@ io.on("connection",socket=>{
     });
     socket.on("startChallenge",async (cid:string,f:(data:any)=>void)=>{
         if(!valVar2(cid,"string",f)) return;
-        console.log("starting challenge...",cid);
+        // console.log("starting challenge...",cid);
 
         let user = getUserBySock(socket.id);
         if(!user){
@@ -899,7 +912,7 @@ io.on("connection",socket=>{
         // await ch.save();
 
         f(p.pid);
-        console.log(">> created challenge project");
+        // console.log(">> created challenge project");
     });
     socket.on("submitChallenge",async (pid:string,f:(res:number)=>void)=>{
         if(!valVar2(pid,"string",f)) return;
@@ -926,16 +939,76 @@ io.on("connection",socket=>{
             return;
         }
         
-        ch.sub.push(new CSubmission("",user.name,user.uid,p.pid));
-        await ch.save();
+        let c = new CSubmission("",user.name,user.uid,p.pid);
+        ch.sub.push(c);
+        let meta = user.pMeta.find(v=>v.pid == p?.pid);
+        if(!meta){
+            f(5);
+            return;
+        }
+        meta.submitted = true;
+        meta.isPublic = true;
+        meta.ws = new Date().toISOString();
         p.meta.submitted = true;
         p.meta.isPublic = true;
-        p.meta.ws = new Date().toISOString();
+        p.meta.ws = meta.ws
+
+        c.ws = meta.ws;
+        
+        function calcSubmissionLang(){
+            if(!p) return [];
+            let lang:string[] = [];
+            let allowed = ["html","css","js"];
+            function search(list:ULItem[]){
+                for(const item of list){
+                    if(item instanceof ULFolder){
+                        search(item.items);
+                        continue;
+                    }
+                    let ind = item.name.lastIndexOf(".");
+                    if(ind == -1) continue;
+                    let ext = item.name.substring(ind+1);
+                    if(allowed.includes(ext)) lang.push(ext);
+                }
+            }
+            if(p.items) search(p.items);
+            return lang;
+            // return lang.length ? lang.sort((a,b)=>a.localeCompare(b)).join(", ") : "None";
+        }
+        function calcSubmissionCharCount(){
+            if(!p) return 0;
+            let allowed = ["html","css","js"];
+            let amt = 0;
+            function search(list:ULItem[]){
+                for(const item of list){
+                    if(item instanceof ULFolder){
+                        search(item.items);
+                        continue;
+                    }
+                    let it = item as ULFile;
+                    let ind = item.name.lastIndexOf(".");
+                    if(ind == -1) continue;
+                    let ext = item.name.substring(ind+1);
+                    if(allowed.includes(ext)){
+                        let after = it.val.replace(/\s/g,"");
+                        amt += after.length;
+                    }
+                }
+            }
+            if(p.items) search(p.items);
+            return amt;
+        }
+        c.cc = calcSubmissionCharCount();
+        c.lang = calcSubmissionLang();
+        c.t = meta.time;
+
+        await ch.save();
+
         p.validateMetaLink();
         await user.saveToFile();
 
         f(0);
-        console.log(">> submitted challenge");
+        // console.log(">> submitted challenge");
     });
     socket.on("unsubmitChallenge",async (pid:string,f:(res:number)=>void)=>{
         if(!valVar2(pid,"string",f)) return;
@@ -969,7 +1042,7 @@ io.on("connection",socket=>{
         await user.saveToFile();
 
         f(0);
-        console.log(">> unsubmitted challenge");
+        // console.log(">> unsubmitted challenge");
     });
     socket.on("continueChallenge",async (cid:string,f:(data:any)=>void)=>{
         if(!valVar2(cid,"string",f)) return;
@@ -1064,7 +1137,7 @@ io.on("connection",socket=>{
 
         let start = p.getPath();
         for(const f of files){
-            console.log("...moving...",fromPath+f,toPath+f);
+            // console.log("...moving...",fromPath+f,toPath+f);
             await rename(start+fromPath+f,start+toPath+f);
         }
         // console.log(fromPath,toPath,files);
@@ -1147,9 +1220,9 @@ io.on("connection",socket=>{
         }
 
         let start = p.getPath();
-        console.log(`deleting NAME (${file})...`,items.map(v=>v.name));
+        // console.log(`deleting NAME (${file})...`,items.map(v=>v.name));
         items.splice(items.indexOf(item),1);
-        console.log("after...",items.map(v=>v.name));
+        // console.log("after...",items.map(v=>v.name));
         if(item instanceof ULFile) await removeFile(start+fromPath+file);
         else await removeFolder(start+fromPath+file);
         f(0);
@@ -1379,7 +1452,6 @@ async function deleteProject(user:User,pMeta:ProjectMeta,f:(res:number)=>void){
 function parseFolderStr(p:Project,path:string){
     if(!p) return;
     let s = path.split("/").filter(v=>v != null && v != "");
-    console.log(s);
     if(!s.length) return null;
     let f = p.items.find(v=>v.name == s[0]) as ULFolder;
     if(!f) return null;
