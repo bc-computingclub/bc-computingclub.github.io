@@ -1,9 +1,0 @@
-{
-    "name": "Lightbulb",
-    "desc": "Create a lightbulb which can be toggled on and off using a light switch (or a simple button). \nIf you'd like to make this challenge a little more interesting, add animations and visual effects to the light.",
-    "imgUrl": "/images/lightbulb.svg",
-    "difficulty": "easy",
-    "timespan": null,
-    "cnt": 0,
-    "sub": []
-}

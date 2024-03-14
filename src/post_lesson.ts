@@ -1,1 +1,0 @@
-b_publish.classList.add("hide");
