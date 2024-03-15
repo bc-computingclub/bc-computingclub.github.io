@@ -1,7 +1,7 @@
-import { io, server, CredentialResData, User, users, getUserBySock, sanitizeEmail, getProject, attemptToGetProject, access, readdir, read, mkdir, removeFile, write, ULFile, ProjectMeta, allProjects, UserChallengeData, Project, getProject2, ULItem, ULFolder, rename, removeFolder, getDefaultProjectMeta, getProjectFromHD, lessonMetas, LessonMeta, loadProject, LessonMode, getLessonMeta, writeLessonMeta, deleteLessonMeta, socks } from "./connection";
+import { io, server, CredentialResData, User, users, getUserBySock, sanitizeEmail, getProject, attemptToGetProject, access, readdir, read, mkdir, removeFile, write, ULFile, ProjectMeta, allProjects, UserChallengeData, Project, getProject2, ULItem, ULFolder, rename, removeFolder, getDefaultProjectMeta, getProjectFromHD, lessonMetas, LessonMeta, loadProject, LessonMode, getLessonMeta, writeLessonMeta, deleteLessonMeta, socks, internalCP } from "./connection";
 import { CSubmission, Challenge, ChallengeData, ChallengeGet, challenges } from "./s_challenges";
 import {LessonData, progressTree} from "./s_lesson";
-import fs from "fs";
+import fs, { copyFile } from "fs";
 import { createInterface } from "readline";
 import crypto from "crypto";
 import { createLesson } from "./s_util";
@@ -25,6 +25,7 @@ function valVar2(v:any,type:string,f:any){
     return (typeof v == type);
 }
 
+let usersOnline:string[] = [];
 let allUsers:Record<string,string> = {};
 function readAllUsers(){
     let str = fs.readFileSync("../data/users.json","utf8");
@@ -132,7 +133,10 @@ io.on("connection",socket=>{
                     // user.lesson = fdata.lesson || {};
                     // user.saveToFile();
                 }
-                if(user) users.set(user.uid,user);
+                if(user){
+                    users.set(user.uid,user);
+                    if(usersOnline.includes(user.email)) usersOnline.push(user.email);
+                }
             }
         }
         if(!user){
@@ -163,6 +167,7 @@ io.on("connection",socket=>{
         let user = getUserBySock(socket.id);
         if(!user) return;
         user.removeSocketId(socket.id);
+        usersOnline.splice(usersOnline.indexOf(user.email),1);
     });
     socket.on("getUserLastLoggedIn",(token:string)=>{
 
@@ -1658,6 +1663,36 @@ rl.on("line",async (line)=>{
                 console.log("Unknown type to create: ",type);
         }
         return;
+    }
+    else if(s[0] == "print"){
+        if(s[1] == "online"){
+            console.log("Users Online: ",usersOnline.join(", "),usersOnline.length);
+            return;
+        }
+    }
+    else if(s[0] == "transfer"){
+        if(s[1] == "challenges"){
+            let from = await readdir("../transfer/challenges");
+            if(!from){
+                console.log("couldn't find from folder");
+                return;
+            }
+            let to = await readdir("../challenges");
+            if(!to){
+                console.log("couldn't find to folder");
+                return;
+            }
+            for(const f of from){
+                if(!to.includes(f)){
+                    let res = await internalCP("../transfer/challenges/"+f,"../challenges/"+f);
+                    if(!res) console.log("...failed: "+f);
+                    else console.log("ADDED: "+f);
+                }
+                else console.log("...skipped: "+f);
+            }
+            console.log("done");
+            return;
+        }
     }
     console.log("Unknown command: ",s[0]);
 });

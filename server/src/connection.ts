@@ -885,3 +885,13 @@ export function rename(fromPath:string,toPath:string){
         });
     });
 }
+export function internalCP(fromPath:string,toPath:string){
+    return new Promise<boolean>(resolve=>{
+        fs.copyFile(fromPath,toPath,err=>{
+            if(err){
+                resolve(false);
+            }
+            else resolve(true);
+        });
+    });
+}
