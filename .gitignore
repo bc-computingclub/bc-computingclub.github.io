@@ -10,3 +10,10 @@ server/package-lock.json
 server/package.json
 package.json
 package-lock.json
+
+# newer stuff after moving to digital ocean
+server/challenges
+server/data
+server/lesson
+server/project
+server/projects
