@@ -433,3 +433,8 @@
 - added redirection to submissions after submitting
 [BUGS]
 - when opening the first file in the submission editor it places it on the wrong side of the add button
+
+### 3/15/24
+- finally got it published at codeotter.dev and working with SSL cert
+- started migrating structure so that the server can be more easily updated
+- added more debug commands to the server

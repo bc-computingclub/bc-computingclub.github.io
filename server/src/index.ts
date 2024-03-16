@@ -1666,7 +1666,13 @@ rl.on("line",async (line)=>{
     }
     else if(s[0] == "print"){
         if(s[1] == "online"){
-            console.log("Users Online: ",usersOnline.join(", "),usersOnline.length);
+            console.log("Users Online: ");
+            console.log(usersOnline.join(", "));
+            console.log(usersOnline.length);
+            return;
+        }
+        if(s[1] == "online-cnt"){
+            console.log("Users Online (count): ",usersOnline.length);
             return;
         }
     }
