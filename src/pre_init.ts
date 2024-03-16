@@ -1,4 +1,5 @@
-let serverURL = "http://localhost:3000";
+let serverURL = location.origin;
+// let serverURL = "http://localhost:3000";
 // let serverURL = "http://claebcode.top:3000";
 // let serverURL = "http://157.245.10.20:3000" // DigitalOcean URL
 

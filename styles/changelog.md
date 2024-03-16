@@ -438,3 +438,7 @@
 - finally got it published at codeotter.dev and working with SSL cert
 - started migrating structure so that the server can be more easily updated
 - added more debug commands to the server
+
+### 3/16/24
+- fixed serverURL to be based on location.origin so it doesn't have to keep being switched everytime we push
+- fixed print online users so that it actually works on the server

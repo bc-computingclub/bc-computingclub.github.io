@@ -1665,14 +1665,28 @@ rl.on("line",async (line)=>{
         return;
     }
     else if(s[0] == "print"){
-        if(s[1] == "online"){
+        // if(s[1] == "online"){
+        //     console.log("Users Online: ");
+        //     console.log(usersOnline.join(", "));
+        //     console.log(usersOnline.length);
+        //     return;
+        // }
+        // if(s[1] == "online-cnt"){
+        //     console.log("Users Online (count): ",usersOnline.length);
+        //     return;
+        // }
+        if(s[1] == "users"){
+            let list:string[] = [];
+            for(const [k,v] of socks){
+                let email = users.get(v)?.email;
+                if(email){
+                    if(!list.includes(email)) list.push(email);
+                }
+                else console.log("** found someone with invalid user data");
+            }
             console.log("Users Online: ");
-            console.log(usersOnline.join(", "));
-            console.log(usersOnline.length);
-            return;
-        }
-        if(s[1] == "online-cnt"){
-            console.log("Users Online (count): ",usersOnline.length);
+            if(list.length) console.log(list.join(", "));
+            console.log(list.length);
             return;
         }
     }
