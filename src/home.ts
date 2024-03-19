@@ -11,17 +11,17 @@ let currentNum: string;
 const sections = [
     {
         title: `<h1 class="h-title">Learn</h1>`,
-        body:`<span class="h-text">Explore programming concepts through a series of interactive tutorials built from scratch something something</span>`,
+        body:`<span class="h-text">Explore programming concepts through a series of interactive tutorials designed from scratch.</span>`,
         button: `<button class="h-redirect" onclick="location.href='/learn/index.html'">GET STARTED<span class="material-symbols-outlined">arrow_forward_ios</span></button>`
     },
     {
         title: `<h1 class="h-title">Practice</h1>`,
-        body:`<span class="h-text">Hone your programming skills by participating in challenges curated by Bridgewater College’s Computing club</span>`,
+        body:`<span class="h-text">Hone your programming skills by completing challenges curated by Bridgewater College’s Computing club</span>`,
         button: `<div class="h-redirect-cont"><button class="h-redirect" onclick="location.href='/practice/index.html'">VIEW CHALLENGES<span class="material-symbols-outlined">arrow_forward_ios</span></button><a class="h-redirect-featured" href="/practice/index.html">Featured Challenge</a></div>`
     },
     {
         title: `<h1 class="h-title">Experiment</h1>`,
-        body:`<span class="h-text">Head out on your own and create whatever you’d like here - this is filler text idk what to say.</span>`,
+        body:`<span class="h-text">Use our built-in code editor to make whatever you'd like, or import your own files.</span>`,
         button: `<button class="h-redirect" onclick="location.href='/editor/index.html'">GET STARTED<span class="material-symbols-outlined">arrow_forward_ios</span></button>`
     },
 ]
