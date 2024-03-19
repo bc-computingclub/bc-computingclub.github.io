@@ -16,7 +16,7 @@ const sections = [
     },
     {
         title: `<h1 class="h-title">Practice</h1>`,
-        body:`<span class="h-text">Hone your programming skills by completing challenges curated by Bridgewater College’s Computing club</span>`,
+        body:`<span class="h-text">Hone your programming skills by completing challenges curated by Bridgewater College’s Computing club.</span>`,
         button: `<div class="h-redirect-cont"><button class="h-redirect" onclick="location.href='/practice/index.html'">VIEW CHALLENGES<span class="material-symbols-outlined">arrow_forward_ios</span></button><a class="h-redirect-featured" href="/practice/index.html">Featured Challenge</a></div>`
     },
     {
