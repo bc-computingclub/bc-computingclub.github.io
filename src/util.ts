@@ -2799,7 +2799,6 @@ class ChallengeMenu extends Menu {
   
     load() {
         super.load();
-        let areSubmissions: boolean = this.c.submission_count <= 0 ? false : true;
         let cDesc = getChallengeDescription(this.c.desc) as HTMLSpanElement;
         this.menu.innerHTML = `
               <div class="c-popup">
@@ -2816,7 +2815,7 @@ class ChallengeMenu extends Menu {
                           <div class ="c-popup-implementations">
                               <div class="c-popup-implementations-header">
                                   <h3 class="c-popup-sub-title">Submissions</h3>
-                                  <button class="c-view-all" onclick="showSubmissions('${this.c.cID}','${areSubmissions}')">
+                                  <button class="c-view-all" onclick="showSubmissions(${this.c.cID}">
                                       View All (${this.c.submission_count})
                                   </button>
                               </div>
@@ -2904,10 +2903,10 @@ class ImagePreview extends Menu {
     }
 }
   
-function showSubmissions(cID: string, areSubmissions: boolean, goToSubmission?:string) {
+function showSubmissions(cID: string, goToSubmission?:string) {
     let goToSub:string = "";
     if(goToSubmission) goToSub = goToSubmission;
-    if (areSubmissions && cID) { 
+    if (cID) { 
         console.log(cID);
         window.location.href = `submissions.html?cid=${cID || ''}&pid=${goToSub || ''}`; 
     }
@@ -3181,7 +3180,7 @@ function getSubmissionElement(submission: Submission, cid?:string): HTMLElement 
     submissionRight.appendChild(openButton);
     if(cid) {
         openButton.addEventListener("click", () => {
-            showSubmissions(cid, true, submission.pid);
+            showSubmissions(cid, submission.pid);
         });
     }
   

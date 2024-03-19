@@ -395,7 +395,29 @@ body.themestyle-light .logo{
     }
 
     .h-title {
-        font-size: 5em;
+        font-size: 3.5em;
+
+        &.exp {
+            font-size: 3em;
+        }
+    }
+
+    .h-text {
+        font-size: 1em;
+        max-width: 250px;
+    }
+
+    .h-redirect-cont {
+        display: flex;
+        align-items: center;
+        gap: 1em;
+    }
+    
+    .h-redirect {
+        font-size: .9em;
+        gap: .5em;
+        font-weight: 700;
+        padding-block: .3em;
     }
 }
 
