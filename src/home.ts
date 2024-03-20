@@ -8,7 +8,7 @@ let currentFeature: HTMLElement;
 let activeElm: HTMLElement;
 let currentNum: string;
 
-const sections = [
+const sections = [ // Any changes to the text displayed on the homepage will tweak this object.
     {
         title: `<h1 class="h-title">Learn</h1>`,
         body:`<span class="h-text">Explore programming concepts through a series of interactive tutorials designed from scratch.</span>`,
@@ -21,16 +21,19 @@ const sections = [
     },
     {
         title: `<h1 class="h-title">Experiment</h1>`,
-        body:`<span class="h-text">Use our built-in code editor to make whatever you'd like, or import your own files.</span>`,
+        body:`<span class="h-text">Create whatever you want. Use our built-in editor, or import your own files.</span>`,
         button: `<button class="h-redirect" onclick="location.href='/editor/index.html'">GET STARTED<span class="material-symbols-outlined">arrow_forward_ios</span></button>`
     },
-]
+];
 
 window.onload = () => {
     setupFeature();
     createFeature();
 }
 
+/**
+ * Find which feature is "active". Give "active" eventlisteners to this feature. (Only called on page load)
+ */
 function setupFeature() {
     currentFeature = document.querySelector('.h-timeline');
     currentNum = currentFeature.getAttribute("section") as string;
@@ -67,6 +70,9 @@ function handleClick(event: Event) {
     }
 }
 
+/**
+ * Clear feature container, then append the "current" feature to the container.
+ */
 function createFeature() {
     while(hDesc.firstChild) hDesc.removeChild(hDesc.firstChild);
     let temp = document.createElement('div');
@@ -79,7 +85,7 @@ function createFeature() {
     hBackground.setAttribute("section", currentNum);
 }
 
-// subtle parallax effect, feel free to remove if you don't like it Caleb
+// Subtle parallax effect, feel free to remove if you don't like it Caleb
 window.addEventListener('mousemove', function(e) {
     var x = e.clientX-innerWidth/2;
     var y = e.clientY-innerHeight/2;

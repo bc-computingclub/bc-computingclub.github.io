@@ -430,6 +430,15 @@ body.themestyle-light .logo{
         font-weight: 700;
         padding-block: .3em;
     }
+
+    .h-background {
+        height: 105dvh;
+        min-width: 130dvw;
+    }
+
+    .nav-container {
+        width: 110dvw;
+    }
 }
 
 /*  */
