@@ -698,6 +698,7 @@ class Project{
     parent:HTMLElement;
     d_files:HTMLElement;
     codeCont:HTMLElement;
+    i_previewURL:HTMLInputElement;
 
     hlItems:FItem[];
 
@@ -807,6 +808,13 @@ class Project{
             await wait(100);
         }
         f.p.deselectHLItems();
+
+        if(f instanceof FFile){
+            if(this.openFiles.includes(f)){
+                f._saved = true; // this is to force it to close if it wasn't saved
+                f.close();
+            }
+        }
     }
     cutFItems(f:FItem){
         if(!f) return;
@@ -900,18 +908,22 @@ class Project{
     }
 
     getURL(){
+        let page = (this.i_previewURL?.value ?? "index.html");
+        if(this.i_previewURL) this.i_previewURL.value = page;
         if(PAGE_ID == PAGEID.editor){
-            if(!this.canEdit) return serverURL+"/public/"+this.meta.owner+"/"+this.pid;
-            return serverURL+"/project/"+g_user.uid+"/"+socket.id+"/"+this.meta.owner+"/"+this.pid;
+            if(!this.canEdit) return serverURL+"/public/"+this.meta.owner+"/"+this.pid+"/"+page;
+            return serverURL+"/project/"+g_user.uid+"/"+socket.id+"/"+this.meta.owner+"/"+this.pid+"/"+page;
         }
-        else if(PAGE_ID == PAGEID.lesson) return serverURL+"/lesson/"+g_user.uid+"/"+socket.id+"/"+g_user.uid+"/"+lesson.lid;
+        else if(PAGE_ID == PAGEID.lesson) return serverURL+"/lesson/"+g_user.uid+"/"+socket.id+"/"+g_user.uid+"/"+lesson.lid+"/"+page;
     }
     getExternalURL(){
+        let page = (this.i_previewURL?.value ?? "index.html");
+        if(this.i_previewURL) this.i_previewURL.value = page;
         if(PAGE_ID == PAGEID.editor){
-            if(!this.canEdit) return location.origin+"/viewer.html?a="+this.meta.owner+"&b="+this.pid+"/index.html";
-            return location.origin+`/viewer.html?t=p&a=${g_user.uid}&b=${socket.id}&c=${this.meta.owner}&d=${this.pid}/index.html`;
+            if(!this.canEdit || this.meta.isPublic) return location.origin+"/viewer.html?a="+this.meta.owner+"&b="+this.pid+"/"+page;
+            return location.origin+`/viewer.html?t=p&a=${g_user.uid}&b=${socket.id}&c=${this.meta.owner}&d=${this.pid}/`+page;
         }
-        else return location.origin+`/viewer.html?t=l&a=${g_user.uid}&b=${socket.id}&c=${lesson.lid}/index.html`;
+        else return location.origin+`/viewer.html?t=l&a=${g_user.uid}&b=${socket.id}&c=${lesson.lid}/`+page;
     }
 
     findFile(name:string){
@@ -1041,7 +1053,7 @@ class Project{
     }
 
     init(){
-        postSetupEditor(this);
+        postSetupEditor(this,!this.isTutor);
     }
 
     get isTutor(){ //temp for now
@@ -1927,17 +1939,23 @@ let iframe:HTMLIFrameElement;
 let _icRef_state = true;
 
 // Lesson Hooks
+// let listenHooks = {
+//     addFile:[] as Task[],
+//     refresh:[] as Task[]
+// } as Record<string,Task[]>;
 let listenHooks = {
     addFile:[] as Task[],
-    refresh:[] as Task[]
-} as Record<string,Task[]>;
+    refresh:[] as Task[],
+    clickPreviewURL:[] as Task[],
+    changePreviewURL:[] as Task[]
+};
 let _hookCount = 0;
 async function waitForQuickHook(hook:Task[]){
     if(lesson.isResuming) return;
     let t = new TmpTask();
     t.start();
     addHook(hook,t);
-    await t._prom;
+    return await t._prom;
 }
 function addHook(hook:Task[],task:Task){
     hook.push(task);
@@ -1954,7 +1972,7 @@ function resolveHook(hook:Task[],data:any){
             if(f.preventContinueIfFail()) result = 1;
             continue;
         }
-        if(f._resFinish) f._resFinish();
+        if(f._resFinish) f._resFinish(data);
         else{
             console.warn("Weird, there wasn't a finish for the hook...?");
         }
@@ -2004,7 +2022,7 @@ function setupEditor(parent:HTMLElement,type:EditorType){
         d_files.appendChild(label);
     }
 }
-function postSetupEditor(project:Project){
+function postSetupEditor(project:Project,isUser=true){
     let parent = project.parent;
     project.d_files = parent.querySelector(".d-open-files");
     project.codeCont = parent.querySelector(".cont-js");
@@ -2104,6 +2122,80 @@ function postSetupEditor(project:Project){
     else project.setPublished(false);
 
     if(project.meta) if(project.meta.cid != null) b_publish.classList.remove("hide");
+
+    if(isUser) postSetupPreview(project);
+}
+function createHTMLPreviewsDropdown(inp:HTMLInputElement){
+    console.log("...setup preview dropdown");
+    let list:string[] = [];
+    inp.addEventListener("mousedown",async e=>{
+        resolveHook(listenHooks.clickPreviewURL,null);
+        list = [];
+        function search(items:FItem[],path=""){
+            for(const f of items){
+                if(f instanceof FFile){
+                    if(f.name.endsWith(".html")){
+                        list.push(path+f.name);
+                    }
+                }
+                else if(f instanceof FFolder){
+                    search(f.items,path+f.name+"/");
+                }
+            }
+        }
+        search(project.items);
+        function calcLen(a:string){
+            if(!a) return 0;
+            if(a == "index.html") return -999;
+            let cnt = a.match(/\//g)?.length || 0;
+            return cnt;
+        }
+        list = list.sort((a,b)=>{
+            if(a == "index.html") return -1;
+            else if(b == "index.html") return 1;
+            return calcLen(a) - calcLen(b) || a.localeCompare(b);
+        });
+        let div = await openDropdown(inp,()=>list,(i)=>{
+            if(!list.length) return;
+            // if(inp.value == list[i]) return;
+            inp.value = list[i];
+            refreshPreview();
+        },{
+            getIcons(){
+                return ["home"];
+            }
+        });
+    });
+    inp.addEventListener("blur",e=>{
+        // if(!inp.value.length) return;
+        if(!overSubMenu || list.length == 0) closeAllSubMenus(true);
+    });
+    // let div = document.createElement("div");
+    // div.className = "preview-dd";
+    // for(const c of list){
+    //     // let item = document
+    // }
+}
+
+function postSetupPreview(p:Project){
+    console.log("...post setup preview");
+    p.i_previewURL = document.querySelector(".i-preview-url");
+    if(p.i_previewURL){
+        p.i_previewURL.value = "index.html";
+        whenEnter(p.i_previewURL,v=>{
+            refreshPreview();
+        });
+        createHTMLPreviewsDropdown(p.i_previewURL);
+    }
+}
+let lastPreviewURL = "";
+async function refreshPreview(){
+    closeAllSubMenus();
+    if(project.i_previewURL.value == lastPreviewURL) return;
+    lastPreviewURL = project.i_previewURL.value;
+    resolveHook(listenHooks.changePreviewURL,lastPreviewURL);
+    if(PAGE_ID == PAGEID.lesson) await refreshLesson();
+    else await refreshProject();
 }
 
 // PAGE ID
@@ -2181,7 +2273,8 @@ async function refreshLesson(){
         alert("No index.html file found! Please create a new file called index.html, this file will be used in the preview.");
         return;
     }
-    iframe.contentWindow.location.replace(serverURL+"/lesson/"+g_user.uid+"/"+socket.id+"/"+g_user.uid+"/"+lesson.lid);
+    // iframe.contentWindow.location.replace(serverURL+"/lesson/"+g_user.uid+"/"+socket.id+"/"+g_user.uid+"/"+lesson.lid);
+    iframe.contentWindow.location.replace(project.getURL());
 
     icon_refresh.style.rotate = _icRef_state ? "360deg" : "0deg";
     _icRef_state = !_icRef_state;
@@ -2383,9 +2476,12 @@ let subs:{
 }[] = [];
 function pushSub(data:any){
     subs.push(data);
-    requestAnimationFrame(()=>{
+    // requestAnimationFrame(()=>{
+    //     _areSubs = true;
+    // });
+    setTimeout(()=>{
         _areSubs = true;
-    });
+    },0);
 }
 setTimeout(()=>{
     subMenus = document.querySelector(".sub-menus") as HTMLElement;
@@ -2399,12 +2495,21 @@ setTimeout(()=>{
 },500);
 let _hadClosedSubMenu = false;
 let _areSubs = false;
-function closeAllSubMenus(){
+function closeAllSubMenus(force=false){
+    if(force) _areSubs = true;
+
+    // recheck
+    // if(!_areSubs){
+    //     // if(subs.some(v=>v.e != null)) _areSubs = true;
+    // }
+    // 
+    
     if(!areSubMenus()) return;
+
     // console.log("HAD: ",_hadClosedSubMenu);
     // if(_hadClosedSubMenu) return;
     let list = [...subs];
-    for(const s of subs){
+    for(const s of list){
         s.e.remove();
         subs.splice(subs.indexOf(s),1);
         if(s.ops.useHold) s.e.classList.remove("hold");
@@ -2613,11 +2718,12 @@ async function initCallouts(){
     console.log(`initialized ${callouts.length} callouts`);
 }
 
-function whenEnter(elm:HTMLInputElement,f:(v:string)=>void){
+function whenEnter(elm:HTMLInputElement,f:(v:string)=>void,noBlur=false){
     elm.addEventListener("keydown",e=>{
         if(e.key.toLowerCase() == "enter") f(elm.value);
     });
-    elm.addEventListener("blur",e=>{
+    if(!noBlur) elm.addEventListener("blur",e=>{
+        if(overSubMenu) return;
         f(elm.value);
     });
 }
@@ -3439,3 +3545,7 @@ async function loadMonaco(){
     });
     _hasLoadedMonaco = true;
 }
+
+document.addEventListener("selectstart",e=>{
+    if("dragging" in window) if(dragging) e.preventDefault();
+});

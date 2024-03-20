@@ -1,12 +1,12 @@
 {
     "ver": "0",
-    "name": "PracticeBoardTesting",
+    "name": "Basic_HTML_Structure",
     "banner": {
         "sections": [
             {
                 "head": "What Will We Be Doing in This Lesson?",
                 "text": [
-                    "Want to start coding?"
+                    "We'll look into more things we can use HTML elements for and different ways to structure them."
                 ]
             }
         ]

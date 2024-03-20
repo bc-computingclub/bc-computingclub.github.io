@@ -11,12 +11,11 @@ function initViewer(){
     if(t == "p") url = serverURL+`/project/${a}/${b}/${c}/${d}`;
     else if(t == "l") url = serverURL+`/lesson/${a}/${b}/${a}/${c}`;
     
-    // viewerFrame.onload = function(){
-    //     setTimeout(()=>{
-    //         // document.title = viewerFrame.contentDocument.title;
-    //         console.log(viewerFrame.contentWindow);
-    //     },400);
-    // };
+    viewerFrame.onload = function(){
+        if(!viewerFrame.contentDocument) return;
+        let title = viewerFrame.contentDocument.title;
+        document.title = (title.length ? title : "Project Viewer");
+    };
     viewerFrame.src = url;
     viewerFrame.setAttribute("style","width:100%;height:100%;border:none;outline:none");
 

@@ -147,7 +147,7 @@ class PTreeFolder{
 }
 
 export const progressTree = new PTreeFolder("root",[],{
-    theBeginnings:new PTreeFolder("The Beginnings",[
+    __0_theBeginnings:new PTreeFolder("The Beginnings",[
         new PTreeLesson("The First Lesson","AqCOreapkT8uu8sC",0,0,[
             new PTreeLink("yX0zoNI7fjG0MgtQ")
         ],{unlocked:true}),
@@ -157,6 +157,7 @@ export const progressTree = new PTreeFolder("root",[],{
         ]),
         new PTreeLesson("Dummy","_dummy03",70,40,[]), // javascript intro
         new PTreeLesson("Dummy","_dummy04",75,-5,[]) // transitions - more intermediate css
+
         // new PTreeLesson("The First Lesson","0001",0,0,[
         //     new PTreeLink("GUR5zKAcaZgObqWk")
         // ],{
@@ -166,9 +167,26 @@ export const progressTree = new PTreeFolder("root",[],{
         //     new PTreeLink("RYRFcZXnLyJJm1Jc",true)
         // ]),
         // new PTreeLesson("The Quick Lesson","RYRFcZXnLyJJm1Jc",70,40),
+    ]),
+    theBeginnings:new PTreeFolder("The Beginnings",[
+        new PTreeLesson("The First Lesson","AqCOreapkT8uu8sC",0,0,[
+            new PTreeLink("aw5HFgPdsxJPHMcg")
+        ],{unlocked:true}),
+        new PTreeLesson("Basic HTML Structure","aw5HFgPdsxJPHMcg",35,20,[
+            new PTreeLink("yX0zoNI7fjG0MgtQ")
+        ]),
+        new PTreeLesson("Simple Styling","yX0zoNI7fjG0MgtQ",70,-5,[
+            new PTreeLink("_dummy04",true),
+        ]),
+
+        new PTreeLesson("Dummy","_dummy04",100,-35,[
+            new PTreeLink("_dummy03",true),
+        ]), // transitions - more intermediate css
+        new PTreeLesson("Dummy","_dummy03",125,15,[]), // javascript intro
+        // new PTreeLesson("Dummy","_dummy03",110,25,[]), // javascript intro
     ])
 });
-const progressTree_raw = {
+/*const progressTree_raw = {
     theBeginnings:{
         lessons:[
             {
@@ -200,4 +218,4 @@ const progressTree_raw = {
             }
         ]
     }
-};
+};*/

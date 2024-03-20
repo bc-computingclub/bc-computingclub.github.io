@@ -443,7 +443,6 @@ class ProjectDashboard extends Menu{
         let list = raw.map(v=>v as ProjectMeta);
 
         // sorting
-        console.log(list);
         list = list.sort((a,b)=>{
             // let aTime = a.wc ? new Date(a.wc).getTime() : 0;
             // let bTime = b.wc ? new Date(b.wc).getTime() : 0;
@@ -524,7 +523,6 @@ class ProjectDashboard extends Menu{
             }
         });
         if(meta.starred) div.classList.add("starred");
-        console.log(meta.name,meta.starred);
 
         // setupCallout(b_star,"Star Project"); // might be annoying to have this
         let ic_sub = div.querySelector(".ic-submitted");

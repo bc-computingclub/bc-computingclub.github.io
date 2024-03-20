@@ -442,3 +442,77 @@
 ### 3/16/24
 - fixed serverURL to be based on location.origin so it doesn't have to keep being switched everytime we push
 - fixed print online users so that it actually works on the server
+- fixed View Project page so that it will use the title of the page as it's title unless it doesn't have one and then it will use "Project Viewer"
+- fixed serverURL so that it uses either codeotter.dev if that's what it is and otherwise localhost:3000 so you can still use live server if you'd like
+- fixed getExternalURL so that if your project is public then it'll use the public url instead
+
+[IDEAS]
+- Learn: The First Lesson -> Basic HTML Structure -> Simple Styling
+- Basic HTML structure will go over nesting html elements and the ! layout (in order to eventually add css and js files)
+
+### 3/17/24
+[IDEAS]
+% [The-First-Lesson]
+\\ ! change ending
+- @ Next time we'll take a look at structuring HTML elements within your page
+
+% [Basic-HTML-Structure]
+- you can go search for other public projects and this will be in the experiment tab but experiment which change to "Discover" or "Inspire" because now what you are doing is looking at other projects for discovery or for inspiration
+
+- [Basic HTML Structure]
+<!-- - so what else can we do with elements? -->
+<!-- - a nice and really important thing we can do is put elements inside of other elements, making them like containers or wrappers around others -->
+<!-- - let's start by constructing  -->
+
+- let's take a look at various text elements
+- (create h1, p, u, b) ~ with each one describe again what they are/mean
+- What if we wanted to underline the <h1> element? how could we do it?
+- well, a nice and imporatnt thing about HTML is that you can put elements inside of other elements, like a container or wrapper around them
+- let's wrap the <u> element around our <h1>
+- this applies the underline style to our header because everything within the <u> element will become underlined
+- you can also put multiple elements within elements
+- make another <u> but open it on a new line and put an <h3> and <p> element in there
+- div elements are often used as generic containers around elements
+- show <div> with another <h3> and <p>
+- -> try to use a div element to make a container of two buttons
+- <div> with 2 buttons (First, Second)
+
+- Nice!, so sure, we can nest elements within each other, but what's the point?
+<!-- could show ul and ol elements here -->
+- ultimately it's for better organization of our page which will become extremely important for tutorials and projects down the road
+- let's build the basic html structure that every page should have
+- -> create page2.html
+- (start with html tag) ~ this element will hold everything in our whole html page
+- (next make head) ~ this will hold elements that hold information like the title of our site, it's icon, and external css files which let us style our page
+- (next make body) ~ the body is where all of your elements that actually make up the physical page go, as well as javascript files that we'll use to control these elements in the body of our page
+- if this seems like a lot of information don't worry, it is, but it's also critical to every html page and we'll be using it in every web tutorial from now on
+- -> create page3.html
+- test yourself to see how much you can remember of the basic structure of an html page, and if you remember it all, try to add a Header 1 and a button to the page as well. (feel free to look back at page2.html but I encourage you to challenge yourself)
+- <html>, <head>, <body>, <h1>Welcome, <button>Start
+- Nice Job! Remember, if you're finding it hard to remember the structure, in time you'll know it by heart since we'll use it in every web tutorial from now on
+
+- @ in the next tutorial we will look at adding an external css file to stylize our html page
+
+<!-- - let's add some more anchor elements
+    - (tip if you hold "Shift+Alt+Down Arrow" on Windows or "Shift+Option+Down Arrow" on MacOS, it'll duplicate the current line you're at)
+    -  -->
+<!-- - (refresh to see how they look) -->
+
+<!-- - these all show various text we may want to display in our program but hmm, what if we wanted to put them in a list, how could we do it? -->
+- 
+
+% [Simple-Styling]
+- this is where the introduction to divs are and I'll show using them as a container and them applying the style to the container and it's children, instead of having to specify a class on each one
+
+### 3/18/24
+- added relative url bar to change where the preview goes to
+
+### 3/19/24
+- added quick html dropdown support to the preview url bar
+- fixed deleting file that was open would not be deleted from openFiles
+- added new lesson Task for clicking and selecting different html preview files
+- added transitions for moving bubbles around
+- fixed bubble with arrow on the right side
+- fixed leaving lesson had double confirmation
+- fixed start lesson banner so that it doesn't display the "what we'll be making menu" when there isn't a final instance loaded
+- wrote second lesson (Basic HTML Structure) but it's really buggy, need to fix some lesson system stuff

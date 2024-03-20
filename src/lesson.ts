@@ -532,6 +532,11 @@ class AddGenericCodeTask extends Task{
             }
             else if(key == "\x06"){
                 // editor.trigger('keyboard','deleteLeft',null);
+                editor.updateOptions({readOnly:false});
+                editor.trigger('keyboard','deleteLeft',null);
+                editor.updateOptions({readOnly:true});
+                await wait(Math.ceil(30+Math.random()*100));
+                continue;
             }
             else if(key == "\x07"){
                 editor.updateOptions({readOnly:false});
@@ -893,6 +898,50 @@ class TmpTask extends Task{
         }});
         console.log(":::: has started");
         return await this.finish();
+    }
+}
+class ChangePreviewURLTask extends Task{
+    constructor(text:string){
+        super("Change Preview URL");
+        this.text = text;
+    }
+    text:string;
+    b:Bubble;
+    async start(): Promise<string | void> {
+        await wait(200);
+
+        let elm = lesson.p.i_previewURL;
+        let rect = elm.getBoundingClientRect();
+        this.b = addBubbleAt(BubbleLoc.xy,this.text,"top",{
+            x:rect.x+35,
+            y:rect.y+rect.height+25-60,
+        });
+
+        await waitForQuickHook(listenHooks.clickPreviewURL);
+        await wait(80);
+        this.b.ops.x = rect.x-42+40-this.b.e.getBoundingClientRect().width;
+        this.b.ops.y += 54-55;
+        this.b.e.classList.remove("dir-top");
+        this.b.e.classList.add("dir-right");
+        this.b.e.style.transform = "translate(-40px,55px)";
+        updateBubbles();
+
+        while(true){
+            let before = project.i_previewURL.value;
+            let url = await waitForQuickHook(listenHooks.changePreviewURL);
+            if(url == before){
+                await wait(200);
+                continue;
+            }
+            break;
+        }
+        this.cleanup();
+        await wait(250);
+        
+        await this.finish();
+    }
+    cleanup(): void {
+        closeBubble(this.b);
     }
 }
 
@@ -2746,7 +2795,7 @@ class Lesson{
         if(eventI == -1 && taskI == -1){
             this.endLoading();
             addBannerBubble(this);
-            addBannerPreviewBubble(this);
+            if(this.finalInstance?.files?.length) addBannerPreviewBubble(this);
         }
         else this.start();
     }
@@ -3848,9 +3897,9 @@ class LessonCompleteMenu extends Menu{
 // Dashboard/Home button
 const b_home = document.querySelector(".b-editor-dashboard");
 b_home.addEventListener("click",e=>{
-    if(!lesson.canLeave()){
-        if(!confirm("You have unsaved changes!\n\nAre you sure you want to leave without saving?")) return;
-    }
+    // if(!lesson.canLeave()){
+    //     if(!confirm("You have unsaved changes!\n\nAre you sure you want to leave without saving?")) return;
+    // }
     location.href = "/learn";
 });
 

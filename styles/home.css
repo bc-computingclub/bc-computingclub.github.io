@@ -146,6 +146,17 @@ body.themestyle-light .logo{
     transform-origin: bottom;
     transition-duration: 0.15s;
 }
+/* claeb: just some testing */
+/* .nav-links{
+    width:480px;
+}
+.nav-links:not(:hover) > *:not(:last-child){
+    width:12px;
+    padding:0px;
+    color:transparent;
+    margin:-3px;
+    height:24px;
+} */
 
 .nav-links >*:hover,
 .nav-links >*.hold {

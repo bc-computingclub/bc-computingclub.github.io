@@ -67,6 +67,7 @@ return [
         new DoRefreshTask("All the buttons should now be stacked vertically."),
     ]),
     new LE_AddGBubble([
-        "Next time we'll look at some simple styling, or adjusting how the elements look."
+        // "Next time we'll look at some simple styling, or adjusting how the elements look."
+        "Next time we'll take a look at structuring HTML elements within your page."
     ],BubbleLoc.global,[])
 ];

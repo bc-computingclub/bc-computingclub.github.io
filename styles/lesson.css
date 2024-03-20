@@ -92,7 +92,10 @@ body.hide-bubbles .tut-mouse{
     max-width:300px;
     font-size:14px;
 
-    transition:opacity 0.2s ease-out;
+    --curve:cubic-bezier(0.175, 0.885, 0.32, 1.125);
+    --time:0.3s;
+    transition:opacity 0.2s ease-out, left var(--time) var(--curve), top var(--time) var(--curve);
+    
 
     color:white;
 
@@ -138,6 +141,9 @@ body.hide-bubbles .tut-mouse{
     border-top:10px solid transparent;
     border-bottom:10px solid transparent;
     border-left:15px solid var(--col);
+    border-right:none;
+    left:unset;
+    right:-14px;
 }
 .bubble.dir-top{
     transform:translate(-40px,55px);
