@@ -214,10 +214,10 @@ class LessonItem{
                     <div>play_arrow</div>
                     <div>Resume</div>
                 </div>
-                <div>
+                <!--<div>
                     <div>replay</div>
                     <div>Restart</div>
-                </div>
+                </div>-->
                 <div>
                     <div>delete</div>
                     <div>Clear</div>
@@ -329,7 +329,7 @@ class LessonItem{
                     location.href = "/learn/lesson/index.html?lid="+this.lid;
                 });
             });
-            this.d_actions.children[1].addEventListener("click",e=>{
+            if(false) this.d_actions.children[1].addEventListener("click",e=>{
                 new ConfirmMenu("Reset Progress",`Are you sure you want<br> to reset lesson progress for "${this.l.name}" ?`,()=>{
                     socket.emit("restartLessonProgress",this.lid,(data:any)=>{
                         if(data == 0){
@@ -341,7 +341,7 @@ class LessonItem{
                     });
                 },()=>{}).load();
             });
-            this.d_actions.children[2].addEventListener("click",e=>{
+            this.d_actions.children[1].addEventListener("click",e=>{
                 new ConfirmMenu("Delete Progress",`Are you sure you want<br> to delete lesson progress for "${this.l.name}" ?`,()=>{
                     socket.emit("deleteLessonProgress",this.lid,(data:any)=>{
                         if(data == 0){

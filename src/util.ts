@@ -461,6 +461,8 @@ function handleCredentialResponse(response:CredentialResponse){
     closeAllMenus();
 }
 
+let bypassLogin = false;
+
 let loginProm:Promise<void>;
 let _loginRes:()=>void;
 loginProm = new Promise<void>(resolve=>{
@@ -494,8 +496,10 @@ function logUserIn(data?:CredentialResData,token?:string){
         img.onerror = (err:Event,source,lineno,colno,error)=>{
             if(err) console.warn("> Failed loading profile picture",err.type);
             g_user = null;
-            new PromptLoginMenu().load();
-            return;
+            if(!bypassLogin){
+                new PromptLoginMenu().load();
+                return;
+            }
         };
 
         _login(data,token);
@@ -992,7 +996,10 @@ class Project{
             f.setTemp(false);
         }
 
-        if(isNew) if(PAGE_ID == PAGEID.editor) saveProject();
+        if(isNew){
+            if(PAGE_ID == PAGEID.editor) saveProject();
+            else if(PAGE_ID == PAGEID.lesson) saveProject();
+        }
         return f;
     }
     createFolder(name:string,folder?:FFolder,isNew=true){
@@ -1944,6 +1951,7 @@ let _icRef_state = true;
 //     refresh:[] as Task[]
 // } as Record<string,Task[]>;
 let listenHooks = {
+    clickAddFile:[] as Task[],
     addFile:[] as Task[],
     refresh:[] as Task[],
     clickPreviewURL:[] as Task[],
@@ -2053,6 +2061,9 @@ function postSetupEditor(project:Project,isUser=true){
         }
         
         // let name = prompt("Enter file name:","index.html");\
+
+        resolveHook(listenHooks.clickAddFile,null);
+        
         let name = "index.html";
         new InputMenu(
             "New File","Enter file name",
@@ -2064,7 +2075,7 @@ function postSetupEditor(project:Project,isUser=true){
             },
             "Create File",
         ).load();
-        if(!name) return;
+        if(!name) return; // technically this doesn't do anything
     });
 
     // loadEditorTheme();
@@ -2187,15 +2198,42 @@ function postSetupPreview(p:Project){
         });
         createHTMLPreviewsDropdown(p.i_previewURL);
     }
+    _iframeKeydown = (e)=>{
+        let k = e.key.toLowerCase();
+        if(k == "control" || e.ctrlKey){
+            iframe.blur();
+            document.body.focus();
+            // fileList.focus();
+            iframe.style.pointerEvents = "none";
+            setTimeout(()=>{
+                iframe.style.pointerEvents = null;
+            },100);
+            console.log("blur");
+        }
+        if(k == "c" && (e.ctrlKey || e.metaKey)){
+            console.log("...refreshing");
+            // e.preventDefault();
+        }
+    };
+    iframe.contentDocument.addEventListener("keydown",_iframeKeydown);
 }
 let lastPreviewURL = "";
+let _iframeKeydown:(e:KeyboardEvent)=>void;
 async function refreshPreview(){
     closeAllSubMenus();
+    resolveHook(listenHooks.changePreviewURL,project.i_previewURL.value);
     if(project.i_previewURL.value == lastPreviewURL) return;
     lastPreviewURL = project.i_previewURL.value;
-    resolveHook(listenHooks.changePreviewURL,lastPreviewURL);
+    
     if(PAGE_ID == PAGEID.lesson) await refreshLesson();
     else await refreshProject();
+}
+function postIFrameRefresh(){
+    iframe.onload = function(){
+        console.log("load");
+        if(_iframeKeydown) iframe.contentDocument.removeEventListener("keydown",_iframeKeydown);
+        iframe.contentDocument.addEventListener("keydown",_iframeKeydown);
+    };
 }
 
 // PAGE ID
@@ -2248,6 +2286,7 @@ async function refreshProject(){
         alert("No index.html file found! Please create a new file called index.html in the outer most folder of your project, this file will be used in the preview.");
         return;
     }
+    postIFrameRefresh();
     iframe.contentWindow.location.replace(project.getURL());
     // let cs = (iframe.contentWindow as any).console as Console;
     // cs.log = function(...data:any[]){
@@ -2274,6 +2313,7 @@ async function refreshLesson(){
         return;
     }
     // iframe.contentWindow.location.replace(serverURL+"/lesson/"+g_user.uid+"/"+socket.id+"/"+g_user.uid+"/"+lesson.lid);
+    postIFrameRefresh();
     iframe.contentWindow.location.replace(project.getURL());
 
     icon_refresh.style.rotate = _icRef_state ? "360deg" : "0deg";

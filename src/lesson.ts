@@ -62,6 +62,7 @@ b_goBackStep.addEventListener("click",e=>{
             if(t instanceof AddTutorSideText) skip = true;
             if(t instanceof MoveCursorTo) skip = true;
             if(t instanceof BubbleTask) skip = true;
+            if(t.skipsRewind()) skip = true;
             if(skip){
                 j--;
                 return check();
@@ -197,6 +198,11 @@ abstract class Task{
     check(data:any){
         return true;
     }
+
+    skipsRewind(){
+        return false;
+    }
+
     async endTask(){
         // new reset stuff
         this._resFinish = null;
@@ -237,6 +243,7 @@ abstract class Task{
         this.canBeFinished = true;
         let res = null;
         if(this.requiresDoneConfirm) showLessonConfirm();
+        else if(this.skipsRewind()) this._resFinish(); // new, hopefully this doesn't break anything
         if(this._prom) res = await this._prom;
         lesson.finishSubTask(this);
         this.isFinished = true;
@@ -396,7 +403,7 @@ class AddFileTask extends Task{
             return this.finish();
         }
 
-        await moveTutMouseTo(rect.x+rect.width/2,rect.y+rect.height/2);
+        await moveTutMouseToXY(rect.x+rect.width/2,rect.y+rect.height/2);
         await wait(300);
         await fakeClickButton(tarBtn);
         if(existingFile){
@@ -410,6 +417,15 @@ class AddFileTask extends Task{
         let alreadyFoundFile = lesson.p.files.find(v=>v.name == this.name);
         if(!alreadyFoundFile){
             this.b = addBubbleAt(BubbleLoc.add_file,this.title);
+            // await waitForQuickHook(listenHooks.clickAddFile);
+            // await wait(80);
+            // this.b.loc = BubbleLoc.xy;
+            // let rect2 = document.querySelector(".b-add-file").getBoundingClientRect();
+            // this.b.e.style.left = (rect2.x-42-this.b.e.getBoundingClientRect().width)+"px";
+            // this.b.e.style.top = (rect2.y+32)+"px";
+            // this.b.e.classList.remove("dir-top","dir-top2");
+            // this.b.e.classList.add("dir-right");
+            // this.b.e.style.transform = "translate(-40px,55px)";
             this.addToHook(listenHooks.addFile);
         }
         else if(!goesBack){
@@ -444,6 +460,279 @@ class SubMsg{
 
     }
 }
+
+const LINE_SCALE = 19;
+const LINE_OFF = 110;
+const COL_SCALE = 7.7;
+const COL_OFF = 60;
+
+type Editor = monaco.editor.IStandaloneCodeEditor;
+async function startMouseMove(col:number,line:number,noShow=false){
+    if(!noShow) await showTutMouse();
+    // await moveTutMouseTo(58 + pos.column*7.7,115 + pos.lineNumber*16.5);
+    await moveTutMouseTo(col,line);
+    if(!noShow) await hideTutMouse();
+}
+async function typeText(editor:Editor,text:string,speedScale=1){
+    if(g_waitDelayScale == 0){
+        editor.updateOptions({readOnly:false});
+        editor.trigger("keyboard","type",{
+            text
+        });
+        let pos = editor.getPosition().clone();
+        editor.setValue(editor.getValue());
+        editor.setPosition(pos);
+        editor.updateOptions({readOnly:true});
+    }
+    else for(let i = 0; i < text.length; i++){
+        let key = text.substring(i,i+1);
+
+        editor.updateOptions({readOnly:false});
+        editor.trigger("keyboard","type",{
+            text:key
+        });
+        editor.updateOptions({readOnly:true});
+        // await wait(Math.ceil(30+Math.random()*100));
+        // await DWait(0);
+        await wait(getTypeSpeed(text?.length ?? 5)*speedScale);
+    }
+}
+function _moveCursorHome(editor:Editor){
+    editor.trigger("keyboard","cursorHome",null);
+}
+function _moveCursorEnd(editor:Editor){
+    editor.trigger("keyboard","cursorEnd",null);
+}
+async function moveCursorBy(editor:Editor,cols:number,rows:number,noShow=false){
+    let pos = editor.getPosition();
+    if(noShow){
+        await moveTutMouseTo(cols,rows);
+        editor.setPosition(pos.with(pos.lineNumber+rows,pos.column+cols));
+        return;
+    }
+    
+    // let amt = Math.max(Math.abs(cols),Math.abs(rows));
+    // editor.setPosition(pos.with(pos.lineNumber+y,pos.column+x));
+    await showTutMouse(true);
+    // for(let i = 0; i < amt; i++){
+    //     editor.setPosition(pos.with(pos.lineNumber+rows,pos.column+cols));
+    //     await wait(getTypeSpeed(5));
+    // }
+    await wait(200);
+    await startMouseMove(pos.column+cols,pos.lineNumber+rows,true);
+    await wait(_mouseClickDelay);
+
+    editor.setPosition(pos.with(pos.lineNumber+rows,pos.column+cols));
+    // await wait(getTypeSpeed(5));
+    await wait(_mouseClickDelay);
+    
+    await hideTutMouse();
+}
+class CodePart{
+    constructor(){
+        
+    }
+    async run(editor:Editor){
+        
+    }
+}
+class CP_LineBelow extends CodePart{
+    constructor(amt:number){
+        super();
+        this.amt = amt;
+    }
+    amt:number;
+    async run(editor: monaco.editor.IStandaloneCodeEditor): Promise<void> {
+        lesson.tut.curFile.blockPosChange = false;
+        editor.updateOptions({readOnly:false});
+        for(let i = 0; i < this.amt; i++){
+            editor.trigger("keyboard","editor.action.insertLineAfter",null);
+        }
+        lesson.tut.curFile.blockPosChange = false;
+        let newPos = editor.getPosition();
+        moveTutMouseTo(newPos.column,newPos.lineNumber);
+        editor.updateOptions({readOnly:true});
+        await wait(50);
+    }
+}
+class CP_Home extends CodePart{
+    constructor(){
+        super();
+    }
+    async run(editor: monaco.editor.IStandaloneCodeEditor): Promise<void> {
+        lesson.tut.curFile.blockPosChange = false;
+        _moveCursorHome(editor);
+        lesson.tut.curFile.blockPosChange = true;
+        await wait(50);
+    }
+}
+class CP_End extends CodePart{
+    constructor(){
+        super();
+    }
+    async run(editor: monaco.editor.IStandaloneCodeEditor): Promise<void> {
+        lesson.tut.curFile.blockPosChange = false;
+        _moveCursorEnd(editor);
+        await wait(50);
+        lesson.tut.curFile.blockPosChange = true;
+    }
+}
+class CP_BreakOut extends CodePart{
+    constructor(y:number,newLine=false){
+        super();
+        this.y = y;
+        this.newLine = newLine;
+    }
+    y:number;
+    newLine:boolean;
+    async run(editor: monaco.editor.IStandaloneCodeEditor): Promise<void> {
+        lesson.tut.curFile.blockPosChange = false;
+        let amt = Math.abs(this.y);
+        let dir = this.y/amt;
+        for(let i = 0; i < amt; i++){
+            _moveCursorEnd(editor);
+            await moveCursorBy(editor,0,dir);
+            await wait(50);
+        }
+        if(this.newLine) await typeText(editor,"\n");
+        lesson.tut.curFile.blockPosChange = true;
+    }
+}
+class CP_MoveBy extends CodePart{
+    constructor(x:number,y:number,noShow=false){
+        super();
+        this.x = x;
+        this.y = y;
+        this.noShow = noShow;
+    }
+    x:number;
+    y:number;
+    noShow:boolean;
+    async run(editor: monaco.editor.IStandaloneCodeEditor): Promise<void> {
+        lesson.tut.curFile.blockPosChange = false;
+        await moveCursorBy(editor,this.x,this.y,this.noShow);
+        lesson.tut.curFile.blockPosChange = true;
+    }
+}
+class CP_Text extends CodePart{
+    constructor(code:string){
+        super();
+        this.code = code;
+    }
+    code:string;
+    async run(editor: Editor): Promise<void> {
+        lesson.tut.curFile.blockPosChange = false;
+
+        await typeText(editor,this.code);
+        // for(const c of list){
+        //     (c as HTMLElement).style.display = null;
+        // }
+        let pos = editor.getPosition();
+        lesson.tut.curFile.curRow = pos.lineNumber;
+        lesson.tut.curFile.curCol = pos.column;
+        lesson.tut.curFile.blockPosChange = true;
+        
+        await startMouseMove(pos.column,pos.lineNumber,true);
+        // moveTutMouseTo(58 + pos.column*7.7,115 + pos.lineNumber*16.5);
+    }
+}
+class CP_HTML extends CodePart{
+    constructor(tag:string,endAtCenter:boolean,open:boolean,text?:string){
+        super();
+        this.tag = tag;
+        this.endAtCenter = endAtCenter;
+        this.open = open;
+        this.text = text;
+    }
+    tag:string;
+    endAtCenter:boolean;
+    open:boolean;
+    text:string;
+    async run(editor: Editor): Promise<void> {
+        lesson.tut.curFile.blockPosChange = false;
+
+        let text = this.text ?? "";
+        await typeText(editor,`<${this.tag}>${text}</${this.tag}>`);
+        
+    
+        // for(const c of list){
+        //     (c as HTMLElement).style.display = null;
+        // }
+        let pos = editor.getPosition();
+        lesson.tut.curFile.curRow = pos.lineNumber;
+        lesson.tut.curFile.curCol = pos.column;
+        
+        await startMouseMove(pos.column,pos.lineNumber,true);
+        // moveTutMouseTo(58 + pos.column*7.7,115 + pos.lineNumber*16.5);
+
+        if(this.endAtCenter) await moveCursorBy(editor,-3-this.tag.length,0);
+        if(this.open) await typeText(editor,"\n");
+
+        lesson.tut.curFile.blockPosChange = true;
+    }
+}
+class AddCode extends Task{
+    constructor(parts:CodePart[],text="Let's add some code here.",dir?:string){
+        super("Add Code Parts");
+        this.parts = parts;
+        this.text = text;
+        this.dir = dir;
+    }
+    parts:CodePart[];
+    text:string;
+    dir:string;
+    async start(): Promise<string | void> {
+        await super.start();
+        let editor = lesson.tut.getCurEditor();
+
+        for(let i = 0; i < this.parts.length; i++){
+            if(i == 0){
+                // Start Cursor
+                let pos = editor.getPosition();
+                await startMouseMove(pos.column,pos.lineNumber);
+
+                // Show Pre Message
+                if(this.text != null){
+                    await wait(250);
+                    // if(this.line != null && this.col != null){
+                        // await showTutMouse();
+                        // await moveTutMouseTo(60 + this.col*7.7, 110 + this.line*19);
+                        // await wait(150);
+                    // }
+                    let r2 = tutMouse.getBoundingClientRect();
+                    let preText = this.text ?? "Let's add some code here.";
+                    if(!lesson._hasShownFollowAlong){
+                        preText += "<br><br>i[Follow along! But feel free to make your own changes and experiment!]";
+                        lesson._hasShownFollowAlong = true;
+                    }
+                    let b2 = addBubbleAt(BubbleLoc.xy,preText,this.dir,{
+                        x:r2.x+r2.width/2 + 17 + 12,
+                        y:r2.y+r2.height/2 - 32,
+                        click:true
+                    });
+                    await b2.clickProm;
+                    await wait(150);
+                }
+                // await hideTutMouse();
+                await wait(200);
+            }
+            
+            let p = this.parts[i];
+            await p.run(editor);
+        }
+
+        return await this.finish();
+    }
+}
+class AddIgnoreCode extends AddCode{
+    constructor(parts:CodePart[],dir?:string){
+        super(parts,null,dir);
+    }
+    requiresDoneConfirm = false;
+    skipsRewind(): boolean {
+        return true;
+    }
+}
 class AddGenericCodeTask extends Task{
     // constructor(code:string,lang:string,hasPreMsg=true,submsgs:SubMsg[]=[]){
     constructor(code:string,lang:string,customText:string=null,hasPreMsg=true,line:number|null=null,col:number|null=null,dir:string="top"){
@@ -475,13 +764,13 @@ class AddGenericCodeTask extends Task{
         let pos = editor.getPosition();
         await showTutMouse();
         // await moveTutMouseTo(58 + pos.column*7.7,115 + pos.lineNumber*16.5);
-        await moveTutMouseTo(60 + pos.column*7.7, 110 + pos.lineNumber*19);
+        await moveTutMouseTo(pos.column,pos.lineNumber);
 
         if(this.hasPreMsg){
             await wait(250);
             if(this.line != null && this.col != null){
                 await showTutMouse();
-                await moveTutMouseTo(60 + this.col*7.7, 110 + this.line*19);
+                await moveTutMouseTo(this.col,this.line);
                 await wait(150);
             }
             let r2 = tutMouse.getBoundingClientRect();
@@ -506,6 +795,11 @@ class AddGenericCodeTask extends Task{
         }
         for(let i = 0; i < this.code.length; i++){
             let key = this.code.substring(i,i+1);
+            if(key == "\n"){
+                let pos2 = editor.getPosition().clone();
+                editor.setValue(editor.getValue());
+                editor.setPosition(pos2);
+            }
             if(key == "\x05"){
                 await wait(250);
                 continue;
@@ -568,7 +862,8 @@ class AddGenericCodeTask extends Task{
         lesson.tut.curFile.curCol = pos.column;
         lesson.tut.curFile.blockPosChange = true;
         
-        moveTutMouseTo(58 + pos.column*7.7,115 + pos.lineNumber*16.5);
+        // moveTutMouseTo(58 + pos.column*7.7,115 + pos.lineNumber*16.5);
+        moveTutMouseTo(pos.column,pos.lineNumber);
 
         if(false){
             let b = addBubble(lesson.tut.curFile,"<button>I'm Done</button>");
@@ -624,7 +919,7 @@ class AddTutorSideText extends Task{
 
         let pos = editor.getPosition();
         await showTutMouse();
-        await moveTutMouseTo(58 + pos.column*7.7,115 + pos.lineNumber*16.5);
+        await moveTutMouseTo(pos.column,pos.lineNumber);
         await wait(150);
         await hideTutMouse();
         await wait(200);
@@ -681,7 +976,7 @@ class AddTutorSideText extends Task{
         lesson.tut.curFile.curCol = pos.column;
         lesson.tut.curFile.blockPosChange = true;
 
-        moveTutMouseTo(58 + pos.column*7.7,115 + pos.lineNumber*16.5);
+        moveTutMouseTo(pos.column,pos.lineNumber);
 
         this.canBeFinished = true;
         this._resFinish();
@@ -705,7 +1000,7 @@ class MoveCursorTo extends Task{
         // let pos = editor.getPosition();
         await showTutMouse();
         // await moveTutMouseTo(58 + this.col*7.7,115 + this.line*16.5);
-        await moveTutMouseTo(60 + this.col*7.7 - editor.getScrollLeft(), 110 + this.line*19);
+        await moveTutMouseToXY(COL_OFF + this.col*COL_SCALE - editor.getScrollLeft(), LINE_OFF + this.line*LINE_SCALE);
         await wait(150);
         await hideTutMouse();
         await wait(200);
@@ -828,7 +1123,7 @@ class BubbleTask extends Task{
         await wait(250);
         if(this.line != null && this.col != null){
             await showTutMouse();
-            await moveTutMouseTo(60 + this.col*7.7, 110 + this.line*19);
+            await moveTutMouseTo(this.col,this.line);
             await wait(150);
         }
         let r2 = tutMouse.getBoundingClientRect();
@@ -901,14 +1196,29 @@ class TmpTask extends Task{
     }
 }
 class ChangePreviewURLTask extends Task{
-    constructor(text:string){
+    constructor(text:string,filename:string){
         super("Change Preview URL");
         this.text = text;
+        this.filename = filename;
     }
     text:string;
+    filename:string;
     b:Bubble;
+    skipsRewind(): boolean {
+        let _list = project.i_previewURL.value.split("/");
+        if(_list[_list.length-1] == this.filename) return true;
+        return false;
+    }
     async start(): Promise<string | void> {
         await wait(200);
+
+        let _list = project.i_previewURL.value.split("/");
+        if(_list[_list.length-1] == this.filename){
+            this.cleanup();
+            await wait(250);
+            await this.finish();
+            return;
+        }
 
         let elm = lesson.p.i_previewURL;
         let rect = elm.getBoundingClientRect();
@@ -930,6 +1240,7 @@ class ChangePreviewURLTask extends Task{
             let before = project.i_previewURL.value;
             let url = await waitForQuickHook(listenHooks.changePreviewURL);
             if(url == before){
+            // if(url != this.filename){
                 await wait(200);
                 continue;
             }
@@ -1098,7 +1409,7 @@ class LE_AddGBubble extends LEvent{
                             let fileElm = lesson.tut.d_files.children[lesson.tut.files.indexOf(startT._preTutFile)];
                             let rect = fileElm.getBoundingClientRect();
                             await showTutMouse();
-                            await moveTutMouseTo(rect.x+rect.width/2,rect.y+rect.height/2);
+                            await moveTutMouseToXY(rect.x+rect.width/2,rect.y+rect.height/2);
                             await wait(300);
                             await fakeClickButton(fileElm);
                             startT._preTutFile.open();
@@ -1169,6 +1480,7 @@ class LessonState{
     }
     tutItems:ULItem[];
     curFile:ULItem;
+    pos:monaco.IPosition;
 }
 class Rect{
     constructor(x:number,y:number,w:number,h:number){
@@ -2594,6 +2906,10 @@ class Lesson{
         state.tutItems = calcItems(this.tut.items);
         // tmp for now, no folder support yet in lesson
         state.curFile = state.tutItems.find(v=>v.name == this.tut.curFile.name);
+        let curEditor = this.tut.getCurEditor();
+        if(curEditor){
+            state.pos = curEditor.getPosition().clone();
+        }
 
         return state;
     }
@@ -2614,7 +2930,7 @@ class Lesson{
                 let b_close = item.link.children[1];
                 let rect = b_close.getBoundingClientRect();
                 await showTutMouse();
-                await moveTutMouseTo(rect.x+rect.width/2,rect.y+rect.height/2);
+                await moveTutMouseToXY(rect.x+rect.width/2,rect.y+rect.height/2);
                 await wait(300);
                 await fakeClickButton(b_close);
                 item.softDelete();
@@ -2626,7 +2942,7 @@ class Lesson{
                 let elm = lesson.tut.parent.querySelector(".b-add-file");
                 let rect = elm.getBoundingClientRect();
                 await showTutMouse();
-                await moveTutMouseTo(rect.x+rect.width/2,rect.y+rect.height/2);
+                await moveTutMouseToXY(rect.x+rect.width/2,rect.y+rect.height/2);
                 await wait(300);
                 await fakeClickButton(elm);
                 // item.open();
@@ -2640,11 +2956,22 @@ class Lesson{
             let fileElm = t.d_files.children[ind];
             let rect = fileElm.getBoundingClientRect();
             await showTutMouse();
-            await moveTutMouseTo(rect.x+rect.width/2,rect.y+rect.height/2);
+            await moveTutMouseToXY(rect.x+rect.width/2,rect.y+rect.height/2);
             await wait(300);
             await fakeClickButton(fileElm);
             file.open();
             await wait(500);
+        }
+        // 
+        if(this.tut.curFile){
+            let editor = this.tut.getCurEditor();
+            editor.updateOptions({readOnly:false});
+            this.tut.curFile.blockPosChange = false;
+            editor.setPosition(state.pos);
+            this.tut.curFile.curRow = state.pos.lineNumber;
+            this.tut.curFile.curCol = state.pos.column;
+            editor.updateOptions({readOnly:true});
+            this.tut.curFile.blockPosChange = true;
         }
     }
 
@@ -3049,23 +3376,34 @@ async function hideTutMouse(){
     tutMouse.style.opacity = "0";
     await wait(350);
 }
-async function showTutMouse(){
+async function showTutMouse(isQuick=false){
     tutMouse.style.opacity = "1";
+    await wait(isQuick?75:350);
+}
+async function moveTutMouseTo(col:number,row:number){
+    if(lesson.tut.curFile){
+        lesson.tut.curFile.curCol = col;
+        lesson.tut.curFile.curRow = row;
+    }
+    tutMouse.style.left = (COL_OFF+col*COL_SCALE)+"px";
+    tutMouse.style.top = (LINE_OFF+row*LINE_SCALE)+"px";
     await wait(350);
 }
-async function moveTutMouseTo(x:number,y:number){
+async function moveTutMouseToXY(x:number,y:number){
     tutMouse.style.left = x+"px";
     tutMouse.style.top = y+"px";
     await wait(350);
 }
 hideTutMouse();
 
+let _mouseClickDelay = 150;
+
 async function fakeClickButton(e:Element){
     await wait(50);
     e.classList.add("f-hover");
-    await wait(150);
+    await wait(_mouseClickDelay);
     e.classList.remove("f-hover");
-    await wait(150);
+    await wait(_mouseClickDelay);
 }
 
 class PromptLoginMenu extends Menu{
@@ -3095,7 +3433,7 @@ async function initLessonPage(){
     
     await waitForUser();
     
-    if(g_user == null){ // not logged in
+    if(!bypassLogin) if(g_user == null){ // not logged in
         // alert("You are not logged in, please log in");
         new PromptLoginMenu().load();
         return;

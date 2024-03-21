@@ -516,3 +516,48 @@
 - fixed leaving lesson had double confirmation
 - fixed start lesson banner so that it doesn't display the "what we'll be making menu" when there isn't a final instance loaded
 - wrote second lesson (Basic HTML Structure) but it's really buggy, need to fix some lesson system stuff
+
+### 3/20/24
+- rewrote some lesson stuff to be less buggy
+- added "AddCode" task with many CodePart subtasks like moveCursor, addLineBelow, addHTML, addText
+- fixed speeding through instances of typing a newline character for something that would open up would skip weirdly and cause issues when resuming or replaying
+- unified cursor positioning
+- more unified delays a bit
+- added method for making a specific task be skippable (not replayable) instead of hardcoded instance check
+- added "addIgnoreCode" as the AddCode version of AddSideTutorText
+- fixed sometimes the tutors cursor would be in crazy places when showing the cursor again after tutor line/column movement
+- changed "changePreviewURL" task so that it only accepts if you click the specified file
+- ** second tutorial should pretty much be fully working and bug free at least in my testing
+
+### 3/21/24
+- added bypass login stuff for when offline (DEBUG)
+- changed it so bubbles are on the bottom then menus and sub menus on top for now
+- changed Learn Lesson Ops so there's only resume and clear now
+- fixed up the second lesson a bit
+- added default text of "Let's add some code here." for the new addCode Task
+- fixed ChangePreviewURLTask so that if it is replayed and you'll already on the right url, it'll be skipped, but if it isn't on the right url then it won't get stuck on the hook like before
+- fixed AddIgnoreCode so that it doesn't add a pre text bubble
+- fixed major bug when pressing ctrl R in the preview would reload the whole page and not the preview
+
+% [Simple-Styling] ~ Introducing CSS and HTML Attributes
+- Let's start by creating our basic HTML structure.
+    + create the structure
+    - Now let's add 3 paragraph elements to our page.
+        + This is some text, This is more text, This is even more text
+- So what if we wanted to change the background color, the color of our text, or the text font size?
+- Well, we can use CSS (Cascading Style Sheets) which let us stylize the looks of our page and in the future, add animations to it.
+- -> Let's start by adding and linking a css file to our page.
+    + add file style.css
+    - Let's try to change the background of our page
+    + write body { background-color: darkcyan } // but make mention that they should choose to experiment with whatever color they choose
+    - Let's take a closer look at this structure (Ponder Board about CSS style-set structure)
+    - If you try to refresh the page
+    - Now that we have our CSS file, we need to tell our HTML page where it is so it knows how to load it
+
+
+    + go back to index.html
+    - We can link our CSS file to our page by adding a line in the h[Head] of our page.
+    + go into head and add <link rel="stylesheet" href="style.css">
+    - Woah, so what is all this?
+    + Let's take a closer look. (Ponder Board about HTML attributes)
+    + 

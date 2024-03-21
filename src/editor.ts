@@ -169,6 +169,8 @@ async function init(){
     }
     let uid = url.searchParams.get("uid");
     let pid = url.searchParams.get("pid");
+    // @ts-ignore
+    if(bypassLogin) g_user = {uid:"b49000e0-ae3e-4d27-9b7e-cc1006ba6cd4"};
     await loadProject(url.searchParams.has("uid")?uid:g_user.uid,pid);
 
     onResize(true);
@@ -306,11 +308,15 @@ document.addEventListener("keydown",e=>{
 
     if(e.ctrlKey){
         if(k == "r"){
+            e.stopImmediatePropagation();
             e.preventDefault();
+            e.stopPropagation();
             refreshProject();
         }
         else if(k == "s"){
+            e.stopImmediatePropagation();
             e.preventDefault();
+            e.stopPropagation();
             saveProject();
         }
     }

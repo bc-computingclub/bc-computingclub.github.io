@@ -50,7 +50,7 @@ body.hide-bubbles .tut-mouse{
 }
 .global-bubble-overlay{
     position:absolute;
-    z-index:99;
+    z-index:40;
 }
 .bubble_old{
     padding:1rem;

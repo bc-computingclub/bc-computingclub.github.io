@@ -112,7 +112,7 @@ button.icon-btn-single:hover{
 
 /* Menus */
 .menu-cont{
-    z-index:50;
+    z-index:45;
     width:100%;
     height:100%;
     position:fixed;
@@ -1140,7 +1140,7 @@ input[type="checkbox"]{
 /* Dropdowns */
 .sub-menus{
     position:absolute;
-    z-index:100;
+    z-index:50;
 }
 .dropdown{
     /* border:solid 2px var(--secondary-bg-col);
