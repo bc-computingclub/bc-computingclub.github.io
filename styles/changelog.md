@@ -538,9 +538,13 @@
 - fixed ChangePreviewURLTask so that if it is replayed and you'll already on the right url, it'll be skipped, but if it isn't on the right url then it won't get stuck on the hook like before
 - fixed AddIgnoreCode so that it doesn't add a pre text bubble
 - fixed major bug when pressing ctrl R in the preview would reload the whole page and not the preview
+- (update2)
+- added protections to make sure lessons with lid's starting with _dummy will not run through the unlock animation
+- 
 
 % [Simple-Styling] ~ Introducing CSS and HTML Attributes
-- Let's start by creating our basic HTML structure.
+- Let's start by creating index.html and our basic HTML structure.
+    + create index.html
     + create the structure
     - Now let's add 3 paragraph elements to our page.
         + This is some text, This is more text, This is even more text
@@ -551,13 +555,27 @@
     - Let's try to change the background of our page
     + write body { background-color: darkcyan } // but make mention that they should choose to experiment with whatever color they choose
     - Let's take a closer look at this structure (Ponder Board about CSS style-set structure)
-    - If you try to refresh the page
-    - Now that we have our CSS file, we need to tell our HTML page where it is so it knows how to load it
-
-
+    - Now, if you try to refresh the preview you'll see nothing changes.
+    + refresh the preview
+- Since the preview only displays our HTML page, we need to tell our HTML page where it is so it knows how to load it.
     + go back to index.html
     - We can link our CSS file to our page by adding a line in the h[Head] of our page.
     + go into head and add <link rel="stylesheet" href="style.css">
-    - Woah, so what is all this?
+    + Refresh the preview to see our new background color applied
+
+    - So what does this even mean?
     + Let's take a closer look. (Ponder Board about HTML attributes)
-    + 
+    
+    - Alright, let's go back and see what else we can do with CSS.
+    - How about making the text twice as large? The default size of text is 16px or pixels so we can set it to 32px.
+    + add: p { font-size:32px }
+    - This says that we want all elements on our page that are paragraph elements to have a font size of 32px.
+    - We can also change the text color.
+    + add: color: darkorchid;
+    - We can change the background-color of the paragraph element itself
+    + add: background-color:yellow;
+
+### 3/22/24
+- abstractified some mouse stuff so the color square works when going through the tutorial like normal but when skipping it gets offset a bit (but it's only a visual problem if skipping - but resuming seems to work fine)
+- there still may be some glitches by they are all visual (the real issue is that they cover up the code they are pointing to)
+- changed bubble arrows so they're under the bubble

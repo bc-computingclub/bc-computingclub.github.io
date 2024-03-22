@@ -101,6 +101,6 @@ return [
     ]),
     new LE_AddGBubble([
         "Nice Job! Remember, if you're finding it hard to remember the structure, in time you'll know it by heart since we'll use it in every web tutorial from now on.",
-        "In the next tutorial we will look at adding an external css file to stylize our html page."
+        "In the next tutorial we will look at adding an external CSS file to stylize our html page."
     ])
 ]

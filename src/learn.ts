@@ -35,6 +35,7 @@ class TreeLesson{
 
     animateUnlocks(lids:string[]){
         for(const lid of lids){
+            if(lid.startsWith("_dummy")) continue;
             let l = this.next.find(v=>v.id == lid);
             if(!l){
                 console.warn("Err: couldn't find lid to animate unlock");

@@ -351,17 +351,19 @@ abstract class Task{
     }
 }
 class AddFileTask extends Task{
-    constructor(name:string,isRequired:boolean){
+    constructor(name:string,isRequired:boolean,customText?:string){
         super("Add a file named: "+name);
         this.name = name;
         this.isRequired = isRequired;
         this.requiresDoneConfirm = false; // you have to do the step in order to continue
+        this.customText = customText;
     }
     name:string;
     isRequired:boolean;
     b:Bubble;
     alreadyHas = false;
     file:FFile;
+    customText:string;
     preventContinueIfFail(): boolean {
         return this.isRequired;
     }
@@ -375,7 +377,7 @@ class AddFileTask extends Task{
         await showTutMouse();
         
         let r2 = tutMouse.getBoundingClientRect();
-        let text2 = "Let's create "+this.name;
+        let text2 = this.customText ?? "Let's create "+this.name;
         let existingFile = lesson.tut.files.find(v=>v.name == this.name);
         let goesBack = false;
         let doNothing = false;
@@ -464,6 +466,7 @@ class SubMsg{
 const LINE_SCALE = 19;
 const LINE_OFF = 110;
 const COL_SCALE = 7.7;
+// const COL_SCALE = 10;
 const COL_OFF = 60;
 
 type Editor = monaco.editor.IStandaloneCodeEditor;
@@ -473,16 +476,19 @@ async function startMouseMove(col:number,line:number,noShow=false){
     await moveTutMouseTo(col,line);
     if(!noShow) await hideTutMouse();
 }
-async function typeText(editor:Editor,text:string,speedScale=1){
+async function typeText(editor:Editor,text:string,speedScale=1,moveMouseToEnd=false){
+    let pos:monaco.IPosition;
     if(g_waitDelayScale == 0){
         editor.updateOptions({readOnly:false});
         editor.trigger("keyboard","type",{
             text
         });
-        let pos = editor.getPosition().clone();
+        pos = editor.getPosition().clone();
         editor.setValue(editor.getValue());
         editor.setPosition(pos);
         editor.updateOptions({readOnly:true});
+        lesson.tut.curFile.curRow = pos.lineNumber;
+        lesson.tut.curFile.curCol = pos.column;
     }
     else for(let i = 0; i < text.length; i++){
         let key = text.substring(i,i+1);
@@ -492,10 +498,14 @@ async function typeText(editor:Editor,text:string,speedScale=1){
             text:key
         });
         editor.updateOptions({readOnly:true});
+        pos = editor.getPosition();
+        lesson.tut.curFile.curRow = pos.lineNumber;
+        lesson.tut.curFile.curCol = pos.column;
         // await wait(Math.ceil(30+Math.random()*100));
         // await DWait(0);
         await wait(getTypeSpeed(text?.length ?? 5)*speedScale);
     }
+    if(moveMouseToEnd) await startMouseMove(pos.column,pos.lineNumber,true);
 }
 function _moveCursorHome(editor:Editor){
     editor.trigger("keyboard","cursorHome",null);
@@ -654,13 +664,12 @@ class CP_HTML extends CodePart{
         let text = this.text ?? "";
         await typeText(editor,`<${this.tag}>${text}</${this.tag}>`);
         
-    
         // for(const c of list){
         //     (c as HTMLElement).style.display = null;
         // }
         let pos = editor.getPosition();
-        lesson.tut.curFile.curRow = pos.lineNumber;
-        lesson.tut.curFile.curCol = pos.column;
+        // lesson.tut.curFile.curRow = pos.lineNumber; // deprecated?
+        // lesson.tut.curFile.curCol = pos.column;
         
         await startMouseMove(pos.column,pos.lineNumber,true);
         // moveTutMouseTo(58 + pos.column*7.7,115 + pos.lineNumber*16.5);
@@ -669,6 +678,52 @@ class CP_HTML extends CodePart{
         if(this.open) await typeText(editor,"\n");
 
         lesson.tut.curFile.blockPosChange = true;
+    }
+}
+function getTutCursor(){
+    return lesson.tut.parent.querySelector(".cursor");
+}
+function forceEditorUpdate(editor:Editor){
+    let pos2 = editor.getPosition().clone();
+    editor.setValue(editor.getValue());
+    editor.setPosition(pos2);
+}
+class CP_CSS extends CodePart{
+    constructor(selector:string,styles:Record<string,any>){
+        super();
+        this.selector = selector;
+        this.styles = styles;
+    }
+    selector:string;
+    styles:Record<string,any>;
+    async run(editor: monaco.editor.IStandaloneCodeEditor): Promise<void> {
+        lesson.startEditting();
+        let speed = 1;
+
+        await typeText(editor,`${this.selector}{\n`,speed,true);
+
+        let i = 0;
+        let ok = Object.keys(this.styles);
+        for(const prop of ok){
+            let val = this.styles[prop];
+            await typeText(editor,prop+":"+val+";"+(i != ok.length-1 ? "\n" : ""),speed);
+            i++;
+        }
+        await wait(50);
+        // forceEditorUpdate(editor);
+
+        // let pos = editor.getPosition();
+        // await startMouseMove(pos.column,pos.lineNumber,true);
+
+        // forceEditorUpdate(editor);
+
+        // await DWait(200); // temporary fix for now
+
+        // let cursor = getTutCursor();
+        // let rect = cursor.getBoundingClientRect();
+        // await moveTutMouseToXY(rect.x,rect.y);
+
+        await lesson.endEditting();
     }
 }
 class AddCode extends Task{
@@ -1119,17 +1174,25 @@ class BubbleTask extends Task{
     dir:string;
     async start(): Promise<string | void> {
         super.start();
-
-        await wait(250);
+        
         if(this.line != null && this.col != null){
-            await showTutMouse();
-            await moveTutMouseTo(this.col,this.line);
-            await wait(150);
+            let editor = lesson.tut.getCurEditor();
+            editor.setPosition({column:this.col,lineNumber:this.line});
+            forceEditorUpdate(editor);
         }
-        let r2 = tutMouse.getBoundingClientRect();
+        await wait(250);
+        // if(this.line != null && this.col != null){
+        //     await showTutMouse();
+        //     await moveTutMouseTo(this.col,this.line);
+        //     await wait(150);
+        // }
+        // let ref = tutMouse;
+        let ref = getTutCursor();
+        let r2 = ref.getBoundingClientRect();
+        // if(lesson.isResuming) await DWait(100);
         this.b = addBubbleAt(BubbleLoc.xy,this.title,this.dir,{
-            x:r2.x+r2.width/2 + 17,
-            y:r2.y+r2.height/2 - 22,
+            x:r2.x+r2.width/2 + 17 + tutMouse.getBoundingClientRect().width/2,
+            y:r2.y+r2.height/2 - 22 - LINE_SCALE/2+2,
             click:true
         });
         await this.b.clickProm;
@@ -1255,6 +1318,18 @@ class ChangePreviewURLTask extends Task{
         closeBubble(this.b);
     }
 }
+
+const snips = {
+    basicHTMLStructure(text?:string,dir?:string){
+        return new AddCode([
+            new CP_HTML("html",true,true),
+            new CP_HTML("head",true,true),
+            new CP_MoveBy(0,1),
+            new CP_LineBelow(1),
+            new CP_HTML("body",true,true)
+        ],text,dir);
+    }
+};
 
 abstract class LEvent{
     protected constructor(){}
@@ -2806,6 +2881,26 @@ class Lesson{
         tutMouse.style.visibility = null;
     }
 
+    // Lesson Tutor Commands
+
+    startEditting(){
+        if(this.tut.curFile) this.tut.curFile.blockPosChange = false;
+    }
+    async endEditting(){
+        if(this.tut.curFile){
+            this.tut.curFile.blockPosChange = true;
+            let editor = this.tut.getCurEditor();
+            forceEditorUpdate(editor);
+            let pos = editor.getPosition();
+            let speed = g_waitDelayScale;
+            g_waitDelayScale = 0;
+            await startMouseMove(pos.column,pos.lineNumber,true);
+            g_waitDelayScale = speed;
+        }
+    }
+    
+    // 
+
     // for going back to learn page
     canLeave(){
         if(this.needsSave) return false;
@@ -3381,6 +3476,23 @@ async function showTutMouse(isQuick=false){
     await wait(isQuick?75:350);
 }
 async function moveTutMouseTo(col:number,row:number){
+    // 
+    // let editor = lesson.tut.getCurEditor();
+    // forceEditorUpdate(editor);
+    // editor.setPosition({column:col,lineNumber:row});
+    // // await DWait(200);
+    // let cursor = getTutCursor();
+    // let rect = cursor.getBoundingClientRect();
+    // tutMouse.style.left = (rect.x)+"px";
+    // tutMouse.style.top = (rect.y)+"px";
+    // if(lesson.tut.curFile){
+    //     lesson.tut.curFile.curCol = col;
+    //     lesson.tut.curFile.curRow = row;
+    // }
+    // await wait(350);
+    // return;
+    // 
+    
     if(lesson.tut.curFile){
         lesson.tut.curFile.curCol = col;
         lesson.tut.curFile.curRow = row;
