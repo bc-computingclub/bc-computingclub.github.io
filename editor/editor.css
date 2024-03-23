@@ -499,3 +499,22 @@ button.load-btn.loading::before{
     display:block;
     animation:ProgressAnim infinite 0.5s cubic-bezier(0.445, 0.05, 0.55, 0.95);
 }
+
+/* test div */
+/* .test-div{
+    border:solid 2px red;
+    background-color:rgba(255,0,0,0.4);
+    width:400px;
+    height:400px;
+    position:absolute;
+    top:300px;
+    left:300px;
+    z-index:9999;
+}
+.test-div-sub{
+    background-color:rgba(0,0,255,0.4);
+    border:solid 2px dodgerblue;
+    height:300px;
+    position:relative;
+    z-index:50%;
+} */

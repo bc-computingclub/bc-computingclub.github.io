@@ -579,3 +579,5 @@
 - abstractified some mouse stuff so the color square works when going through the tutorial like normal but when skipping it gets offset a bit (but it's only a visual problem if skipping - but resuming seems to work fine)
 - there still may be some glitches by they are all visual (the real issue is that they cover up the code they are pointing to)
 - changed bubble arrows so they're under the bubble
+
+<!-- 19,302 lines as of this point -->
