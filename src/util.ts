@@ -994,11 +994,14 @@ class Project{
         if(PAGE_ID == PAGEID.lesson){
             f.setSaved(true);
             f.setTemp(false);
+            if(this == lesson.p) if(lesson.hasLoaded){
+                console.error("...ran saved");
+                saveLesson();
+            }
         }
 
         if(isNew){
             if(PAGE_ID == PAGEID.editor) saveProject();
-            else if(PAGE_ID == PAGEID.lesson) saveProject();
         }
         return f;
     }
@@ -2189,6 +2192,8 @@ function createHTMLPreviewsDropdown(inp:HTMLInputElement){
 }
 
 function postSetupPreview(p:Project){
+    if(PAGE_ID != PAGEID.editor && PAGE_ID != PAGEID.lesson) return;
+    
     console.log("...post setup preview");
     p.i_previewURL = document.querySelector(".i-preview-url");
     if(p.i_previewURL){

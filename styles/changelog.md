@@ -574,6 +574,8 @@
     + add: color: darkorchid;
     - We can change the background-color of the paragraph element itself
     + add: background-color:yellow;
+    <!--  -->
+
 
 ### 3/22/24
 - abstractified some mouse stuff so the color square works when going through the tutorial like normal but when skipping it gets offset a bit (but it's only a visual problem if skipping - but resuming seems to work fine)
@@ -581,3 +583,9 @@
 - changed bubble arrows so they're under the bubble
 
 <!-- 19,302 lines as of this point -->
+
+### 3/23/24
+- added basic error message when not being able to load a submission correctly (if it can't find it) on submissions page
+- fixed new bug where files didn't load in submissions page
+- fixed adding new files during lesson auto save so they show up in the preview correctly right after creating
+- fix type in first lesson xD "is is" after highlight

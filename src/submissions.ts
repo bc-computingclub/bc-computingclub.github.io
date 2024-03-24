@@ -22,8 +22,12 @@ window.onload = async () => {
   cTitle.textContent = `${currentChallenge.name} Challenge`;
   await displaySubmissions(submissionArray,true);
   if(popupPid) {
-    console.log("Creating popup with " + submissionArray.find((v) => v.pid == popupPid)?.who + "'s Submission details");
-    createSubmissionMenu(submissionArray.find((v) => v.pid == popupPid));
+    let sub = submissionArray.find((v) => v.pid == popupPid);
+    if(!sub){
+      return;
+    }
+    console.log("Creating popup with " + sub.who + "'s Submission details");
+    createSubmissionMenu(sub);
   }
 };
 

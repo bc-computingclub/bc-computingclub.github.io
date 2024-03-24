@@ -12,7 +12,7 @@ return [
         "i[So what even is an HTML document and what can we do with it?]"
     ],BubbleLoc.global,[]),
     new LE_AddGBubble([
-        "An HTML document defines what is h[in the page.] is is make up of pieces called elements.",
+        "An HTML document defines what is h[in the page] and is made up of pieces called elements.",
         "For example, this is where you would put b[buttons, text, and images.] which will be elements in our page.",
         "i[Let's try adding a some text.]"
     ],BubbleLoc.global,[
