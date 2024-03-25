@@ -589,3 +589,6 @@
 - fixed new bug where files didn't load in submissions page
 - fixed adding new files during lesson auto save so they show up in the preview correctly right after creating
 - fix type in first lesson xD "is is" after highlight
+
+### 3/24/24
+- some more work on lesson #3

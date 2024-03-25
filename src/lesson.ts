@@ -1619,6 +1619,7 @@ abstract class BoardObj{
     addTag(...tags:string[]){
         for(const tag of tags){
             if(!this._storeTags.includes(tag)){
+                console.log("TAG:",tag);
                 this._storeTags.push(...tag.split(" "));
                 // let oldObj = this.b.objStore.get(tag);
                 // if(oldObj) oldObj.removeTag(tag);
@@ -1803,7 +1804,8 @@ const TC_Cols = {
     0:"gray",
     1:"royalblue",
     2:"dodgerblue",
-    3:"white"
+    3:"white",
+    4:"#ce9178"
 };
 function getLenTC(tc:TC[]){
     let l = 0;
