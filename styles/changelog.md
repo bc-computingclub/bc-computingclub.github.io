@@ -592,3 +592,7 @@
 
 ### 3/24/24
 - some more work on lesson #3
+
+### 3/28/24
+- fixed a lot of issues with screwing up the tutor while they were typing
+- got rid of lessonData print flooding console on lesson load

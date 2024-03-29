@@ -469,6 +469,17 @@ const COL_SCALE = 7.7;
 // const COL_SCALE = 10;
 const COL_OFF = 60;
 
+function startEdit(){
+    lesson.tut.curFile.blockPosChange = false;
+    let editor = lesson.tut.getCurEditor();
+    if(editor) editor.updateOptions({readOnly:false});
+}
+function endEdit(){
+    lesson.tut.curFile.blockPosChange = true;
+    let editor = lesson.tut.getCurEditor();
+    if(editor) editor.updateOptions({readOnly:true});
+}
+
 type Editor = monaco.editor.IStandaloneCodeEditor;
 async function startMouseMove(col:number,line:number,noShow=false){
     if(!noShow) await showTutMouse();
@@ -479,6 +490,7 @@ async function startMouseMove(col:number,line:number,noShow=false){
 async function typeText(editor:Editor,text:string,speedScale=1,moveMouseToEnd=false){
     let pos:monaco.IPosition;
     if(g_waitDelayScale == 0){
+        startEdit();
         editor.updateOptions({readOnly:false});
         editor.trigger("keyboard","type",{
             text
@@ -489,10 +501,12 @@ async function typeText(editor:Editor,text:string,speedScale=1,moveMouseToEnd=fa
         editor.updateOptions({readOnly:true});
         lesson.tut.curFile.curRow = pos.lineNumber;
         lesson.tut.curFile.curCol = pos.column;
+        endEdit();
     }
     else for(let i = 0; i < text.length; i++){
         let key = text.substring(i,i+1);
 
+        startEdit();
         editor.updateOptions({readOnly:false});
         editor.trigger("keyboard","type",{
             text:key
@@ -503,21 +517,28 @@ async function typeText(editor:Editor,text:string,speedScale=1,moveMouseToEnd=fa
         lesson.tut.curFile.curCol = pos.column;
         // await wait(Math.ceil(30+Math.random()*100));
         // await DWait(0);
+        endEdit();
         await wait(getTypeSpeed(text?.length ?? 5)*speedScale);
     }
     if(moveMouseToEnd) await startMouseMove(pos.column,pos.lineNumber,true);
 }
 function _moveCursorHome(editor:Editor){
+    startEdit();
     editor.trigger("keyboard","cursorHome",null);
+    endEdit();
 }
 function _moveCursorEnd(editor:Editor){
+    startEdit();
     editor.trigger("keyboard","cursorEnd",null);
+    endEdit();
 }
 async function moveCursorBy(editor:Editor,cols:number,rows:number,noShow=false){
     let pos = editor.getPosition();
     if(noShow){
         await moveTutMouseTo(cols,rows);
+        startEdit();
         editor.setPosition(pos.with(pos.lineNumber+rows,pos.column+cols));
+        endEdit();
         return;
     }
     
@@ -532,7 +553,9 @@ async function moveCursorBy(editor:Editor,cols:number,rows:number,noShow=false){
     await startMouseMove(pos.column+cols,pos.lineNumber+rows,true);
     await wait(_mouseClickDelay);
 
+    startEdit();
     editor.setPosition(pos.with(pos.lineNumber+rows,pos.column+cols));
+    endEdit();
     // await wait(getTypeSpeed(5));
     await wait(_mouseClickDelay);
     
@@ -553,15 +576,13 @@ class CP_LineBelow extends CodePart{
     }
     amt:number;
     async run(editor: monaco.editor.IStandaloneCodeEditor): Promise<void> {
-        lesson.tut.curFile.blockPosChange = false;
-        editor.updateOptions({readOnly:false});
+        startEdit();
         for(let i = 0; i < this.amt; i++){
             editor.trigger("keyboard","editor.action.insertLineAfter",null);
         }
-        lesson.tut.curFile.blockPosChange = false;
         let newPos = editor.getPosition();
         moveTutMouseTo(newPos.column,newPos.lineNumber);
-        editor.updateOptions({readOnly:true});
+        endEdit();
         await wait(50);
     }
 }
@@ -570,9 +591,7 @@ class CP_Home extends CodePart{
         super();
     }
     async run(editor: monaco.editor.IStandaloneCodeEditor): Promise<void> {
-        lesson.tut.curFile.blockPosChange = false;
         _moveCursorHome(editor);
-        lesson.tut.curFile.blockPosChange = true;
         await wait(50);
     }
 }
@@ -581,10 +600,8 @@ class CP_End extends CodePart{
         super();
     }
     async run(editor: monaco.editor.IStandaloneCodeEditor): Promise<void> {
-        lesson.tut.curFile.blockPosChange = false;
         _moveCursorEnd(editor);
         await wait(50);
-        lesson.tut.curFile.blockPosChange = true;
     }
 }
 class CP_BreakOut extends CodePart{
@@ -596,7 +613,6 @@ class CP_BreakOut extends CodePart{
     y:number;
     newLine:boolean;
     async run(editor: monaco.editor.IStandaloneCodeEditor): Promise<void> {
-        lesson.tut.curFile.blockPosChange = false;
         let amt = Math.abs(this.y);
         let dir = this.y/amt;
         for(let i = 0; i < amt; i++){
@@ -605,7 +621,6 @@ class CP_BreakOut extends CodePart{
             await wait(50);
         }
         if(this.newLine) await typeText(editor,"\n");
-        lesson.tut.curFile.blockPosChange = true;
     }
 }
 class CP_MoveBy extends CodePart{
@@ -619,9 +634,7 @@ class CP_MoveBy extends CodePart{
     y:number;
     noShow:boolean;
     async run(editor: monaco.editor.IStandaloneCodeEditor): Promise<void> {
-        lesson.tut.curFile.blockPosChange = false;
         await moveCursorBy(editor,this.x,this.y,this.noShow);
-        lesson.tut.curFile.blockPosChange = true;
     }
 }
 class CP_Text extends CodePart{
@@ -631,8 +644,6 @@ class CP_Text extends CodePart{
     }
     code:string;
     async run(editor: Editor): Promise<void> {
-        lesson.tut.curFile.blockPosChange = false;
-
         await typeText(editor,this.code);
         // for(const c of list){
         //     (c as HTMLElement).style.display = null;
@@ -640,7 +651,6 @@ class CP_Text extends CodePart{
         let pos = editor.getPosition();
         lesson.tut.curFile.curRow = pos.lineNumber;
         lesson.tut.curFile.curCol = pos.column;
-        lesson.tut.curFile.blockPosChange = true;
         
         await startMouseMove(pos.column,pos.lineNumber,true);
         // moveTutMouseTo(58 + pos.column*7.7,115 + pos.lineNumber*16.5);
@@ -659,7 +669,7 @@ class CP_HTML extends CodePart{
     open:boolean;
     text:string;
     async run(editor: Editor): Promise<void> {
-        lesson.tut.curFile.blockPosChange = false;
+        // lesson.tut.curFile.blockPosChange = false;
 
         let text = this.text ?? "";
         await typeText(editor,`<${this.tag}>${text}</${this.tag}>`);
@@ -676,8 +686,6 @@ class CP_HTML extends CodePart{
 
         if(this.endAtCenter) await moveCursorBy(editor,-3-this.tag.length,0);
         if(this.open) await typeText(editor,"\n");
-
-        lesson.tut.curFile.blockPosChange = true;
     }
 }
 function getTutCursor(){
@@ -697,7 +705,7 @@ class CP_CSS extends CodePart{
     selector:string;
     styles:Record<string,any>;
     async run(editor: monaco.editor.IStandaloneCodeEditor): Promise<void> {
-        lesson.startEditting();
+        // lesson.startEditting();
         let speed = 1;
 
         await typeText(editor,`${this.selector}{\n`,speed,true);
@@ -723,7 +731,7 @@ class CP_CSS extends CodePart{
         // let rect = cursor.getBoundingClientRect();
         // await moveTutMouseToXY(rect.x,rect.y);
 
-        await lesson.endEditting();
+        // await lesson.endEditting();
     }
 }
 class AddCode extends Task{
@@ -2885,9 +2893,11 @@ class Lesson{
 
     // Lesson Tutor Commands
 
+    /**@deprecated */
     startEditting(){
         if(this.tut.curFile) this.tut.curFile.blockPosChange = false;
     }
+    /**@deprecated */
     async endEditting(){
         if(this.tut.curFile){
             this.tut.curFile.blockPosChange = true;
@@ -3579,7 +3589,6 @@ async function initLessonPage(){
         });
     });
 
-    console.log(lessonData);
     lesson = Lesson.parse(lessonData,pane_code,pane_tutor_code);
     if(false){
         lesson = new Lesson("0001","Lesson 01",pane_code,pane_tutor_code);

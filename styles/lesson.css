@@ -125,6 +125,7 @@ body.hide-bubbles .tut-mouse{
     content:"";
     z-index:-1;
     --col:var(--bubble-bg-solid);
+    /* --col:white; */
     position:absolute;
     top:17.5px;
     left:-15px;
