@@ -186,6 +186,26 @@ export const progressTree = new PTreeFolder("root",[],{
         // new PTreeLesson("Dummy","_dummy03",110,25,[]), // javascript intro
     ])
 });
+
+export const ptreeMap = new Map<string,PTreeLesson>();
+function initPTreeMap(){
+    function search(folder:PTreeFolder){
+        for(const lesson of folder.lessons){
+            ptreeMap.set(lesson.lid,lesson);
+        }
+        if(folder.folders){
+            let ok = Object.keys(folder.folders);
+            for(const k of ok){
+                search(folder.folders[k]);
+            }
+        }
+    }
+    search(progressTree);
+
+    console.log("$ loaded ptree mappings");
+}
+initPTreeMap();
+
 /*const progressTree_raw = {
     theBeginnings:{
         lessons:[

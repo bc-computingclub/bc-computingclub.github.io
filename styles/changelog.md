@@ -596,3 +596,10 @@
 ### 3/28/24
 - fixed a lot of issues with screwing up the tutor while they were typing
 - got rid of lessonData print flooding console on lesson load
+
+### 3/29/24
+- added "Play Again" support when lesson is finished
+- added "Clone Files Into New Project" support when lesson is finished
+- fixed/cleaned up input menu beforeText to handle the error if inp box wasn't found correctly
+- fixed new projects so they go at the top of the list in the dashboard instead of the bottom when created because the time field was empty until first save
+- fixed weird bug when deleting projects they would delete too many visually and the page would lose connection to the server until refresh (at least in firefox)

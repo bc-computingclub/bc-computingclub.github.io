@@ -1,6 +1,6 @@
 import { io, server, CredentialResData, User, users, getUserBySock, sanitizeEmail, getProject, attemptToGetProject, access, readdir, read, mkdir, removeFile, write, ULFile, ProjectMeta, allProjects, UserChallengeData, Project, getProject2, ULItem, ULFolder, rename, removeFolder, getDefaultProjectMeta, getProjectFromHD, lessonMetas, LessonMeta, loadProject, LessonMode, getLessonMeta, writeLessonMeta, deleteLessonMeta, socks, internalCP } from "./connection";
 import { CSubmission, Challenge, ChallengeData, ChallengeGet, challenges } from "./s_challenges";
-import {LessonData, progressTree} from "./s_lesson";
+import {LessonData, progressTree, ptreeMap} from "./s_lesson";
 import fs, { copyFile } from "fs";
 import { createInterface } from "readline";
 import crypto from "crypto";
@@ -218,6 +218,61 @@ io.on("connection",socket=>{
         await removeFolder("../lesson/"+user.uid+"/"+lid);
 
         f(0);
+    });
+    socket.on("copyFilesIntoNewProject",async (name:string,root:ULFolder,desc:string,f:(data:any)=>void)=>{
+        if(!valVar2(name,"string",f)) return;
+        if(!valVar2(desc,"string",f)) return;
+        if(!valVar2(root,"object",f)) return;
+        if(!valVar2(root.items,"array",f)) return;
+
+        let user = getUserBySock(socket.id);
+        if(!user){
+            f(-3);
+            return;
+        }
+
+        let p = await createProject(user,name,desc,false);
+        if(!p){
+            f(1);
+            return;
+        }
+
+        let path = "../project/"+user.uid+"/"+p.pid;
+        if(!await access(path)) await mkdir(path);
+
+        async function _write(l:ULItem[],pth:string,ffL:ULItem[]){
+            let i = 0;
+            for(const item of l){
+                let ff:ULItem|undefined = undefined;
+                if(ffL){
+                    // ff = ffL[i];
+                    ff = ffL.find(v=>v.name == item.name);
+                    if(!ff) ffL.splice(i,0,item);
+                }
+                if(item instanceof ULFile){
+                    await write(path+"/"+pth+"/"+item.name,item.val,item.enc);
+                    if(ff){
+                        if(ff instanceof ULFile){
+                            ff.name = item.name;
+                            ff.val = item.val;
+                        }
+                        // else console.log("$ err: ff wasn't a file..?",ff.name,item.name);
+                    }
+                    // else console.log("$ err: no ff ref found");
+                }
+                else if(item instanceof ULFolder){
+                    await mkdir(path+"/"+pth+"/"+item.name);
+                    await _write(item.items,pth+"/"+item.name,(ff as ULFolder)?.items);
+                    if(ff) if(ff instanceof ULFolder){
+                        ff.name = item.name;
+                    }
+                }
+                i++;
+            }
+        }
+        await _write(root.items,"",p.items);
+        
+        f(p.pid);
     });
     socket.on("finishLesson",async (lid:string,call:(data:any)=>void)=>{
         if(!valVar2(lid,"string",call)) return;
@@ -565,10 +620,13 @@ io.on("connection",socket=>{
             await writeLessonMeta(user.uid,lessonId,meta);
         }
 
+        let info = ptreeMap.get(lessonId);
+
         call({
             files,
             // tutFiles,
-            meta
+            meta,
+            info
         });
     });
     // editor
@@ -1521,6 +1579,7 @@ async function createProject(user:User,name:string,desc:string,isPublic=false){
     let pid = genPID();
     let meta = new ProjectMeta(user,pid,name,desc,isPublic,false);
     meta.wc = new Date().toISOString();
+    meta.wls = meta.wc;
     let p = user.createProject(meta,pid);
     let path = "../project/"+user.uid;
     await mkdir(path);

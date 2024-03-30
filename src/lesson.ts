@@ -2859,6 +2859,9 @@ class Lesson{
     needsSave = false;
     hasLoaded = false;
     _loadStart = 0;
+
+    info:TreeLesson;
+
     async endLoading(isFirst=true){
         if(isFirst){
             let time = performance.now()-this._loadStart;
@@ -2891,8 +2894,24 @@ class Lesson{
         tutMouse.style.visibility = null;
     }
 
-    // Lesson Tutor Commands
+    // 
+    getFilesAsFolder(){
+        let root = new FFolder(this.p,"root",null);
+        root.items = this.p.items;
+        let add = (f:FItem)=>{
+            if(f instanceof FFolder){
+                let folder = new ULFolder(f.name,[]);
+                folder.items = f.items.map(v=>add(v));
+                return folder;
+            }
+            else if(f instanceof FFile){
+                return new ULFile(f.name,f.editor.getValue(),null,null);
+            }
+        }
+        return add(root);
+    }
 
+    // Lesson Tutor Commands
     /**@deprecated */
     startEditting(){
         if(this.tut.curFile) this.tut.curFile.blockPosChange = false;
@@ -4296,6 +4315,8 @@ class LessonCompleteMenu extends Menu{
     }
     load(priority?: number): this {
         super.load(priority);
+        saveLesson(true);
+        
         this.menu.classList.add("menu-lesson-complete");
 
         let l = lesson;
@@ -4339,10 +4360,44 @@ class LessonCompleteMenu extends Menu{
             location.href = "/learn";
         });
         btnCont.children[1].addEventListener("click",e=>{
-            // rest lesson and restart
+            // reset lesson and restart
+            new ConfirmMenu("Delete Progress",`Are you sure you want<br> to restart lesson progress for this lesson?<br><br><span class="note">Your files created during this lesson will be deleted</span>`,()=>{
+                socket.emit("deleteLessonProgress",l.lid,(data:any)=>{
+                    if(data == 0){
+                        // finished deleting successfully
+                        socket.emit("startLesson",l.lid,0,(data:any)=>{
+                            if(data == 0){
+                                reloadPage();
+                            }
+                            else alert(`Error ${data} while trying to start lesson`);
+                        });
+                    }
+                    else{
+                        alert("Err: while deleting lesson progress, error code: "+data);
+                    }
+                });
+            },()=>{}).load();
         });
-        btnCont.children[2].addEventListener("click",e=>{
+        btnCont.children[2].addEventListener("click",async e=>{            
+            let name = await new Promise<string>(resolve=>{
+                let menu = new InputMenu("Project Name","Name",(data)=>{
+                    resolve(data);
+                },()=>{resolve(null)},null,null,"Name your new project to put the files into.");
+                menu._newLayer = true;
+                menu.load();
+            });
+            console.warn("GOT NAME: ",name);
+            if(!name) return;
+            
             // copy files into new project
+            socket.emit("copyFilesIntoNewProject",name,lesson.getFilesAsFolder(),"Cloned from lesson: "+l.info.name+".",(data:any)=>{
+                console.log("res: ",data);
+                if(typeof data == "number" && data != 0){
+                    alert(`Error ${data} while trying to copy files into new project`);
+                    return;
+                }
+                goToProject(data);
+            });
         });
         // b.e.appendChild(btnCont);
         // setupCallout(btnCont.children[0]);

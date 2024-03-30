@@ -304,7 +304,6 @@ class LessonItem{
         if(b_start) b_start.addEventListener("click",e=>{
             if(!this.data.s){
                 socket.emit("startLesson",this.lid,0,(data:any)=>{
-                    console.log("RES: ",data);
                     if(data != 0){
                         alert(`Error ${data} trying to start lesson`);
                         return;

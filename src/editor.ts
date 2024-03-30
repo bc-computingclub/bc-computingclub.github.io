@@ -662,10 +662,10 @@ async function deleteProject(meta:ProjectMeta,div?:HTMLElement){
                         return;
                     }
                     let item = document.querySelector(".pi-"+meta.pid);
-                    if(item) item.remove();
-                    if(div) div.remove();
+                    // if(item) item.remove();
+                    // if(div) div.remove();
                     resolve(true);
-                    if(project?.pid == meta.pid) location.reload();
+                    if(project?.pid == meta.pid) reloadPage();
                 });
             },
             () => { return; }

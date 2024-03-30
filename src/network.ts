@@ -186,7 +186,8 @@ async function restoreLessonFiles(lesson:Lesson){
     lesson.progress.eventI = data.meta.eventI;
     lesson.progress.taskI = data.meta.taskI;
     
-    return data;
+    lesson.info = data.info;
+    // return data;
 }
 // 
 function old_uploadProjectFiles(project:Project){ // for refresh

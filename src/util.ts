@@ -91,8 +91,10 @@ class Menu{
     }
 
     _priority = 0;
+    _newLayer:null|boolean = null;
 
     load(priority=0,newLayer=false){
+        if(this._newLayer != null) newLayer = this._newLayer;
         if(newLayer){
             for(const m of menusOpen){
                 m.menu.classList.add("force-hidden");
@@ -2414,7 +2416,7 @@ function goToProject(pid:string){
     url.pathname = "/editor/index.html";
     url.searchParams.set("pid",pid);
     history.pushState(null,null,url);
-    location.reload();
+    reloadPage();
 }
 
 document.addEventListener("keydown",e=>{
@@ -3224,7 +3226,7 @@ class InputMenu extends Menu {
             let  beforeElm = document.createElement("span");
             beforeElm.style.fontSize = "15px";
             beforeElm.textContent = this.beforeInputPrompt;
-            document.querySelector(".menu-body").insertBefore(beforeElm, inputObj.inp.parentElement); // this line took forever to figure out and is probably not optimal... sigh. 
+            this.body.insertBefore(beforeElm, inputObj.div); // this line took forever to figure out and is probably not optimal... sigh. --- fixed!
         }
         if(this.afterInputPrompt){
             let afterElm = document.createElement("span");
@@ -3594,3 +3596,9 @@ async function loadMonaco(){
 document.addEventListener("selectstart",e=>{
     if("dragging" in window) if(dragging) e.preventDefault();
 });
+/**
+ * This is needed because for some reason location.reload doesn't work in firefox on the lesson page
+ */
+function reloadPage(){
+    location.href = location.href;
+}
