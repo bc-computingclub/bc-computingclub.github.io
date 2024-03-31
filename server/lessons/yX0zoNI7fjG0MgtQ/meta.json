@@ -12,5 +12,5 @@
         ]
     },
     "finalInstance": null,
-    "boards": ["css_board"]
+    "boards": ["css_board","attr_board"]
 }

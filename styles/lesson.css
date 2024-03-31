@@ -41,7 +41,7 @@ body.hide-bubbles .tut-mouse{
 /* .pane-tutor-code .cont-js{ */
 .pane-tutor-code .monaco-editor{
     /* filter:hue-rotate(-35deg); */
-    filter:hue-rotate(45deg);
+    /* filter:hue-rotate(45deg); <-- the actual one */
     /* filter:hue-rotate(135deg); */
 }
 
@@ -167,7 +167,7 @@ body.hide-bubbles .tut-mouse{
     transform:translate(0px,0px);
 }
 .bubble.dir-top2:not(.no-callout) .bg::after{
-    top:-20px;
+    top:-23px;
     left:2.25px;
 
     border-left:9px solid transparent;
@@ -548,4 +548,14 @@ hr{
     /* display:none !important; */
     /* width:0.8em; */
     /* height:0.8em; */
+}
+
+.pane-tutor-code{
+    --f:hue-rotate(45deg);
+}
+.mtk8{
+    filter:var(--f);
+}
+.mtk4{
+    filter:var(--f);
 }

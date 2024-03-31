@@ -642,6 +642,7 @@ function getSum(){
 }
 function getRemaining(){
     let c = 15.4000244140625;
+    if(!centerCont) centerCont = document.querySelector(".center-cont");
     return centerCont.getBoundingClientRect().width - getSum() - c;
 }
 let _paneFilesLastWidth = 0;
@@ -3579,6 +3580,29 @@ class SubmissionMenu extends Menu {
     }
 }
 
+async function testGoToSymbol(){
+    let editor = lesson.p.getCurEditor();
+
+    editor.focus(); // Editor needs focus to be able to trigger command
+    editor.trigger("", "editor.action.quickCommand", ""); // Opens the quickcommand
+    let input = document.querySelector(".quick-input-box .input") as HTMLInputElement; // Gets the quickcommand input
+    
+    function setInp(s:string){
+        input.value = s; // Change the input value
+        input.dispatchEvent(new Event("input", { bubbles: true })); // Trigger an input event, for the search to register the new input value
+    }
+    function runEnter(){
+        input.focus();
+        input.dispatchEvent(new KeyboardEvent("keydown", { bubbles: true, key:"enter" })); // Trigger an input event, for the search to register the new input value
+    }
+    // setInp("> go to symbol in editor");
+    // await wait(500);
+
+    setInp("@head");
+    await wait(1500);
+    runEnter();
+}
+
 let _hasLoadedMonaco = false;
 async function loadMonaco(){
     if(_hasLoadedMonaco) return;
@@ -3591,6 +3615,10 @@ async function loadMonaco(){
         });
     });
     _hasLoadedMonaco = true;
+    monaco.languages.typescript.javascriptDefaults.setCompilerOptions({
+        allowNonTsExtensions: true
+    });
+    
 }
 
 document.addEventListener("selectstart",e=>{

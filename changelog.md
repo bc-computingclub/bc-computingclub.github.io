@@ -603,3 +603,19 @@
 - fixed/cleaned up input menu beforeText to handle the error if inp box wasn't found correctly
 - fixed new projects so they go at the top of the list in the dashboard instead of the bottom when created because the time field was empty until first save
 - fixed weird bug when deleting projects they would delete too many visually and the page would lose connection to the server until refresh (at least in firefox)
+
+### 3/30/24
+- moved changelog out of styles, not sure why it was there
+- added ability to press Enter instead of clicking bubbles but if you're focused in a textarea or input then it'll type there but in those cases if you press Shift+Enter then it'll go to the next thing
+- tweaked 3rd lesson a bit
+- added SwitchToFile CodePart
+- added MoveMouseTo CodePart
+- fixed resizing lesson panes not resizing editors
+- fixed some core mouse movement functions to actually update the editor's cursor position along with it (but disabled for now)
+- experimented with possibly a Go to symbol CodePart
+- fixed dir-top2 callout arrow being too close to bubble
+- wrote second ponder board in simple styling lesson
+- fixed some bugs with ponder board
+- fixed tutor editor filtering so color change only happens on certain tokens so CSS color stuff and brackets stays normal color
+- fixed resuming to CP_CSS wasn't correct
+- made editor blur when opening ponder board

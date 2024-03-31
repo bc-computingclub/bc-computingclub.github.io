@@ -26,7 +26,7 @@ return [
         "So what if we wanted to change the background color, the color of our text, or the text font size?",
         "Well, we can use CSS (Cascading Style Sheets) which let us stylize the looks of our page and in the future, add animations to it."
     ],BubbleLoc.global,[
-        new AddFileTask("style.css",true,"Let's start by adding and linking a css file to our page."),
+        new AddFileTask("style.css",true,"Let's start by adding and linking a CSS file to our page."),
         new AddCode([
             new CP_CSS("body",{
                 "background-color":"darkcyan"
@@ -34,20 +34,26 @@ return [
         ],"Let's try to change the background of our page."),
         new BubbleTask("i[Feel free to experiment and change the color to whatever you like!]",undefined,undefined,"left"),
         new PonderBoardTask("css_board","Let's take a closer look at this structure."),
-        new DoRefreshTask("Now, if you try to refresh the preview you'll see nothing changes."),
+        new DoRefreshTask("Now, if you try to refresh the preview you'll see nothing changed."),
     ]),
     new LE_AddGBubble([
         "Since the preview only displays our HTML page, we need to tell our HTML page where our CSS file is so it knows how to load it."
     ],BubbleLoc.global,[
-        new AddFileTask("index.html",true,"Let's go back to our page."),
+        new SwitchFileTask("index.html","Let's go back to our index page."),
+        new AddIgnoreCode([
+            new CP_MoveTo(8,3),
+        ]),
         new AddCode([
             new CP_Text('<link rel="stylesheet" href="style.css">')
         ],"We can link our CSS file to our page by adding a line in the h[Head] of our page."),
         new DoRefreshTask("Refresh the preview to see our new background color applied."),
-        new BubbleTask("So what does this even mean? (ponder board)"),
-        // new PonderBoardTask()
+        new PonderBoardTask("attr_board","So what does this even mean?"),
 
-        new AddFileTask("style.css",true,"Alright, let's go back and see what else we can do with CSS."),
+        new SwitchFileTask("style.css","Alright, let's go back and see what else we can do with CSS."),
+        new AddIgnoreCode([
+            new CP_MoveBy(0,2,true),
+            new CP_LineBelow(2)
+        ]),
         new AddCode([
             new CP_CSS("p",{
                 "font-size":"32px"

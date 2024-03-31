@@ -350,6 +350,63 @@ abstract class Task{
         return t;
     }
 }
+class SwitchFileTask extends Task{
+    constructor(name:string,comment:string,requireConfirm=false){
+        super("Switch to file: "+name);
+        this.name = name;
+        this.comment = comment;
+        this.requiresDoneConfirm = requireConfirm;
+    }
+    skipsRewind(): boolean {
+        return !this.requiresDoneConfirm;
+    }
+    name:string;
+    comment:string;
+    async start(): Promise<string | void> {
+        await super.start();
+        let alreadyDone = false;
+        if(lesson.p.curFile?.name == this.name) alreadyDone = true;
+        
+        let r2 = tutMouse.getBoundingClientRect();
+        let rect:DOMRect;
+        let existingFile = lesson.tut.files.find(v=>v.name == this.name);
+        if(!existingFile){
+            console.warn("Err: tutor tried to switch to file that didn't exist");
+            alert("A strange error has occured, please save and then refresh the page.");
+            await this.finish();
+            return;
+        }
+        let text2 = "Let's go back";
+        let tarBtn:Element;
+        if(existingFile){
+            text2 = (this.comment ?? "Let's go back to "+this.name);
+            let fileElm = lesson.tut.d_files.children[lesson.tut.files.indexOf(existingFile)];
+            rect = fileElm.getBoundingClientRect();
+            r2 = rect;
+            tarBtn = fileElm;
+            // goesBack = true;
+        }
+        let b2 = addBubbleAt(BubbleLoc.xy,text2,"top",{
+            x:r2.x+r2.width/2 + 17,
+            y:r2.y+r2.height/2 - 22,
+            click:true
+        });
+        await b2.clickProm;
+
+        await showTutMouse();
+        await moveTutMouseToXY(rect.x+rect.width/2,rect.y+rect.height/2);
+        await wait(300);
+        await fakeClickButton(tarBtn);
+        if(existingFile){
+            existingFile.open();
+            // lesson.tut.curFile = existingFile;
+        }
+
+        await hideTutMouse();
+
+        await this.finish();
+    }
+}
 class AddFileTask extends Task{
     constructor(name:string,isRequired:boolean,customText?:string){
         super("Add a file named: "+name);
@@ -488,6 +545,7 @@ async function startMouseMove(col:number,line:number,noShow=false){
     if(!noShow) await hideTutMouse();
 }
 async function typeText(editor:Editor,text:string,speedScale=1,moveMouseToEnd=false){
+    forceEditorUpdate(editor); // <-- this will degrade tutor and load performance a bit but doesn't seem to be too noticable on my end
     let pos:monaco.IPosition;
     if(g_waitDelayScale == 0){
         startEdit();
@@ -532,7 +590,7 @@ function _moveCursorEnd(editor:Editor){
     editor.trigger("keyboard","cursorEnd",null);
     endEdit();
 }
-async function moveCursorBy(editor:Editor,cols:number,rows:number,noShow=false){
+async function moveEditorCursorBy(editor:Editor,cols:number,rows:number,noShow=false){
     let pos = editor.getPosition();
     if(noShow){
         await moveTutMouseTo(cols,rows);
@@ -557,6 +615,28 @@ async function moveCursorBy(editor:Editor,cols:number,rows:number,noShow=false){
     editor.setPosition(pos.with(pos.lineNumber+rows,pos.column+cols));
     endEdit();
     // await wait(getTypeSpeed(5));
+    await wait(_mouseClickDelay);
+    
+    await hideTutMouse();
+}
+async function moveEditorCursorTo(editor:Editor,col:number,row:number,noShow=false){
+    let pos = editor.getPosition();
+    if(noShow){
+        await moveTutMouseTo(col,row);
+        startEdit();
+        editor.setPosition(pos.with(row,col));
+        endEdit();
+        return;
+    }
+    
+    await showTutMouse(true);
+    await wait(200);
+    await startMouseMove(col,row,true);
+    await wait(_mouseClickDelay);
+
+    startEdit();
+    editor.setPosition(pos.with(row,col));
+    endEdit();
     await wait(_mouseClickDelay);
     
     await hideTutMouse();
@@ -617,7 +697,7 @@ class CP_BreakOut extends CodePart{
         let dir = this.y/amt;
         for(let i = 0; i < amt; i++){
             _moveCursorEnd(editor);
-            await moveCursorBy(editor,0,dir);
+            await moveEditorCursorBy(editor,0,dir);
             await wait(50);
         }
         if(this.newLine) await typeText(editor,"\n");
@@ -634,7 +714,21 @@ class CP_MoveBy extends CodePart{
     y:number;
     noShow:boolean;
     async run(editor: monaco.editor.IStandaloneCodeEditor): Promise<void> {
-        await moveCursorBy(editor,this.x,this.y,this.noShow);
+        await moveEditorCursorBy(editor,this.x,this.y,this.noShow);
+    }
+}
+class CP_MoveTo extends CodePart{
+    constructor(col:number,row:number,noShow=false){
+        super();
+        this.col = col;
+        this.row = row;
+        this.noShow = noShow;
+    }
+    col:number;
+    row:number;
+    noShow:boolean;
+    async run(editor: monaco.editor.IStandaloneCodeEditor): Promise<void> {
+        await moveEditorCursorTo(editor,this.col,this.row,this.noShow);
     }
 }
 class CP_Text extends CodePart{
@@ -684,7 +778,7 @@ class CP_HTML extends CodePart{
         await startMouseMove(pos.column,pos.lineNumber,true);
         // moveTutMouseTo(58 + pos.column*7.7,115 + pos.lineNumber*16.5);
 
-        if(this.endAtCenter) await moveCursorBy(editor,-3-this.tag.length,0);
+        if(this.endAtCenter) await moveEditorCursorBy(editor,-3-this.tag.length,0);
         if(this.open) await typeText(editor,"\n");
     }
 }
@@ -709,15 +803,27 @@ class CP_CSS extends CodePart{
         let speed = 1;
 
         await typeText(editor,`${this.selector}{\n`,speed,true);
+        startEdit();
+        // editor.trigger("keyboard","editor.action.insertLineAfter",null);
+        // let pos = editor.getPosition();
+        // editor.setPosition(pos.with(pos.lineNumber-1,pos.column));
+        endEdit();
 
         let i = 0;
         let ok = Object.keys(this.styles);
+        // forceEditorUpdate(editor);
         for(const prop of ok){
             let val = this.styles[prop];
             await typeText(editor,prop+":"+val+";"+(i != ok.length-1 ? "\n" : ""),speed);
             i++;
         }
         await wait(50);
+
+        // startEdit();
+        // editor.trigger("keyboard","editor.action.insertLineAfter",null);
+        // editor.trigger("keyboard","type",{text:"}"});
+        // endEdit();
+
         // forceEditorUpdate(editor);
 
         // let pos = editor.getPosition();
@@ -1154,6 +1260,8 @@ class PonderBoardTask extends Task{
 
         let b = lesson.boards.find(v=>v.bid == this.bid);
         lesson.board = b;
+        let curTA = document.activeElement as HTMLTextAreaElement;
+        if(curTA?.tagName.toLowerCase() == "textarea") curTA.blur();
         
         b.initEvents();
         b.init();
@@ -1813,7 +1921,15 @@ const TC_Cols = {
     1:"royalblue",
     2:"dodgerblue",
     3:"white",
-    4:"#ce9178"
+    4:"#ce9178", // orange // str
+    5:"#9cdcfe", // light blue // attr
+    6:"#569cd6", // tag
+};
+const COL = {
+    gram:0,
+    tag:6, // or could be 2 for legacy
+    str:4,
+    attr:5,
 };
 function getLenTC(tc:TC[]){
     let l = 0;
@@ -3530,6 +3646,12 @@ async function moveTutMouseTo(col:number,row:number){
     }
     tutMouse.style.left = (COL_OFF+col*COL_SCALE)+"px";
     tutMouse.style.top = (LINE_OFF+row*LINE_SCALE)+"px";
+    // if(lesson.tut.curFile){ // temp disabled for now until I come up with maybe a better solution
+    //     let editor = lesson.tut.curFile.editor;
+    //     startEdit();
+    //     editor.setPosition({column:col,lineNumber:row});
+    //     endEdit();
+    // }
     await wait(350);
 }
 async function moveTutMouseToXY(x:number,y:number){
@@ -4208,6 +4330,26 @@ document.addEventListener("keydown",async e=>{
     if(!e.key) return;
     let k = e.key.toLowerCase();
 
+    if(k == "enter" || k == "return"){
+        let active = document.activeElement?.tagName.toLowerCase();
+        if((e.shiftKey && !e.ctrlKey) || (!active ? true : (active != "textarea" && active != "input"))) if(bubbles.length){
+            e.preventDefault();
+            e.stopImmediatePropagation();
+            e.stopPropagation();
+            // let b = bubbles[0]; // grab the first one first (queue)?
+            let b = bubbles[bubbles.length-1]; // grab the last one first (stack)?
+            let btn = b.e.querySelector(".b-confirm") as HTMLButtonElement;
+            if(btn){
+                btn.click();
+                // closeBubble(b);
+            }
+            else if(b.clickRes){
+                b.clickRes();
+                // closeBubble(b);
+            }
+        }
+    }
+    
     if(e.shiftKey && e.ctrlKey) g_waitDelayScale = 0;
 
     if(e.ctrlKey || e.metaKey){

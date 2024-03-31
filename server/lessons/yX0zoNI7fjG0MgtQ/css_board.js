@@ -41,8 +41,8 @@ return [
     new BE_SetOpacity(["selector",0]),
     new BE_GlobalBubble(`Everything within these curly braces will be the i["styles"] that we add to those elements.`),
     new BE_SetOpacity([".","style1","val1"],1),
-    new BE_GlobalBubble(`All styles follow the same pattern starting with the name of the style property you want, a colon (:), the value you want to change the style to, and then a semicolon (;).\ni[name: value;]`),
-    new BE_GlobalBubble(`The selector along with it's properties is called a h[Style Set], because it contains a set of properties or styles.`),
+    new BE_GlobalBubble(`All styles follow this same pattern:\ni[style-name: value;]`),
+    new BE_GlobalBubble(`This whole structure is called a h[Style Set], because it contains a set of properties or styles.`),
     // new BE_GlobalBubble(`This is the basic structure of `),
 
     new BE_GlobalBubble(`We'll look more into the power of CSS in later tutorials.`)
