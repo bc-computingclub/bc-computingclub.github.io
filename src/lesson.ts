@@ -14,6 +14,8 @@ const d_subTasks = document.querySelector(".d-sub-tasks");
 const b_imDone = d_lesson_confirm.querySelector(".b-im-done") as HTMLButtonElement;
 const b_replay = d_lesson_confirm.querySelector(".b-replay");
 const b_goBackStep = d_lesson_confirm.querySelector(".b-go-back-step");
+setupCallout(b_replay,"Replay Step");
+setupCallout(b_goBackStep,"Go Back Step");
 
 const l_progress = document.querySelector(".l-progress");
 
@@ -1927,9 +1929,11 @@ const TC_Cols = {
 };
 const COL = {
     gram:0,
+    _:0, // none
     tag:6, // or could be 2 for legacy
     str:4,
     attr:5,
+    text:3
 };
 function getLenTC(tc:TC[]){
     let l = 0;
@@ -2489,6 +2493,60 @@ class BO_Circle extends BoardRenderObj{
         // ctx.strokeRect(r.x,r.y,r.w,r.h);
     }
 }
+class BO_Underline extends BoardRenderObj{
+    constructor(r:Rect,padX:number,padY:number){
+        super(r.x,r.y,Anchor.CENTER,Anchor.CENTER);
+        this.r = r;
+        this.padX = padX;
+        this.padY = padY;
+    }
+    r:Rect;
+    padX:number;
+    padY:number;
+    async onAdd(b: Board): Promise<void> {
+        let can = this.can;
+        let ctx = this.ctx;
+        this.r = this.r.changeUnits(1,1,b.can.width,b.can.height);
+        let r = this.r;
+        can.width = this.r.w+this.padX*4;
+        can.height = this.r.h+this.padY*4;
+
+        let cx = can.width/2;
+        let cy = can.height/2;
+
+        ctx.lineWidth = b.fontSize/8;
+        ctx.strokeStyle = "white";
+        ctx.lineDashOffset = can.width/70;
+        let radX = r.w/2+this.padX + b.fontSize/8;
+        let radY = r.h/2+this.padY;
+        radY *= 0.5;
+        radY += r.w/8;
+        let delay = 30;
+        function draw(x1:number,y1:number,x2:number,y2:number){
+            ctx.beginPath();
+            ctx.lineCap = "round";
+            ctx.moveTo(x1,y1);
+            ctx.lineTo(x2,y2);
+            ctx.stroke();
+        }
+        let tx = cx-radX/2;
+        let ty = cy+radY/2 + b.fontSize/6;
+        let speed = 0.1/6.28*radX; // this is the same speed as the circle to draw
+        function getY(i:number){
+            return ty+Math.sin(i/radX*Math.PI*b.fontSize/7)*b.fontSize/12;
+        }
+        for(let i = 0; i < radX; i += speed){
+            draw(tx+i,getY(i),tx+i+speed,getY(i+speed));
+            delay *= 0.99;
+            await wait(delay);
+        }
+    }
+    render(_ctx: CanvasRenderingContext2D, b: Board){
+        if(this.can.width == 0 || this.can.height == 0) return;
+        let {x,y} = this.getAnchoredPos(this.can.width,this.can.height);
+        _ctx.drawImage(this.can,x+this.r.w/2,y+this.r.h/2);
+    }
+}
 class BO_Paint extends BoardObj{
     constructor(){
         super(0,0);
@@ -2670,6 +2728,34 @@ class BE_CircleObj extends ObjRefBoardEvent{
         return new BE_CircleObj(data.refs);
     }
 }
+class BE_UnderlineObj extends ObjRefBoardEvent{
+    constructor(refs:string[]|MultiBORef){
+        super(refs);
+    }
+    async run(b: Board): Promise<void> {
+        this.start();
+        let can = b.paint._can;
+        let ctx = b.paint._ctx;
+        
+        let objs = this.refs.unwrap(b);
+        for(const o of objs){
+            let r = o.getRect().changeUnits(b.can.width,b.can.height,1,1);
+            let pad = b.getCharWidthInPX()*2;
+            await this.addObj(new BO_Underline(r,pad,pad),b);
+        }
+        
+        await this.finish(true);
+    }
+    serialize() {
+        return {
+            id:"circleObj",
+            refs:this.refs.refs
+        };
+    }
+    static parse(data: any): BoardEvent {
+        return new BE_CircleObj(data.refs);
+    }
+}
 class BE_RemoveObj extends ObjRefBoardEvent{
     constructor(refs:string[]|MultiBORef,fadeOut=true,fadeTime=500){
         super(refs);
@@ -2784,6 +2870,9 @@ class Board{
         await wait(2);
         this.objs = [];
         // this.events = [];
+
+        let bgo = document.querySelector(".global-bubble-overlay");
+        if(bgo) bgo.classList.remove("covered");
 
         let paint = new BO_Paint();
         this.objs.push(paint);
@@ -2903,6 +2992,8 @@ class Board{
         this.objs = [];
     }
     show(){
+        let bgo = document.querySelector(".global-bubble-overlay");
+        if(bgo) bgo.classList.add("covered");
         this.isVisible = true;
         let b = addBubbleAt(BubbleLoc.global,"");
         b.e.classList.add("board-bubble");
@@ -3110,7 +3201,7 @@ class Lesson{
         a.totalParts = _i;
 
         // load initial tutor files
-        if(data.isStart) requestAnimationFrame(async ()=>{
+        requestAnimationFrame(async ()=>{
             if(data.initialFiles){
                 for(const file of data.initialFiles){
                     a.tut.createFile(file.name,file.data);

@@ -97,6 +97,8 @@ export class LessonData{
     finalInstance?:null;
 
     events:LessonEvent[] = [];
+
+    // continueFrom:string|null = null;
 }
 
 class PTreeLink{
@@ -176,13 +178,16 @@ export const progressTree = new PTreeFolder("root",[],{
             new PTreeLink("yX0zoNI7fjG0MgtQ")
         ]),
         new PTreeLesson("Simple Styling","yX0zoNI7fjG0MgtQ",70,-5,[
-            new PTreeLink("_dummy04",true),
+            new PTreeLink("PpcVdfjdzo7TfWBL",true)
+        ]),
+        new PTreeLesson("ID & Class Attributes","PpcVdfjdzo7TfWBL",100,-35,[
+            new PTreeLink("_dummy04",true)
         ]),
 
-        new PTreeLesson("Dummy","_dummy04",100,-35,[
-            new PTreeLink("_dummy03",true),
+        new PTreeLesson("Dummy","_dummy04",130,-10,[
+            new PTreeLink("_dummy03",false),
         ]), // transitions - more intermediate css
-        new PTreeLesson("Dummy","_dummy03",125,15,[]), // javascript intro
+        new PTreeLesson("Dummy","_dummy03",165,45,[]), // javascript intro
         // new PTreeLesson("Dummy","_dummy03",110,25,[]), // javascript intro
     ])
 });

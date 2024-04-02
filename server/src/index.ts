@@ -1,4 +1,4 @@
-import { io, server, CredentialResData, User, users, getUserBySock, sanitizeEmail, getProject, attemptToGetProject, access, readdir, read, mkdir, removeFile, write, ULFile, ProjectMeta, allProjects, UserChallengeData, Project, getProject2, ULItem, ULFolder, rename, removeFolder, getDefaultProjectMeta, getProjectFromHD, lessonMetas, LessonMeta, loadProject, LessonMode, getLessonMeta, writeLessonMeta, deleteLessonMeta, socks, internalCP } from "./connection";
+import { io, server, CredentialResData, User, users, getUserBySock, sanitizeEmail, getProject, attemptToGetProject, access, readdir, read, mkdir, removeFile, write, ULFile, ProjectMeta, allProjects, UserChallengeData, Project, getProject2, ULItem, ULFolder, rename, removeFolder, getDefaultProjectMeta, getProjectFromHD, lessonMetas, LessonMeta, loadProject, LessonMode, getLessonMeta, writeLessonMeta, deleteLessonMeta, socks, internalCP, internalCPDir } from "./connection";
 import { CSubmission, Challenge, ChallengeData, ChallengeGet, challenges } from "./s_challenges";
 import {LessonData, progressTree, ptreeMap} from "./s_lesson";
 import fs, { copyFile } from "fs";
@@ -475,7 +475,7 @@ io.on("connection",socket=>{
             f(1);
             return;
         }
-        let data:any;
+        let data;
         try{
             data = JSON.parse(str);
         }
@@ -496,20 +496,18 @@ io.on("connection",socket=>{
         }
 
         // Initial files (for tutor)
-        if(await access("../users/"+user.uid+"/lesson/"+lid)){
-            
-        }
-        else{
+        if(!await access("../users/"+user.uid+"/lesson/"+lid)){
             data.isStart = true;
-            let initialFiles = await readdir(path+"initial_files");
-            if(initialFiles){
-                data.initialFiles = [];
-                for(const v of initialFiles){
-                    data.initialFiles.push({
-                        name:v,
-                        data:await read(path+"initial_files/"+v,"utf8")
-                    });
-                }
+        }
+        if(!await access("../lesson/"+user.uid+"/"+lid)) if(data.continueFrom) await copyContinueFromFiles(user,data.continueFrom,lid);
+        let initialFiles = await readdir(path+"initial_files");
+        if(initialFiles){
+            data.initialFiles = [];
+            for(const v of initialFiles){
+                data.initialFiles.push({
+                    name:v,
+                    data:await read(path+"initial_files/"+v,"utf8")
+                });
             }
         }
         
@@ -580,20 +578,23 @@ io.on("connection",socket=>{
         let user = getUserBySock(socket.id);
         if(!user) return;
 
+        let meta = await getLessonMeta(user.uid,lessonId);
+
         // console.log("restoring lesson files...");
         let path = "../lesson/"+user.uid+"/"+lessonId;
         let filePath = path;
         if(!await access(path)){
             await mkdir(path);
-            await mkdir(filePath);
-            let path2 = "../lessons/"+lessonId+"/initial_files";
-            let initialFiles = await readdir(path2);
-            // console.log("$ initial files: ",initialFiles);
-            if(initialFiles){
-                for(const name of initialFiles){
-                    await write(filePath+"/"+name,await read(path2+"/"+name));
-                }
-            }
+            // await mkdir(filePath);
+
+            // let path2 = "../lessons/"+lessonId+"/initial_files";
+            // let initialFiles = await readdir(path2);
+            // if(initialFiles){
+            //     for(const name of initialFiles){
+            //         await write(filePath+"/"+name,await read(path2+"/"+name));
+            //     }
+            // }
+            // if(meta.continueFrom) await copyContinueFromFiles(user,meta.continueFrom,lessonId);
             // call(null);
             // return;
         }
@@ -612,8 +613,6 @@ io.on("connection",socket=>{
         // if(tutCurFiles) for(const f of tutCurFiles){
         //     tutFiles.push(new ULFile(f,await read(tutFilePath+"/"+f,"utf8"),"","utf8"));
         // }
-
-        let meta = await getLessonMeta(user.uid,lessonId);
 
         if(meta){
             meta.wls = new Date().toISOString();
@@ -1485,6 +1484,12 @@ io.on("connection",socket=>{
         call(0,v);
     });
 });
+async function copyContinueFromFiles(user:User,fromLID:string,toLID:string){
+    if(!user) return;
+    let fromPath = `../lesson/${user.uid}/${fromLID}`;
+    let toPath = `../lesson/${user.uid}/${toLID}`;
+    let res = await internalCPDir(fromPath,toPath);
+}
 async function deleteProject(user:User,pMeta:ProjectMeta,f:(res:number)=>void){
     if(!pMeta.user){
         f(-3);

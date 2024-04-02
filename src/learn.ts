@@ -157,8 +157,10 @@ class LessonItem{
         this.d_actions.classList.remove("open");
         if(!this.isHovering){
             this.b_start.textContent = this.tmp;
-            this.b_start.classList.remove("material-symbols-outlined");
-            if(this.data.s) this.b_start.classList.add("percent");
+            if(this.data.s){
+                this.b_start.classList.remove("material-symbols-outlined");
+                this.b_start.classList.add("percent");
+            }
         }
     }
     open(){
@@ -256,11 +258,23 @@ class LessonItem{
             this.tmp = b_start.textContent;
             b_start.onmouseenter = ()=>{
                 this.isHovering = true;
+                if(this.data.s){
+                    b_start.classList.add("material-symbols-outlined");
+                }
+                else{
+                    b_start.classList.add("material-symbols-outlined");
+                }
                 b_start.textContent = "play_arrow";
             };
             b_start.onmouseleave = ()=>{
                 this.isHovering = false;
                 if(b_start.classList.contains("open")) return;
+                if(this.data.s){
+                    b_start.classList.remove("material-symbols-outlined");
+                }
+                else{
+                    b_start.classList.add("material-symbols-outlined");
+                }
                 b_start.textContent = this.tmp;
             };
         }

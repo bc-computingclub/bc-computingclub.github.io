@@ -895,3 +895,14 @@ export function internalCP(fromPath:string,toPath:string){
         });
     });
 }
+export function internalCPDir(fromPath:string,toPath:string){
+    return new Promise<boolean>(resolve=>{
+        fs.cp(fromPath,toPath,{ recursive: true },err=>{
+            if(err){
+                console.log("$ error copying",err);
+                resolve(false);
+            }
+            else resolve(true);
+        });
+    });
+}

@@ -24,7 +24,7 @@ return [
     
     new LE_AddGBubble([
         "So what if we wanted to change the background color, the color of our text, or the text font size?",
-        "Well, we can use CSS (Cascading Style Sheets) which let us stylize the looks of our page and in the future, add animations to it."
+        "Well, we can use h[CSS (Cascading Style Sheets)] which let us stylize the looks of our page and in the future, add animations to it."
     ],BubbleLoc.global,[
         new AddFileTask("style.css",true,"Let's start by adding and linking a CSS file to our page."),
         new AddCode([
@@ -45,28 +45,33 @@ return [
         ]),
         new AddCode([
             new CP_Text('<link rel="stylesheet" href="style.css">')
-        ],"We can link our CSS file to our page by adding a line in the h[Head] of our page."),
+        ],"We can link our CSS file to our page by adding a line in the h[head] of our page."),
         new DoRefreshTask("Refresh the preview to see our new background color applied."),
         new PonderBoardTask("attr_board","So what does this even mean?"),
+        
+        // 
 
-        new SwitchFileTask("style.css","Alright, let's go back and see what else we can do with CSS."),
-        new AddIgnoreCode([
-            new CP_MoveBy(0,2,true),
-            new CP_LineBelow(2)
-        ]),
-        new AddCode([
-            new CP_CSS("p",{
-                "font-size":"32px"
-            })
-        ],"How about making the text twice as large? The default size of text is 16px or pixels so we can set it to 32px."),
-        new BubbleTask(`NOTE: This says that we want u[ALL paragraph elements] on our page to have a font size of 32px.`,undefined,undefined,"left"),
-        new AddCode([
-            new CP_LineBelow(1),
-            new CP_Text("color:darkorchid;")
-        ],"We can also change the text color."),
-        new AddCode([
-            new CP_LineBelow(1),
-            new CP_Text("background-color:yellow;")
-        ],"We can change the background-color of the paragraph element itself, like a highlight.")
+        // new SwitchFileTask("style.css","Alright, let's go back and see what else we can do with CSS."),
+        // new AddIgnoreCode([
+        //     new CP_MoveBy(0,2,true),
+        //     new CP_LineBelow(2)
+        // ]),
+        // new AddCode([
+        //     new CP_CSS("p",{
+        //         "font-size":"32px"
+        //     })
+        // ],"How about making the text twice as large? The default size of text is 16px or pixels so we can set it to 32px."),
+        // new BubbleTask(`NOTE: This says that we want u[ALL paragraph elements] on our page to have a font size of 32px.`,undefined,undefined,"left"),
+        // new AddCode([
+        //     new CP_LineBelow(1),
+        //     new CP_Text("color:darkorchid;")
+        // ],"We can also change the text color."),
+        // new AddCode([
+        //     new CP_LineBelow(1),
+        //     new CP_Text("background-color:yellow;")
+        // ],"We can change the background-color of the paragraph element itself, like a highlight.")
     ]),
+    new LE_AddGBubble([
+        "Alright, now that we've set up our CSS file and linked it to our page, we can start to look into the real power that CSS can give us.\nSee you in the next one 👋"
+    ])
 ]

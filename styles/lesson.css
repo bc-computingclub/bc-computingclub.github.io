@@ -52,6 +52,29 @@ body.hide-bubbles .tut-mouse{
     position:absolute;
     z-index:40;
 }
+.global-bubble-overlay.covered::before{
+    content:"";
+    position:absolute;
+    top:0px;
+    left:0px;
+    width:100vw;
+    height:calc(100vh - 60px);
+    animation:CoverGBO 3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    animation-delay:0.3s;
+    transition:background-color 0.3s ease-out, backdrop-filter 0.3s ease-out;
+    /* vvv - this property is insane */
+    animation-fill-mode:forwards;
+}
+@keyframes CoverGBO {
+    0%{
+        background-color:rgba(0,0,0,0);
+        backdrop-filter:blur(0px);
+    }
+    100%{
+        background-color:rgba(0,0,0,0.5);
+        backdrop-filter:blur(2px);
+    }
+}
 .bubble_old{
     padding:1rem;
     background-color:var(--bubble-bg);

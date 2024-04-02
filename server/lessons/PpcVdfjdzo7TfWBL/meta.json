@@ -1,0 +1,17 @@
+{
+    "ver": "0",
+    "name": "ID & Class Attributes",
+    "banner": {
+        "sections": [
+            {
+                "head": "What Will We Be Doing in This Lesson?",
+                "text": [
+                    "We'll be looking at some more styling with CSS by using the ID and Class attributes."
+                ]
+            }
+        ]
+    },
+    "finalInstance": null,
+    "boards": [],
+    "continueFrom":"yX0zoNI7fjG0MgtQ"
+}

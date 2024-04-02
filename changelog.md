@@ -618,4 +618,15 @@
 - fixed some bugs with ponder board
 - fixed tutor editor filtering so color change only happens on certain tokens so CSS color stuff and brackets stays normal color
 - fixed resuming to CP_CSS wasn't correct
-- made editor blur when opening ponder board
+- made editor lose focus when opening ponder board
+
+### 4/1/24
+- added Replay Step and Go Back Step callouts to those buttons in lesson
+- added icon to lesson page
+- fixed rare bug when clearing progress in learn page and then clicking away would cause the play icon to not have the symbols class on it
+- added BE_UnderlineObj for boards
+- some tweaks to Simple Styling lesson
+- added darkened and blurred background when Ponder Board opens so you are more focused on the board and you can't interact with what's behind it while it's going on
+- FINISHED LESSON 3!!!!
+- added continueFrom for lessons to copy your files from order lessons into a new one
+- fixed up initialFiles so they are for the tutor, not you
