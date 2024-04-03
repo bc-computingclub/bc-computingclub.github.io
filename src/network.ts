@@ -76,6 +76,7 @@ function _login(data:CredentialResData,token:string){
 let h_profile = document.querySelector(".h-profile") as HTMLElement;
 h_profile.addEventListener("mousedown",e=>{
     let labels = [
+        g_user ? "View Profile" : " --- ",
         g_user ? "Switch Account" : "Log In",
         g_user ? "Log Out" : " --- ",
         "Switch Theme",
@@ -84,19 +85,22 @@ h_profile.addEventListener("mousedown",e=>{
     openDropdown(h_profile,()=>labels,async (i)=>{
         let l = labels[i];
         // if(l == "Switch Account" || l == "Log In"){
-        if(i == 0){
+        if(i == 0) {
+            location.href = "../profile/";
+        }
+        if(i == 1){
             new LogInMenu().load();
         }
         // else if(l == "Log Out"){
-        if(i == 1 && g_user){
+        if(i == 2 && g_user){
             _logout();
         }
         // else if(l == "Switch Theme"){
-        if(i == 2){
+        if(i == 3){
             setTheme(curTheme == "dark" ? "light" : "dark");
             return;
         }
-        else if(i == 3){
+        else if(i == 4){
             socket.disconnect();
             await wait(500);
             socket.connect();
@@ -106,7 +110,7 @@ h_profile.addEventListener("mousedown",e=>{
     },{
         openToLeft:true,
         getIcons(){
-            return ["person","logout","light","wifi"];
+            return ["person","switch_account","logout","light","wifi"];
         },
         useHold:false // true doesn't quite work right yet
     });
