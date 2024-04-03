@@ -16,6 +16,11 @@ let currentChallenge:Challenge;
 
 window.onload = async () => {
   await loginProm;
+  if(!g_user){
+    alertNotLoggedIn();
+    return;
+  }
+
   currentChallenge = await getChallenge(cid);
   submissionArray = currentChallenge.submissions;
   cTitle.style.opacity = "1";

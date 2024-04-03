@@ -10,6 +10,9 @@ let connected = false;
 function setConneted(val:boolean){
     connected = val;
     console.log("NEW Connection Status: ",connected);
+    // setTimeout(()=>{
+    //     if(PAGE_ID != PAGEID.home) if(localStorage.getItem("token") == null) new LogInMenu().load();
+    // },500);
 }
 
 socket.on("connect",()=>{

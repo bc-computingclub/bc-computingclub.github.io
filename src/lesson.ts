@@ -3787,7 +3787,7 @@ async function initLessonPage(){
     setupEditor(pane_tutor_code,EditorType.tutor);
     setupEditor(pane_code,EditorType.self);
     
-    await waitForUser();
+    if(!await waitForUser()) return;
     
     if(!bypassLogin) if(g_user == null){ // not logged in
         // alert("You are not logged in, please log in");

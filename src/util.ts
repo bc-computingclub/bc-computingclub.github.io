@@ -426,6 +426,10 @@ function decodeJwtResponse(token:string) {
 
 declare const google:any;
 let initializedSignInPrompt = false;
+let _googleLoadedRes:()=>void;
+let googleLoadedProm = new Promise<void>(resolve=>{
+    _googleLoadedRes = resolve;
+});
 
 function initializeSignIn(){
     if(!initializedSignInPrompt){
@@ -437,6 +441,7 @@ function initializeSignIn(){
             auto_prompt:"false"
         });
         initializedSignInPrompt = true;
+        _googleLoadedRes();
     }
 }
 function promptSignIn(){
@@ -472,8 +477,14 @@ loginProm = new Promise<void>(resolve=>{
 });
 let g_user:CredentialResData;
 async function waitForUser(){
-    if(!loginProm) return;
+    if(!loginProm) return false;
     await loginProm;
+    if(!g_user){
+        alertNotLoggedIn();
+        lessonLoadCont.classList.add("done");
+        return false;
+    }
+    return true;
 }
 function logUserIn(data?:CredentialResData,token?:string){
     if(!data) data = JSON.parse(localStorage.getItem("logData")) as CredentialResData;
@@ -610,7 +621,7 @@ function addScript(src:string,isAsync=false,call?:()=>void){
     };
 }
 // addScript("/out/pre_init.js");
-addScript("https://accounts.google.com/gsi/client",true,()=>{
+addScript("https://accounts.google.com/gsi/client",false,()=>{
     initializeSignIn();
 });
 
@@ -2248,7 +2259,8 @@ function postIFrameRefresh(){
 enum PAGEID{
     none,
     editor,
-    lesson
+    lesson,
+    home
 }
 let PAGE_ID = PAGEID.none;
 
@@ -2777,7 +2789,8 @@ function whenEnter(elm:HTMLInputElement,f:(v:string)=>void,noBlur=false){
 }
 
 let _hasAlertedNotLoggedIn = false;
-function alertNotLoggedIn(){
+async function alertNotLoggedIn(){
+    await googleLoadedProm;
     _hasAlertedNotLoggedIn = true;
     new LogInMenu().load();
 }
@@ -3630,6 +3643,3 @@ document.addEventListener("selectstart",e=>{
 function reloadPage(){
     location.href = location.href;
 }
-
-// 
-if(localStorage.getItem("token") != null) new PromptLoginMenu().load();

@@ -29,6 +29,10 @@ async function getChallenges() {
 let shouldBeOpen: boolean;
 window.addEventListener("load", async () => {
   await loginProm; // Ensures user is logged in before challenges are fetched.
+  if(!g_user){
+    alertNotLoggedIn();
+    return;
+  }
 
   await getChallenges();
   await showChallenges(challengeArray, true);

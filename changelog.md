@@ -635,4 +635,16 @@
 - fixed lesson so it'll select the first file (usually index.html) to load to prevent issues with pre loading multiple files
 - fixed lesson page so "invert contrast" and "open in new tab" both have callouts like the editor page
 - fixed lesson page so the save button callout says "Save Lesson" instead of "Save Project"
-- 
+- worked some on lesson 4
+
+### 4/3/24
+- fixed sign in prompt so that it appears on all applicable pages and refreshes correctly
+
+- % [IDs-&-Classes]
+- I've copied the files
+    + reload the preview so we have a sense of what we're working with
+    - alright let's see what else cwe can do with CSS (switch file to style.css)
+    + add font-size: 32px (we can make the text twice as large)
+    + add color: tomato (we can also change the text color)
+    + add background-color: yellow (we can change the background-color of an element like a highlight)
+    
