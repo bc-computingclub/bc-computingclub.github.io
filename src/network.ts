@@ -188,6 +188,10 @@ async function restoreLessonFiles(lesson:Lesson){
     
     lesson.info = data.info;
     // return data;
+
+    // select the first file to be consistent (usually this will be the index.html)
+    if(lesson.p.files.length) lesson.p.files[0].open();
+    if(lesson.tut.files.length) lesson.tut.files[0].open();
 }
 // 
 function old_uploadProjectFiles(project:Project){ // for refresh
@@ -253,7 +257,7 @@ async function restoreProjectFiles(uid:string,pid:string){
         });
     });
    if(!data) return {meta:null,canEdit:false};
-    return data;
+   return data;
 }
 
 // Challenge

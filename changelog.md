@@ -630,3 +630,9 @@
 - FINISHED LESSON 3!!!!
 - added continueFrom for lessons to copy your files from order lessons into a new one
 - fixed up initialFiles so they are for the tutor, not you
+
+### 4/2/24
+- fixed lesson so it'll select the first file (usually index.html) to load to prevent issues with pre loading multiple files
+- fixed lesson page so "invert contrast" and "open in new tab" both have callouts like the editor page
+- fixed lesson page so the save button callout says "Save Lesson" instead of "Save Project"
+- 

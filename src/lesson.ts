@@ -3791,7 +3791,7 @@ async function initLessonPage(){
     
     if(!bypassLogin) if(g_user == null){ // not logged in
         // alert("You are not logged in, please log in");
-        new PromptLoginMenu().load();
+        // new PromptLoginMenu().load();
         return;
     }
 

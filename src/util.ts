@@ -556,7 +556,7 @@ function genHeader(i:number,isCompact=true,id:string){
         </div>
         <div class="cur-project-controls">
             <div class="d-current-project">[No Project Loaded]</div>
-            <div class="b-save icon-div"><div class="material-symbols-outlined co-item" co-label="Save Project">save</div></div>
+            <div class="b-save icon-div"><div class="material-symbols-outlined co-item" co-label="Save ${isLesson?"Lesson":"Project"}">save</div></div>
             <!--<div class="b-publish icon-div hide"><div class="material-symbols-outlined"></div></div>-->
             <button class="b-publish hide">
                 <div class="material-symbols-outlined"></div>
@@ -2757,9 +2757,9 @@ function setupCustomCallout(ele:Element,onshow:(div:HTMLElement)=>void){
         if(d?.parentElement) d.remove();
     });
 }
-async function initCallouts(){
+async function initCallouts(parent?:Element){
     await loginProm;
-    const callouts = document.querySelectorAll(".co-item");
+    const callouts = (parent ?? document).querySelectorAll(".co-item");
     for(const c of callouts){
         setupCallout(c);
     }
@@ -3630,3 +3630,6 @@ document.addEventListener("selectstart",e=>{
 function reloadPage(){
     location.href = location.href;
 }
+
+// 
+if(localStorage.getItem("token") != null) new PromptLoginMenu().load();

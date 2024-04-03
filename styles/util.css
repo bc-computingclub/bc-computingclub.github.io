@@ -240,8 +240,9 @@ div.menu.force-hidden{
 
 .menu-new-file, .menu-new-folder { /* New files and folders created will have this sizing*/
     /* width: 350px; */
+    /* height: 220px; */
     width: 370px;
-    height: 220px;
+    height:200px;
 }
 
 .menu-submit-challenge{
@@ -1534,6 +1535,7 @@ input[type="checkbox"]{
     display: flex;
     align-items: center;
     gap: 1em;
+    margin-top: auto;
     > * {
         width: 100%;
     }
