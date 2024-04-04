@@ -360,6 +360,7 @@ button.warn{
 }
 *.disabled{
     opacity:0.4;
+    pointer-events:none;
 }
 button:disabled{
     opacity:0.4;

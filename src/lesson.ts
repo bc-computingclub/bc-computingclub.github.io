@@ -4143,10 +4143,6 @@ function addBubbleAt(loc:BubbleLoc,text:string,dir?:string,ops?:any){
     return data;
 }
 
-let dev = {
-    skipGetStarted:true
-};
-
 class BannerMenu extends Menu{
     constructor(text:string,lesson:Lesson){
         super("Welcome!");

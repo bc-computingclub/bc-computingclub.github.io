@@ -1,6 +1,11 @@
 let lesson:Lesson;
 let project:Project;
 
+let dev = {
+    skipGetStarted:true,
+    blockViewProfile:true
+};
+
 let settingsList:Setting<any>[] = [];
 class Settings{
     invertContrast = new Setting<boolean>("invertContrast",false);

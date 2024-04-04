@@ -190,7 +190,8 @@ body.hide-bubbles .tut-mouse{
     transform:translate(0px,0px);
 }
 .bubble.dir-top2:not(.no-callout) .bg::after{
-    top:-23px;
+    /* top:-23px; */
+    top:-20px;
     left:2.25px;
 
     border-left:9px solid transparent;

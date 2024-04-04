@@ -639,6 +639,10 @@
 
 ### 4/3/24
 - fixed sign in prompt so that it appears on all applicable pages and refreshes correctly
+- changed arrow on non clickable bubbles again to be flush in light theme
+- added dev field for disabling "View Profile" until it's complete
+- published lesson 3
+- END of update1
 
 - % [IDs-&-Classes]
 - I've copied the files

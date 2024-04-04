@@ -22,6 +22,14 @@ return [
         new AddCode([
             new CP_LineBelow(1),
             new CP_Text("background-color:yellow;")
-        ],"We can change the background-color of the paragraph element itself, like a highlight.")
+        ],"We can change the background-color of the paragraph element itself, like a highlight."),
+        new AddCode([
+            new CP_LineBelow(1),
+            new CP_Text("font-style:italic;\nfont-weight:bold;")
+        ],"We can also make our text italic and bold by using the font-style and font-weight properties."),
+        new DoRefreshTask("If you haven't already refresh to see all the changes we've made.")
     ]),
+    new LE_AddGBubble([
+        "So, now we have all our text customized, what if we wanted to change just h[i[one]] of them?"
+    ])
 ]

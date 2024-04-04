@@ -37,7 +37,7 @@ return [
     new BE_CircleObj(["end"]).applyToObjs(o=>{
         o.addTag("cir");
     }),
-    new BE_GlobalBubble("Notice, &lt;link&gt; elements don't have closing tags; it doesn't make since for them to contain text because they don't display anything."),
+    new BE_GlobalBubble("Notice, &lt;link&gt; elements don't have closing tags; it doesn't make sense for them to contain text because they don't display anything."),
     new BE_RemoveObj(["cir"]),
     new BE_SetOpacity(["attr1","attr2"],1),
     
@@ -101,10 +101,10 @@ return [
 
     new BE_SetOpacity(["attr2"],op),
     new BE_SetOpacity(["ex2-attr1"],1),
-    new BE_GlobalBubble(`"id" is used for putting a h[unique identifier] on an element so we can find that specific element from somewhere else.\ni[We will be using id and class (which is similar to id) in a lot in future tutorials.]`),
+    new BE_GlobalBubble(`"id" is used for putting a h[unique identifier] on an element so we can find that specific element from somewhere else.`),
 
     new BE_SetOpacity(["ex2-attr1"],op),
-    new BE_SetOpacity(["ex2-attr2"],1),
+    new BE_SetOpacity(["ex2-attr2"],1), 
     new BE_GlobalBubble(`Notice, there's no value set to this attribute.\ni[We're just saying the button is disabled, plain and simple.]`),
     
     new BE_SetOpacity(["attr1","tag","<>","attr2","ex2"],1),

@@ -115,7 +115,12 @@ h_profile.addEventListener("mousedown",e=>{
         getIcons(){
             return ["person","switch_account","logout","light","wifi"];
         },
-        useHold:false // true doesn't quite work right yet
+        useHold:false, // true doesn't quite work right yet
+        onopen(dd){
+            if(dev.blockViewProfile) if(dd.children[0]){
+                dd.children[0].classList.add("disabled");
+            }
+        }
     });
 });
 
