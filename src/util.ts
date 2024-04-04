@@ -1139,6 +1139,10 @@ async function unsubmitChallenge(pid:string){
 
 // filtering
 
+const selectedFilters = {};
+let searchOption: string = "popularity";
+let searchDesc: boolean = true;
+
 let fileList:HTMLElement;
 let hoverFileListItem:FFile;
 let hoverFolderListItems:FFolder[] = [];
@@ -3108,10 +3112,6 @@ function getImplementationsHTML(submissionsExist: boolean) {
        `;
     return temp;
 }
- 
-const selectedFilters = {};
-let searchOption: string = "popularity";
-let searchDesc: boolean = true;
 
 function resetChallengeBody() {
     challengePopupBody.remove();
@@ -3249,7 +3249,7 @@ class InputMenu extends Menu {
             let  beforeElm = document.createElement("span");
             beforeElm.style.fontSize = "15px";
             beforeElm.textContent = this.beforeInputPrompt;
-            this.body.insertBefore(beforeElm, inputObj.div); // this line took forever to figure out and is probably not optimal... sigh. --- fixed!
+            this.body.insertBefore(beforeElm, inputObj.div);
         }
         if(this.afterInputPrompt){
             let afterElm = document.createElement("span");
@@ -3646,6 +3646,7 @@ async function loadMonaco(){
 document.addEventListener("selectstart",e=>{
     if("dragging" in window) if(dragging) e.preventDefault();
 });
+
 /**
  * This is needed because for some reason location.reload doesn't work in firefox on the lesson page
  */

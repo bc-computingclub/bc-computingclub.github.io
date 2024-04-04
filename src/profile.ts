@@ -5,6 +5,7 @@ let challengeStatContainer = document.querySelector(".p-challenge-stats") as HTM
 let lessonStatContainer = document.querySelector(".p-lesson-stats") as HTMLElement;
 let dateJoined = document.querySelector(".p-date-joined") as HTMLElement;
 let username = document.querySelector(".p-username") as HTMLElement;
+let viewSubmissionsButton = document.querySelector(".p-view-submissions") as HTMLButtonElement;
 
 let challengeStats:[];
 let lessonStats:[];
@@ -31,13 +32,15 @@ async function genProfile() {
     let formattedDate = `${date.getMonth()}/${date.getDate()}/${date.getFullYear()}`;
     dateJoined.innerHTML = "<i>Joined " + formattedDate; + "</i>";
     username.textContent = g_user.name.length < 24 ? g_user.name : g_user.name.substring(0,24) + "...";
-    setProfilePicture(g_user.picture);
+    let pfp = document.querySelector(".p-pfp") as HTMLImageElement;
+    pfp.src = `${g_user.picture}`;
     // profileHeader.insertBefore(profilePicture, username);
 
     await showLoadingAnim([challengeStatContainer,lessonStatContainer],400);
 
-    await getStats();
+    await setStats();
 
+    // All objects in this array will be loaded as stats. I've commented out the ones which are currently just placeholders.
     let challengeStats = [
         {title:"Challenges Completed: ",number:`${challengesCompleted}`,icon:""},
         // {title:"Average time spent: ",number:`${avgHours}`,icon:""},
@@ -75,15 +78,14 @@ async function genProfile() {
     }
 }
 
-function setProfilePicture(imgURL:string) {
-    let pfp = document.querySelector(".p-pfp") as HTMLImageElement;
-    pfp.src = `${imgURL}`;
-}
-
-async function getStats() {
+async function setStats() {
     challengesCompleted = (await getServerChallenges()).filter((challenge) => challenge.submitted).length;
     lessonsCompleted = 1;
     avgHours = "1.4h";
     totalHours = "4.2h";
     avgChars = 1342;
 }
+
+viewSubmissionsButton.addEventListener("click", (e) => {
+    location.href = '/practice/?showusersubmissions=true';
+})

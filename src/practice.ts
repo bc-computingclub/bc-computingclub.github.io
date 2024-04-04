@@ -17,6 +17,7 @@ const lsUID = "BCC-01";
 
 let cURL = new URL(location.href);
 let popupCID = cURL.searchParams.get("cid") || "";
+let showUserSubmissions = cURL.searchParams.get("showusersubmissions") || ""; // is either true or null
  
 let bCounter = 0;
 let ipCounter = 0;
@@ -26,12 +27,45 @@ async function getChallenges() {
   challengeArray = await getServerChallenges();
 }
 
+checkboxes.forEach((checkbox) => {
+  checkbox.addEventListener("change", (event) => {
+    if (outerInProgressDiv.classList.contains("collapse")) {
+      toggleInProgressDiv(cToggle, true);
+    }
+    const checkboxValue = (event.target as HTMLInputElement).value;
+    const isChecked = (event.target as HTMLInputElement).checked;
+    const filterType = (event.target as HTMLInputElement).name;
+
+    if (isChecked) {
+      if (!selectedFilters[filterType]) {
+        selectedFilters[filterType] = [];
+      }
+      selectedFilters[filterType].push(checkboxValue);
+    } else {
+      const index = selectedFilters[filterType].indexOf(checkboxValue);
+      if (index > -1) {
+        selectedFilters[filterType].splice(index, 1);
+      }
+      if (selectedFilters[filterType].length === 0) {
+        delete selectedFilters[filterType];
+      }
+    }
+
+    filterChallenges();
+  });
+});
+
 let shouldBeOpen: boolean;
 window.addEventListener("load", async () => {
   await loginProm; // Ensures user is logged in before challenges are fetched.
   if(!g_user){
     alertNotLoggedIn();
     return;
+  }
+
+  if(showUserSubmissions && showUserSubmissions != '""') {
+    (document.querySelector("input#completed")as HTMLInputElement).checked = true;
+    selectedFilters["completed"] = ["true"];
   }
 
   await getChallenges();
@@ -276,34 +310,6 @@ async function deleteProgress(cID: Challenge["cID"]) {
 async function setupButton(cID: Challenge["cID"]) {
   await createChallengePopup(challengeArray.find((v) => v.cID == cID));
 }
-
-checkboxes.forEach((checkbox) => {
-  checkbox.addEventListener("change", (event) => {
-    if (outerInProgressDiv.classList.contains("collapse")) {
-      toggleInProgressDiv(cToggle, true);
-    }
-    const checkboxValue = (event.target as HTMLInputElement).value;
-    const isChecked = (event.target as HTMLInputElement).checked;
-    const filterType = (event.target as HTMLInputElement).name;
-
-    if (isChecked) {
-      if (!selectedFilters[filterType]) {
-        selectedFilters[filterType] = [];
-      }
-      selectedFilters[filterType].push(checkboxValue);
-    } else {
-      const index = selectedFilters[filterType].indexOf(checkboxValue);
-      if (index > -1) {
-        selectedFilters[filterType].splice(index, 1);
-      }
-      if (selectedFilters[filterType].length === 0) {
-        delete selectedFilters[filterType];
-      }
-    }
-
-    filterChallenges();
-  });
-});
 
 async function filterChallenges() {
   await getChallenges();

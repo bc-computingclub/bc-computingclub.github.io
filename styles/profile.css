@@ -66,6 +66,7 @@
     font-size: 24px;
     display: flex;
     gap: .5em;
+    justify-content: space-between;
 }
 
 .p-stat {
@@ -83,4 +84,8 @@
     flex-direction: column;
     gap: 1em;
     padding-left: 1em;
+}
+
+.p-view-challenges {
+    cursor: pointer;
 }
