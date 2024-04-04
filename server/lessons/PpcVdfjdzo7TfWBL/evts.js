@@ -30,6 +30,8 @@ return [
         new DoRefreshTask("If you haven't already refresh to see all the changes we've made.")
     ]),
     new LE_AddGBubble([
-        "So, now we have all our text customized, what if we wanted to change just h[i[one]] of them?"
+        "So, now we have all our text customized, what if we wanted to change just h[i[one]] of them?\ni[For example, what if we wanted to highlight our 3rd paragraph element?]"
+    ],BubbleLoc.global,[
+        
     ])
 ]

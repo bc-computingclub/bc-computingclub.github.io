@@ -639,10 +639,13 @@
 
 ### 4/3/24
 - fixed sign in prompt so that it appears on all applicable pages and refreshes correctly
+- thought I fixed the editor page so that it doesn't resize slow if page load is slow but that makes autocomplete invisible for some reason
 - changed arrow on non clickable bubbles again to be flush in light theme
 - added dev field for disabling "View Profile" until it's complete
 - published lesson 3
 - END of update1
+- removed the fast resizing to bring back autocomplete visibility
+- END of hotfix 1
 
 - % [IDs-&-Classes]
 - I've copied the files
