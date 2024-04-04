@@ -3108,13 +3108,17 @@ function getImplementationsHTML(submissionsExist: boolean) {
        `;
     return temp;
 }
-  
+ 
+const selectedFilters = {};
+let searchOption: string = "popularity";
+let searchDesc: boolean = true;
+
 function resetChallengeBody() {
     challengePopupBody.remove();
     console.log("Attempting to reset body of challenge popup");
     cLeft.append(tempPopupBody);
 }
-  
+
   let loadingDiv: HTMLElement;
   async function showLoadingAnim(loadThese: HTMLElement[], delay?: number) {
     // if no delay is passed in, loading animation wil loop until hideLoadingAnim() is called

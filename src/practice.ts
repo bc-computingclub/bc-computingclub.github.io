@@ -277,7 +277,6 @@ async function setupButton(cID: Challenge["cID"]) {
   await createChallengePopup(challengeArray.find((v) => v.cID == cID));
 }
 
-const selectedFilters = {};
 checkboxes.forEach((checkbox) => {
   checkbox.addEventListener("change", (event) => {
     if (outerInProgressDiv.classList.contains("collapse")) {
@@ -333,8 +332,6 @@ clearFiltersButton.addEventListener("click", () => {
   filterChallenges();
 });
 
-let searchOption: string = "popularity";
-let searchDesc: boolean = true;
 async function sortChallenges(option: string, descending: boolean) {
   clearChallenges();
 
