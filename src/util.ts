@@ -3,7 +3,7 @@ let project:Project;
 
 let dev = {
     skipGetStarted:true,
-    blockViewProfile:true
+    blockViewProfile:false
 };
 
 let settingsList:Setting<any>[] = [];

@@ -12,12 +12,13 @@ const cSortDiv = document.querySelector(".c-sort-div") as HTMLElement;
 let cToggle: HTMLElement;
 let displayedChallenges: Challenge[] = [];
 
-const checkboxes = document.querySelectorAll('input[type="checkbox"]');
+const checkboxes = document.querySelectorAll('input[type="checkbox"]') as NodeListOf<HTMLInputElement>;
 const lsUID = "BCC-01";
 
 let cURL = new URL(location.href);
 let popupCID = cURL.searchParams.get("cid") || "";
 let showUserSubmissions = cURL.searchParams.get("showusersubmissions") || ""; // is either true or null
+
  
 let bCounter = 0;
 let ipCounter = 0;
@@ -25,7 +26,45 @@ let challengeArray: Challenge[] = [];
 
 async function getChallenges() {
   challengeArray = await getServerChallenges();
+  if (challengeArray == null) {
+    alert("Failed to fetch challenges. Please try again later.");
+    return;
+  }
 }
+
+let shouldBeOpen: boolean;
+window.addEventListener("load", async () => {
+  await loginProm; // Ensures user is logged in before challenges are fetched.
+  if(!g_user){
+    alertNotLoggedIn();
+    return;
+  }
+
+  await getChallenges();
+  await showChallenges(challengeArray, true);
+  let toggleState = localStorage.getItem(`${lsUID}toggleState`) || "open";
+  shouldBeOpen = toggleState == "open" ? true : false;
+
+  outerInProgressDiv.classList.add("window-load");
+  if (shouldBeOpen == false) {
+    // console.log("Should be closed, closing (no animation)");
+    outerInProgressDiv.classList.add("collapse");
+    cToggle.classList.remove("point-up");
+    cToggle.classList.add("point-down");
+  }
+  if (popupCID && popupCID != '""') {
+    await setupButton(popupCID);
+    let tempURL = new URL(location.href);
+    tempURL.searchParams.delete("cid");
+    window.history.replaceState({}, document.title, tempURL.toString());
+  }
+
+  if(showUserSubmissions == "true") {
+    let checkThis = document.querySelector("input#completed")as HTMLInputElement;
+    checkThis.checked = true;
+    checkThis.dispatchEvent(new Event('change'));
+  }
+});
 
 checkboxes.forEach((checkbox) => {
   checkbox.addEventListener("change", (event) => {
@@ -50,43 +89,10 @@ checkboxes.forEach((checkbox) => {
         delete selectedFilters[filterType];
       }
     }
-
     filterChallenges();
   });
 });
 
-let shouldBeOpen: boolean;
-window.addEventListener("load", async () => {
-  await loginProm; // Ensures user is logged in before challenges are fetched.
-  if(!g_user){
-    alertNotLoggedIn();
-    return;
-  }
-
-  if(showUserSubmissions && showUserSubmissions != '""') {
-    (document.querySelector("input#completed")as HTMLInputElement).checked = true;
-    selectedFilters["completed"] = ["true"];
-  }
-
-  await getChallenges();
-  await showChallenges(challengeArray, true);
-  let toggleState = localStorage.getItem(`${lsUID}toggleState`) || "open";
-  shouldBeOpen = toggleState == "open" ? true : false;
-
-  outerInProgressDiv.classList.add("window-load");
-  if (shouldBeOpen == false) {
-    // console.log("Should be closed, closing (no animation)");
-    outerInProgressDiv.classList.add("collapse");
-    cToggle.classList.remove("point-up");
-    cToggle.classList.add("point-down");
-  }
-  if (popupCID && popupCID != '""') {
-    await setupButton(popupCID);
-    let tempURL = new URL(location.href);
-    tempURL.searchParams.delete("cid");
-    window.history.replaceState({}, document.title, tempURL.toString());
-  }
-});
 
 function toggleInProgressDiv(btn: HTMLElement, opening: boolean) {
   if(btn) {
