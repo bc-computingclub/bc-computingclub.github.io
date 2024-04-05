@@ -2991,7 +2991,7 @@ class ChallengeMenu extends Menu {
                           <div class ="c-popup-implementations">
                               <div class="c-popup-implementations-header">
                                   <h3 class="c-popup-sub-title">Submissions</h3>
-                                  <button class="c-view-all" onclick="showSubmissions(${this.c.cID}">
+                                  <button class="c-view-all" onclick="showSubmissions('${this.c.cID}','')">
                                       View All (${this.c.submission_count})
                                   </button>
                               </div>
@@ -3022,10 +3022,10 @@ class ChallengeMenu extends Menu {
         // let _body = this.menu.querySelector(".c-popup-body") as HTMLElement;
         // setupResize(_body);
 
-        if (this.c.sub_highlights?.length) {
-            for (let i = 0; i < this.c.sub_highlights.length; i++) {
-                let temp = getSubmissionElement(this.c.sub_highlights[i],this.c.cID);
-                document.querySelector(".c-implementations").appendChild(temp);
+        if (this.c.submission_count > 0) {
+            for(let i = 0; i < 3; i++) {
+                // This is where I'd put my submissions, if I had any :(
+                console.log("Creating submission for menu");
             }
         } else {
             document.querySelector(".c-implementations").innerHTML =
@@ -3061,6 +3061,7 @@ function previewImg(url: string) {
     // new ImagePreview(url).load();
 }
 
+// Currently not using this menu. Planned to use for image preview in ChallengeMenu, might implement in the future.
 class ImagePreview extends Menu {
     constructor(url: string) {
         super("Image Preview");
@@ -3082,9 +3083,9 @@ class ImagePreview extends Menu {
 function showSubmissions(cID: string, goToSubmission?:string) {
     let goToSub:string = "";
     if(goToSubmission) goToSub = goToSubmission;
-    if (cID) { 
+    if (cID) {
         console.log(cID);
-        window.location.href = `submissions.html?cid=${cID || ''}&pid=${goToSub || ''}`; 
+        window.location.href = `/practice/submissions.html?cid=${cID || ''}&pid=${goToSub || ''}`; 
     }
 }
   
@@ -3653,3 +3654,11 @@ document.addEventListener("selectstart",e=>{
 function reloadPage(){
     location.href = location.href;
 }
+
+async function getChallenges() {
+    challengeArray = await getServerChallenges();
+    if (challengeArray == null) {
+      alert("Failed to fetch challenges. Please try again later.");
+      return;
+    }
+  }

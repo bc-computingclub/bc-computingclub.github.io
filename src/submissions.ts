@@ -8,6 +8,8 @@ const sSortDiv = document.querySelector<HTMLElement>(".c-sort-div");
 const sContainer = document.querySelector<HTMLElement>(".s-container");
 const sCheckboxes = document.querySelectorAll('input[type="checkbox"]') as NodeListOf<HTMLInputElement>;
 let previewButtons: NodeListOf<HTMLElement>;
+const clearSubmissionFiltersButton = document.querySelector(".clear-sub-filters") as HTMLElement;
+const submissionCheckboxes = document.querySelectorAll('input[type="checkbox"]') as NodeListOf<HTMLInputElement>;
 
 // Get submissions based on cID
 // Get challenge based on cID
@@ -118,3 +120,51 @@ sSortDiv.addEventListener("mousedown", () => {
     },
   );
 });
+
+const submissionFilters = {};
+const filterType = "";
+
+submissionCheckboxes.forEach((checkbox) => {
+  checkbox.addEventListener("change", (event) => {
+    const checkboxValue = (event.target as HTMLInputElement).value;
+    const isChecked = (event.target as HTMLInputElement).checked;
+    const filterType = (event.target as HTMLInputElement).name;
+
+    if (isChecked) {
+      if (!submissionFilters[filterType]) {
+        submissionFilters[filterType] = [];
+      }
+      submissionFilters[filterType].push(checkboxValue);
+    } else {
+      const index = submissionFilters[filterType].indexOf(checkboxValue);
+      if (index > -1) {
+        submissionFilters[filterType].splice(index, 1);
+      }
+      if (submissionFilters[filterType].length === 0) {
+        delete submissionFilters[filterType];
+      }
+    }
+    filterSubmissions();
+  });
+});
+
+async function filterSubmissions() {
+  let tempsubs = (await getChallenge(cid)).submissions;
+  clearSubmissions();
+  await displaySubmissions(tempsubs);
+}
+
+clearSubmissionFiltersButton.addEventListener("click", () => {
+  Object.keys(submissionFilters).forEach((filterType) => {
+    delete submissionFilters[filterType];
+  });
+  submissionCheckboxes.forEach((checkbox: HTMLInputElement) => {
+    checkbox.checked = false;
+  });
+
+  filterSubmissions();
+});
+
+function clearSubmissions() {
+  sContainer.innerHTML = "";
+}

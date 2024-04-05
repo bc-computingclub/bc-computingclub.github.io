@@ -24,13 +24,32 @@ let bCounter = 0;
 let ipCounter = 0;
 let challengeArray: Challenge[] = [];
 
-async function getChallenges() {
-  challengeArray = await getServerChallenges();
-  if (challengeArray == null) {
-    alert("Failed to fetch challenges. Please try again later.");
-    return;
-  }
-}
+checkboxes.forEach((checkbox) => {
+  checkbox.addEventListener("change", (event) => {
+    if (outerInProgressDiv.classList.contains("collapse")) {
+      toggleInProgressDiv(cToggle, true);
+    }
+    const checkboxValue = (event.target as HTMLInputElement).value;
+    const isChecked = (event.target as HTMLInputElement).checked;
+    const filterType = (event.target as HTMLInputElement).name;
+
+    if (isChecked) {
+      if (!selectedFilters[filterType]) {
+        selectedFilters[filterType] = [];
+      }
+      selectedFilters[filterType].push(checkboxValue);
+    } else {
+      const index = selectedFilters[filterType].indexOf(checkboxValue);
+      if (index > -1) {
+        selectedFilters[filterType].splice(index, 1);
+      }
+      if (selectedFilters[filterType].length === 0) {
+        delete selectedFilters[filterType];
+      }
+    }
+    filterChallenges();
+  });
+});
 
 let shouldBeOpen: boolean;
 window.addEventListener("load", async () => {
@@ -65,34 +84,6 @@ window.addEventListener("load", async () => {
     checkThis.dispatchEvent(new Event('change'));
   }
 });
-
-checkboxes.forEach((checkbox) => {
-  checkbox.addEventListener("change", (event) => {
-    if (outerInProgressDiv.classList.contains("collapse")) {
-      toggleInProgressDiv(cToggle, true);
-    }
-    const checkboxValue = (event.target as HTMLInputElement).value;
-    const isChecked = (event.target as HTMLInputElement).checked;
-    const filterType = (event.target as HTMLInputElement).name;
-
-    if (isChecked) {
-      if (!selectedFilters[filterType]) {
-        selectedFilters[filterType] = [];
-      }
-      selectedFilters[filterType].push(checkboxValue);
-    } else {
-      const index = selectedFilters[filterType].indexOf(checkboxValue);
-      if (index > -1) {
-        selectedFilters[filterType].splice(index, 1);
-      }
-      if (selectedFilters[filterType].length === 0) {
-        delete selectedFilters[filterType];
-      }
-    }
-    filterChallenges();
-  });
-});
-
 
 function toggleInProgressDiv(btn: HTMLElement, opening: boolean) {
   if(btn) {
@@ -209,7 +200,7 @@ function setChallengeHTML(c: Challenge) {
             <button class="c-preview" onclick="setupButton(${c.cID});">
                 Details <span class="material-symbols-outlined">info</span>
             </button>
-            <button class="c-submissions" onclick="showSubmissions('${c.cID}','${c.inProgress}')">
+            <button class="c-submissions" onclick="showSubmissions('${c.cID}','')">
                 <span>Submissions</span>
             </button>
         </div>
