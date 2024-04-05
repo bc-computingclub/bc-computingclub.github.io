@@ -2890,7 +2890,7 @@ class Challenge {
         //         v.uid
         //     ),
         // );
-        data.sub_highlights = data.hl;
+        c.sub_highlights = data.hl;
         // c.sub_highlights = data.hl?.map(
         //     (v: any) =>
         //     new Submission(
@@ -3022,10 +3022,10 @@ class ChallengeMenu extends Menu {
         // let _body = this.menu.querySelector(".c-popup-body") as HTMLElement;
         // setupResize(_body);
 
-        if (this.c.submission_count > 0) {
-            for(let i = 0; i < 3; i++) {
-                // This is where I'd put my submissions, if I had any :(
-                console.log("Creating submission for menu");
+        if (this.c.sub_highlights.length) {
+            for(let i = 0; i < this.c.sub_highlights.length; i++) {
+                let temp = getSubmissionElement(this.c.sub_highlights[i]);
+                document.querySelector(".c-implementations").appendChild(temp);
             }
         } else {
             document.querySelector(".c-implementations").innerHTML =

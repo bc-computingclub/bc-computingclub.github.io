@@ -1312,16 +1312,14 @@ input[type="checkbox"]{
     display: grid;
     grid-template-rows: 1fr;
     gap: .5em;
-    min-height: calc(156px + 1em);
+    min-height: calc(47.5px + 1em);
     align-items: start;
     border-radius: 2px;
-    
-    &:not("empty") {
-        padding:.5em;
-        background-color: var(--bg-col);
-        & >* {
-            background-color: var(--secondary-bg-col);
-        }
+    background-color: var(--bg-col);
+    padding:.5em;
+
+    .s-card {
+        padding-inline: .5em;
     }
 }
 
