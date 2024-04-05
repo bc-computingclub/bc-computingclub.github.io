@@ -1436,6 +1436,16 @@ input[type="checkbox"]{
     font-weight: 500;
 }
 
+.c-pointer {
+    cursor: pointer;
+}
+
+.intro-up {
+    animation-name: intro-up;
+    animation-duration: 0.3s;
+    animation-timing-function: ease-out;
+}
+
 @keyframes intro-up {
     from {
         transform: translateY(20px);

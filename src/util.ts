@@ -3024,7 +3024,7 @@ class ChallengeMenu extends Menu {
 
         if (this.c.sub_highlights.length) {
             for(let i = 0; i < this.c.sub_highlights.length; i++) {
-                let temp = getSubmissionElement(this.c.sub_highlights[i]);
+                let temp = getSubmissionElement(this.c.sub_highlights[i], this.c.cID);
                 document.querySelector(".c-implementations").appendChild(temp);
             }
         } else {
@@ -3351,7 +3351,7 @@ function getSubmissionElement(submission: Submission, cid?:string): HTMLElement 
   
     /* Open button */
     let openButton = document.createElement("button");
-    openButton.className = "s-open-preview";
+    openButton.className = "s-open-preview c-pointer";
     openButton.textContent = "Open";
     openButton.setAttribute("pid", submission.pid);
     submissionRight.appendChild(openButton);
