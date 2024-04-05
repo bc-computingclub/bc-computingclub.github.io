@@ -29,7 +29,7 @@ async function genProfile() {
 
     // Adding in join date, username, pfp.
     let date = new Date(g_user._joinDate);
-    let formattedDate = `${date.getMonth()}/${date.getDate()}/${date.getFullYear()}`;
+    let formattedDate = date.toLocaleDateString();
     dateJoined.innerHTML = "<i>Joined " + formattedDate; + "</i>";
     username.textContent = g_user.name.length < 24 ? g_user.name : g_user.name.substring(0,24) + "...";
     let pfp = document.querySelector(".p-pfp") as HTMLImageElement;
