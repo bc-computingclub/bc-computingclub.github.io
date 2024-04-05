@@ -655,3 +655,10 @@
     + add color: tomato (we can also change the text color)
     + add background-color: yellow (we can change the background-color of an element like a highlight)
     
+### 4/4/24
+- worked on 4th lesson a bit
+- started adding support for the tutor to be able to comment out lines
+
+### 4/5/24
+- fixed submission highlights not being set correctly
+- END of update1

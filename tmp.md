@@ -12,3 +12,8 @@ River - gaps in typesetting which appear to run through
 
 Rag - the irregular or uneven vertical margin of a block of type
     - don't be afraid of rag on the right
+
+------
+
+Miura - steam solutions
+Star Leasing Company - has amazing logo

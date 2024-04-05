@@ -3603,6 +3603,23 @@ class SubmissionMenu extends Menu {
     }
 }
 
+async function testCommentLine(){
+    let editor = lesson.tut.getCurEditor();
+    startEdit();
+    editor.focus();
+    editor.trigger("","editor.action.commentLine","");
+    endEdit();
+}
+async function testSelect(scol:number,srow:number,ecol:number,erow:number){
+    let editor = lesson.tut.getCurEditor();
+    startEdit();
+    editor.focus();
+    let s = editor.getSelection();
+    s = s.setStartPosition(srow,scol);
+    s = s.setEndPosition(erow,ecol);
+    editor.setSelection(s);
+    endEdit();
+}
 async function testGoToSymbol(){
     let editor = lesson.p.getCurEditor();
 
