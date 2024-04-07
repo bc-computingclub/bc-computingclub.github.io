@@ -1,0 +1,216 @@
+@import url(https://fonts.googleapis.com/icon?family=Material+Icons);
+@import url(https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0);
+
+body {
+    background-color: #1e1e1e;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    font-size: 20px;
+    color: #f3f3f3;
+    position: relative;
+}
+
+.co-title {
+    font-size: 5em;
+    /* font-weight: 600; */
+}
+
+.co-text {
+    display: flex;
+    flex-direction: column;
+    gap:.5em;
+
+    & >span {
+        text-align: end;
+    }
+}
+
+.co-cont {
+    display: flex;
+    flex-direction: column;
+    gap: 3em;
+    position: absolute;
+    top: 30dvh;
+    align-items: end;
+    left: 8em;
+}
+
+.co-top {
+    display: flex;
+    flex-direction: column;
+    gap: 1em;
+
+    transform: translate(0,0);
+    transition-duration: .5s;
+    transition-timing-function: ease-out;
+
+    &.altpos {
+        transform: translate(0,7vh);
+    }
+}
+
+button {
+    font-size: inherit;
+    font-weight: inherit;
+    font-family: inherit;
+    padding: 5px;
+    padding-inline: 10px;
+    display: flex;
+    align-items: center;
+    gap: .5em;
+    /* text-transform: uppercase; */
+    border:none;
+    border-radius: 2px;
+    width: fit-content;
+    color: #1e1e1e;
+
+    cursor: pointer;
+}
+
+.material-symbols-outlined{
+    user-select:none;
+    -webkit-user-select:none;
+    font-size: 20px;
+
+    &.arrow {
+        font-size: 24px;
+    }
+}
+
+.container {
+    height: 100dvh;
+    width: 100dvw;
+    position: relative;
+}
+
+.introducing {
+    position: absolute;
+    top: 4em;
+    left: 4em;
+    text-transform: uppercase;
+}
+
+.co-button {
+    opacity: 0;
+    animation: float-in-up .5s ease-in-out 1s;
+    animation-fill-mode: forwards;
+}
+
+.load-in {
+    animation: float-in-up .5s ease-in-out;
+}
+
+.showcase-img-cont {
+    position: relative;
+}
+
+.showcase-img {
+    width: 400px;
+    border-radius: 2px;
+    position: absolute;
+    opacity: 0;
+    animation: float-in-up .5s ease-in-out 1s;
+    animation-fill-mode: forwards;
+
+    box-shadow: 0px 4px 4px 0px rgba(0, 0, 0, 0.25);
+    -webkit-box-shadow: 0px 4px 4px 0px rgba(0, 0, 0, 0.25);
+    -moz-box-shadow: 0px 4px 4px 0px rgba(81, 81, 81, 0.25);
+}
+
+.feature-cont {
+    position: absolute;
+    top: 8em;
+    left: calc(500px + 10em);
+    max-width: 640px;
+    display: flex;
+    flex-direction: column;
+    gap: 1em;
+}
+
+.fade-in-up {
+    animation: fade-in .5s ease-out;
+}
+
+@keyframes fade-in {
+    0% {
+        opacity: 0;
+    }
+    100% {
+        opacity: 1;
+    }
+}
+
+.feature-body {
+    background-color: #f3f3f3;
+    color: #1e1e1e;
+    padding: 2em;
+    border-radius: 2px;
+    display: flex;
+    flex-direction: column;
+    gap: 1em;
+}
+
+.feature-controls {
+    display: flex;
+    gap: .5em;
+    justify-content: flex-start;
+}
+
+.removeimgdiv {
+    animation: fade-out-up .5s ease-out;
+    animation-fill-mode: forwards;
+}
+
+@keyframes fade-out-up {
+    0% {
+        transform: translateY(0);
+        opacity: 1;
+    }
+    100% {
+        transform: translateY(-10%);
+        opacity: 0;
+    } 
+}
+
+.removebtn {
+    animation: fade-out .5s ease-out;
+}
+
+@keyframes fade-out {
+    0% {
+        opacity: 1;
+    }
+    100% {
+        opacity: 0;
+    }
+}
+
+.showcase-img:nth-child(1){
+    left: calc(500px + 22em);
+    top: 10vh;
+}
+
+.showcase-img:nth-child(2){
+    top: 30vh;
+    left: calc(500px + 16em);
+}
+
+.showcase-img:nth-child(3){
+    top: 50vh;
+    left: calc(500px + 10em);
+}
+
+@keyframes float-in-up {
+    0% {
+        transform: translateY(10%);
+    }
+    100% {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+@media (max-width: 768px) {
+    .showcase-img-cont {
+        display: none;
+    }
+}
