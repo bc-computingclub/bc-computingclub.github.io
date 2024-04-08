@@ -1,5 +1,6 @@
 body {
     overflow: hidden;
+    font-size: 2rem;
 }
 
 .introducing {
@@ -12,20 +13,18 @@ body {
 }
 
 .co-title {
-    font-size: 8rem;
-}
-
-.co-text {
-    font-size: 1.4rem;
+    font-size: 10rem;
 }
 
 .co-cont {
-    left: 30vw;
+    left: 20vw;
     gap: 2em;
-    width: 80vw;
+    max-width: 630px;
+    transition-duration: .8s;
+    transition-timing-function: ease-out;
 
     &.altpos {
-        transform: translate(0,-50px);
+        transform: translate(0,-300px);
         & .co-top {
             gap: 1em;
         }
@@ -38,9 +37,9 @@ h1 {
 
 .feature-cont {
     position: absolute;
-    top: 60dvh;
-    left: 15dvw;
-    width: 80dvw;
+    top: 45dvh;
+    left: 10dvw;
+    max-width: 80vw;
     display: flex;
     flex-direction: column;
     gap: 1em;
