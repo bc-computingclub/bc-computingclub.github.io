@@ -10,8 +10,9 @@ body {
 }
 
 .co-title {
-    font-size: 5em;
-    /* font-weight: 600; */
+    font-size: 5.6em;
+    display: flex;
+    justify-content: end;
 }
 
 .co-text {
@@ -31,7 +32,7 @@ body {
     position: absolute;
     top: 30dvh;
     align-items: end;
-    left: 8em;
+    left: 7em;
     transform: translate(0,0);
     transition-duration: .5s;
     transition-timing-function: ease-out;

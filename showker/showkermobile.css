@@ -11,6 +11,10 @@ body {
     display: none;
 }
 
+.co-title {
+    font-size: 4.9em;
+}
+
 .co-cont {
     left: 10dvw;
     gap: 2em;

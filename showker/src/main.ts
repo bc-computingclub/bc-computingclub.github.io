@@ -19,7 +19,7 @@ let features = [
     },
     {
         title: "The problem",
-        body: "<span>We needed a way to help students apply knowledge learnt in their Computer Science classes, and we saw the opportunity to drive engagement with programming at Bridgewater.</span><span>In order to do this, we wanted something which could go on indefinitely; to which other students could contribute to in the future.</span><span>We also wanted this to be as accessible as possible to everyone - </span>",
+        body: "<span>We needed a way to help students apply knowledge learnt in their Computer Science classes, and we saw the opportunity to drive engagement with programming at Bridgewater.</span><span>In order to do this, we wanted something which could go on indefinitely; to which other students could contribute to in the future.</span><span>This means we'd have to set up a way for people to tweak this in the future.</span>",
     },
     {
         title: "So what's our solution?",
