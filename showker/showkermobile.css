@@ -12,16 +12,16 @@ body {
 }
 
 .co-title {
-    font-size: 4.9em;
+    font-size: 5.5em;
 }
 
 .co-cont {
     left: 10dvw;
     gap: 2em;
-    max-width: 80vw;
+    width: 80vw;
 
     &.altpos {
-        transform: translate(0,-15vh);
+        transform: translate(0,-50px);
         & .co-top {
             gap: 1em;
         }
@@ -34,9 +34,9 @@ h1 {
 
 .feature-cont {
     position: absolute;
-    top: 500px;
+    top: 60dvh;
     left: 10dvw;
-    max-width: 80vw;
+    width: 80dvw;
     display: flex;
     flex-direction: column;
     gap: 1em;

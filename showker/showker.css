@@ -129,7 +129,7 @@ button {
 
 .feature-cont {
     position: absolute;
-    top: 8em;
+    top: 12dvh;
     left: calc(500px + 10em);
     max-width: 640px;
     display: flex;
