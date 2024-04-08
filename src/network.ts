@@ -89,7 +89,7 @@ h_profile.addEventListener("mousedown",e=>{
         let l = labels[i];
         // if(l == "Switch Account" || l == "Log In"){
         if(i == 0) {
-            location.href = "../profile/";
+            location.href = "/profile/";
         }
         if(i == 1){
             new LogInMenu().load();

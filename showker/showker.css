@@ -40,7 +40,7 @@ body {
 
     &.altpos {
         transform: translate(0,-5vh);
-        & .co-top {
+        & >.co-top {
             gap: 2em;
         }
     }
