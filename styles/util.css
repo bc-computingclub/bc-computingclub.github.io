@@ -1484,8 +1484,7 @@ input[type="checkbox"]{
     transition:all 0.3s ease-out;
     transition-delay:0.2s;
     --bg1:black;
-
-;
+    display:flex;
     justify-content:center;
     align-items:center;
 
