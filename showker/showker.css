@@ -35,6 +35,7 @@ body {
     transform: translate(0,0);
     transition-duration: .5s;
     transition-timing-function: ease-out;
+    max-width:450px;
 
     &.altpos {
         transform: translate(0,-5vh);
@@ -113,7 +114,7 @@ button {
 
 .showcase-img {
     filter: grayscale(20%);
-    width: 400px;
+    max-width: 400px;
     border-radius: 2px;
     position: absolute;
     opacity: 0;
@@ -136,9 +137,20 @@ button {
 }
 
 .fade-in-up {
-    animation: fade-in .5s ease-out;
+    animation: fade-in-up .5s ease-out;
 }
 
+/*Fade in, and move up 20px*/
+@keyframes fade-in-up {
+    0% {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    100% {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
 .fade-in-up-slow {
     animation: fade-in 1s ease-out;
 }
@@ -181,7 +193,7 @@ ul {
 }
 
 .removeimgdiv {
-    animation: fade-out-up .5s ease-out;
+    animation: fade-out-up .4s linear;
     animation-fill-mode: forwards;
 }
 
@@ -191,7 +203,7 @@ ul {
         opacity: 1;
     }
     100% {
-        transform: translateY(-10%);
+        transform: translateY(-5px);
         opacity: 0;
     } 
 }
