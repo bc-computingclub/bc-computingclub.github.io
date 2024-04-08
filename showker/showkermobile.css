@@ -16,9 +16,13 @@ body {
     font-size: 10rem;
 }
 
+button {
+    padding: 12px 34px;
+}
+
 .co-cont {
     left: 20vw;
-    gap: 2em;
+    gap: 1em;
     max-width: 630px;
     transition-duration: .8s;
     transition-timing-function: ease-out;
@@ -37,14 +41,10 @@ h1 {
 
 .feature-cont {
     position: absolute;
-    top: 45dvh;
+    top: 42dvh;
     left: 10dvw;
     max-width: 80vw;
     display: flex;
     flex-direction: column;
     gap: 1em;
-}
-
-.feature-body {
-    font-size: 1.6rem;
 }
