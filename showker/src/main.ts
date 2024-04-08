@@ -15,11 +15,11 @@ let features = [
     },
     {
         title: "A background to our problem",
-        body: "<span>In his Computer Science classes, Dr McGregor encourages students to search for ways to apply the things they learn in class - and also to go beyond that, for example by building projects on their own.</span><span>Caleb and I frequently get questions from students echoing these words, hoping we can guide them - whether they’re complete beginners, or they want to learn more about programming.</span><span>In Fall ‘23, when the club started hosting JavaScript challenges, we realized there was a lot of interest in the topic, but students’ skill levels were all over the place. </span>",
+        body: "<span>In his Computer Science classes, Dr McGregor encourages students to search for ways to apply the things they learn in class - and also to go beyond that, for example by building projects on their own.</span><span>Caleb and I frequently get questions from students echoing these words, hoping we can guide them - whether they’re complete beginners, or they already have some background in programming.</span><span>In Fall ‘23, when the club started hosting JavaScript challenges, we realized there was a lot of interest in the topic, but students’ skill levels were all over the place. </span>",
     },
     {
         title: "The problem",
-        body: "<span>We needed a way to help students apply knowledge learnt in their Computer Science classes, and we saw the opportunity to drive engagement with programming at Bridgewater.</span><span>In order to do this, we wanted something which could go on indefinitely; to which other students could contribute to in the future.</span><span>This means we'd have to set up a way for people to tweak this in the future.</span>",
+        body: "<span>We needed a way to help students apply knowledge learnt in their Computer Science classes, and we saw the opportunity to drive engagement with programming at Bridgewater.</span><span>In order to do this, we wanted something which could go on indefinitely; to which other students could contribute to in the future.</span><span>And we wanted for all of this to take place on one website - to streamline the experience, avoiding all-too-common hassle of navigating many websites/tabs when learning how to code.</span>",
     },
     {
         title: "So what's our solution?",
@@ -29,6 +29,10 @@ let features = [
         title: "What does this look like?",
         body: "<span>This web-app is composed of three sections:<span><ul><li>Learn: A series of interactive tutorials teaching users how to code in HTML, CSS and JavaScript.</li><li>Practice: This page hosts challenges for all skill levels, from beginner to what we call ‘code-wizard’. These challenges are built so that users can view one another's submissions.</li><li>Experiment: Our built-in code editor allows users to make projects and create whatever they want - and then share their progress with whoever they’d like.</li></ul>",
     },
+    {
+        title: "Come see the app live!",
+        body: "<span>This is only a glimpse into the project that we've set up - join us on April 12th so that we can share the app itself with you, as well as many more details on how exactly this process came together!</span><span>If this website is a little buggy, I apologize: I coded it by hand over the weekend. I figured using a wordpress site would be quite boring given the nature of our project. -Paul 🙂</span>"
+    }
 ];
 
 getStartedButton.addEventListener("animationend", (event) => {

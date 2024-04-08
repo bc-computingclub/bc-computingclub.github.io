@@ -17,7 +17,8 @@ body {
 }
 
 button {
-    padding: 12px 34px;
+    padding: 18px 40px;
+    border-radius: 5px;
 }
 
 .co-cont {
@@ -47,4 +48,5 @@ h1 {
     display: flex;
     flex-direction: column;
     gap: 1em;
+    border-radius: 5px;
 }
