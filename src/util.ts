@@ -3355,11 +3355,9 @@ function getSubmissionElement(submission: Submission, cid?:string): HTMLElement 
     openButton.textContent = "Open";
     openButton.setAttribute("pid", submission.pid);
     submissionRight.appendChild(openButton);
-    if(cid) {
-        openButton.addEventListener("click", () => {
-            showSubmissions(cid, submission.pid);
-        });
-    }
+    openButton.addEventListener("click", () => {
+        showSubmissions(cid, submission.pid);
+    });
   
     /* Return completed submission element */
     return subDiv;

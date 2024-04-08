@@ -18,6 +18,7 @@
     "exclude": [
         "node_modules",
         "js-challenges",
-        "server"
+        "server",
+        "showker"
     ]
 }

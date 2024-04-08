@@ -1,0 +1,44 @@
+body {
+    overflow: hidden;
+}
+
+.introducing {
+    left: 2em;
+    top: 2em;
+}
+
+.showcase-img {
+    display: none;
+}
+
+.co-cont {
+    left: 10dvw;
+    gap: 2em;
+    max-width: 80vw;
+
+    &.altpos {
+        transform: translate(0,-15vh);
+        & .co-top {
+            gap: 1em;
+        }
+    }
+}
+
+h1 {
+    font-size: 1.5em;
+}
+
+.feature-cont {
+    position: absolute;
+    top: 500px;
+    left: 10dvw;
+    max-width: 80vw;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 1em;
+}
+
+.feature-body {
+    font-size: .9rem;
+}

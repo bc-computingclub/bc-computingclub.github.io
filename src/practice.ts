@@ -190,9 +190,12 @@ function setChallengeHTML(c: Challenge) {
         <div class="c-img-div">
             <img class="c-img" src="${c.imgURL}" alt="challenge image">
         </div>
-        <h3 class="c-name">
-            ${c.name}
-        </h3>
+        <div class="flx-sb flx-al">
+          <h3 class="c-name">
+              ${c.name}
+          </h3>
+          <span class="c-diff" d="${c.difficulty}">${c.difficulty}</span>
+        </div>
         <span class="c-text">
         ${(c.desc.length > 120) ? c.desc.slice(0, 120) + "..." : c.desc}
         </span>

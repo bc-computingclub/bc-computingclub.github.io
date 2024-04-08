@@ -5,6 +5,11 @@ body {
     /* --purple-col-alt:var(--darken2); */
     --purple-col: #503E6E;
     --purple-col-alt: rgb(56, 42, 77);
+    
+    --easy-col: rgb(202, 123, 202);
+    --medium-col: rgb(137, 46, 137);
+    --hard-col: rgb(103, 49, 155);
+    --code-wizard-col: var(--purple-col);
     /* --purple-col: #8D679F; */
     /* --purple-col-alt: #503E6E; */
     overflow: scroll;
@@ -292,6 +297,29 @@ body {
     &:hover {
         .c-details{
             opacity: 1;
+        }
+    }
+
+    .c-diff {
+        text-transform: uppercase;
+        font-size: 13px;
+        border-radius: 2px;
+        color: var(--secondary-col);
+        padding-inline: .5em;
+        padding-block: .2em;
+
+        &[d="easy"] {
+            color: var();
+            background-color: var(--easy-col);
+        }
+        &[d="medium"] {
+            background-color: var(--medium-col);
+        }
+        &[d="hard"] {
+            background-color: var(--hard-col);
+        }
+        &[d="code-wizard"] {
+            background-color: var(--code-wizard-col);
         }
     }
 }
