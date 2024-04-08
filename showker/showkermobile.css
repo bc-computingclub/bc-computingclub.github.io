@@ -12,11 +12,15 @@ body {
 }
 
 .co-title {
-    font-size: 5.5em;
+    font-size: 8rem;
+}
+
+.co-text {
+    font-size: 1.4rem;
 }
 
 .co-cont {
-    left: 10dvw;
+    left: 30vw;
     gap: 2em;
     width: 80vw;
 
@@ -35,7 +39,7 @@ h1 {
 .feature-cont {
     position: absolute;
     top: 60dvh;
-    left: 10dvw;
+    left: 15dvw;
     width: 80dvw;
     display: flex;
     flex-direction: column;
@@ -43,5 +47,5 @@ h1 {
 }
 
 .feature-body {
-    font-size: .9rem;
+    font-size: 1.6rem;
 }
