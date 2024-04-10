@@ -65,7 +65,7 @@ window.addEventListener("load", async () => {
   await getChallenges();
   await showChallenges(challengeArray, true);
   let toggleState = localStorage.getItem(`${lsUID}toggleState`) || "open";
-  shouldBeOpen = toggleState == "open" ? true : false;
+  shouldBeOpen = (challengeArray.length == 0 ? true : toggleState == "open");
 
   outerInProgressDiv.classList.add("window-load");
   if (shouldBeOpen == false) {
@@ -158,6 +158,7 @@ async function showChallenges(cArr: Challenge[], showAnim?: boolean) {
     setChallengeHTML(challenge);
   }
   await hideLoadingAnim();
+  if(cArr.length == 0) toggleInProgressDiv(cToggle,true);
 
   // console.log("Showing Challenges. In Progress: " + ipCounter + " Browse: " + bCounter);
   if (ipCounter <= 0) {
