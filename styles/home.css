@@ -206,6 +206,7 @@ body.themestyle-light .logo{
     z-index: 1;
     opacity: 0.12;
     background-position: 0% 0%;
+    overflow: hidden;
     
     /* Background image styling */
     transition: background-image 0.3s ease-in-out, opacity 0.3s ease-in-out;
@@ -283,7 +284,7 @@ body.themestyle-light .logo{
         grid-template-rows: 1fr 1fr 3fr;
     }
 
-    & > * {
+    & >* {
         width: 8px;
         position: relative;
         background-color: var(--muted-col);
@@ -385,12 +386,16 @@ body.themestyle-light .logo{
 
 /* Formatting for mobile */
 
-@media (max-width: 918px) {
+@media (max-width: 1000px) {
     .h-feature-cont {
         top: unset;
-        bottom: 4em;
+        bottom: 2em;
         gap: 4em;
-        margin-inline: 4em;
+        margin-inline-start: 2em;
+    }
+
+    .h-redirect-featured {
+        display: none;
     }
 
     .nav-links {
@@ -406,15 +411,36 @@ body.themestyle-light .logo{
     }
 
     .h-title {
-        font-size: 3.5em;
+        &[t="l"] {
+            font-size: 6rem;
+        }
+        &[t="p"] {
+            font-size: 4rem;
+        }
+        &[t="e"] {
+            font-size: 3rem;
+        }
 
         &.exp {
             font-size: 3em;
         }
     }
 
+    .h-timeline {
+        & >* {
+            ::after {
+                left: 20px;
+            } 
+        }
+    }
+
+    .h-background {
+        width: 100%;
+        height: calc(100dvh - 60px);
+    }
+
     .h-text {
-        font-size: 1em;
+        font-size: 1.4rem;
         max-width: 250px;
     }
 
@@ -428,12 +454,7 @@ body.themestyle-light .logo{
         font-size: .9em;
         gap: .5em;
         font-weight: 700;
-        padding-block: .3em;
-    }
-
-    .h-background {
-        height: 105dvh;
-        min-width: 130dvw;
+        padding-block: 1em;
     }
 
     .nav-container {
@@ -441,7 +462,19 @@ body.themestyle-light .logo{
     }
 }
 
-/*  */
+@media (max-width: 400px) {
+    .h-title {
+        &[t="l"] {
+            font-size: 4.5rem;
+        }
+        &[t="p"] {
+            font-size: 3rem;
+        }
+        &[t="e"] {
+            font-size: 2.2rem;
+        }
+    }
+}
 
 .sign-in-btn{
     display:flex;
