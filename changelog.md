@@ -662,3 +662,8 @@
 ### 4/5/24
 - fixed submission highlights not being set correctly
 - END of update1
+
+### 4/10/24 - ideas from Brt
+- calculator challenge (medium?)
+- menu with things you can click (login menu)
+    - this is a good one for styling and html structure (easy)
