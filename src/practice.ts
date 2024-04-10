@@ -129,9 +129,6 @@ function giveCToggleEventListener(cToggle: HTMLElement) {
       cToggle.onclick = function(){
         toggleInProgressDiv(cToggle, localStorage.getItem(`${lsUID}toggleState`) == "open" ? false : true);
       };
-    // cToggle.addEventListener("click", () => {
-    //     toggleInProgressDiv(cToggle, localStorage.getItem(`${lsUID}toggleState`) == "open" ? false : true);
-    // });
   }
 }
 
