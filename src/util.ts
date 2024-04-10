@@ -3656,7 +3656,6 @@ async function loadMonaco(){
     monaco.languages.typescript.javascriptDefaults.setCompilerOptions({
         allowNonTsExtensions: true
     });
-    
 }
 
 document.addEventListener("selectstart",e=>{

@@ -87,5 +87,5 @@ async function setStats() {
 }
 
 viewSubmissionsButton.addEventListener("click", (e) => {
-    location.href = '/practice/?showusersubmissions=true';
+    location.href = '/practice/?filteroptions=completed';
 })

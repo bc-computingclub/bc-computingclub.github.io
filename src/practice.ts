@@ -17,9 +17,12 @@ const lsUID = "BCC-01";
 
 let cURL = new URL(location.href);
 let popupCID = cURL.searchParams.get("cid") || "";
-let showUserSubmissions = cURL.searchParams.get("showusersubmissions") || ""; // is either true or null
+let tempFilterOptions:string = cURL.searchParams.get("filteroptions")
+let urlFilterOptions:string[] = [];
+if(tempFilterOptions) {
+  urlFilterOptions = tempFilterOptions.split(",") || []; // makes array out of filteroptions parameter in URL
+}
 
- 
 let bCounter = 0;
 let ipCounter = 0;
 let challengeArray: Challenge[] = [];
@@ -77,12 +80,29 @@ window.addEventListener("load", async () => {
     tempURL.searchParams.delete("cid");
     window.history.replaceState({}, document.title, tempURL.toString());
   }
-
-  if(showUserSubmissions == "true") {
-    let checkThis = document.querySelector("input#completed")as HTMLInputElement;
-    checkThis.checked = true;
-    checkThis.dispatchEvent(new Event('change'));
+  
+  if(urlFilterOptions.length > 0) {
+    let checkThis;
+    console.log(urlFilterOptions);
+    for(let option of urlFilterOptions) {
+      checkThis = document.querySelector(`input#${option}`) as HTMLInputElement;
+      console.log(checkThis);
+      if(checkThis) {
+        checkThis.checked = true;
+        checkThis.dispatchEvent(new Event('change'));
+      }
+    }
   }
+  // if(urlFilterOptions.includes("completed")) {
+  //   let checkThis = document.querySelector("input#completed")as HTMLInputElement;
+  //   checkThis.checked = true;
+  //   checkThis.dispatchEvent(new Event('change'));
+  // }
+  // if(urlFilterOptions.includes("featured")) {
+  //   let checkThis = document.querySelector("input#ongoing")as HTMLInputElement;
+  //   checkThis.checked = true;
+  //   checkThis.dispatchEvent(new Event('change'));
+  // }
 });
 
 function toggleInProgressDiv(btn: HTMLElement, opening: boolean) {
