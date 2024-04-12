@@ -1,6 +1,7 @@
 body{
     position: relative;
     transition: background-color 0.3s ease-in-out;
+    height: 100dvh;
     
     &[section="1"] {
         background-color: var(--learn-col);
