@@ -436,7 +436,7 @@ body.themestyle-light .logo{
 
     .h-background {
         width: 100%;
-        height: calc(100dvh - 60px);
+        height: 100%;
     }
 
     .h-text {

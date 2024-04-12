@@ -664,6 +664,6 @@
 - END of update1
 
 ### 4/10/24 - ideas from Brt
-- calculator challenge (medium?)
-- menu with things you can click (login menu)
-    - this is a good one for styling and html structure (easy)
+- calculator challenge (medium?) - done (paul)
+- menu with things you can click (login menu) 
+    - this is a good one for styling and html structure (easy) - done (paul)

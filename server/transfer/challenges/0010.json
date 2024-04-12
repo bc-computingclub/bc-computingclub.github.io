@@ -1,0 +1,9 @@
+{
+    "name": "Login Menu",
+    "desc": "Create a login menu which allows the user to enter in a username and password, and to then click 'log in'. \nFeel free to add more details to this menu, such as animations and transitions!",
+    "imgUrl": "/images/loginmenu.svg",
+    "difficulty": "easy",
+    "timespan": null,
+    "cnt": 0,
+    "sub": []
+}

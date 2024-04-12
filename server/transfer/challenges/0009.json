@@ -1,0 +1,9 @@
+{
+    "name": "Calculator",
+    "desc": "Create a calculator which can add, subtract, multiply, and divide. \nWant an extra challenge? Add more functionality to the calculator.",
+    "imgUrl": "/images/calculator.svg",
+    "difficulty": "medium",
+    "timespan": null,
+    "cnt": 0,
+    "sub": []
+}
