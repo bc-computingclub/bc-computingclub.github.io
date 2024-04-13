@@ -592,9 +592,9 @@ function genHeader(i:number,isCompact=true,id:string){
         </div>
         <div class="nav-links">
             <button class="icon-btn-single co-item b-feedback" co-label="Send Feedback"><div class="material-symbols-outlined">forum</div></button>
-            <a href="/learn/index.html" class="nav-link">Learn <span class="material-symbols-outlined">Auto_stories</span></a>
-            <a href="/practice/index.html" class="nav-link">Practice <span class="material-symbols-outlined">Checkbook</span></a>
-            <a href="/editor/index.html" class="nav-link">Experiment <span class="material-symbols-outlined">Experiment</span></a>
+            <a href="/learn/index.html" class="nav-link learn-link">Learn <span class="material-symbols-outlined">Auto_stories</span></a>
+            <a href="/practice/index.html" class="nav-link practice-link">Practice <span class="material-symbols-outlined">Checkbook</span></a>
+            <a href="/editor/index.html" class="nav-link experiment-link">Experiment <span class="material-symbols-outlined">Experiment</span></a>
             <a class="h-profile"><span class="material-symbols-outlined">Person</span></a>
         </div>
     `;

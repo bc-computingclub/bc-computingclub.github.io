@@ -670,3 +670,8 @@
 
 ### 4/12/24
 - feedback menu
+
+### 4/13/24
+- fixed feedback menu color issues
+- added no-color class for pages to default to translucent gray color that aren't in the main 3 categories
+- update1

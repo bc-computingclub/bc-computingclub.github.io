@@ -446,36 +446,6 @@ body.themestyle-light .project-item.starred .star{
 }
 
 /*  */
-.menu input[type="text"]{
-    padding:6px;
-    font-size:15px;
-    border-radius:3px;
-    outline:solid 1px gray;
-    border:none;
-    transition:outline 0.1s ease-out, background-color 0.1s ease-out;
-}
-body.themestyle-light .menu input[type="text"]:focus{
-    outline:solid 3px var(--accent,var(--cta-btn-col));
-}
-body.themestyle-dark .menu input[type="text"]:focus{
-    background-color:var(--accent,var(--cta-btn-col));
-}
-.menu textarea{
-    padding:6px;
-    font-size:15px;
-    border-radius:3px;
-    outline:solid 1px gray;
-    border:none;
-    transition:outline 0.1s ease-out;
-}
-body.themestyle-light .menu textarea:focus{
-    outline:solid 3px var(--accent,var(--cta-btn-col));
-}
-body.themestyle-dark .menu textarea:focus{
-    background-color:var(--accent,var(--cta-btn-col));
-}
-
-/*  */
 button.load-btn::before{
     content:"progress_activity";
     font-family:"Material Symbols Outlined";

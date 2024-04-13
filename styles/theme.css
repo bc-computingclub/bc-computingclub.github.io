@@ -109,8 +109,16 @@ body.experiment-page{
     /* --cta-btn-col:var(--experiment-col) !important; */
 }
 
-body.profile-page {
-    --cta-btn-col:var(--col) !important;
+body.no-color {
+    --cta-btn-col:gray !important;
+}
+body.no-color .callout{
+    background-color:var(--col) !important;
+    color:var(--inv-col) !important;
+}
+body.no-color .menu::after{
+    --cta-btn-col:#aaaaaa55;
+    backdrop-filter:blur(4px);
 }
 
 body.theme-light{
@@ -119,6 +127,7 @@ body.theme-light{
     --bg-col: rgb(216, 216, 216);
     --secondary-bg-col:white;
     --col: black;
+    --inv-col:white;
     --secondary-col:rgb(255, 255, 255);
     --font: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     --faded-col:rgb(150, 157, 184);
@@ -152,6 +161,7 @@ body.theme-dark{
 
     --bg:#111;
     --col:whitesmoke;
+    --inv-col:black;
     --secondary-col:lightgray;
     --editor-bg:#1e1e1e;
     --secondary-bg-col:#000;

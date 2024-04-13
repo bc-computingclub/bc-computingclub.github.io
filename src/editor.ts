@@ -76,7 +76,7 @@ async function loadProject(uid:string,pid:string){
     if(meta.cid != null){
         console.log("** found Challenge Project");
         document.body.classList.add("is-challenge");
-        let nav = document.querySelector("a.nav-link:nth-child(2)");
+        let nav = document.querySelector("a.nav-link.practice-link");
         if(nav){
             nav.classList.add("active");
             nav.nextElementSibling.classList.remove("active");
