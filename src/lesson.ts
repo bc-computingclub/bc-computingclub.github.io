@@ -4073,29 +4073,6 @@ enum BubbleLoc{
     refresh,
     xy
 }
-function formatBubbleText(text:string,ops?:any){
-    // text = escapeMarkup(text);
-    // while(text.includes("[") && text[text.indexOf("[")-1] != "0"){
-    while(text.includes("[")){
-        let ind = text.indexOf("[");
-        let id = text[ind-1];
-        let str = `<span class="l-${id}">`;
-        if(id == "0") str = "[]"+str;
-        text = text.replace(id+"[",str); // replaces just the first instance which is where we're at
-        let cnt = 0;
-        for(let i = 0; i < text.length; i++){
-            if(text[i] == "[") if(text[i-1] != "0") cnt++;
-        }
-        if(cnt == 0) break;
-    }
-    text = text.replaceAll("]","</span>");
-    if(ops){
-        if(ops.click) text += "<div class='material-symbols-outlined click-bubble-indicator'>mouse</div>";
-    }
-    text = text.replaceAll("\n","<br><br>");
-    text = text.replaceAll("$$SB","[ ]");
-    return text;
-}
 function addBubbleAt(loc:BubbleLoc,text:string,dir?:string,ops?:any){
     let b = document.createElement("div");
     let _text = document.createElement("div");

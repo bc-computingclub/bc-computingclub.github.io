@@ -591,6 +591,7 @@ function genHeader(i:number,isCompact=true,id:string){
             <button class="b-go-back-step hide"><div class="material-symbols-outlined">keyboard_double_arrow_left</div></button>
         </div>
         <div class="nav-links">
+            <button class="icon-btn-single co-item b-feedback" co-label="Send Feedback"><div class="material-symbols-outlined">forum</div></button>
             <a href="/learn/index.html" class="nav-link">Learn <span class="material-symbols-outlined">Auto_stories</span></a>
             <a href="/practice/index.html" class="nav-link">Practice <span class="material-symbols-outlined">Checkbook</span></a>
             <a href="/editor/index.html" class="nav-link">Experiment <span class="material-symbols-outlined">Experiment</span></a>
@@ -613,6 +614,14 @@ function genHeader(i:number,isCompact=true,id:string){
     //     div.classList.add("callout-no-color");
     //     div.textContent = "Submit";
     // });
+
+    let b_feedback = document.querySelector(".b-feedback");
+    b_feedback.addEventListener("click",e=>{
+        new FeedbackMenu().load();
+        // new InputMenu("Send Feedback","Description:",(data:string)=>{
+        //     console.log("data: ",data);
+        // },()=>{},"Send","Cancel","Tell us what you think!\nIs there anything you think we should add? Something to improve? Or just your thoughts!").load();
+    });
 }
 
 // Add General Scripts
@@ -2797,6 +2806,30 @@ function whenEnter(elm:HTMLInputElement,f:(v:string)=>void,noBlur=false){
     });
 }
 
+function formatBubbleText(text:string,ops?:any){
+    // text = escapeMarkup(text);
+    // while(text.includes("[") && text[text.indexOf("[")-1] != "0"){
+    while(text.includes("[")){
+        let ind = text.indexOf("[");
+        let id = text[ind-1];
+        let str = `<span class="l-${id}">`;
+        if(id == "0") str = "[]"+str;
+        text = text.replace(id+"[",str); // replaces just the first instance which is where we're at
+        let cnt = 0;
+        for(let i = 0; i < text.length; i++){
+            if(text[i] == "[") if(text[i-1] != "0") cnt++;
+        }
+        if(cnt == 0) break;
+    }
+    text = text.replaceAll("]","</span>");
+    if(ops){
+        if(ops.click) text += "<div class='material-symbols-outlined click-bubble-indicator'>mouse</div>";
+    }
+    text = text.replaceAll("\n","<br><br>");
+    text = text.replaceAll("$$SB","[ ]");
+    return text;
+}
+
 let _hasAlertedNotLoggedIn = false;
 async function alertNotLoggedIn(){
     await googleLoadedProm;
@@ -3249,13 +3282,13 @@ class InputMenu extends Menu {
         if (this.beforeInputPrompt) {
             let  beforeElm = document.createElement("span");
             beforeElm.style.fontSize = "15px";
-            beforeElm.textContent = this.beforeInputPrompt;
+            beforeElm.innerHTML = formatBubbleText(this.beforeInputPrompt);
             this.body.insertBefore(beforeElm, inputObj.div);
         }
         if(this.afterInputPrompt){
             let afterElm = document.createElement("span");
             afterElm.style.fontSize = "15px";
-            afterElm.textContent = this.afterInputPrompt;
+            afterElm.innerHTML = formatBubbleText(this.afterInputPrompt);
             this.body.appendChild(afterElm);
         }
         let temp = document.createElement("div") as HTMLElement;
@@ -3291,6 +3324,31 @@ class InputMenu extends Menu {
     cancelChoice() {
         this.onCancel();
         this.close();
+    }
+}
+
+class FeedbackMenu extends InputMenu{
+    constructor(){
+        super("Send Feedback","Description:",async ()=>{
+            let text = this.body.querySelector("textarea")?.value;
+            if(!text) return;
+            await sendFeedback("",0,text);
+            alert("Thank you for your feedback!");
+        },()=>{},"Send","Cancel","Tell us what you think!\ni[Comment anything you think we should add, something to improve, or just your thoughts!]");
+        this.icon = "forum";
+    }
+    load(priority?:number,newLayer?:boolean): this {
+        super.load();
+        this.menu.style.height = "max-content";
+        let textInputLabel = this.body.querySelector(".text-input-label");
+        textInputLabel.remove();
+        let inp = this.body.querySelector("input");
+        let ta = document.createElement("textarea");
+        ta.style.resize = "vertical";
+        ta.style.height = "100px";
+        ta.style.minHeight = "100px";
+        inp.parentElement.replaceWith(ta);
+        return this;
     }
 }
 

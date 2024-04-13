@@ -289,3 +289,17 @@ async function getChallengeData(cid:string){
         });
     });
 }
+
+// Feedback
+async function sendFeedback(title:string,type:number,desc:string){
+    return await new Promise<boolean>(resolve=>{
+        socket.emit("sendFeedback",title,type,desc,(res:any)=>{
+            if(typeof res == "number"){
+                alert(`Error ${res} while trying to submit feedback`);
+                resolve(false);
+                return;
+            }
+            resolve(true);
+        });
+    });
+}

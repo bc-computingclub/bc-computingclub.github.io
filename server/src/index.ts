@@ -1483,7 +1483,66 @@ io.on("connection",socket=>{
 
         call(0,v);
     });
+    socket.on("sendFeedback",(title:string,type:number,desc:string,f:(res:any)=>void)=>{
+        if(!valVar2(title,"string",f)) return;
+        if(!valVar2(type,"number",f)) return;
+        if(!valVar2(desc,"string",f)) return;
+        
+        // probably don't want to record who send the feedback?
+
+        cachedFeedbackData.push(new FeedbackData(title,type,desc));
+        _feedbackNeedsSaved = true;
+        f(null);
+    });
 });
+
+let _feedbackNeedsSaved = false;
+let _feedbackIsSaving = false;
+let cachedFeedbackData:FeedbackData[] = [];
+class FeedbackData{
+    constructor(name:string,type:number,desc:string){
+        this.date = new Date().toISOString();
+        this.title = name;
+        this.type = type;
+        this.desc = desc;
+    }
+    date:string;
+    title:string;
+    type:number;
+    desc:string;
+}
+setInterval(async ()=>{
+    if(!_feedbackNeedsSaved) return;
+    if(_feedbackIsSaving){
+        console.log("Warn: feedback is already saving...");
+        return;
+    }
+    _feedbackNeedsSaved = false;
+    _feedbackIsSaving = true;
+
+    let s = await read("../data/fb.json");
+    let ar:any[]|null = null;
+    try{
+        ar = JSON.parse(s);
+    }
+    catch(e){
+        console.log("Warn: error saving feedback.json");
+    }
+    if(ar){
+        for(const c of cachedFeedbackData) ar.push(c);
+        await write("../data/fb.json",JSON.stringify(ar,null,4),"utf8");
+        cachedFeedbackData = [];
+    }
+    
+    _feedbackIsSaving = false;
+},5000);
+async function initFeedback(){
+    if(!await access("../data/fb.json")){
+        await write("../data/fb.json","[]","utf8");
+    }
+}
+initFeedback();
+
 async function copyContinueFromFiles(user:User,fromLID:string,toLID:string){
     if(!user) return;
     let fromPath = `../lesson/${user.uid}/${fromLID}`;
@@ -1618,6 +1677,10 @@ rl.on("line",async (line)=>{
         return;
     }
     else if(line == "stop"){
+        if(_feedbackIsSaving){
+            console.log("Can't stop, feedback save is still in progress");
+            return;
+        }
         process.exit();
     }
     else if(s[0] == "cdata"){
