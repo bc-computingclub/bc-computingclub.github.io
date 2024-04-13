@@ -109,6 +109,10 @@ body.experiment-page{
     /* --cta-btn-col:var(--experiment-col) !important; */
 }
 
+body.profile-page {
+    --cta-btn-col:var(--col) !important;
+}
+
 body.theme-light{
     --cta-btn-col:#228882;
 

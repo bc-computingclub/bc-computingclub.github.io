@@ -605,7 +605,8 @@ function genHeader(i:number,isCompact=true,id:string){
     document.body.classList.add([
         "learn-page",
         "practice-page",
-        "experiment-page"
+        "experiment-page",
+        "profile-page"
     ][i]);
 
     d_lesson_confirm = document.querySelector(".d-lesson-confirm") as HTMLElement;
