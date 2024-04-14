@@ -675,3 +675,15 @@
 - fixed feedback menu color issues
 - added no-color class for pages to default to translucent gray color that aren't in the main 3 categories
 - update1
+
+### 4/14/24
+- added timeTaken to projects and lessons
+- changed confirm bubbles in lessons to say "Ok" on a new line to be more user friendly
+- fixed renaming a project from the project dashboard menu wouldn't show a change after going back out
+- fixed displaying time taken not to show WIP anymore and be formated as "minutes" instead of "m", to stop at hours instead of days, and to show toFixed(1)
+- fixed displaying languages in submission popup so they're uppercase all
+- removed add_file button from submission window editor
+- fixed calc line count formula to find the correct line count
+- fixed time would be recorded initialy when creating a new project
+- added getSubmissions with sorting and filtering
+- [update1-END]

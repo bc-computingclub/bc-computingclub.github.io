@@ -178,6 +178,7 @@ export class ProjectMeta{
         this.desc = desc;
         this.isPublic = isPublic;
         this.submitted = submitted ?? false;
+        this.time = 0;
     }
     user:User|null;
     pid:string;
@@ -186,8 +187,25 @@ export class ProjectMeta{
     isPublic:boolean;
     submitted:boolean;
     wc:string = ""; // when created
-    time = 0;
+    time = 0; // how much time spent on the project
     wls:string = ""; // when last saved
+    /**
+     * Note: This method does not save the meta data, you must user.saveToFile() on your own
+     */
+    updateWhenLastSaved(){
+        if(!this.wls || this.wls == ""){
+            this.time = 0;
+            let date = new Date();
+            this.wls = date.toISOString();
+            return;
+        }
+        let last = this.wls;
+        let date = new Date();
+        this.wls = date.toISOString();
+        let dif = date.getTime()-new Date(last).getTime();
+        dif = Math.min(dif,900000); // 15 min
+        this.time += dif;
+    }
 
     cid?:string;
     ws:string = ""; // when submitted
@@ -462,6 +480,24 @@ export class LessonMeta{
     hf = false; // has finished once
     _hp = 0; // has sent out post (like unlocks) - this is a version number if new updates come out in the future
     wls = ""; // when last save
+    time = 0;
+    /**
+     * Note: This method does not save the meta data, you must user.saveToFile() on your own
+     */
+    updateWhenLastSaved(){
+        if(!this.wls || this.wls == ""){
+            this.time = 0;
+            let date = new Date();
+            this.wls = date.toISOString();    
+            return;
+        }
+        let last = this.wls;
+        let date = new Date();
+        this.wls = date.toISOString();
+        let dif = date.getTime()-new Date(last).getTime();
+        dif = Math.min(dif,900000); // 15 min
+        this.time += dif;
+    }
     static parse(data:any){
         let m = new LessonMeta(data.eventI,data.taskI,data.prog??0,data.mode??0);
         m.wu = data.wu ?? "";
@@ -473,6 +509,7 @@ export class LessonMeta{
         m.hf = data.hf ?? false;
         m._hp = data._hp ?? 0;
         m.wls = data.wls ?? "";
+        m.time = data.time ?? 0;
         return m;
     }
 }

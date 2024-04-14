@@ -2045,7 +2045,7 @@ enum EditorType{
     self,
     tutor
 }
-function setupEditor(parent:HTMLElement,type:EditorType){
+function setupEditor(parent:HTMLElement,type:EditorType,fromSub=false){
     let d_files = document.createElement("div");
     d_files.className = "d-open-files pane";
     let contJs = document.createElement("div");
@@ -2053,10 +2053,12 @@ function setupEditor(parent:HTMLElement,type:EditorType){
     parent.appendChild(d_files);
     parent.appendChild(contJs);
 
-    let add_file = document.createElement("button");
-    add_file.className = "b-add-file";
-    add_file.innerHTML = "<div class='material-symbols-outlined'>add</div>";
-    d_files.appendChild(add_file);
+    if(!fromSub){
+        let add_file = document.createElement("button");
+        add_file.className = "b-add-file";
+        add_file.innerHTML = "<div class='material-symbols-outlined'>add</div>";
+        d_files.appendChild(add_file);
+    }
 
     if(type != EditorType.none){
         let label = document.createElement("div");
@@ -2089,7 +2091,7 @@ function postSetupEditor(project:Project,isUser=true){
     // project.files[1].open();
 
     let add_file = parent.querySelector(".b-add-file");
-    add_file.addEventListener("click",e=>{
+    if(add_file) add_file.addEventListener("click",e=>{
         if(!project.canEdit) return;
         if(project.isTutor){
             alert("Sorry! You can't add files to the tutor's project!");
@@ -3487,9 +3489,10 @@ function getTimeTaken(v:number){
     // time in seconds?
     let unit = "s";
     let units = [
-        {u:"m",s:60},
-        {u:"h",s:60},
-        {u:"d",s:24},
+        {u:" seconds",s:1000},
+        {u:" minutes",s:60},
+        {u:" hours",s:60},
+        // {u:" days",s:24},
     ];
     for(let i = 0; i < units.length; i++){
         let d = units[i];
@@ -3499,7 +3502,7 @@ function getTimeTaken(v:number){
         }
         else break;
     }
-    return v+unit;
+    return v.toFixed(1)+unit;
 }
   
 let curSubMenu: SubmissionMenu;
@@ -3526,7 +3529,7 @@ class SubmissionMenu extends Menu {
             let tmpp = new Project("__tmp",par,{
                 readonly:false
             });
-            setupEditor(tmpp.parent,EditorType.none);
+            setupEditor(tmpp.parent,EditorType.none,true);
             tmpp.init();
             // // @ts-ignore
             // window.tmpp = tmpp;
@@ -3625,14 +3628,14 @@ class SubmissionMenu extends Menu {
                   </div>
                   <div class="s-popup-preview-details-item">
                     <h4 class="s-popup-preview-details-item-title">Language(s)</h4>
-                    <div class="s-popup-preview-details-item-contents">${this.submission.lang?this.submission.lang.join(", "):"None"/*calcSubmissionLang(p)*/}<!--JavaScript--></div>
+                    <div class="s-popup-preview-details-item-contents">${this.submission.lang?this.submission.lang.join(", ").toUpperCase():"None"/*calcSubmissionLang(p)*/}<!--JavaScript--></div>
                   </div>
                   <div class="s-popup-preview-details-item">
                     <h4 class="s-popup-preview-details-item-title">Date Submitted</h4>
                     <div class="s-popup-preview-details-item-contents">${new Date(this.submission.ws).toLocaleDateString()/*getWhenSubmitted(p)*/}</div>
                   </div>
                   <div class="s-popup-preview-details-item">
-                    <h4 class="s-popup-preview-details-item-title">Time Taken (WIP)</h4>
+                    <h4 class="s-popup-preview-details-item-title">Time Taken</h4>
                     <div class="s-popup-preview-details-item-contents">${getTimeTaken(this.submission.t)}</div>
                   </div>
                 </div>

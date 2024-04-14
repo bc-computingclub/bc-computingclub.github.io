@@ -87,6 +87,17 @@ async function getSubmission(uid:string,pid:string){
     });
   });
 }
+async function getSubmissions(cid:string,filter:{mine:boolean},sort:string,desc:boolean,perPage=20,pageI=0){
+  return new Promise<Submission[]>(resolve=>{
+    socket.emit("getSubmissions",cid,perPage,pageI,filter,sort,desc,(data:any)=>{
+      if(typeof data == "number" || data == null){
+        alert(`Error ${data} while trying to get Submissions`);
+        resolve([]);
+      }
+      resolve(data);
+    });
+  });
+}
 
 sCheckboxes.forEach((cb:HTMLInputElement) => {
     cb.addEventListener("change", (event) => {

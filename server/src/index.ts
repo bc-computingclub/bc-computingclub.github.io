@@ -615,7 +615,7 @@ io.on("connection",socket=>{
         // }
 
         if(meta){
-            meta.wls = new Date().toISOString();
+            meta.updateWhenLastSaved();
             await writeLessonMeta(user.uid,lessonId,meta);
         }
 
@@ -723,7 +723,8 @@ io.on("connection",socket=>{
         }
 
         if(p) if(p.meta){
-            p.meta.wls = new Date().toISOString();
+            // p.meta.wls = new Date().toISOString();
+            p.meta.updateWhenLastSaved();
             await user.saveToFile();
         }
         
@@ -844,6 +845,65 @@ io.on("connection",socket=>{
         else f({
             p:p.serializeGet(true)
         });
+    });
+    socket.on("getSubmissions",async (cid:string,perPage:number,pageI:number,filter:SubmissionsFilterType,option:string,desc:boolean,f:(data:any)=>void)=>{
+        if(!valVar2(perPage,"number",f)) return;
+        if(!valVar2(pageI,"number",f)) return;
+        if(!valVar2(filter,"object",f)) return;
+        if(!valVar2(option,"string",f)) return;
+        if(!valVar2(desc,"boolean",f)) return;
+
+        let user = getUserBySock(socket.id);
+        if(!user){
+            f(-3);
+            return;
+        }
+
+        let c = challenges.get(cid);
+        if(!c){
+            f(1);
+            return;
+        }
+
+        console.log("found challenge",c);
+
+        let list:CSubmission[] = [];
+        let clist:CSubmission[] = [];
+        for(const v of c.sub){
+            clist.push(v);
+        }
+        clist = clist.sort((a,b)=>{
+            switch(option) {
+                case "lines": // line count
+                    if(desc) return b.lc - a.lc;
+                    return a.lc - b.lc;
+                case "chars": // char count
+                    if(desc) return b.cc - a.cc;
+                    return a.cc - b.cc;
+                case "time": // time taken
+                    return (desc ? (b.t-a.t) : (a.t-b.t));
+                case "recent": // recently submitted
+                    let dif = new Date(b.ws).getTime() - new Date(a.ws).getTime();
+                    return (desc ? dif : -dif);
+                default:
+                    return 0;
+            }
+        });
+
+        let i = 0;
+        let skip = pageI*perPage;
+        for(const v of clist){
+            if(filter.mine){
+                if(v.who != user.uid) continue;
+            }
+            
+            if(i >= skip) list.push(v);
+
+            if(list.length >= perPage) break;
+            i++;
+        }
+        
+        f(list);
     });
     socket.on("getChallenge",(cid:string,f:(data:any)=>void)=>{
         if(!valVar2(cid,"string",f)) return;
@@ -1065,8 +1125,14 @@ io.on("connection",socket=>{
                     if(ind == -1) continue;
                     let ext = item.name.substring(ind+1);
                     if(allowed.includes(ext)){
-                        let v = it.val.match(/\n/g);
-                        amt += (v ? v.length : 0);
+                        it.val = it.val.replace(/\r/g,"");
+                        let lines = it.val.split("\n");
+                        for(const l of lines){
+                            if(l.length > 0) amt++;
+                        }
+                        // let v = it.val.match(/\n/g);
+                        // console.log((v ? v.length : 0),v);
+                        // amt += (v ? v.length : 0);
                     }
                 }
             }
@@ -1625,6 +1691,7 @@ async function createChallengeProject(user:User,cid:string):Promise<Project|numb
     let p = new Project(pid,user.uid,getDefaultProjectMeta(user,pid,c.name));
     p.meta.desc = `An attempt at the ${c.name} challenge.`;
     p._owner = user;
+    p.meta.time = 0;
     user.projects.push(p);
     // allProjects.set(pid,p);
     p.meta.cid = cid;
@@ -1661,6 +1728,9 @@ type FilterType = {
     difficulty:string[];
     ongoing:string[];
     completed:string[];
+};
+type SubmissionsFilterType = {
+    mine:boolean;
 };
 
 server.listen(3000,()=>{

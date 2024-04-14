@@ -910,6 +910,7 @@ class ProjSettingsMenu extends Menu{
 
                 this.meta.name = name;
                 this.meta.desc = desc;
+                if(this.dash) this.dash.reloadSection();
             });
         });
         b_privacy.addEventListener("click",e=>{

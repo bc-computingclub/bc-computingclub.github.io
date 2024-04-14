@@ -409,11 +409,23 @@ hr{
 }
 .click-bubble-indicator{
     font-size:22px;
+    display:flex;
+    align-items:center;
+    gap:4px;
+    margin-top:22px;
+    margin-bottom:5px;
+    margin-left:50%;
+    transform:translate(-50%,0px);
     /* opacity:0.7; */
     line-height:0;
     /* transform:translate(5px,5px); */
-    transform:translate(5px,6px);
+    /* transform:translate(5px,6px); */
     animation:Indicate infinite alternate 2s ease-in-out;
+}
+.click-bubble-indicator::before{
+    content: "Ok";
+    font-family: monospace;
+    font-size: 15px;
 }
 @keyframes Indicate{
     0%{
