@@ -48,9 +48,13 @@ export class Challenge{
     // cnt:number; // submission count
 
     isCompleted(user:User){
-        let p = user.pMeta.find(v=>v.cid == this.id);
-        if(!p) return false;
-        return p.submitted;
+        let existing = user.pMeta.filter(v=>v.cid == this.id);
+        if(!existing) return false;
+        if(!existing.length) return false;
+        return !existing.some(v=>!v.submitted);
+        // let p = user.pMeta.find(v=>v.cid == this.id);
+        // if(!p) return false;
+        // return p.submitted;
     }
     isInProgress(user:User){
         if(this.isCompleted(user)) return false;

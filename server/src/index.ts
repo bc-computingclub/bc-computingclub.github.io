@@ -1193,7 +1193,7 @@ io.on("connection",socket=>{
             return;
         }
 
-        let m = user.challenges.find(v=>v.cid == cid);
+        let m = user.pMeta.find(v=>v.cid == cid && !v.submitted);
         if(!m){
             f(null);
             return;
@@ -1677,16 +1677,31 @@ async function createChallengeProject(user:User,cid:string):Promise<Project|numb
     if(!c) return 3; // couldn't find challenge
     let pid = genPID();
     
-    if(user.challenges.some(v=>v.cid == cid)) return 1; // already exists
+    // let existing = user.challenges.some(v=>v.cid == cid);
+    let existingCh = user.challenges.filter(v=>v.cid == cid);
+    let _id = 0;
+    if(existingCh.length){
+        let existing = user.pMeta.filter(v=>v.cid == cid);
+        if(existing.some(v=>!v.submitted)){
+            // return 1; // already exists
+            return 1;
+        }
+        let id = 0;
+        for(const e of existingCh){
+            if(e.i > id) id = e.i;
+        }
+        id++;
+        _id = id;
+    }
     let path = "../project/"+user.uid+"/"+pid; //__c- prefix (THIS WILL BE INCLUDED ON CHALLENGES DATA EVENTUALLY)
     // if(await access(path)) return 1; // already exists
     let res = await mkdir(path);
     if(!res) return 2; // failed to create
-    user.challenges.push(new UserChallengeData(0,cid,pid));
+    user.challenges.push(new UserChallengeData(_id,cid,pid));
     await user.saveToFile();
 
     // setup/create project
-    let p = new Project(pid,user.uid,getDefaultProjectMeta(user,pid,c.name));
+    let p = new Project(pid,user.uid,getDefaultProjectMeta(user,pid,c.name+(_id != 0 ? " "+(_id+1) : "")));
     p.meta.desc = `An attempt at the ${c.name} challenge.`;
     p._owner = user;
     p.meta.time = 0;

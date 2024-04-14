@@ -687,3 +687,4 @@
 - fixed time would be recorded initialy when creating a new project
 - added getSubmissions with sorting and filtering
 - [update1-END]
+- added ability to submit multiple times to a challenge and resume correctly to the "most recent one that is unsubmitted"
