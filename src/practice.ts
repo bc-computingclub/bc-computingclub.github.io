@@ -25,7 +25,6 @@ if(tempFilterOptions) {
 
 let bCounter = 0;
 let ipCounter = 0;
-let challengeArray: Challenge[] = [];
 
 checkboxes.forEach((checkbox) => {
   checkbox.addEventListener("change", (event) => {

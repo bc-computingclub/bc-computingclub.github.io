@@ -3515,60 +3515,66 @@ class SubmissionMenu extends Menu {
     submission: Submission;
   
     async load2(){
-        let p = this.data.p;
-        await loadMonaco();
-        
-        // load items
-        
-        let par = this.menu.querySelector(".submission-editor > .editor-cont") as HTMLElement;
-        let tmpp = new Project("__tmp",par,{
-            readonly:false
-        });
-        setupEditor(tmpp.parent,EditorType.none);
-        tmpp.init();
-        // // @ts-ignore
-        // window.tmpp = tmpp;
-        function run(l:any[],cur:FFolder){
-            sortFiles(l);
-            let list = [];
-            for(const f of l){
-                if(f.val != null){
-                    let ff = tmpp.createFile(f.name,f.val,null,cur);
-                    createFileListItem(ff);
-                    list.push(ff);
+        await getChallenges();
+        if(challengeArray.find(c=>c.cID == cid).submitted){
+            let p = this.data.p;
+            await loadMonaco();
+            
+            // load items
+            
+            let par = this.menu.querySelector(".submission-editor > .editor-cont") as HTMLElement;
+            let tmpp = new Project("__tmp",par,{
+                readonly:false
+            });
+            setupEditor(tmpp.parent,EditorType.none);
+            tmpp.init();
+            // // @ts-ignore
+            // window.tmpp = tmpp;
+            function run(l:any[],cur:FFolder){
+                sortFiles(l);
+                let list = [];
+                for(const f of l){
+                    if(f.val != null){
+                        let ff = tmpp.createFile(f.name,f.val,null,cur);
+                        createFileListItem(ff);
+                        list.push(ff);
+                    }
+                    else if(f.items != null){
+                        let ff = tmpp.createFolder(f.name,cur,false);
+                        createFolderListItem(ff);
+                        list.push(ff);
+                        ff.items = run(f.items,ff);
+                    }
                 }
-                else if(f.items != null){
-                    let ff = tmpp.createFolder(f.name,cur,false);
-                    createFolderListItem(ff);
-                    list.push(ff);
-                    ff.items = run(f.items,ff);
-                }
+                return list;
             }
-            return list;
+            run(p.items,null);
+            let height = par.getBoundingClientRect().height;
+            par.parentElement.style.height = height+"px";
+            let b_openInFull = par.parentElement.querySelector(".b-fullscreen") as HTMLButtonElement;
+            b_openInFull.onclick = async function(){
+                b_openInFull.blur();
+                if(!document.fullscreenElement){
+                    await par.parentElement.requestFullscreen();
+                    b_openInFull.children[0].textContent = "collapse_content";
+                    await wait(100);
+                    tmpp.getCurEditor()?.layout();
+                }
+                else{
+                    await document.exitFullscreen();
+                }
+            };
+            par.parentElement.onfullscreenchange = async function(e){
+                if(!document.fullscreenElement){
+                    b_openInFull.children[0].textContent = "open_in_full";
+                    await wait(100);
+                    tmpp.getCurEditor()?.layout();
+                }
+            };
+        } else {
+            document.querySelector(".submission-editor").innerHTML = "<i>In order to view the code, please upload your own submission first!</i>";
+            document.querySelector(".submission-editor").classList.add("empty");
         }
-        run(p.items,null);
-        let height = par.getBoundingClientRect().height;
-        par.parentElement.style.height = height+"px";
-        let b_openInFull = par.parentElement.querySelector(".b-fullscreen") as HTMLButtonElement;
-        b_openInFull.onclick = async function(){
-            b_openInFull.blur();
-            if(!document.fullscreenElement){
-                await par.parentElement.requestFullscreen();
-                b_openInFull.children[0].textContent = "collapse_content";
-                await wait(100);
-                tmpp.getCurEditor()?.layout();
-            }
-            else{
-                await document.exitFullscreen();
-            }
-        };
-        par.parentElement.onfullscreenchange = async function(e){
-            if(!document.fullscreenElement){
-                b_openInFull.children[0].textContent = "open_in_full";
-                await wait(100);
-                tmpp.getCurEditor()?.layout();
-            }
-        };
     }
     load() {
       let p = this.data.p;
@@ -3637,6 +3643,7 @@ class SubmissionMenu extends Menu {
       `;
 
         this.load2();
+        
   
         let b_refresh = this.menu.querySelector(".s-b-refresh") as HTMLButtonElement;
         let b_openInNew = this.menu.querySelector(".b-open-in-new") as HTMLButtonElement;
@@ -3728,10 +3735,12 @@ function reloadPage(){
     location.href = location.href;
 }
 
+
+let challengeArray: Challenge[] = [];
 async function getChallenges() {
     challengeArray = await getServerChallenges();
     if (challengeArray == null) {
       alert("Failed to fetch challenges. Please try again later.");
       return;
     }
-  }
+}

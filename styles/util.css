@@ -1683,6 +1683,11 @@ button.b-publish:hover{
     background-color:var(--bg-col);
     padding:3px;
     border-radius:5px;
+
+    &.empty {
+        padding: 1em;
+        grid-template-columns: 1fr;
+    }
 }
 .submission-editor .editor-cont{
     display:flex;
