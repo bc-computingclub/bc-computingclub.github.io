@@ -865,8 +865,6 @@ io.on("connection",socket=>{
             return;
         }
 
-        console.log("found challenge",c);
-
         let list:CSubmission[] = [];
         let clist:CSubmission[] = [];
         for(const v of c.sub){
