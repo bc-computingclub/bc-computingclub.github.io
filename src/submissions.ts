@@ -160,7 +160,7 @@ submissionCheckboxes.forEach((checkbox) => {
 });
 
 async function filterSubmissions() {
-  let tempsubs = (await getChallenge(cid)).submissions;
+  let tempsubs = (await getChallenge(cid,2)).submissions;
   clearSubmissions();
   await displaySubmissions(tempsubs);
 }

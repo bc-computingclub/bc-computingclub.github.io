@@ -970,7 +970,7 @@ io.on("connection",socket=>{
 
             if(filter.completed?.length) if(!v.isCompleted(user)) continue;
             
-            if(i >= skip) list.push(v.serializeGet(user,2));
+            if(i >= skip) list.push(v.serializeGet(user,0));
 
             if(list.length >= perPage) break;
             i++;
