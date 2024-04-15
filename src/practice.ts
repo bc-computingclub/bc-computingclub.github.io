@@ -60,6 +60,20 @@ window.addEventListener("load", async () => {
     alertNotLoggedIn();
     return;
   }
+  
+  if(urlFilterOptions.length > 0) {
+    let checkThis;
+    console.log(urlFilterOptions);
+    for(let option of urlFilterOptions) {
+      checkThis = document.querySelector(`input#${option}`) as HTMLInputElement;
+      console.log(checkThis);
+      if(checkThis) {
+        checkThis.checked = true;
+        selectedFilters[checkThis.name] = [checkThis.value];
+        // checkThis.dispatchEvent(new Event('change'));
+      }
+    }
+  }
 
   await getChallenges();
   await showChallenges(challengeArray, true);
@@ -79,29 +93,6 @@ window.addEventListener("load", async () => {
     tempURL.searchParams.delete("cid");
     window.history.replaceState({}, document.title, tempURL.toString());
   }
-  
-  if(urlFilterOptions.length > 0) {
-    let checkThis;
-    console.log(urlFilterOptions);
-    for(let option of urlFilterOptions) {
-      checkThis = document.querySelector(`input#${option}`) as HTMLInputElement;
-      console.log(checkThis);
-      if(checkThis) {
-        checkThis.checked = true;
-        checkThis.dispatchEvent(new Event('change'));
-      }
-    }
-  }
-  // if(urlFilterOptions.includes("completed")) {
-  //   let checkThis = document.querySelector("input#completed")as HTMLInputElement;
-  //   checkThis.checked = true;
-  //   checkThis.dispatchEvent(new Event('change'));
-  // }
-  // if(urlFilterOptions.includes("featured")) {
-  //   let checkThis = document.querySelector("input#ongoing")as HTMLInputElement;
-  //   checkThis.checked = true;
-  //   checkThis.dispatchEvent(new Event('change'));
-  // }
 });
 
 function toggleInProgressDiv(btn: HTMLElement, opening: boolean) {
@@ -221,7 +212,7 @@ function setChallengeHTML(c: Challenge) {
         </span>
         <div class="c-button-options">
             <button class="c-preview" onclick="setupButton(${c.cID});">
-                Details <span class="material-symbols-outlined">info</span>
+                Open <span class="material-symbols-outlined">info</span>
             </button>
             <button class="c-submissions" onclick="showSubmissions('${c.cID}','')">
                 <span>Submissions</span>
