@@ -95,7 +95,7 @@ export class Challenge{
         return ongoing;
     }
 
-    serializeGet(user:User|null,minimal=false){
+    serializeGet(user:User|null,mode=0){ // 0 is just hl, 1 is both, 2 is just sub
         return {
             id:this.id,
             name:this.name,
@@ -104,8 +104,8 @@ export class Challenge{
             difficulty:this.difficulty,
             timespan:this.timespan,
             ongoing:this.ongoing,
-            hl:(minimal ? this.sub.slice(0,2) : null),
-            sub:(minimal ? null : this.sub),
+            hl:(mode <= 1 ? this.sub.slice(0,2) : null),
+            sub:(mode == 0 ? null : this.sub),
             submission_count:this.sub.length,
             completed:(user ? this.isCompleted(user) : false),
             inProgress:(user ? this.isInProgress(user) : null)

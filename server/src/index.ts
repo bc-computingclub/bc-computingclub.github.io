@@ -903,8 +903,9 @@ io.on("connection",socket=>{
         
         f(list);
     });
-    socket.on("getChallenge",(cid:string,f:(data:any)=>void)=>{
+    socket.on("getChallenge",(cid:string,mode:number,f:(data:any)=>void)=>{
         if(!valVar2(cid,"string",f)) return;
+        if(!valVar2(mode,"number",f)) return;
         
         let user = getUserBySock(socket.id);
         if(!user){
@@ -918,7 +919,7 @@ io.on("connection",socket=>{
             return;
         }
 
-        f(c.serializeGet(user));
+        f(c.serializeGet(user,mode));
     });
     socket.on("getChallenges",(perPage:number,pageI:number,filter:FilterType,option:string,desc:boolean,f:(data:any)=>void)=>{
         let user = getUserBySock(socket.id);
@@ -969,7 +970,7 @@ io.on("connection",socket=>{
 
             if(filter.completed?.length) if(!v.isCompleted(user)) continue;
             
-            if(i >= skip) list.push(v.serializeGet(user,true));
+            if(i >= skip) list.push(v.serializeGet(user,2));
 
             if(list.length >= perPage) break;
             i++;

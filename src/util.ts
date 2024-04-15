@@ -3189,9 +3189,9 @@ async function hideLoadingAnim() {
  * Get a single challenge from the server. 
  * Using.submissions returns an array with all submissions for that challenge.
  */
-async function getChallenge(cid:string){
+async function getChallenge(cid:string,mode=0){ // mode: 0 is just hl, 1 is both, 2 is just sub
     return new Promise<Challenge>(resolve=>{
-        socket.emit("getChallenge",cid,(data:any)=>{
+        socket.emit("getChallenge",cid,mode,(data:any)=>{
             resolve(Challenge.from(data));
         });
     });

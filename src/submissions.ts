@@ -23,7 +23,7 @@ window.onload = async () => {
     return;
   }
 
-  currentChallenge = await getChallenge(cid);
+  currentChallenge = await getChallenge(cid,1);
   submissionArray = currentChallenge.submissions;
   cTitle.style.opacity = "1";
   cTitle.textContent = `${currentChallenge.name} Challenge`;
