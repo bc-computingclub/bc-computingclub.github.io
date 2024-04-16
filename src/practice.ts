@@ -70,7 +70,6 @@ window.addEventListener("load", async () => {
       if(checkThis) {
         checkThis.checked = true;
         selectedFilters[checkThis.name] = [checkThis.value];
-        // checkThis.dispatchEvent(new Event('change'));
       }
     }
   }
