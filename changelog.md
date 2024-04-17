@@ -691,3 +691,7 @@
 
 ### 4/15/24
 - added mode toggle to getChallenge which fixed opening challenge details on submissions page
+
+### 4/17/24
+- fixed filter on gettingSubmissions server side (My Submissions)
+- fixed opening submission on submissions page wouldn't load file in the editor after the first time it was opened

@@ -3531,8 +3531,8 @@ class SubmissionMenu extends Menu {
             });
             setupEditor(tmpp.parent,EditorType.none,true);
             tmpp.init();
-            // // @ts-ignore
-            // window.tmpp = tmpp;
+            // @ts-ignore
+            window.tmpp = tmpp;
             function run(l:any[],cur:FFolder){
                 sortFiles(l);
                 let list = [];
@@ -3574,6 +3574,7 @@ class SubmissionMenu extends Menu {
                     tmpp.getCurEditor()?.layout();
                 }
             };
+            fileList = null; // this is to reset it so that it will check if this is null or not and research since it's a new editor when you open it again
         } else {
             document.querySelector(".submission-editor").innerHTML = "<i>In order to view the code, please upload your own submission first!</i>";
             document.querySelector(".submission-editor").classList.add("empty");
