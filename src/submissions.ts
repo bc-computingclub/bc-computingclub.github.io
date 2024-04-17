@@ -9,7 +9,6 @@ const sContainer = document.querySelector<HTMLElement>(".s-container");
 const sCheckboxes = document.querySelectorAll('input[type="checkbox"]') as NodeListOf<HTMLInputElement>;
 let previewButtons: NodeListOf<HTMLElement>;
 const clearSubmissionFiltersButton = document.querySelector(".clear-sub-filters") as HTMLElement;
-const submissionCheckboxes = document.querySelectorAll('input[type="checkbox"]') as NodeListOf<HTMLInputElement>;
 
 // Get submissions based on cID
 // Get challenge based on cID
@@ -38,7 +37,12 @@ window.onload = async () => {
   }
 };
 
+/**
+ * Clears submission page, then displays submissions passed in by submissionArray.
+ * If showAnim is true, a 400ms loading animation is applied.
+ */
 async function displaySubmissions(submissionArray: Submission[],showAnim?:boolean) {
+  clearSubmissions();
   if (showAnim) await showLoadingAnim([sContainer], 400);
   for (const sub of submissionArray) {
     let tempSub: HTMLElement = getSubmissionElement(sub);
@@ -57,19 +61,10 @@ function addClickListeners(elm: NodeListOf<HTMLElement>) {
   for (let i = 0; i < elm.length; i++) {
     elm[i].addEventListener("click", () => {
       let pid = elm[i].getAttribute("pid");
-      // console.log(pid);
       let sub = submissionArray.find((s) => s.pid == pid);
       createSubmissionMenu(sub);
     });
   }
-}
-
-function toggleLineCount() {
-  let sLineCount: NodeListOf<HTMLElement> = document.querySelectorAll(".s-line-count");
-  sLineCount.forEach((el) => {
-    el.classList.toggle("show-count");
-    // todo: store in localstorage and get value on page load?
-  });
 }
 
 cDetails.addEventListener("click", async () => {
@@ -99,32 +94,26 @@ async function getSubmissions(cid:string,filter:{mine:boolean},sort:string,desc:
   });
 }
 
-sCheckboxes.forEach((cb:HTMLInputElement) => {
-    cb.addEventListener("change", (event) => {
-        const checkboxValue = (event.target as HTMLInputElement).value;
-        console.log(checkboxValue);
-        if(checkboxValue == "show-lines-of-code") toggleLineCount();
-    });
-});
-
 sSortDiv.addEventListener("mousedown", () => {
   openDropdown(
     sSortDiv,
-    () => ["Popularity", "Popularity", "Alphabetical (A-Z)", "Alphabetical (Z-A)"],
+    () => ["Number of Lines", "Number of Characters", "Time Taken", "Most Recent","Oldest First"],
     (i) => {
-      if (i == 0) sortChallenges("popularity", true);
-      if (i == 1) sortChallenges("popularity", false);
-      if (i == 2) sortChallenges("alphabetical", true);
-      if (i == 3) sortChallenges("alphabetical", false);
+      if (i == 0) sortSubmissions("lines", true);
+      if (i == 1) sortSubmissions("chars", true);
+      if (i == 2) sortSubmissions("time", true);
+      if (i == 3) sortSubmissions("recent", true);
+      if (i == 4) sortSubmissions("recent", false);
       closeAllSubMenus(); // Close menu when a sort option is clicked
     },
     {
       getIcons() {
         return [
           "keyboard_double_arrow_down",
-          "keyboard_double_arrow_up",
           "keyboard_double_arrow_down",
-          "keyboard_double_arrow_up"
+          "keyboard_double_arrow_down",
+          "keyboard_double_arrow_down",
+          "keyboard_double_arrow_down",
       ];
       },
       openToLeft: true
@@ -132,45 +121,36 @@ sSortDiv.addEventListener("mousedown", () => {
   );
 });
 
-const submissionFilters = {};
-const filterType = "";
+async function sortSubmissions(sortType: string, desc: boolean,) {
+  let temp = await getSubmissions(cid,{mine:false},sortType,desc);
+  displaySubmissions(temp);
+}
 
-submissionCheckboxes.forEach((checkbox) => {
+const submissionFilters = {};
+sCheckboxes.forEach((checkbox) => {
   checkbox.addEventListener("change", (event) => {
     const checkboxValue = (event.target as HTMLInputElement).value;
     const isChecked = (event.target as HTMLInputElement).checked;
-    const filterType = (event.target as HTMLInputElement).name;
+    const checkboxName = (event.target as HTMLInputElement).name;
 
     if (isChecked) {
-      if (!submissionFilters[filterType]) {
-        submissionFilters[filterType] = [];
-      }
-      submissionFilters[filterType].push(checkboxValue);
+      submissionFilters[checkboxName] = checkboxValue;
     } else {
-      const index = submissionFilters[filterType].indexOf(checkboxValue);
-      if (index > -1) {
-        submissionFilters[filterType].splice(index, 1);
-      }
-      if (submissionFilters[filterType].length === 0) {
-        delete submissionFilters[filterType];
-      }
+      delete submissionFilters[checkboxName];
     }
+
     filterSubmissions();
   });
 });
 
 async function filterSubmissions() {
-  let tempsubs = (await getChallenge(cid,2)).submissions;
-  clearSubmissions();
+  let tempsubs = await getSubmissions(cid,{mine:submissionFilters["madebyuser"]!=null},"recent",false);
   await displaySubmissions(tempsubs);
 }
 
 clearSubmissionFiltersButton.addEventListener("click", () => {
-  Object.keys(submissionFilters).forEach((filterType) => {
-    delete submissionFilters[filterType];
-  });
-  submissionCheckboxes.forEach((checkbox: HTMLInputElement) => {
-    checkbox.checked = false;
+  sCheckboxes.forEach((checkbox: HTMLInputElement) => {
+    if(checkbox.checked == true) checkbox.click();
   });
 
   filterSubmissions();

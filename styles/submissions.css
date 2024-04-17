@@ -222,9 +222,8 @@
 }
 
 .s-card {
-    /* padding: .3em; */
-    padding-inline: .5em;
     /* ANY STYLING FOR S-CARD SHOULD GO IN UTIL UNLESS SPECIFIC TO SUBMISSIONS.HTML */
+    padding-inline: .5em;
 }
 
 .s-card-info {

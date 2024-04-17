@@ -80,7 +80,7 @@ window.addEventListener("load", async () => {
   shouldBeOpen = (challengeArray.length == 0 ? true : toggleState == "open");
 
   outerInProgressDiv.classList.add("window-load");
-  if (shouldBeOpen == false) {
+  if (shouldBeOpen == false && cToggle) {
     // console.log("Should be closed, closing (no animation)");
     outerInProgressDiv.classList.add("collapse");
     cToggle.classList.remove("point-up");
