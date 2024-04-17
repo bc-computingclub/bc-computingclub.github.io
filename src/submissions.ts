@@ -122,7 +122,7 @@ sSortDiv.addEventListener("mousedown", () => {
 });
 
 async function sortSubmissions(sortType: string, desc: boolean,) {
-  let temp = await getSubmissions(cid,{mine:false},sortType,desc);
+  let temp = await getSubmissions(cid,{mine:submissionFilters["madebyuser"]!=null},sortType,desc);
   displaySubmissions(temp);
 }
 
