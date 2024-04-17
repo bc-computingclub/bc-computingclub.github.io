@@ -892,7 +892,7 @@ io.on("connection",socket=>{
         let skip = pageI*perPage;
         for(const v of clist){
             if(filter.mine){
-                if(v.who != user.uid) continue;
+                if(v.uid != user.uid) continue;
             }
             
             if(i >= skip) list.push(v);
