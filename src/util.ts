@@ -2453,6 +2453,7 @@ function goToProject(pid:string){
     reloadPage();
 }
 
+let closeThis:ConfirmMenu | DeleteMenu;
 document.addEventListener("keydown",e=>{
     // let active = document.activeElement;
     // if(active) if(active.className.endsWith("cursor-text")){
@@ -2460,6 +2461,9 @@ document.addEventListener("keydown",e=>{
     if(menusOpen.length) if(!document.fullscreenElement){
         if(k == "escape"){
             closeAllMenus();
+        } else if (k == "enter") {
+            closeThis = menusOpen.slice().reverse().find(v=>v instanceof ConfirmMenu || v instanceof DeleteMenu) as ConfirmMenu | DeleteMenu;
+            closeThis.confirmChoice();
         }
         return;
     }

@@ -282,6 +282,11 @@ class DeleteMenu extends Menu {
     return this;
   }
 
+  confirmChoice() {
+    deleteProgress(this.cID);
+    this.close();
+  }
+
   onClose(): void {
     cancelProgressDeletion();
   }
