@@ -41,7 +41,7 @@ return [
     new BE_SetOpacity(["selector",0]),
     new BE_GlobalBubble(`Everything within these curly braces will be the i["styles"] that we add to those elements.`),
     new BE_SetOpacity([".","style1","val1"],1),
-    new BE_GlobalBubble(`All styles follow this same pattern:\ni[style-name: value;]\ni[And we instead of using spaces CSS uses dashes (-).]`),
+    new BE_GlobalBubble(`All styles follow this same pattern:\ni[style-name: value;]\ni[And instead of using spaces, CSS uses dashes (-).]`),
     new BE_GlobalBubble(`This whole structure is called a h[Style Set], because it contains a set of properties or styles.`),
     // new BE_GlobalBubble(`This is the basic structure of `),
 

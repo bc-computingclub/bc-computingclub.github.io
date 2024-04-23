@@ -6,20 +6,20 @@ return [
         new AddFileTask("index.html"),
         new BubbleTask("Let's start by looking at some various text elements."),
 
-        new AddGenericCodeTask("<h1>Heading</h1>","html","Headings just act as larger text within your page"),
+        new AddGenericCodeTask("<h1>Heading</h1>","html","Headings just act as larger text within your page."),
         new AddTutorSideText("\n\n"),
-        new AddGenericCodeTask("<p>This is a paragraph</p>","html","Paragraph elements are for standard text"),
+        new AddGenericCodeTask("<p>This is a paragraph</p>","html","Paragraph elements are for standard text."),
         new AddTutorSideText("\n\n"),
-        new AddGenericCodeTask("<u>This is underlined</u>","html","You can use the &lt;u&gt; element to create underlined text"),
+        new AddGenericCodeTask("<u>This is underlined</u>","html","You can use the &lt;u&gt; element to create underlined text."),
         new AddTutorSideText("\n\n"),
-        new AddGenericCodeTask("<b>This is bolded</b>","html","You can use the &lt;b&gt; element to create bolded text"),
-        new DoRefreshTask("Refresh to see how they all look")
+        new AddGenericCodeTask("<b>This is bolded</b>","html","You can use the &lt;b&gt; element to create bolded text."),
+        new DoRefreshTask("Refresh to see how they all look.")
         // new ChangePreviewURLTask("Change the URL to our new page"),
         // new InfiniteTask()
     ]),
     new LE_AddGBubble([
         "What if we wanted to underline the &lt;h1&gt; element?",
-        "Well, a nice and imporatnt thing about HTML is that you can put elements inside of other elements, like a container or wrapper around them.",
+        "Well, a nice and important thing about HTML is that you can put elements inside of other elements, like a container or wrapper around them.",
         "i[Let's wrap the &lt;u&gt; element around our &lt;h1&gt;.]"
     ],BubbleLoc.global,[
         new MoveCursorTo(1,1),
@@ -79,8 +79,8 @@ return [
         new AddIgnoreCode([new CP_MoveBy(0,1,true),new CP_LineBelow(1)]),
         new AddCode([
             new CP_HTML("body",true,true)
-        ],"The body is where all of your elements that actually make up the physical page go, as well as javascript files that we'll use to control these"),
-        new BubbleTask("If this seems like a lot of information don't worry, it is, but it's also critical to every html page and we'll be using it in every web tutorial from now on"),
+        ],"The body is where all of your elements that actually make up the physical page go, as well as javascript files that we'll use to control these."),
+        new BubbleTask("If this seems like a lot of information don't worry, it is, but it's also critical to every html page and we'll be using it in every web tutorial from now on."),
 
         new AddFileTask("page3.html"),
         new ChangePreviewURLTask("Change the preview to display our page3.html file","page3.html"),

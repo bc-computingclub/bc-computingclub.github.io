@@ -695,3 +695,13 @@
 ### 4/17/24
 - fixed filter on gettingSubmissions server side (My Submissions)
 - fixed opening submission on submissions page wouldn't load file in the editor after the first time it was opened
+- fixed some typos in second lesson
+- fixed opening 10th challenge
+
+### 4/22/24
+- added popup about case sensitivity when that's an issue upon creating files prompted by the tutor
+- fixed propagation stuff when hitting enter in the inputMenu
+- added when creating new files the editor for the newly created file gets focused and you can immidiately start typing
+- fixed timing delay of saving projects or lessons to not go super quick when you have a slower connection to the server
+- added some periods to the ends of sentences from the tutor in the second lesson
+- fixed bug where you could edit the tutor's code position after resuming

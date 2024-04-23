@@ -510,6 +510,16 @@ class AddFileTask extends Task{
         return res;
     }
     check(name:string){
+        if(name != this.name){
+            if(name.toLowerCase() == this.name.toLowerCase()){
+                // got captitalization wrong
+                setTimeout(()=>{
+                    addBubbleAt(BubbleLoc.global,`<div style="display:flex;align-items:center;gap:10px"><div class="material-symbols-outlined">warning</div>Hold on there.</div>\nFile names are "case sensitive" which means that:\n<pre>h[${name} ≠ ${this.name}]</pre>\ni[File names are typically all lowercase.]`,undefined,{
+                        click:true
+                    });
+                },50);
+            }
+        }
         return (name == this.name);
     }
     cleanup(): void {
@@ -879,7 +889,8 @@ class AddCode extends Task{
                     let b2 = addBubbleAt(BubbleLoc.xy,preText,this.dir,{
                         x:r2.x+r2.width/2 + 17 + 12,
                         y:r2.y+r2.height/2 - 32,
-                        click:true
+                        click:true,
+                        inEditor:lesson.tut.getCurEditor()
                     });
                     await b2.clickProm;
                     await wait(150);
@@ -953,7 +964,8 @@ class AddGenericCodeTask extends Task{
             let b2 = addBubbleAt(BubbleLoc.xy,preText,this.dir,{
                 x:r2.x+r2.width/2 + 17,
                 y:r2.y+r2.height/2 - 22,
-                click:true
+                click:true,
+                inEditor:lesson.tut.getCurEditor()
             });
             await b2.clickProm;
             await wait(150);
@@ -1311,7 +1323,8 @@ class BubbleTask extends Task{
         this.b = addBubbleAt(BubbleLoc.xy,this.title,this.dir,{
             x:r2.x+r2.width/2 + 17 + tutMouse.getBoundingClientRect().width/2,
             y:r2.y+r2.height/2 - 22 - LINE_SCALE/2+2,
-            click:true
+            click:true,
+            inEditor:lesson.tut.getCurEditor()
         });
         await this.b.clickProm;
 
@@ -3099,6 +3112,7 @@ class Lesson{
         document.body.classList.remove("hide-bubbles");
         await DWait(500);
         tutMouse.style.visibility = null;
+        endEdit();
     }
 
     // 
@@ -4300,6 +4314,7 @@ function updateBubble(i:number){
         x = b.ops.x;
         y = b.ops.y - 60;
     }
+    // if(b.ops?.inEditor) y -= b.ops.inEditor.getScrollTop(); // buggy for now, not going to be super easy to implement correctly so I'll put it off for now
 
     b.e.style.left = x+"px";
     b.e.style.top = y+"px";

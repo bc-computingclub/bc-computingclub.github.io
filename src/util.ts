@@ -1003,6 +1003,7 @@ class Project{
             let q = this.findFile(name);
             if(q){
                 q.open();
+                if(PAGE_ID == PAGEID.lesson ? !lesson.tut.files.includes(q) : true) q.editor.focus();
                 return q;
             }
         }
@@ -1024,7 +1025,7 @@ class Project{
             f.setSaved(true);
             f.setTemp(false);
             if(this == lesson.p) if(lesson.hasLoaded){
-                console.error("...ran saved");
+                // console.error("...ran saved");
                 saveLesson();
             }
         }
@@ -1032,6 +1033,7 @@ class Project{
         if(isNew){
             if(PAGE_ID == PAGEID.editor) saveProject();
         }
+        if(PAGE_ID == PAGEID.lesson ? !lesson.tut.files.includes(f) : true) if(f.editor) f.editor.focus();
         return f;
     }
     createFolder(name:string,folder?:FFolder,isNew=true){
@@ -2382,8 +2384,10 @@ async function saveProject(isQuick=false){
     project.files.forEach(v=>v.setSaved(true));
 
     if(!isQuick){
-        if(time < 50) delay = 300;
-        await wait(delay);
+        // if(time < 50) delay = 300;
+        // if(time < 300) delay = 300-time;
+        // await wait(delay);
+        await wait(300);
     }
 
     b_save.children[0].textContent = "save";
@@ -3315,6 +3319,9 @@ class InputMenu extends Menu {
         // when enter key is pressed, send input to confirmChoice
         inputObj.inp.addEventListener("keydown", (e) => {
             if (e.key == "Enter") {
+                e.preventDefault();
+                e.stopImmediatePropagation();
+                e.stopPropagation();
                 this.confirmChoice(inputObj.inp.value);
             }
         });
