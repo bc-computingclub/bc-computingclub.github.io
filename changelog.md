@@ -705,3 +705,15 @@
 - fixed timing delay of saving projects or lessons to not go super quick when you have a slower connection to the server
 - added some periods to the ends of sentences from the tutor in the second lesson
 - fixed bug where you could edit the tutor's code position after resuming
+
+### 5/4/24
+- [BUG] - if the tutor switches to a file and then you switch the tutor's active file to view the other one and then confirm, then the tutor will start typing like normal but in the wrong file
+    - I think I need to make a field on Lesson that is tutActiveFile:FFile and so when the tutor starts a Task then it will check if lesson.tut.curFile == lesson.tutActiveFile and if it's not then the tutor will go back to the other file first
+    - with this I also need to make it so the user cannot switch the active file being shown of the tutor while the tutor is typing (not sure how I'm going to detect that)
+    
+- added EnsureIndent CodePart so that the tutor will indent to the specified amount if needed (whether they overshot it or undershot)
+- fixed 3rd lesson to use EnsureIndent for adding the link element
+- fixed tutor won't select the most recent file by added one frame delay during lesson load
+- [BUG] - sometimes hard to reproduce (seems to only happen on Firefox) - when resuming a lesson if you try to type in any of your files it'll type in the first file and be kinda glitchy with requiring a double click to focus on the first file
+- added Comment CodePart for toggling comments at the current line of the tutor
+- continued work on Lesson 4

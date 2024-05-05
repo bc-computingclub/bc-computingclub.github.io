@@ -29,14 +29,18 @@ return [
         ],"We can also make our text italic and bold by using the font-style and font-weight properties."),
         new DoRefreshTask("If you haven't already, refresh to see all the changes we've made."),
         new AddCode([
-            // new CP_MoveBy
-        ],"You can also quickly comment out or disable lines for testing by pressing h[Ctrl/Cmd + /].")
+            new CP_Comment()
+        ],"You can also quickly comment out or disable lines for testing by pressing\nh[Ctrl/Cmd + /].\nComments are ignored so they're an easy way to quickly disable code!"),
+        new AddIgnoreCode([
+            new CP_Comment()
+        ])
     ]),
     new LE_AddGBubble([
-        "So, now we have all our text customized, what if we wanted to change just h[i[one]] of them?\ni[For example, what if we wanted to change the highlight color of our 3rd paragraph element to green?]"
+        "So, now that we have all our text customized, what if we wanted to change just h[i[one]] of them?\ni[For example, what if we wanted to change the highlight color of our 3rd paragraph element to light blue?]"
     ]),
     new LE_AddGBubble([
-        "Well, in order to do this we can put an id on our element so we can target that one specifically from CSS.",
+        "Well, in order to do this we can put an h[id] on our element so we can target i[that one specifically] from CSS."
+    ],BubbleLoc.global,[
         new SwitchFileTask("index.html"),
         new AddIgnoreCode([
             new CP_MoveBy(8,9),

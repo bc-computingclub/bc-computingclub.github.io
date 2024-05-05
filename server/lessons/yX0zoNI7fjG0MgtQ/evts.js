@@ -42,6 +42,7 @@ return [
         new SwitchFileTask("index.html","Let's go back to our index page."),
         new AddIgnoreCode([
             new CP_MoveTo(8,3),
+            new CP_EnsureIndent(2)
         ]),
         new AddCode([
             new CP_Text('<link rel="stylesheet" href="style.css">')

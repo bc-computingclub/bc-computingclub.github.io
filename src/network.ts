@@ -202,6 +202,7 @@ async function restoreLessonFiles(lesson:Lesson){
     // return data;
 
     // select the first file to be consistent (usually this will be the index.html)
+    await wait(0);
     if(lesson.p.files.length) lesson.p.files[0].open();
     if(lesson.tut.files.length) lesson.tut.files[0].open();
 }

@@ -3759,3 +3759,27 @@ async function getChallenges() {
       return;
     }
 }
+
+// String util
+function countChars(str:string,char:string,start?:number,end?:number){
+    if(start == null) start = 0;
+    if(end == null) end = str.length;
+    let amt = 0;
+    let s = str.substring(start,end);
+    for(let i = 0; i < s.length; i++){
+        if(s[i] == char) amt++;
+    }
+    return amt;
+}
+function countStartingChars(str:string,char:string,start?:number,end?:number){
+    if(start == null) start = 0;
+    if(end == null) end = str.length;
+    let amt = 0;
+    let s = str.substring(start,end);
+    for(let i = 0; i < s.length; i++){
+        let c = s[i];
+        if(c != char) return amt;
+        else amt++;
+    }
+    return amt;
+}

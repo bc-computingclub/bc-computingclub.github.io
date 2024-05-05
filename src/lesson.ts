@@ -762,6 +762,34 @@ class CP_Text extends CodePart{
         // moveTutMouseTo(58 + pos.column*7.7,115 + pos.lineNumber*16.5);
     }
 }
+class CP_EnsureIndent extends CodePart{
+    constructor(amt:number){
+        super();
+        this.amt = amt;
+    }
+    amt:number;
+    async run(editor: monaco.editor.IStandaloneCodeEditor): Promise<void> {
+        let pos = editor.getPosition();
+        let a = getEditActions(editor);
+        let line = a.getLine(pos.lineNumber);
+        let tabSize = a.getTabSize();
+        let count = countStartingChars(line," ");
+        let curTabs = Math.floor(count/tabSize);
+        startEdit();
+        a.indent(this.amt-curTabs);
+        endEdit();
+    }
+}
+class CP_Comment extends CodePart{
+    constructor(){
+        super();
+    }
+    async run(editor: monaco.editor.IStandaloneCodeEditor): Promise<void> {
+        startEdit();
+        editor.trigger("comment","editor.action.commentLine",null);
+        endEdit();
+    }
+}
 class CP_HTML extends CodePart{
     constructor(tag:string,endAtCenter:boolean,open:boolean,text?:string){
         super();
@@ -793,6 +821,26 @@ class CP_HTML extends CodePart{
         if(this.endAtCenter) await moveEditorCursorBy(editor,-3-this.tag.length,0);
         if(this.open) await typeText(editor,"\n");
     }
+}
+class TutEditorActions{
+    constructor(editor:Editor){
+        this.editor = editor;
+    }
+    editor:Editor;
+    getLine(line:number){
+        return this.editor.getModel().getLineContent(line);
+    }
+    indent(amt:number){
+        for(let i = 0; i < Math.abs(amt); i++){
+            this.editor.trigger("indent",amt > 0 ? "editor.action.indentLines" : "editor.action.outdentLines",null);
+        }
+    }
+    getTabSize(){
+        return this.editor.getModel().getOptions().tabSize;
+    }
+}
+function getEditActions(editor:Editor){
+    return new TutEditorActions(editor);
 }
 function getTutCursor(){
     return lesson.tut.parent.querySelector(".cursor");
