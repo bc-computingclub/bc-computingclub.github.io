@@ -265,6 +265,7 @@ body.hide-bubbles .tut-mouse{
     filter:var(--theme-inv-filter);
 
     transition:all 0.35s ease-out;
+    /* transition:all 0.35s; */
 }
 
 /*  */

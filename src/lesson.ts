@@ -571,6 +571,7 @@ async function typeText(editor:Editor,text:string,speedScale=1,moveMouseToEnd=fa
         editor.updateOptions({readOnly:true});
         lesson.tut.curFile.curRow = pos.lineNumber;
         lesson.tut.curFile.curCol = pos.column;
+        // moveTutMouseTo(pos.lineNumber,pos.column,true);
         endEdit();
     }
     else for(let i = 0; i < text.length; i++){
@@ -587,6 +588,7 @@ async function typeText(editor:Editor,text:string,speedScale=1,moveMouseToEnd=fa
         lesson.tut.curFile.curCol = pos.column;
         // await wait(Math.ceil(30+Math.random()*100));
         // await DWait(0);
+        // moveTutMouseTo(pos.lineNumber,pos.column,true);
         endEdit();
         await wait(getTypeSpeed(text?.length ?? 5)*speedScale);
     }
@@ -822,6 +824,152 @@ class CP_HTML extends CodePart{
         if(this.open) await typeText(editor,"\n");
     }
 }
+class CP_Bubble extends CodePart{
+    constructor(text:string,dir="top"){
+        super();
+        this.text = text;
+        this.dir = dir;
+    }
+    text:string;
+    dir:string;
+    async run(editor: monaco.editor.IStandaloneCodeEditor): Promise<void>{
+        let ref = getTutCursor();
+        let r2 = ref.getBoundingClientRect();
+        let b = addBubbleAt(BubbleLoc.xy,this.text,this.dir,{
+            x:r2.x+r2.width/2 + 17 + tutMouse.getBoundingClientRect().width/2,
+            y:r2.y+r2.height/2 - 22 - LINE_SCALE/2+2,
+            click:true,
+            inEditor:lesson.tut.getCurEditor()
+        });
+        await b.clickProm;
+        closeBubble(b);
+    }
+}
+class CP_ShowHover extends CodePart{
+    constructor(){
+        super();
+    }
+    async run(editor: monaco.editor.IStandaloneCodeEditor): Promise<void> {
+        await wait(250);
+        let a = getEditActions(editor);
+        a.showDebugHover();
+        await wait(250);
+    }
+}
+class ShowHoverTask extends Task{
+    constructor(){
+        super("Show Hover");
+    }
+    async start(): Promise<string | void> {
+        await super.start();
+
+        await showTutMouse();
+        let editor = lesson.tut.getCurEditor();
+        let a = getEditActions(editor);
+        if(editor){
+            await wait(250);
+            a.showDebugHover();
+            await wait(250);
+        }
+        
+        await this.finish();
+
+        if(a.editor) a.simulateMouseEnterAndLeave();
+        await hideTutMouse();
+    }
+}
+class CP_Delete extends CodePart{
+    constructor(amt:number,toRight=false){
+        super();
+        this.amt = amt;
+        this.toRight = toRight;
+    }
+    amt:number;
+    toRight:boolean;
+    async run(editor: monaco.editor.IStandaloneCodeEditor): Promise<void> {
+        let action = (this.toRight ? "deleteRight" : "deleteLeft");
+        let speed = getTypeSpeed(this.amt);
+        for(let i = 0; i < this.amt; i++){
+            startEdit();
+            editor.trigger("keyboard",action,null);
+            endEdit();
+            await wait(speed);
+        }
+        await wait(200);
+    }
+}
+class CP_Select extends CodePart{
+    constructor(row1:number,col1:number,row2:number,col2:number,isInstant=false){
+        super();
+        this.row1 = row1;
+        this.col1 = col1;
+        this.row2 = row2;
+        this.col2 = col2;
+        this.isInstant = isInstant;
+    }
+    row1:number;
+    col1:number;
+    row2:number;
+    col2:number;
+    isInstant:boolean;
+    async run(editor: monaco.editor.IStandaloneCodeEditor): Promise<void> {
+        if(this.isInstant){
+            startEdit();
+            let range = new monaco.Range(this.row1,this.col1,this.row2,this.col2);
+            editor.setSelection(range);
+            endEdit();
+        }
+        else{
+            let totalTime = 350; // time it takes to move the mouse
+            let inc = 10;
+            let time = totalTime/inc;
+            let x = this.col1;
+            let y = this.row1;
+            let dx = this.col2-this.col1;
+            let dy = this.row2-this.row1;
+            dx /= inc;
+            dy /= inc;
+            
+            await showTutMouse();
+            // tutMouse.style.transitionTimingFunction = "none";
+            await wait(250);
+            await moveTutMouseTo(this.col1,this.row1);
+            await wait(250);
+
+            let range = new monaco.Range(this.row1,this.col1,this.row1,this.col1);
+            
+            moveTutMouseTo(this.col2,this.row2);
+            for(let i = 0; i < inc; i++){
+                x += dx;
+                y += dy;
+                let row = Math.round(y);
+                let col = Math.round(x);
+                
+                range = new monaco.Range(this.row1,this.col1,row,col);
+                startEdit();
+                editor.setSelection(range);
+                endEdit();
+
+                await wait(time);
+            }
+            await wait(500); // extra delay between making the selection and then hiding the cursor
+
+            await hideTutMouse();
+            // tutMouse.style.transitionTimingFunction = null;
+        }
+        await wait(350);
+    }
+}
+class CP_Wait extends CodePart{
+    constructor(time:number){
+        super();
+        this.time = time;
+    }
+    time:number;
+    async run(editor: monaco.editor.IStandaloneCodeEditor): Promise<void> {
+        await wait(this.time);
+    }
+}
 class TutEditorActions{
     constructor(editor:Editor){
         this.editor = editor;
@@ -837,6 +985,32 @@ class TutEditorActions{
     }
     getTabSize(){
         return this.editor.getModel().getOptions().tabSize;
+    }
+
+    showDebugHover(){
+        this.editor.trigger("hover_info","editor.action.showHover",null);
+    }
+    simulateMouseEnterAndLeave(){
+        let editorDomNode = this.editor.getDomNode();
+        
+        let mouseEnterEvent = new MouseEvent("mouseenter",{
+            bubbles:true,
+            cancelable:false,
+            view:window
+        });
+      
+        // Dispatch the mouse enter event
+        editorDomNode.dispatchEvent(mouseEnterEvent);
+      
+        // Create a new mouse leave event
+        let mouseLeaveEvent = new MouseEvent("mouseleave",{
+            bubbles:true,
+            cancelable:false,
+            view:window
+        });
+      
+        // Dispatch the mouse leave event
+        editorDomNode.dispatchEvent(mouseLeaveEvent);
     }
 }
 function getEditActions(editor:Editor){
@@ -1226,20 +1400,24 @@ class MoveCursorTo extends Task{
         super.start();
         
         let editor = lesson.tut.getCurEditor();
-        lesson.tut.curFile.blockPosChange = false;
 
-        // let pos = editor.getPosition();
         await showTutMouse();
-        // await moveTutMouseTo(58 + this.col*7.7,115 + this.line*16.5);
-        await moveTutMouseToXY(COL_OFF + this.col*COL_SCALE - editor.getScrollLeft(), LINE_OFF + this.line*LINE_SCALE);
+        lesson.tut.curFile.blockPosChange = false;
+        editor.setPosition({lineNumber:this.line,column:this.col});
+        lesson.tut.curFile.blockPosChange = true;
+        await syncMousePos(editor);
         await wait(150);
         await hideTutMouse();
         await wait(200);
-        editor.setPosition(editor.getPosition().with(this.line,this.col));
-        let pos = editor.getPosition();
-        lesson.tut.curFile.curRow = pos.lineNumber;
-        lesson.tut.curFile.curCol = pos.column;
-        lesson.tut.curFile.blockPosChange = true;
+        // await showTutMouse();
+        // await moveTutMouseToXY(COL_OFF + this.col*COL_SCALE - editor.getScrollLeft(), LINE_OFF + this.line*LINE_SCALE);
+        // await wait(150);
+        // await hideTutMouse();
+        // await wait(200);
+        // editor.setPosition(editor.getPosition().with(this.line,this.col));
+        // let pos = editor.getPosition();
+        // lesson.tut.curFile.curRow = pos.lineNumber;
+        // lesson.tut.curFile.curCol = pos.column;
 
         // moveTutMouseTo(58 + pos.column*7.7,115 + pos.lineNumber*16.5);
 
@@ -3775,7 +3953,18 @@ async function showTutMouse(isQuick=false){
     tutMouse.style.opacity = "1";
     await wait(isQuick?75:350);
 }
-async function moveTutMouseTo(col:number,row:number){
+async function moveTutMouseTo(col:number,row:number,immidiate=false){
+    // if(lesson.tut.curFile){
+    //     lesson.tut.curFile.curCol = col;
+    //     lesson.tut.curFile.curRow = row;
+    // }
+    if(lesson.tut.curFile){
+        let editor = lesson.tut.getCurEditor();
+        editor.setPosition({lineNumber:row,column:col});
+        syncMousePos(editor,true);
+    }
+    await wait(350);
+    return;
     // 
     // let editor = lesson.tut.getCurEditor();
     // forceEditorUpdate(editor);
@@ -3805,12 +3994,15 @@ async function moveTutMouseTo(col:number,row:number){
     //     editor.setPosition({column:col,lineNumber:row});
     //     endEdit();
     // }
-    await wait(350);
+    if(!immidiate) await wait(350);
 }
-async function moveTutMouseToXY(x:number,y:number){
+async function moveTutMouseToXY(x:number,y:number,immidiate=false){
+    syncMousePos(lesson.tut.getCurEditor());
+    await wait(350);
+    return;
     tutMouse.style.left = x+"px";
     tutMouse.style.top = y+"px";
-    await wait(350);
+    if(!immidiate) await wait(350);
 }
 hideTutMouse();
 

@@ -177,10 +177,16 @@ export const progressTree = new PTreeFolder("root",[],{
         new PTreeLesson("Basic HTML Structure","aw5HFgPdsxJPHMcg",35,20,[
             new PTreeLink("yX0zoNI7fjG0MgtQ")
         ]),
+        // new PTreeLesson("Simple Styling","yX0zoNI7fjG0MgtQ",70,-5,[
+        //     new PTreeLink("_dummy_PpcVdfjdzo7TfWBL",true)
+        // ]),
+        // new PTreeLesson("ID & Class Attributes","_dummy_PpcVdfjdzo7TfWBL",100,-35,[
+        //     new PTreeLink("_dummy04",true)
+        // ]),
         new PTreeLesson("Simple Styling","yX0zoNI7fjG0MgtQ",70,-5,[
-            new PTreeLink("_dummy_PpcVdfjdzo7TfWBL",true)
+            new PTreeLink("PpcVdfjdzo7TfWBL",true)
         ]),
-        new PTreeLesson("ID & Class Attributes","_dummy_PpcVdfjdzo7TfWBL",100,-35,[
+        new PTreeLesson("ID & Class Attributes","PpcVdfjdzo7TfWBL",100,-35,[
             new PTreeLink("_dummy04",true)
         ]),
 

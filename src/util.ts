@@ -1574,6 +1574,23 @@ function createFolderListItem(f:FFolder){
     // });
 }
 
+let _tutEditorOffsetTop = 125.075; // this is hardcoded just for speed sake but can be calculated with tut's editor.getDOMNode().getBoundingClientRect().top
+async function syncMousePos(editor:Editor,noShow=false){
+    forceShowCursor();
+    // tutMouse.style.transitionDuration = "0s";
+    let elm = editor.getDomNode();
+    let pos = editor.getPosition();
+    let coords = editor.getScrolledVisiblePosition(pos);
+    // await moveTutMouseToXY(coords.left,coords.top+_tutEditorOffsetTop);
+    tutMouse.style.left = (coords.left)+"px";
+    tutMouse.style.top = (coords.top+_tutEditorOffsetTop)+"px";
+    if(!noShow){
+        await wait(350);
+        // showTutMouse(true);
+    }
+    // tutMouse.style.transitionDuration = "0.35s";
+}
+
 class FItem{
     constructor(p:Project,name:string,folder:FFolder){
         this.p = p;
@@ -1851,6 +1868,20 @@ class FFile extends FItem{
                 editor.onDidChangeCursorPosition(e=>{
                     // if(t._mouseOver) editor.setPosition({column:1,lineNumber:1});
                     if(t.blockPosChange) editor.setPosition({column:this.curCol,lineNumber:this.curRow});
+                    else{
+                        lesson.tut.curFile.curCol = e.position.column;
+                        lesson.tut.curFile.curRow = e.position.lineNumber;
+                    }
+                    if(lesson) if(!lesson.isResuming){
+                        syncMousePos(editor);
+                        // moveTutMouseTo(this.curCol,this.curRow);
+                    }
+                });
+                editor.onDidContentSizeChange(e=>{
+                    syncMousePos(editor);
+                });
+                editor.onDidScrollChange(e=>{
+                    syncMousePos(editor);
                 });
                 // editor.onMouseMove(e=>{
                 //     t._mouseOver = true;
@@ -1939,15 +1970,28 @@ class FFile extends FItem{
     }
 }
 
+let _cursorTO:number;
+function forceShowCursor(){
+    let list = document.querySelectorAll(".custom-cursor");
+    for(const c of list){
+        c.classList.add("hide");
+    }
+    cursorLoop();
+}
 function cursorLoop(){
+    if(_cursorTO != null){
+        clearTimeout(_cursorTO);
+        _cursorTO = null;
+    }
+    
     let delay = 500;
 
     let list = document.querySelectorAll(".custom-cursor");
     for(const c of list){
-        if(c.classList.toggle("hide")) delay = 500;
+        c.classList.toggle("hide");
     }
     
-    setTimeout(cursorLoop,delay);
+    _cursorTO = setTimeout(cursorLoop,delay);
 }
 cursorLoop();
 

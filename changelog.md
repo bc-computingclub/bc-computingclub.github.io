@@ -717,3 +717,17 @@
 - [BUG] - sometimes hard to reproduce (seems to only happen on Firefox) - when resuming a lesson if you try to type in any of your files it'll type in the first file and be kinda glitchy with requiring a double click to focus on the first file
 - added Comment CodePart for toggling comments at the current line of the tutor
 - continued work on Lesson 4
+
+### 5/14/24
+- fixed issue where leaving a project and then coming back and then saving would automatically add 15 minutes to the time spent because it included the time you were away
+    - seems like this was already implemented for lessons
+- did more work on the 4th lesson
+- added CP_Bubble, CP_ShowHover, ShowHoverTask, CP_Delete (animated), CP_Select (animated but not perfect yet), and CP_Wait (Code Parts for the AddCode task)
+- added showDebugHover, and simulateMouseEnterAndLeave for opening and closing the ctrl+k, ctrl+i menu
+- ! - fixed moveCursorTo Task and the moveTutMouseTo and moveTutMouseToXY helper functions so that it uses global for to current line and column number instead of calculating the x,y location to go to on the screen which became inconsistent at times with other mouse move actions for various tasks
+- !!! - added syncMousePos() which gets called when trying to make the mouse cursor go somewhere, when the cursor location of monaco changes, when the content size of monaco changes, or when monaco is scrolled
+    - this new function also calls a new forceShowCursor() which resets the timer on the fake tutor caret to be shown so the caret stays there while the tutor is typing instead of blinking while typing
+    - this unifies the positioning of the cursor of the tutor so it doesn't move up and down slightly while doing different actions
+    - the tutors mouse will always come from the correct spot now (where the caret last was)
+    - now accounts for things like in CSS files where the color previews would shift the content around after it was done typing
+    - better accounts for scrolling now

@@ -773,6 +773,10 @@ io.on("connection",socket=>{
 
         if(!user.projects.includes(p)) user.projects.push(p);
 
+        // p.meta.wls = new Date().toISOString(); // resetting this makes it so time from closing the project to reopening it isn't included in the time spent on the project
+        p.meta.updateWhenLastSaved();
+        await user.saveToFile();
+
         call(p.serializeGet(true),null,user.canEdit(p.meta));
 
         user.addToRecents(p.pid);
