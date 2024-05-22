@@ -939,7 +939,7 @@ class CP_Select extends CodePart{
             let range = new monaco.Range(this.row1,this.col1,this.row1,this.col1);
             
             moveTutMouseTo(this.col2,this.row2);
-            for(let i = 0; i < inc; i++){
+            for(let i = 0; i < inc; i++){                
                 x += dx;
                 y += dy;
                 let row = Math.round(y);
@@ -950,7 +950,7 @@ class CP_Select extends CodePart{
                 editor.setSelection(range);
                 endEdit();
 
-                await wait(time);
+                await wait(time*(0.01+(inc/(i+1))));
             }
             await wait(500); // extra delay between making the selection and then hiding the cursor
 

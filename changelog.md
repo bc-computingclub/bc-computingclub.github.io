@@ -731,3 +731,4 @@
     - the tutors mouse will always come from the correct spot now (where the caret last was)
     - now accounts for things like in CSS files where the color previews would shift the content around after it was done typing
     - better accounts for scrolling now
+

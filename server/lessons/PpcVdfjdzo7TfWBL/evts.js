@@ -60,7 +60,7 @@ return [
         new ShowHoverTask(),
         new DoRefreshTask("If you refresh, only our 3rd paragraph element should have the lightblue background color."),
         // 
-        new BubbleTask("We'll look more into selectors in later tutorials, but keep in mind that in a selector b[spaces matter]."),
+        new BubbleTask("We'll look more into selectors in the next tutorials, but keep in mind that in a selector, b[spaces matter]."),
         new AddCode([
             new CP_MoveTo(7,13),
             new CP_Delete(4),
