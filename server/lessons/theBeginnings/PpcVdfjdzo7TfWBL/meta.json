@@ -13,5 +13,13 @@
     },
     "finalInstance": null,
     "boards": [],
-    "continueFrom":"yX0zoNI7fjG0MgtQ"
+    "continueFrom":"yX0zoNI7fjG0MgtQ",
+    "x":100,
+    "y":-35,
+    "req":[
+        {
+            "lid":"yX0zoNI7fjG0MgtQ",
+            "flip":true
+        }
+    ]
 }

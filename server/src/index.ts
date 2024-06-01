@@ -1,10 +1,10 @@
 import { io, server, CredentialResData, User, users, getUserBySock, sanitizeEmail, getProject, attemptToGetProject, access, readdir, read, mkdir, removeFile, write, ULFile, ProjectMeta, allProjects, UserChallengeData, Project, getProject2, ULItem, ULFolder, rename, removeFolder, getDefaultProjectMeta, getProjectFromHD, lessonMetas, LessonMeta, loadProject, LessonMode, getLessonMeta, writeLessonMeta, deleteLessonMeta, socks, internalCP, internalCPDir } from "./connection";
 import { CSubmission, Challenge, ChallengeData, ChallengeGet, challenges } from "./s_challenges";
-import {LessonData, progressTree, ptreeMap} from "./s_lesson";
+import {LessonData, PTreeFolder, getLessonFolder, globalLessonFolders, ptreeMap} from "./s_lesson";
 import fs, { copyFile } from "fs";
 import { createInterface } from "readline";
 import crypto from "crypto";
-import { createLesson } from "./s_util";
+import { createGuidedProject, createLesson } from "./s_util";
 
 function valVar(v:any,type:string){
     if(v == null) return false;
@@ -319,13 +319,10 @@ io.on("connection",socket=>{
         }
         
         let list = path.split("/");
-        let folder = progressTree;
-        for(const key of list){
-            folder = folder.folders[key];
-            if(!folder){
-                call(1); // folder not found
-                return;
-            }
+        let folder = getLessonFolder(list);
+        if(!folder){
+            call(1); // folder not found
+            return;
         }
 
         // for(const l of folder.lessons){
@@ -406,14 +403,21 @@ io.on("connection",socket=>{
         }
 
         let list = path.split("/");
-        let folder = progressTree;
-        for(const key of list){
-            folder = folder.folders[key];
-            if(!folder){
-                call(1); // folder not found
-                return;
-            }
+
+        let folder = getLessonFolder(list);
+        if(!folder){
+            call(1);
+            return;
         }
+
+        // let folder = progressTree;
+        // for(const key of list){
+        //     folder = folder.folders[key];
+        //     if(!folder){
+        //         call(1); // folder not found
+        //         return;
+        //     }
+        // }
 
         for(const l of folder.lessons){
             if(!l.ops) continue;
@@ -429,8 +433,9 @@ io.on("connection",socket=>{
         
         call(folder.lessons);
     });
-    socket.on("getLearnData",async (call:(data:any)=>void)=>{
+    socket.on("getLearnData",async (lids:string[],call:(data:any)=>void)=>{
         if(!valVar(call,"function")) return;
+        if(!valVar2(lids,"array",call)) return;
         
         let user = getUserBySock(socket.id);
         if(!user){
@@ -444,12 +449,12 @@ io.on("connection",socket=>{
         //     return;
         // }
         // for(const lid of startedLessons)
-        let list = await readdir("../lessons");
-        if(!list){
-            call(1);
-            return;
-        }
-        for(const lid of list){
+        // let list = await readdir("../lessons");
+        // if(!list){
+        //     call(1);
+        //     return;
+        // }
+        for(const lid of lids){
             let data = await getLessonMeta(user.uid,lid);
             ar[lid] = data;
         }
@@ -1873,6 +1878,13 @@ rl.on("line",async (line)=>{
                     return;
                 }
                 createLesson(s[2]);
+                break;
+            case "guided_project":
+                if(!s[2]){
+                    console.log("Invalid project name");
+                    return;
+                }
+                createGuidedProject(s[2]);
                 break;
             default:
                 console.log("Unknown type to create: ",type);

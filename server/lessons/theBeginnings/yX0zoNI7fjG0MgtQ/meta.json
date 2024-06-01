@@ -12,5 +12,12 @@
         ]
     },
     "finalInstance": null,
-    "boards": ["css_board","attr_board"]
+    "boards": ["css_board","attr_board"],
+    "x":70,
+    "y":-5,
+    "req":[
+        {
+            "lid":"aw5HFgPdsxJPHMcg"
+        }
+    ]
 }

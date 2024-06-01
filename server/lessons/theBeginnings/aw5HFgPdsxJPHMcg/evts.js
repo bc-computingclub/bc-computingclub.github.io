@@ -1,4 +1,4 @@
-import * as a from "../../../src/lesson";
+import * as a from "../../../../src/lesson";
 return [
     new LE_AddGBubble([
         "First, let's make our index.html file."

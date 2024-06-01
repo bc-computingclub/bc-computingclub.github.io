@@ -12,5 +12,7 @@
         ]
     },
     "finalInstance": null,
-    "boards": ["board0"]
+    "boards": ["board0"],
+    "x":0,
+    "y":0
 }

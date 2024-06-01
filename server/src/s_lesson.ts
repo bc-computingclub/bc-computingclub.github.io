@@ -1,3 +1,6 @@
+import { read, readdir } from "./connection";
+import { LessonType } from "./s_util";
+
 export class TextSection{
     constructor(text:string[]){
         this.text = text;
@@ -127,11 +130,12 @@ class PTreeLesson{
 }
 type PTLessonOps = {
     unlocked?:boolean;
+    type?:LessonType;
 };
 type PTreeOps = {
     initialUnlocks?:string[]
 };
-class PTreeFolder{
+export class PTreeFolder{
     constructor(name:string,lessons:PTreeLesson[]=[],folders:Record<string,PTreeFolder>={},ops:PTreeOps={}){
         this.name = name;
         this.lessons = lessons;
@@ -148,7 +152,61 @@ class PTreeFolder{
     ops:PTreeOps;
 }
 
-export const progressTree = new PTreeFolder("root",[],{
+export let globalLessonFolders = new Map<string,PTreeFolder>();
+export function getLessonFolder(keys:string[]){
+    let folder = globalLessonFolders.get(keys[0]);
+    for(let i = 1; i < keys.length; i++){
+        let key = keys[i];
+        folder = folder?.folders[key];
+    }
+    return folder;
+}
+
+async function registerLessonFolder(name:string,firstLID:string,pathKeys:string[]=[],ops?:PTreeOps){
+    let path = "../lessons/"+name+"/";
+    for(const key of pathKeys){
+        path += key+"/";
+    }
+    let lids = await readdir(path);
+    if(!lids){
+        console.log("failed to register lesson folder: "+path);
+        return;
+    }
+    let folder = new PTreeFolder(name,[],undefined,ops);
+    globalLessonFolders.set(name,folder);
+    let first1:PTreeLesson|null = null;
+    for(const lid of lids){
+        let metaStr = await read(path+lid+"/meta.json","utf8",true);
+        if(!metaStr){
+            console.log("couldn't find lesson while loading: "+lid);
+            continue;
+        }
+        let meta = JSON.parse(metaStr);
+        let l = new PTreeLesson(meta.name,lid,meta.x??Math.random()*100,meta.y??Math.random()*100,[],{
+            type:meta.type??0
+        });
+        folder.lessons.push(l);
+
+        if(meta.req){
+            for(const link of meta.req){
+                l.links.push(new PTreeLink(link.lid,!!link.flip));
+            }
+        }
+
+        // if(first1){
+        //     l.links.push(new PTreeLink(first1.lid));
+        // }
+        // else first1 = l;
+    }
+    let first = folder.lessons.find(v=>v.lid == firstLID);
+    if(first) first.ops.unlocked = true;
+
+    initPTreeMappings(folder);
+}
+
+registerLessonFolder("theBeginnings","AqCOreapkT8uu8sC");
+
+const progressTree = new PTreeFolder("root",[],{
     __0_theBeginnings:new PTreeFolder("The Beginnings",[
         new PTreeLesson("The First Lesson","AqCOreapkT8uu8sC",0,0,[
             new PTreeLink("yX0zoNI7fjG0MgtQ")
@@ -184,7 +242,8 @@ export const progressTree = new PTreeFolder("root",[],{
         //     new PTreeLink("_dummy04",true)
         // ]),
         new PTreeLesson("Simple Styling","yX0zoNI7fjG0MgtQ",70,-5,[
-            new PTreeLink("PpcVdfjdzo7TfWBL",true)
+            new PTreeLink("PpcVdfjdzo7TfWBL",true),
+            new PTreeLink("FI8EQAfpS5eh6jkY")
         ]),
         new PTreeLesson("ID & Class Attributes","PpcVdfjdzo7TfWBL",100,-35,[
             new PTreeLink("_dummy04",true)
@@ -195,25 +254,31 @@ export const progressTree = new PTreeFolder("root",[],{
         ]), // transitions - more intermediate css
         new PTreeLesson("Dummy","_dummy03",165,45,[]), // javascript intro
         // new PTreeLesson("Dummy","_dummy03",110,25,[]), // javascript intro
+
+
+
+        new PTreeLesson("Simple Menu Bar","FI8EQAfpS5eh6jkY",100,50,[],{
+            type:LessonType.project
+        }),
     ])
 });
 
 export const ptreeMap = new Map<string,PTreeLesson>();
-function initPTreeMap(){
-    function search(folder:PTreeFolder){
-        for(const lesson of folder.lessons){
-            ptreeMap.set(lesson.lid,lesson);
-        }
-        if(folder.folders){
-            let ok = Object.keys(folder.folders);
-            for(const k of ok){
-                search(folder.folders[k]);
-            }
+function initPTreeMappings(folder:PTreeFolder){
+    for(const lesson of folder.lessons){
+        ptreeMap.set(lesson.lid,lesson);
+    }
+    if(folder.folders){
+        let ok = Object.keys(folder.folders);
+        for(const k of ok){
+            initPTreeMappings(folder.folders[k]);
         }
     }
-    search(progressTree);
+}
+function initPTreeMap(){
+    // initPTreeMappings(progressTree);
 
-    console.log("$ loaded ptree mappings");
+    // console.log("$ loaded ptree mappings");
 }
 initPTreeMap();
 

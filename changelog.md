@@ -732,3 +732,13 @@
     - now accounts for things like in CSS files where the color previews would shift the content around after it was done typing
     - better accounts for scrolling now
 
+### 5/27/24
+- redid how the lesson progress data is stored on the server side to be more modular
+    - location data and links are stored in lesson meta data instead of in s_lesson.ts
+        - will allow prereq and other more advanced things
+    - lesson folders now have to be registered (will add better support for allowing the user to go to other folders)
+    - easier to maintain and is less cumbersome to add new lessons
+    - lesson meta and evt files are now stored in the folders of whatever folder they're in server side to be more organized
+- added LessonType enum
+- added createGuidedProject helper function
+- fixed some minor bugs

@@ -856,11 +856,11 @@ export function write(path:string,data:any,encoding?:BufferEncoding){
         });
     });
 }
-export function read(path:string,encoding?:BufferEncoding){
+export function read(path:string,encoding?:BufferEncoding,nolog=false){
     return new Promise<any>(resolve=>{
         fs.readFile(path,{encoding},(err,data)=>{
             if(err){
-                console.log("err: ",err);
+                if(!nolog) console.log("err: ",err);
                 resolve(null);
             }
             else resolve(data);

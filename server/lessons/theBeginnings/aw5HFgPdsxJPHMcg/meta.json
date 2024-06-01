@@ -1,6 +1,6 @@
 {
     "ver": "0",
-    "name": "Basic_HTML_Structure",
+    "name": "Basic HTML Structure",
     "banner": {
         "sections": [
             {
@@ -12,5 +12,12 @@
         ]
     },
     "finalInstance": null,
-    "boards": []
+    "boards": [],
+    "x":35,
+    "y":20,
+    "req":[
+        {
+            "lid":"AqCOreapkT8uu8sC"
+        }
+    ]
 }

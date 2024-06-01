@@ -4,6 +4,10 @@ const panCont = document.querySelector(".pan-cont") as HTMLElement;
 let cont = document.querySelector(".cont") as HTMLElement;
 const ns = "http://www.w3.org/2000/svg";
 
+enum LessonType{
+    lesson,
+    project
+}
 class LessonTar{
     constructor(tar:string,bendOther=false){
         this.id = tar;
@@ -22,6 +26,7 @@ class TreeLesson{
         this.next = next || [];
         this.prev = [];
     }
+    type:LessonType;
     name:string;
     lid:string;
     x:number;
@@ -98,6 +103,7 @@ function parseProgTree(data:any){
     let ar:TreeLesson[] = [];
     for(const l of data){
         let t = new TreeLesson(l.name,l.lid,l.x,l.y,l.links?.map((v:any)=>new LessonTar(v.to,v.flip)??[]));
+        t.type = (l.ops.type ?? LessonType.lesson);
         ar.push(t);
     }
     console.log(ar);
@@ -448,7 +454,7 @@ async function loadProgressTree(){
     });
 
     let progress = await new Promise<ProgressData[]>(resolve=>{
-        socket.emit("getLearnData",(data:any)=>{
+        socket.emit("getLearnData",progressTree.map(v=>v.lid),(data:any)=>{
             if(typeof data == "number"){
                 alert(`Error ${data}: failed to retrieve learn progress`);
                 return;
