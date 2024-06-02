@@ -1,0 +1,17 @@
+{
+  "name": "code-otter",
+  "version": "1.0.0",
+  "description": "An interactive tutorial site to help teach code.",
+  "main": "index.js",
+  "directories": {
+    "lib": "lib"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "mongodb": "^6.7.0"
+  }
+}

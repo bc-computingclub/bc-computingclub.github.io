@@ -13,7 +13,7 @@ body.themestyle-dark .main{
         /* opacity:0.2; */
     }
     & .circle{
-        background-color:var(--cta-btn-col);
+        --c:var(--cta-btn-col);
         /* background-color:var(--lighten0) !important; */
     }
 }
@@ -54,9 +54,10 @@ body.themestyle-dark .main{
     position:relative;
     width:130px;
     height:130px;
+    background-color:var(--c);
     /* border:solid 2px var(--darken0); */
     /* border-bottom:solid 5px var(--cta-btn-col); */
-    background-color:var(--secondary-bg-col);
+    --c:var(--secondary-bg-col);
     /* background-color:var(--secondary-bg-col); */
     /* background-color:var(--cta-btn-col); */
     /* border-radius:50%; */
@@ -419,3 +420,17 @@ body.themestyle-light .item-actions > div:hover{
     border:solid 1px red;
     translate:-50% -12px;
 } */
+
+/* Lesson Types */
+.item-cont.type-guided-project{
+    /* border-left:solid 8px var(--practice-col); */
+    /* padding-left:3px; */
+    /* --stroke-col:var(--practice-col); */
+    &{
+        .circle{
+            /* border-top-left-radius:0px; */
+            /* border-bottom-left-radius:0px; */
+            /* --c:var(--practice-col) !important; */
+        }
+    }
+}

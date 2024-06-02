@@ -312,10 +312,10 @@ io.on("connection",socket=>{
         //     return;
         // }
 
-        if(!meta.hf){
-            call(3); // criteria not met
-            return;
-        }
+        // if(!meta.hf){
+        //     call(3); // criteria not met
+        //     return;
+        // }
         
         // let list = path.split("/");
         // let folder = getLessonFolder(list);
@@ -345,19 +345,45 @@ io.on("connection",socket=>{
         //     return;
         // }
 
-        let tree = get
-
-        for(const l of data.links){
-            let meta = await getLessonMeta(user.uid,l.to);
-            meta.u = true;
-            // meta.n = true; // maybe this should only be client side?
-            await writeLessonMeta(user.uid,l.to,meta,true);
+        let ldata = lessonCache.get(lid);
+        if(!ldata){
+            call(3); // couldn't find lesson data
+            return;
         }
 
-        meta._hp = __maxHP;
-        await writeLessonMeta(user.uid,lid,meta);
+        // for(const l of ldata.lesson.links){ // old way of checking
+        //     let meta = await getLessonMeta(user.uid,l.to);
+        //     meta.u = true;
+        //     // meta.n = true; // maybe this should only be client side?
+        //     await writeLessonMeta(user.uid,l.to,meta,true);
+        // }
         
-        call(data.links.map(v=>v.to));
+        let unlockSuccess = true;
+        for(const reqLink of ldata.lesson.links){ // requirements for unlock
+            // let req = ldata.folder.lessons.find(v=>v.lid == reqLink.to);
+            let meta2 = await getLessonMeta(user.uid,reqLink.to);
+            if(!meta2){
+                unlockSuccess = false;
+                break;
+            }
+            if(!meta2.hf){
+                unlockSuccess = false;
+                break;
+            }
+        }
+
+        if(unlockSuccess){
+            meta.u = true; // unlock
+
+            meta._hp = __maxHP;
+            await writeLessonMeta(user.uid,lid,meta);
+            
+            // call(ldata.lesson.links.map(v=>v.to));
+            call(null);
+        }
+        else{
+            call(0);
+        }
     });
     let __maxHP = 1; // max_HasPost xD
     socket.on("startLesson",async (lid:string,mode:LessonMode,call:(data:any)=>void)=>{        

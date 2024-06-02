@@ -38,10 +38,11 @@ class TreeLesson{
     root:TreeLesson[];
     rootProg:ProgressData[];
 
-    animateUnlocks(lids:string[]){
-        for(const lid of lids){
+    animateUnlocks(tree:TreeLesson[],lids:string[]){
+        if(false) for(const lid of lids){
             if(lid.startsWith("_dummy")) continue;
-            let l = this.next.find(v=>v.id == lid);
+            // let l = this.next.find(v=>v.id == lid);
+            let l = tree.find(v=>v.lid == lid);
             if(!l){
                 console.warn("Err: couldn't find lid to animate unlock");
                 continue;
@@ -58,6 +59,11 @@ class TreeLesson{
             to.data.n = true;
             to.update();
         }
+        let to = items.find(v=>v.lid == this.lid);
+        if(to.data.u) return;
+        to.data.u = true;
+        to.data.n = true;
+        to.update();
     }
 }
 let progressTree_testing = {
@@ -204,6 +210,9 @@ class LessonItem{
             e.parentElement.classList.remove("locked");
             e.classList.remove("locked");
         }
+
+        // lesson type
+        if(this.l.type == 1) e.parentElement.classList.add("type-guided-project");
 
         if(unlocked) e.innerHTML = `
             <div>${this.l.name}</div>
@@ -508,19 +517,19 @@ async function loadProgressTree(){
         items.push(ref);
         ref.update();
 
-        if(ref.data.hf){
-            setTimeout(()=>{
+        setTimeout(()=>{
+            if(l.prev.every(v=>items.find(w=>w.lid == v.id)?.data.hf)){
                 socket.emit("postFinishLesson",ref.lid,(data:any)=>{
-                    console.log("data: ",data);
+                    console.log("FROM: ",ref.lid,data);
                     if(data == 0) return;
-                    if(typeof data == "number" || data == null){
+                    if(typeof data == "number"){
                         alert(`Error ${data} while post finishing lesson`);
                         return;
                     }
-                    l.animateUnlocks(data);
+                    l.animateUnlocks(progressTree,data);
                 });
-            },1000);
-        }
+            }
+        },1000);
 
         let r = 50;
         if(l.prev) setTimeout(()=>{

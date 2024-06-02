@@ -163,12 +163,16 @@ export function getLessonFolder(keys:string[]){
 }
 
 class LessonCacheItem{
-    constructor(lid:string,path:string){
+    constructor(lid:string,path:string,lesson:PTreeLesson,folder:PTreeFolder){
         this.lid = lid;
         this.path = path;
+        this.lesson = lesson;
+        this.folder = folder;
     }
     lid:string;
     path:string;
+    lesson:PTreeLesson;
+    folder:PTreeFolder;
     get fullPath(){
         return this.path+this.lid+"/";
     }
@@ -186,7 +190,7 @@ async function registerLessonFolder(name:string,firstLID:string,pathKeys:string[
     }
     let folder = new PTreeFolder(name,[],undefined,ops);
     globalLessonFolders.set(name,folder);
-    let first1:PTreeLesson|null = null;
+    // let first1:PTreeLesson|null = null;
     for(const lid of lids){
         let metaStr = await read(path+lid+"/meta.json","utf8",true);
         if(!metaStr){
@@ -205,7 +209,7 @@ async function registerLessonFolder(name:string,firstLID:string,pathKeys:string[
             }
         }
 
-        lessonCache.set(lid,new LessonCacheItem(lid,path));
+        lessonCache.set(lid,new LessonCacheItem(lid,path,l,folder));
 
         // if(first1){
         //     l.links.push(new PTreeLink(first1.lid));

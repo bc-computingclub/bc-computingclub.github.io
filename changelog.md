@@ -744,4 +744,8 @@
 - fixed some minor bugs
 
 ### 6/1/24
-- 
+- added package.json with mongodb for future converting stuff
+- fixed unlocking lessons so they use req instead of next and now support for having multiple requirements to unlock a lesson
+- added lessonCache for easier access to PTree information
+- fixed learn page with new system so the arrows go the right way
+- experiementing with how to display a "Guided Project" type of lesson on the learn page

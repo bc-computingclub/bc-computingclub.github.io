@@ -5,6 +5,34 @@ import fs from "fs";
 import { challenges } from "./s_challenges";
 // import cors from "cors";
 
+import { MongoClient, ServerApiVersion } from "mongodb";
+const uri = "mongodb+srv://claebcode:2Z6WY3Nv3AgE0vke@code-otter-0.67qhyto.mongodb.net/?retryWrites=true&w=majority&appName=code-otter-0";
+
+// Mongo Init
+
+const client = new MongoClient(uri,{
+    serverApi:{
+        version:ServerApiVersion.v1,
+        strict:true,
+        deprecationErrors:true
+    }
+});
+
+async function initMongoDB(){
+    try{
+        await client.connect();
+        await client.db("admin").command({ping:1});
+        console.log("pinged!!!");
+    }
+    finally{
+        await client.close();
+        console.log("-- closed");
+    }
+}
+initMongoDB();
+
+// 
+
 console.log("started...");
 const app = express();
 // app.use(cors({
