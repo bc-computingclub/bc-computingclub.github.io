@@ -1,6 +1,6 @@
 import { io, server, CredentialResData, User, users, getUserBySock, sanitizeEmail, getProject, attemptToGetProject, access, readdir, read, mkdir, removeFile, write, ULFile, ProjectMeta, allProjects, UserChallengeData, Project, getProject2, ULItem, ULFolder, rename, removeFolder, getDefaultProjectMeta, getProjectFromHD, lessonMetas, LessonMeta, loadProject, LessonMode, getLessonMeta, writeLessonMeta, deleteLessonMeta, socks, internalCP, internalCPDir } from "./connection";
 import { CSubmission, Challenge, ChallengeData, ChallengeGet, challenges } from "./s_challenges";
-import {LessonData, PTreeFolder, getLessonFolder, globalLessonFolders, ptreeMap} from "./s_lesson";
+import {LessonData, PTreeFolder, getLessonFolder, globalLessonFolders, lessonCache, ptreeMap} from "./s_lesson";
 import fs, { copyFile } from "fs";
 import { createInterface } from "readline";
 import crypto from "crypto";
@@ -293,8 +293,7 @@ io.on("connection",socket=>{
         await writeLessonMeta(user.uid,lid,meta);
         call(0);
     });
-    socket.on("postFinishLesson",async (path:string,lid:string,call:(data:any)=>void)=>{
-        if(!valVar2(path,"string",call)) return;
+    socket.on("postFinishLesson",async (lid:string,call:(data:any)=>void)=>{
         if(!valVar2(lid,"string",call)) return;
 
         let user = getUserBySock(socket.id);
@@ -318,12 +317,12 @@ io.on("connection",socket=>{
             return;
         }
         
-        let list = path.split("/");
-        let folder = getLessonFolder(list);
-        if(!folder){
-            call(1); // folder not found
-            return;
-        }
+        // let list = path.split("/");
+        // let folder = getLessonFolder(list);
+        // if(!folder){
+        //     call(1); // folder not found
+        //     return;
+        // }
 
         // for(const l of folder.lessons){
         //     if(!l.ops) continue;
@@ -340,11 +339,14 @@ io.on("connection",socket=>{
         //     }
         // }
         
-        let data = folder.lessons.find(v=>v.lid == lid);
-        if(!data){
-            call(4); // couldn't find ptree data, not good!
-            return;
-        }
+        // let data = folder.lessons.find(v=>v.lid == lid);
+        // if(!data){
+        //     call(4); // couldn't find ptree data, not good!
+        //     return;
+        // }
+
+        let tree = get
+
         for(const l of data.links){
             let meta = await getLessonMeta(user.uid,l.to);
             meta.u = true;
@@ -467,6 +469,10 @@ io.on("connection",socket=>{
             f(3);
             return;
         }
+        // if(paths.some(v=>v.includes(".")||v.includes("/"))){
+        //     f(3); // invalid characters in paths
+        //     return;
+        // }
         
         let user = getUserBySock(socket.id);
         if(!user){
@@ -474,7 +480,9 @@ io.on("connection",socket=>{
             return;
         }
 
-        let path = "../lessons/"+lid+"/";
+        // let path = "../lessons/"+paths.join("/")+(paths.length?"/":"")+lid+"/";
+        // let path = "../lessons/"+lid+"/";
+        let path = lessonCache.get(lid)?.fullPath;
         let str = await read(path+"meta.json");
         if(!str){
             f(1);

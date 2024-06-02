@@ -1577,8 +1577,9 @@ function createFolderListItem(f:FFolder){
 let _tutEditorOffsetTop = 125.075; // this is hardcoded just for speed sake but can be calculated with tut's editor.getDOMNode().getBoundingClientRect().top
 async function syncMousePos(editor:Editor,noShow=false){
     forceShowCursor();
+    if(!editor) return;
     // tutMouse.style.transitionDuration = "0s";
-    let elm = editor.getDomNode();
+    // let elm = editor.getDomNode();
     let pos = editor.getPosition();
     let coords = editor.getScrolledVisiblePosition(pos);
     // await moveTutMouseToXY(coords.left,coords.top+_tutEditorOffsetTop);

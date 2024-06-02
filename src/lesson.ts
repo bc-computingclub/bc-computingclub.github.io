@@ -396,7 +396,7 @@ class SwitchFileTask extends Task{
         await b2.clickProm;
 
         await showTutMouse();
-        await moveTutMouseToXY(rect.x+rect.width/2,rect.y+rect.height/2);
+        await moveTutMouseToCustom(rect.x+rect.width/2,rect.y+rect.height/2);
         await wait(300);
         await fakeClickButton(tarBtn);
         if(existingFile){
@@ -464,7 +464,7 @@ class AddFileTask extends Task{
             return this.finish();
         }
 
-        await moveTutMouseToXY(rect.x+rect.width/2,rect.y+rect.height/2);
+        await moveTutMouseToCustom(rect.x+rect.width/2,rect.y+rect.height/2);
         await wait(300);
         await fakeClickButton(tarBtn);
         if(existingFile){
@@ -1841,7 +1841,7 @@ class LE_AddGBubble extends LEvent{
                             let fileElm = lesson.tut.d_files.children[lesson.tut.files.indexOf(startT._preTutFile)];
                             let rect = fileElm.getBoundingClientRect();
                             await showTutMouse();
-                            await moveTutMouseToXY(rect.x+rect.width/2,rect.y+rect.height/2);
+                            await moveTutMouseToCustom(rect.x+rect.width/2,rect.y+rect.height/2);
                             await wait(300);
                             await fakeClickButton(fileElm);
                             startT._preTutFile.open();
@@ -3503,7 +3503,7 @@ class Lesson{
                 let b_close = item.link.children[1];
                 let rect = b_close.getBoundingClientRect();
                 await showTutMouse();
-                await moveTutMouseToXY(rect.x+rect.width/2,rect.y+rect.height/2);
+                await moveTutMouseToCustom(rect.x+rect.width/2,rect.y+rect.height/2);
                 await wait(300);
                 await fakeClickButton(b_close);
                 item.softDelete();
@@ -3515,7 +3515,7 @@ class Lesson{
                 let elm = lesson.tut.parent.querySelector(".b-add-file");
                 let rect = elm.getBoundingClientRect();
                 await showTutMouse();
-                await moveTutMouseToXY(rect.x+rect.width/2,rect.y+rect.height/2);
+                await moveTutMouseToCustom(rect.x+rect.width/2,rect.y+rect.height/2);
                 await wait(300);
                 await fakeClickButton(elm);
                 // item.open();
@@ -3529,7 +3529,7 @@ class Lesson{
             let fileElm = t.d_files.children[ind];
             let rect = fileElm.getBoundingClientRect();
             await showTutMouse();
-            await moveTutMouseToXY(rect.x+rect.width/2,rect.y+rect.height/2);
+            await moveTutMouseToCustom(rect.x+rect.width/2,rect.y+rect.height/2);
             await wait(300);
             await fakeClickButton(fileElm);
             file.open();
@@ -4000,6 +4000,11 @@ async function moveTutMouseToXY(x:number,y:number,immidiate=false){
     syncMousePos(lesson.tut.getCurEditor());
     await wait(350);
     return;
+    tutMouse.style.left = x+"px";
+    tutMouse.style.top = y+"px";
+    if(!immidiate) await wait(350);
+}
+async function moveTutMouseToCustom(x:number,y:number,immidiate=false){
     tutMouse.style.left = x+"px";
     tutMouse.style.top = y+"px";
     if(!immidiate) await wait(350);

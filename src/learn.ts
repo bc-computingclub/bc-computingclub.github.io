@@ -102,7 +102,9 @@ function parseProgTree(data:any){
     console.log(data);
     let ar:TreeLesson[] = [];
     for(const l of data){
-        let t = new TreeLesson(l.name,l.lid,l.x,l.y,l.links?.map((v:any)=>new LessonTar(v.to,v.flip)??[]));
+        console.log("LINK INFO:",l.name,l.links);
+        let t = new TreeLesson(l.name,l.lid,l.x,l.y,[]);
+        t.prev = l.links?.map((v:any)=>new LessonTar(v.to,v.flip)??[]);
         t.type = (l.ops.type ?? LessonType.lesson);
         ar.push(t);
     }
@@ -508,7 +510,7 @@ async function loadProgressTree(){
 
         if(ref.data.hf){
             setTimeout(()=>{
-                socket.emit("postFinishLesson","theBeginnings",ref.lid,(data:any)=>{
+                socket.emit("postFinishLesson",ref.lid,(data:any)=>{
                     console.log("data: ",data);
                     if(data == 0) return;
                     if(typeof data == "number" || data == null){
@@ -521,10 +523,9 @@ async function loadProgressTree(){
         }
 
         let r = 50;
-        if(l.next) setTimeout(()=>{
-            for(const tar of l.next){
+        if(l.prev) setTimeout(()=>{
+            for(const tar of l.prev){
                 let next = progressTree.find(v=>v.lid == tar.id);
-                next.prev.push(tar);
                 if(next){
                     let test = document.createElement("div");
                     test.classList.add("test");
@@ -547,10 +548,11 @@ async function loadProgressTree(){
                     let centerX = (fx+sx)/2;
                     let centerY = (fy+sy)/2;
 
-                    let x1 = l._x;
-                    let y1 = l._y;
-                    let x2 = next._x;
-                    let y2 = next._y;
+                    let x1 = next._x; // reversed dir because "next" is now actually the previous node
+                    let y1 = next._y;
+                    let x2 = l._x;
+                    let y2 = l._y;
+
                     let dx = x2-x1;
                     let dy = y2-y1;
                     let dist = Math.sqrt(dx**2+dy**2);

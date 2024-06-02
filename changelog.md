@@ -742,3 +742,6 @@
 - added LessonType enum
 - added createGuidedProject helper function
 - fixed some minor bugs
+
+### 6/1/24
+- 

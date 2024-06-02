@@ -162,6 +162,18 @@ export function getLessonFolder(keys:string[]){
     return folder;
 }
 
+class LessonCacheItem{
+    constructor(lid:string,path:string){
+        this.lid = lid;
+        this.path = path;
+    }
+    lid:string;
+    path:string;
+    get fullPath(){
+        return this.path+this.lid+"/";
+    }
+}
+export const lessonCache = new Map<string,LessonCacheItem>();
 async function registerLessonFolder(name:string,firstLID:string,pathKeys:string[]=[],ops?:PTreeOps){
     let path = "../lessons/"+name+"/";
     for(const key of pathKeys){
@@ -192,6 +204,8 @@ async function registerLessonFolder(name:string,firstLID:string,pathKeys:string[
                 l.links.push(new PTreeLink(link.lid,!!link.flip));
             }
         }
+
+        lessonCache.set(lid,new LessonCacheItem(lid,path));
 
         // if(first1){
         //     l.links.push(new PTreeLink(first1.lid));
