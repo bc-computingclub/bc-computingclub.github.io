@@ -436,7 +436,10 @@ class ProjectDashboard extends Menu{
         this.content.textContent = "";
         async function tryGet(){
             return new Promise<any[]>(resolve=>{
+                console.log("send...");
                 socket.emit("user-getProjectList",i,(data:any[])=>{
+                    console.log("DATA",data);
+                    if(typeof data == "number") data = [];
                     resolve(data || []);
                 });
             });

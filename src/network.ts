@@ -269,7 +269,10 @@ async function restoreProjectFiles(uid:string,pid:string){
             resolve({meta,canEdit});
         });
     });
-   if(!data) return {meta:null,canEdit:false};
+   if(!data){
+        console.log("ERR: couldn't get data when restoring project files");
+        return {meta:null,canEdit:false};
+   }
    return data;
 }
 

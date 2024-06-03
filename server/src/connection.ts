@@ -5,33 +5,8 @@ import fs from "fs";
 import { challenges } from "./s_challenges";
 // import cors from "cors";
 
-import { MongoClient, ServerApiVersion } from "mongodb";
-const uri = "mongodb+srv://claebcode:2Z6WY3Nv3AgE0vke@code-otter-0.67qhyto.mongodb.net/?retryWrites=true&w=majority&appName=code-otter-0";
-
-// Mongo Init
-
-const client = new MongoClient(uri,{
-    serverApi:{
-        version:ServerApiVersion.v1,
-        strict:true,
-        deprecationErrors:true
-    }
-});
-
-async function initMongoDB(){
-    try{
-        await client.connect();
-        await client.db("admin").command({ping:1});
-        console.log("pinged!!!");
-    }
-    finally{
-        await client.close();
-        console.log("-- closed");
-    }
-}
+import {ProjectInst, ProjectModel, UserSessionItem, initMongoDB, userSessions} from "./db";
 initMongoDB();
-
-// 
 
 console.log("started...");
 const app = express();
@@ -87,7 +62,7 @@ function checkAuth(req:Request,res:Response,next:NextFunction){
     }
 }
 
-function genPID(){
+export function genPID(){
     return crypto.randomUUID();
 }
 export function getDefaultProjectMeta(user:User,pid:string,name:string){
@@ -542,7 +517,7 @@ export class LessonMeta{
     }
 }
 
-export const users = new Map<string,User>();
+export const users = new Map<string,UserSessionItem>();
 export const socks = new Map<string,string>();
 export const allProjects = new Map<string,Project>();
 const hasntFoundProject:string[] = [];
@@ -599,6 +574,14 @@ export function getProject(ref:string){
 }
 export function getProject2(uid:string,pid:string){
     return allProjects.get(uid+":"+pid);
+}
+export async function findProject(uid:string,pid:string){
+    let res = await ProjectModel.findOne({
+        pid:pid,
+        uid:uid
+    });
+    if(!res) return;
+    return new ProjectInst(res);
 }
 export async function getProjectFromHD(uid:string,pid:string){
     if(!uid) return -2;
@@ -737,7 +720,15 @@ export async function attemptToGetProject(user:User,pid:string){
 export function getUserBySock(sockId:string){
     let email = socks.get(sockId);
     if(!email) return;
-    return users.get(email);
+    // return users.get(email);
+    // return userSessions.get(email)?.user;
+    return userSessions.get(email);
+}
+export function getMUserBySock(sockId:string){
+    let email = socks.get(sockId);
+    if(!email) return;
+    // return users.get(email);
+    return userSessions.get(email)?.meta;
 }
 
 app.use("/public",async (req,res,next)=>{
