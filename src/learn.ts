@@ -490,7 +490,6 @@ async function loadProgressTree(){
     let lessonCont = document.createElement("div");
     for(const l of progressTree){
         let pdata = progress.find(v=>v.lid == l.lid);
-        console.log(pdata);
         let x = cx+l.x*moveScale;
         let y = cy+l.y*moveScale;
 
@@ -500,6 +499,9 @@ async function loadProgressTree(){
         item.classList.add("circle");
         itemCont.style.left = x+"px";
         itemCont.style.top = y+"px";
+        let icon = document.createElement("div");
+        icon.className = "item-cont-icon";
+        itemCont.appendChild(icon);
         l._x = x;
         l._y = y;
 
@@ -570,6 +572,19 @@ async function loadProgressTree(){
                     let horz = tar.bendOther;
                     dx /= dist;
                     dy /= dist;
+
+                    // closer test
+
+                    // let dx0 = x2-x1;
+                    // let dy0 = y2-y1;
+                    // let ang0 = Math.atan2(dy0,dx0);
+                    // let amt = 100;
+                    // x1 += Math.cos(ang0)*amt;
+                    // y1 += Math.sin(ang0)*amt;
+                    // x2 -= Math.cos(ang0)*amt;
+                    // y2 -= Math.sin(ang0)*amt;
+                    
+                    // 
 
                     let dashArray = "40,20";
 
@@ -677,6 +692,26 @@ async function loadProgressTree(){
             ref.init();
         }
     },50);
+
+    testWarpZone();
+}
+
+function testWarpZone(){
+    let itemCont = document.createElement("div");
+    itemCont.classList.add("item-cont","type-warp-zone");
+    cont.children[0].appendChild(itemCont);
+
+    itemCont.style.left = "1100px";
+    itemCont.style.top = "1300px";
+
+    itemCont.innerHTML = `
+        <div class="circle">
+            <img class="warp" src="/images/warp_0.4.svg" draggable=false>
+            <img src="/images/warp_0.4.svg" draggable=false>
+        </div>
+    `; // 0.4 or 0.7 are good
+
+    console.log("added: ",itemCont);
 }
 
 // Back pan blocking

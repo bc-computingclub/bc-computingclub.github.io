@@ -1,4 +1,5 @@
 import { User, read, readdir, write } from "./connection";
+import { ChallengeDifficulty, ChallengeInst, ChallengeModel, ChallengeSubmissionInst, ChallengeSubmissionModel } from "./db";
 
 export class CSubmission{
     constructor(url:string,who:string,uid:string,pid:string){
@@ -169,6 +170,38 @@ async function initChallenges(){
     }
 }
 initChallenges();
+
+export async function uploadChallenges(){
+    for(const [cid,challenge] of challenges){
+        let data = await ChallengeModel.findOne({
+            cid
+        });
+        let difficulty = getDifficultyId(challenge.difficulty);
+        if(!data) data = new ChallengeModel({
+            cid,
+            name:challenge.name,
+            desc:challenge.desc,
+            imgUrl:challenge.imgUrl,
+            difficulty
+        });
+        else{
+            data.name = challenge.name;
+            data.desc = challenge.desc;
+            data.imgUrl = challenge.imgUrl;
+            data.difficulty = difficulty;
+        }
+        await data.save();
+    }
+    console.log("$ finished updating challenges");
+}
+
+export function getDifficultyId(difficulty:string){
+    return (
+        difficulty == "easy" ? 0 :
+        difficulty == "medium" ? 1 : 
+        difficulty == "hard" ? 2 : 3
+    );
+}
 
 // THIS ERROR CHECKING CODE NEEDS TO GO SOMEWHERE BUT THAT PLACE DOESN'T EXIST YET
 /**if(p.cid) if(!p.meta.submitted){ 

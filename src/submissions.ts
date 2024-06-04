@@ -72,7 +72,8 @@ cDetails.addEventListener("click", async () => {
 });
 
 cBack.addEventListener("click", () => {
-  window.location.href = `index.html?cid=${cid}`; // redirects to challenge page and opens challenge corresponding to cId
+  // window.location.href = `index.html?cid=${cid}`; // redirects to challenge page and opens challenge corresponding to cId
+  window.location.href = `index.html`; // Claeb: I don't think the challenge popup should show back up when going back, seems redundant bc if they are going back then they probably want to see something else instead of having to click again
 });
 
 async function getSubmission(uid:string,pid:string){

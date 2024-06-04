@@ -8,6 +8,7 @@ const browseHeader = document.querySelector(".c-browse-container-header") as HTM
 const cHome = document.querySelector(".c-home") as HTMLElement;
 const clearFiltersButton = document.querySelector(".clear-filters") as HTMLElement;
 const cSortDiv = document.querySelector(".c-sort-div") as HTMLElement;
+const cSearchForm = document.querySelector("form.c-search") as HTMLFormElement;
 
 let cToggle: HTMLElement;
 let displayedChallenges: Challenge[] = [];
@@ -211,13 +212,13 @@ function setChallengeHTML(c: Challenge) {
         </span>
         <div class="c-button-options">
             <button class="c-preview" onclick="setupButton(${c.cID});">
-                Open <span class="material-symbols-outlined">info</span>
+                View <span class="material-symbols-outlined">info</span>
             </button>
             <button class="c-submissions" onclick="showSubmissions('${c.cID}','')">
                 <span>Submissions</span>
             </button>
         </div>
-    `;
+    `; // Claeb: view or open?
   if (c.inProgress) {
     let tempSpan = document.createElement("span");
     tempSpan.className = "c-details material-symbols-outlined";
@@ -389,4 +390,9 @@ cSortDiv.addEventListener("mousedown", () => {
       openToLeft: true
     },
   );
+});
+
+cSearchForm.addEventListener("submit",e=>{
+  e.preventDefault();
+  filterChallenges();
 });

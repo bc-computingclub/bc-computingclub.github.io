@@ -2,11 +2,11 @@ import * as http from "http";
 import express, { NextFunction, Request, Response } from "express";
 import {Server, Socket} from "socket.io";
 import fs from "fs";
-import { challenges } from "./s_challenges";
 // import cors from "cors";
 
-import {ProjectInst, ProjectModel, UserSessionItem, initMongoDB, userSessions} from "./db";
-initMongoDB();
+import {LessonMetaInst, LessonProgressModel, ProjectInst, ProjectModel, UserSessionItem, initMongoDB, postInitMongoDB, userSessions} from "./db";
+// initMongoDB();
+postInitMongoDB();
 
 console.log("started...");
 const app = express();
@@ -523,7 +523,7 @@ export const allProjects = new Map<string,Project>();
 const hasntFoundProject:string[] = [];
 export const lessonMetas = new Map<string,LessonMeta>();
 
-export async function getLessonMeta(uid:string,lid:string){
+export async function _getLessonMeta(uid:string,lid:string){
     let metaPath = "../users/"+uid+"/lesson/"+lid+"/";
     let meta = lessonMetas.get(uid+":"+lid);
     if(!meta){
@@ -550,13 +550,14 @@ export async function deleteLessonMeta_old(uid:string,lid:string){
     await removeFolder(metaPath);
     lessonMetas.delete(uid+":"+lid);
 }
-export async function deleteLessonMeta(uid:string,lid:string,meta:LessonMeta){
-    meta.eventI = -1;
-    meta.taskI = -1;
-    meta.prog = 0;
-    meta.mode = 0;
-    meta.s = false;
-    await writeLessonMeta(uid,lid,meta);
+export async function deleteLessonMeta(meta:LessonMetaInst){
+    meta.meta.eventI = -1;
+    meta.meta.taskI = -1;
+    meta.meta.progress = 0;
+    meta.meta.mode = 0;
+    meta.meta.started = false;
+    // await writeLessonMeta(uid,lid,meta);
+    await meta.save();
 }
 
 // for indexing, need to make a deloadProject at some point
@@ -575,13 +576,19 @@ export function getProject(ref:string){
 export function getProject2(uid:string,pid:string){
     return allProjects.get(uid+":"+pid);
 }
-export async function findProject(uid:string,pid:string){
+export async function _findProject(uid:string,pid:string){
     let res = await ProjectModel.findOne({
-        pid:pid,
-        uid:uid
+        pid,uid
     });
     if(!res) return;
     return new ProjectInst(res);
+}
+export async function _findLessonMeta(uid:string,lid:string){
+    let res = await LessonProgressModel.findOne({
+        lid,uid
+    });
+    if(!res) return;
+    return new LessonMetaInst(res);
 }
 export async function getProjectFromHD(uid:string,pid:string){
     if(!uid) return -2;
@@ -717,19 +724,19 @@ export async function attemptToGetProject(user:User,pid:string){
     return p2;
 }
 
-export function getUserBySock(sockId:string){
-    let email = socks.get(sockId);
-    if(!email) return;
+export function getSession(sockId:string){
+    // let email = socks.get(sockId);
+    // if(!email) return;
     // return users.get(email);
     // return userSessions.get(email)?.user;
-    return userSessions.get(email);
+    return userSessions.get(sockId);
 }
-export function getMUserBySock(sockId:string){
-    let email = socks.get(sockId);
-    if(!email) return;
-    // return users.get(email);
-    return userSessions.get(email)?.meta;
-}
+// export function getMUserBySock(sockId:string){
+//     let email = socks.get(sockId);
+//     if(!email) return;
+//     // return users.get(email);
+//     return userSessions.get(email)?.meta;
+// }
 
 app.use("/public",async (req,res,next)=>{
     let arr = req.originalUrl.split("/");
@@ -897,11 +904,11 @@ export function removeFile(path:string){
         });
     });
 }
-export function removeFolder(path:string){
+export function removeFolder(path:string,noerr=false){
     return new Promise<boolean>(resolve=>{
         fs.rm(path,{recursive:true},err=>{
             if(err){
-                console.log("err: ",err);
+                if(!noerr) console.log("err: ",err);
                 resolve(false);
             }
             else resolve(true);

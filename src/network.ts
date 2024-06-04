@@ -52,9 +52,8 @@ function _logout(){
 }
 let _usedConfirmLeavePopup = false;
 function _login(data:CredentialResData,token:string){
-    console.log("...starting login");
     socket.emit("login",data,token,(data:CredentialResData)=>{
-        console.log("Log in successful: ",data);
+        console.log("Log in successful");
         if(!_usedConfirmLeavePopup){
             if(g_user || _hasAlertedNotLoggedIn){
                 location.reload();
@@ -277,9 +276,9 @@ async function restoreProjectFiles(uid:string,pid:string){
 }
 
 // Challenge
-async function getServerChallenges(){
+async function getServerChallenges(search?:string){
     let list = await new Promise<Challenge[]>(resolve=>{
-        socket.emit("getChallenges",20,0,selectedFilters,searchOption,searchDesc,(list:any[])=>{
+        socket.emit("getChallenges",search?.length?search:undefined,20,0,selectedFilters,searchOption,searchDesc,(list:any[])=>{
             resolve(list);
         });
     });

@@ -1115,10 +1115,10 @@ function getPublicProjectURL(ownerUid:string,pid:string){
 
 // submitting challenges
 
-async function submitChallenge(pid:string){
+async function submitChallenge(cid:string,pid:string){
     await saveProject(true);
     let res = await new Promise<number>(resolve=>{
-        socket.emit("submitChallenge",pid,(res:number)=>{
+        socket.emit("submitChallenge",cid,pid,(res:number)=>{
             resolve(res);
         });
     });
@@ -2317,7 +2317,6 @@ async function refreshPreview(){
 }
 function postIFrameRefresh(){
     iframe.onload = function(){
-        console.log("load");
         if(_iframeKeydown) iframe.contentDocument.removeEventListener("keydown",_iframeKeydown);
         iframe.contentDocument.addEventListener("keydown",_iframeKeydown);
     };
@@ -3797,8 +3796,9 @@ function reloadPage(){
 
 
 let challengeArray: Challenge[] = [];
+const cSearch = document.querySelector("#search") as HTMLInputElement;
 async function getChallenges() {
-    challengeArray = await getServerChallenges();
+    challengeArray = await getServerChallenges(cSearch?.value);
     if (challengeArray == null) {
       alert("Failed to fetch challenges. Please try again later.");
       return;

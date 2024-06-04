@@ -2,3 +2,32 @@
 - working for users, creating new accounts and logging in
 - working for experiment page you can create new projects, save and load them all fine
 - (I'm going to rewrite a lot of this again anyways for then new socket.id sessions system)
+
+### 6/3/24
+- fixed all major pages to have the title: Code Otter | {title}
+- drew new warp logo
+- switch old circle logo on home, learn, practice, submissions, etc. to new warp logo
+- changed animation for hovering over logo
+- added pre_init.ts thing so it forces the new warp logo to be used as page icon
+- fixed styling of search box on challenges page in dark theme
+- added working functionality to search box on challenges page
+- fixed some minor typos in the first lesson
+
+- !!! (MongoDB transition pretty much finished) - it's gone through my basic testing and every main area should work fine but it needs more thorough testing
+- (should be good except there are some weird bugs with viewing submissions but I'll get to those later)
+- everything seems to work fine but I just need to make a command for the DO server to upload everything and make a separate dev database
+- fixed some small bugs with statistics data on lessons and projects
+- fixed CloneIntoNewProject at the end of lesson wouldn't transfer the files
+- added support for nested files in folders on lessons (there's no way to make folders during a lesson at the moment but there's backend support for it now)
+- still need to do better token auth stuff for login on the backend at some point
+- added upload challenges helper that will take all the challenges stored locally and put them in the database
+
+- added experimental "Practice" label with the purple practice-col to instruct bubbles in lessons
+- added styling with purple background/accent to Guided Projects in the learn page
+- added custom styling for Guided Projects with a label and different size so the user knows it's a little different
+- changed light theme so that paths are gray instead of blue so the Guided Project's purple accent didn't look weird (looks better now too)
+- added icon to represent what kind of lesson or thing it is in the bottom left corner (knowledge/school icon for standard lessons and outlined cube icon for guided projects)
+- added experimental Warp Zone object (visual only) to the learn page with animaion
+- removed some debugging logs on front end
+- renamed "Open" to "View" for challenge cards on challenges page
+- changed pressing back from submissions page will take you back to the challenges page without opening the popup again (reason in submissions.ts)

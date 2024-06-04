@@ -22,7 +22,7 @@ return [
         new BubbleTask(`b[&lt;h1&gt;] stands for "Header 1" and is the largest of the built in headers you can use. h2, h3, h4, and so on are often used for sub headers.`),
         
         new AddTutorSideText("\n\n"),
-        new AddGenericCodeTask("<button>Click Me!</button>","html","Let's add a button here"),
+        new AddGenericCodeTask("<button>Click Me!</button>","html","Let's add a button here."),
         new DoRefreshTask("Refresh the preview to see how the button looks.","Refresh the preview"),
 
         new PonderBoardTask("board0","Alright, let's look a little closer at all this."),
@@ -32,7 +32,7 @@ return [
         new AddGenericCodeTask("<button>Or Click Me!</button>","html",null,false),
 
         new AddTutorSideText("\n\n",""),
-        new InstructTask(`i[Try to add 2 more buttons to the page]\nOne with the text "Button Three" and the other with the text "Button Four".`),
+        new InstructTask(`i[Try to add 2 more buttons to the page.]\nOne with the text "Button Three" and the other with the text "Button Four".`),
         new AddGenericCodeTask(`<button>Button Three</button>\n<button>Button Four</button>`,"html",null,false),
         
         new MoveCursorTo(3,27),
@@ -68,6 +68,6 @@ return [
     ]),
     new LE_AddGBubble([
         // "Next time we'll look at some simple styling, or adjusting how the elements look."
-        "Next time we'll take a look at structuring HTML elements within your page."
+        "Next time we'll take a look at structuring HTML elements within our page."
     ],BubbleLoc.global,[])
 ];
