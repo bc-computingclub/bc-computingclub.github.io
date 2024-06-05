@@ -78,7 +78,7 @@ io.on("connection",socket=>{
         async function post(session:UserSessionItem,isNew=false){
             session.meta.lastLoggedIn = new Date();
             await session.meta.save();
-            console.log("$ logged in: "+data.email);
+            // console.log("$ logged in: "+data.email);
 
             socks.set(socket.id,session.meta.email);
             users.set(session.meta.uid,session);
@@ -95,13 +95,11 @@ io.on("connection",socket=>{
         async function attempt(){
             let session = userSessions.get(socket.id);
             if(!session){
-                // console.log("...user was NOT logged in");
-                console.log("...creating a session");
+                // console.log("...creating a session");
                 
                 let result = await UserModel.findOne({
                     email:data.email
                 });
-                // console.log("FIND",result);
 
                 if(!result){ // no account, create one
                     console.log("...creating new account");
@@ -114,7 +112,7 @@ io.on("connection",socket=>{
                         lastLoggedIn:new Date()
                     });
                     await result.save();
-                    console.log("...SAVED...");
+                    // console.log("...SAVED...");
                 }
                 // account already exists, login and create new session
                 // console.log("...creating SESSION...");
@@ -1084,7 +1082,10 @@ io.on("connection",socket=>{
             return;
         }
 
-        f(p.serialize());
+        let data = p.serialize();
+        data.items = await p.getFileItems();
+        
+        f({p:data});
         
         // let p = await getProjectFromHD(ownerUid,pid);
         // if(typeof p == "number") f(p);
@@ -1866,55 +1867,83 @@ io.on("connection",socket=>{
         f(res);
         // deleteProject(user,p,f);
     });
-    socket.on("unlinkProject",async (pid:string,f:(res:number)=>void)=>{
-        if(!valVar2(pid,"string",f)) return;
+    socket.on("unlinkProject",async (pid:string,call:(res:number)=>void)=>{
+        if(!valVar2(pid,"string",call)) return;
 
         let user = getSession(socket.id);
         if(!user){
-            f(1);
+            call(-3);
             return;
         }
 
-        // let m = user.pMeta.find(v=>v.pid == pid);
         let p = await user.getProject(pid);
         if(!p){
-            f(2);
+            call(1);
             return;
         }
-
-        if(!p.canEdit(user.uid)){
-            f(-5); // can't edit
+        if(!p.isOwner(user.uid)){ // <-- this might not be needed but just in case
+            call(2); // you don't own this project
             return;
         }
-
-        let cid = p.meta.cid;
-        // let p = user.projects.find(v=>v.pid == pid);
-        if(p){
-            p.meta.cid = undefined;
+        if(p.meta.cid == null){
+            call(3); // project wasn't even a challenge project
+            return;
         }
-        if(cid){
-            //remove from challenges
-            let ind = user.challenges.findIndex(v=>v.pid == pid);
-            user.challenges.splice(ind,1);
-            // remove from submissions
-            let ch = challenges.get(cid);
-            if(ch){
-                let ind = ch.sub.findIndex(v=>v.pid == pid);
-                if(ind != -1){
-                    ch.sub.splice(ind,1);
-                    await ch.save();
-                }
-            }
-            else console.log("warn: couldn't find challenge: ",p.meta.cid);
-        }
-        p.meta.cid = undefined;
-        // await user.save();
+        
+        // 
 
-        // save
-        await p.save();
-
-        f(0);
+        let res = await p.unlinkFromChallenge(user);
+        call(res);
     });
+    // socket.on("unlinkProject_old",async (pid:string,f:(res:number)=>void)=>{
+    //     if(!valVar2(pid,"string",f)) return;
+
+    //     let user = getSession(socket.id);
+    //     if(!user){
+    //         f(1);
+    //         return;
+    //     }
+
+    //     // let m = user.pMeta.find(v=>v.pid == pid);
+    //     let p = await user.getProject(pid);
+    //     if(!p){
+    //         f(2);
+    //         return;
+    //     }
+
+    //     if(!p.canEdit(user.uid)){
+    //         f(-5); // can't edit
+    //         return;
+    //     }
+
+    //     let cid = p.meta.cid;
+    //     // let p = user.projects.find(v=>v.pid == pid);
+    //     if(p){
+    //         p.meta.cid = undefined;
+    //     }
+    //     if(cid){
+    //         //remove from challenges
+    //         let ind = user.challenges.findIndex(v=>v.pid == pid);
+    //         user.challenges.splice(ind,1);
+    //         // remove from submissions
+    //         let ch = challenges.get(cid);
+    //         if(ch){
+    //             let ind = ch.sub.findIndex(v=>v.pid == pid);
+    //             if(ind != -1){
+    //                 ch.sub.splice(ind,1);
+    //                 await ch.save();
+    //             }
+    //         }
+    //         else console.log("warn: couldn't find challenge: ",p.meta.cid);
+    //     }
+    //     p.meta.cid = undefined;
+    //     // await user.save();
+
+    //     // save
+    //     await p.save();
+
+    //     f(0);
+    // });
     socket.on("removeFromRecents",async (pid:string,call:(data:any)=>void)=>{
         if(!valVar2(pid,"string",call)) return;
 

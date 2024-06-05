@@ -1,6 +1,6 @@
 import { MongoClient, ServerApiVersion } from "mongodb";
 import mongoose, { mongo } from "mongoose";
-import { Project, ProjectMeta, ULFile, ULFolder, ULItem, _findLessonMeta, _findProject, access, genPID, mkdir, read, readdir, removeFolder, socks, users } from "./connection";
+import { Project, ProjectMeta, ULFile, ULFolder, ULItem, _findLessonMeta, _findProject, access, genPID, mkdir, projectCache, read, readdir, removeFolder, socks, users } from "./connection";
 
 const dbName = "code-otter-main";
 const uri = "mongodb+srv://claebcode:2Z6WY3Nv3AgE0vke@code-otter-0.67qhyto.mongodb.net/"+dbName+"?retryWrites=true&w=majority&appName=code-otter-0";
@@ -133,8 +133,6 @@ type MProject = {
     dateLastSaved:Date,
 
     time:number,
-
-    save:()=>Promise<void>
 };
 const ProjectSchema = new Schema({
     pid:{
@@ -561,11 +559,12 @@ export class ChallengeInst{
         });
         if(!subData) return -5;
 
-        removeFromListPred(this.meta.submissions,item=>item.equals(subData._id));
+        removeFromListPred(this.meta.submissions,item=>item.equals(subData?._id)); // not sure why I need the ?, vscode thinks it's good but tsc no
 
         p.meta.submitted = false;
         p.meta.public = false;
         removeFromListPred(user.meta.submittedChallenges,item=>item.pid == pid);
+        user.meta.inprogressChallenges.push({cid:this.meta.cid,pid});
 
         await ChallengeSubmissionModel.deleteOne({
             _id:subData._id
@@ -576,10 +575,6 @@ export class ChallengeInst{
         await p.save();
         await this.save();
         await user.save();
-
-        // 
-
-        removeFromListPred(this.meta.submissions,item=>item.equals());
 
         return 0;
     }
@@ -857,7 +852,13 @@ export class ProjectInst{
     session:UserSessionItem|undefined;
 
     async save(){
+        // @ts-ignore
         await this.meta.save();
+
+        let cacheItem = projectCache.get(this.meta.pid);
+        if(cacheItem){
+            cacheItem.makeDirty();
+        }
     }
     
     getPath(){
@@ -883,6 +884,9 @@ export class ProjectInst{
         let canEdit = true;
         if(this.meta.submitted) canEdit = false;
         return canEdit;
+    }
+    isOwner(uid:string){
+        return this.meta.uid == uid;
     }
     serialize(){
         let items:any[] = [];
@@ -969,7 +973,7 @@ export class ProjectInst{
                 let c = await findChallenge(this.meta.cid);
                 console.log("ID: ",res._id);
                 if(c){
-                    removeFromListPred(c.meta.submissions,item=>item.equals(res._id));
+                    removeFromListPred(c.meta.submissions,item=>item.equals(res?._id));
                     await c.save();
                 }
                 await ChallengeSubmissionModel.deleteOne({_id:res._id});
@@ -997,6 +1001,31 @@ export class ProjectInst{
         return this.meta.cid != null;
     }
 
+    async unlinkFromChallenge(user:UserSessionItem){
+        if(this.meta.cid == null){ // project wasn't even a challenge project
+            return -5;
+        }
+        if(this.meta.submitted){
+            return -6; // can't unlink if it's submitted
+        }
+        // 
+        
+        let challenge = await findChallenge(this.meta.cid);
+        if(!challenge){
+            return -7; // couldn't find challenge
+        }
+
+        removeFromListPred(user.meta.inprogressChallenges,item=>item.pid == this.meta.pid);
+
+        this.meta.cid = undefined;
+
+        // save
+        await user.save();
+        await this.save();
+
+        return 0;
+    }
+
     async getFileItems(){
         let list:ULItem[] = [];
         async function search(folder:ULItem[],path:string){
@@ -1022,7 +1051,7 @@ export class ProjectInst{
 export function removeFromList(list:any[],item:any){
     list.splice(list.indexOf(item),1);
 }
-export function removeFromListPred(list:any[],pred:(item:any)=>boolean){
+export function removeFromListPred<T>(list:T[],pred:(item:T)=>boolean){
     list.splice(list.findIndex(pred),1);
 }
 export function addUnique(list:any[],item:any){

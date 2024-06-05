@@ -508,7 +508,7 @@ function logUserIn(data?:CredentialResData,token?:string){
         localStorage.setItem("logData",JSON.stringify(data));
         h_profile.classList.add("logged-in");
         h_profile.innerHTML = `
-            <img referrerpolicy="no-referrer" src="${data.picture}">
+            <img referrerpolicy="no-referrer" draggable="false" src="${data.picture}">
         `;
         let img = h_profile.querySelector("img");
         img.onerror = (err:Event,source,lineno,colno,error)=>{
@@ -3638,7 +3638,7 @@ class SubmissionMenu extends Menu {
     load() {
       let p = this.data.p;
       let url = getPublicProjectURL(this.submission.uid,this.submission.pid);
-  
+
       super.load();
       this.menu.innerHTML = `
         <div class="s-popup">

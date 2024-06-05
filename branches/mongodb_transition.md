@@ -15,6 +15,7 @@
 
 - !!! (MongoDB transition pretty much finished) - it's gone through my basic testing and every main area should work fine but it needs more thorough testing
 - (should be good except there are some weird bugs with viewing submissions but I'll get to those later)
+- (unlink challenge also not done)
 - everything seems to work fine but I just need to make a command for the DO server to upload everything and make a separate dev database
 - fixed some small bugs with statistics data on lessons and projects
 - fixed CloneIntoNewProject at the end of lesson wouldn't transfer the files
@@ -31,3 +32,13 @@
 - removed some debugging logs on front end
 - renamed "Open" to "View" for challenge cards on challenges page
 - changed pressing back from submissions page will take you back to the challenges page without opening the popup again (reason in submissions.ts)
+
+### 6/4/24
+- fixed viewing public projects so it actually works and is pretty efficient using the ProjectCache with experation time / dirty system
+- got rid of meta.save() methods so only the Inst.save() methods can be used and when a ProjectInst.save() method is called it calls makeDirty() on the project cache so it needs to be retrieved again
+- fixed unsubmit project so that it gets readded to the inprogress challenges array
+- rewrote unlinkFromChallenge so that it works with mongo
+- removed some extra debug logs from the back end
+- fixed getSubmission so it returns the right data (including the files) so it doesn't break on the front end anymore
+- fixed iconRef set in pre_init.ts so it doesn't break previews in the submissions page
+- fixed profile picture so it isn't draggable

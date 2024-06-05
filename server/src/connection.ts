@@ -738,14 +738,86 @@ export function getSession(sockId:string){
 //     return userSessions.get(email)?.meta;
 // }
 
+const projectCacheTimeLimit = 500000; // 500 seconds
+
+class ProjectCacheItem{
+    constructor(p:ProjectInst){
+        this.time = performance.now();
+        this.p = p;
+    }
+    time = 0;
+    p:ProjectInst;
+    _dirty = false;
+    makeDirty(){
+        // console.log(".. project was made dirty");
+        this._dirty = true;
+    }
+
+    static async find(pid:string,uid:string){
+        let item = projectCache.get(pid);
+        if(item){
+            if(!item._dirty) if(performance.now()-item.time <= projectCacheTimeLimit) return item;
+        }
+        
+        let inst = await _findProject(uid,pid);
+        // console.log("---- a project fetch...");
+        if(!inst) return;
+
+        item = new ProjectCacheItem(inst);
+        projectCache.set(pid,item);
+        return item;
+    }
+}
+export const projectCache = new Map<string,ProjectCacheItem>(); // pid, data
+
 app.use("/public",async (req,res,next)=>{
     let arr = req.originalUrl.split("/");
-    // let project = getProject2(arr[2],arr[3]);
-    let project = await getProjectFromHD(arr[2],arr[3]);
-    if(typeof project == "number"){
-        res.send("Error getting project, code "+project);
+
+    let uid = arr[2];
+    let pid = arr[3];
+
+    if(!uid || !pid){
+        res.send("Query invalid");
         return;
     }
+    
+    // TODO (done) - need to make some kind of expiring cache for this so if you refresh constantly it doesn't have to keep getting it from the database but after a few seconds it'll empty the cache and get it fresh from the database again
+
+    let item = await ProjectCacheItem.find(pid,uid);
+    if(!item){
+        res.send("Project or User not found");
+        return;
+    }
+
+    // let p = await _findProject(uid,pid);
+    // console.log("---- a project fetch...");
+    // if(!p){
+    //     res.send("Project or User not found");
+    //     return;
+    // }
+
+    // auth/permission check
+    if(item.p.meta.public){
+        next(); // if it's public then you're all good
+        return;
+    }
+
+    // todo... - check if your uid is in the list of allowed people to view/edit
+
+    res.send("You don't have permission to view this project (or it's private)");
+    
+    ///////////////////
+    
+    // let project = getProject2(arr[2],arr[3]);
+    
+    
+    // let project = await getProjectFromHD(arr[2],arr[3]);
+    // if(typeof project == "number"){
+    //     res.send("Error getting project, code "+project);
+    //     return;
+    // }
+
+
     // let pid = arr[2];
     // let owner = arr[3];
     // let user = users.get(owner);
@@ -762,15 +834,16 @@ app.use("/public",async (req,res,next)=>{
     //     res.send("Error getting project, query invalid");
     //     return;
     // }
-    if(!project){
-        res.send("Project not found or loaded");
-        return;
-    }
-    if(!project.meta.isPublic){
-        res.send("Project is private");
-        return;
-    }
-    next();
+
+    // if(!project){
+    //     res.send("Project not found or loaded");
+    //     return;
+    // }
+    // if(!project.meta.isPublic){
+    //     res.send("Project is private");
+    //     return;
+    // }
+    // next();
 },express.static("../project/"));
 app.use("/project/:userId/:auth",(req,res,next)=>{
     let p = req.params;
