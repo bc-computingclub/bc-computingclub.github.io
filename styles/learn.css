@@ -202,6 +202,8 @@ body.themestyle-light .btn-start.open{
 .circle.locked{
     opacity:0.5;
     filter:grayscale(1);
+    width:130px;
+    height:130px;
     /* filter:grayscale(1) brightness(0.8); */
     /* background-color:var(--col); */
     /* color:var(--secondary-bg-col); */

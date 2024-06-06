@@ -210,9 +210,19 @@ class LessonItem{
             e.parentElement.classList.remove("locked");
             e.classList.remove("locked");
         }
-
-        // lesson type
-        if(this.l.type == 1) e.parentElement.classList.add("type-guided-project");
+        
+        if(unlocked){
+            // lesson icon
+            let icon = e.parentElement.querySelector(".item-cont-icon");
+            if(!icon){
+                icon = document.createElement("div");
+                icon.className = "item-cont-icon";
+                e.parentElement.appendChild(icon);
+            }
+            
+            // lesson type
+            if(this.l.type == 1) e.parentElement.classList.add("type-guided-project");
+        }
 
         if(unlocked) e.innerHTML = `
             <div>${this.l.name}</div>
@@ -499,9 +509,6 @@ async function loadProgressTree(){
         item.classList.add("circle");
         itemCont.style.left = x+"px";
         itemCont.style.top = y+"px";
-        let icon = document.createElement("div");
-        icon.className = "item-cont-icon";
-        itemCont.appendChild(icon);
         l._x = x;
         l._y = y;
 

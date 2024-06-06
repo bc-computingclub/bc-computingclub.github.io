@@ -1,5 +1,4 @@
 import { mkdir, readdir, write } from "./connection";
-import { LessonData } from "./s_lesson";
 
 export enum LessonType{
     lesson,

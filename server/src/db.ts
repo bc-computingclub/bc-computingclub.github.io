@@ -2,7 +2,41 @@ import { MongoClient, ServerApiVersion } from "mongodb";
 import mongoose, { mongo } from "mongoose";
 import { Project, ProjectMeta, ULFile, ULFolder, ULItem, _findLessonMeta, _findProject, access, genPID, mkdir, projectCache, read, readdir, removeFolder, socks, users } from "./connection";
 
-const dbName = "code-otter-main";
+export enum ServerMode{
+    dev,
+    public
+}
+let _serverModes = ["dev","public"];
+export let serverMode = ServerMode.dev;
+
+function processArgs(){
+    let args = process.argv;
+    for(let i = 0; i < args.length; i++){
+        function next(){
+            i++;
+            return args[i];
+        }
+        let s = args[i];
+        if(s.startsWith("-")){
+            switch(s){
+                case "-mode":
+                    let mode = _serverModes.indexOf(next());
+                    if(mode == -1){
+                        console.log("$ error: invalid server mode, valid are: ",_serverModes.join(", "));
+                    }
+                    else serverMode = mode;
+                    break;
+            }
+        }
+    }
+}
+processArgs();
+console.log("SERVER MODE: ",ServerMode[serverMode]);
+
+const dbName = (
+    serverMode == ServerMode.dev ? "code-otter-main" :
+    serverMode == ServerMode.public ? "code-otter-public" : "code-otter-main"
+);
 const uri = "mongodb+srv://claebcode:2Z6WY3Nv3AgE0vke@code-otter-0.67qhyto.mongodb.net/"+dbName+"?retryWrites=true&w=majority&appName=code-otter-0";
 
 // Mongo Init
@@ -640,7 +674,7 @@ export class ChallengeSubmissionInst{
 
 export const UserModel = mongoose.model("User",UserSchema);
 export const ProjectModel = mongoose.model("Project",ProjectSchema);
-export const LessonProgressModel = mongoose.model("LessonProg",LessonProgressSchema);
+export const LessonProgressModel = mongoose.model("Lesson_Prog",LessonProgressSchema);
 export const ChallengeModel = mongoose.model("Challenge",ChallengeSchema);
 export const ChallengeSubmissionModel = mongoose.model("Challenge_Submission",ChallengeSubmissionSchema);
 

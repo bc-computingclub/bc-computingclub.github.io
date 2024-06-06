@@ -42,3 +42,11 @@
 - fixed getSubmission so it returns the right data (including the files) so it doesn't break on the front end anymore
 - fixed iconRef set in pre_init.ts so it doesn't break previews in the submissions page
 - fixed profile picture so it isn't draggable
+
+### 6/5/24
+- added processArgs for command line args passed to the server
+- added -mode arg to specify whether the server is running in dev or public mode
+- added ServerMode which corresponds to which database will be used code-otter-main or code-otter-public for now
+- renamed LessonProgs to Lesson_Progs (mongo collection)
+- fixed lesson type icons and alt type lessons (guided projects) so they aren't broken when not unlocked
+- in the last update lessons were changed from 130x130px to 140x140px and in this update the locked ones are now changed back to 130x130px
