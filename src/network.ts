@@ -59,13 +59,13 @@ function _login(data:CredentialResData,token:string){
                 location.reload();
                 return;
             }
-            if(g_user) if(g_user.email != data.email){
+            if(g_user) if(g_user.data.email != data.email){
                 location.reload();
                 return;
             }
         }
         _usedConfirmLeavePopup = false;
-        g_user = data;
+        g_user = new GlobalUser(data);
         if(loginProm){
             _loginRes();
             _loginRes = null;

@@ -1,14 +1,13 @@
 import * as http from "http";
 import express, { NextFunction, Request, Response } from "express";
 import {Server, Socket} from "socket.io";
-import fs from "fs";
 // import cors from "cors";
 
-import {LessonMetaInst, LessonProgressModel, ProjectInst, ProjectModel, UserSessionItem, initMongoDB, postInitMongoDB, userSessions} from "./db";
+import {LessonMetaInst, LessonProgressModel, ProjectInst, ProjectModel, UserSessionItem, postInitMongoDB, removeFromList, userSessions} from "./db";
+import { write, read, readdir, access, mkdir, removeFolder } from "./s_util";
 // initMongoDB();
 postInitMongoDB();
 
-console.log("started...");
 const app = express();
 // app.use(cors({
 //     origin:"http://localhost:5501"
@@ -195,6 +194,12 @@ export class ProjectMeta{
     /**
      * Note: This method does not save the meta data, you must user.saveToFile() on your own
      */
+
+    // ONLY FOR AUTOCOMPLETE
+    sub:boolean = false;
+    starred:boolean = false;
+    // 
+
     updateWhenLastSaved(){
         if(!this.wls || this.wls == ""){
             this.time = 0;
@@ -382,7 +387,7 @@ export class User{
     }
     removeSocketId(sockId:string){
         if(!this.sockIds.includes(sockId)) return;
-        this.sockIds.splice(this.sockIds.indexOf(sockId),1);
+        removeFromList(this.sockIds,sockId);
         socks.delete(sockId);
     }
     deleteSocketIds(){
@@ -931,114 +936,4 @@ export class ULFile extends ULItem{
     val:string;
     path:string;
     enc:BufferEncoding;
-}
-
-export function access(path:string){
-    return new Promise<boolean>(resolve=>{
-        fs.access(path,err=>{
-            if(err){
-                // console.log("err: ",err);
-                resolve(false);
-            }
-            else resolve(true);
-        });
-    });
-}
-export function write(path:string,data:any,encoding?:BufferEncoding){
-    return new Promise<boolean>(resolve=>{
-        fs.writeFile(path,data,{encoding},err=>{
-            if(err){
-                console.log("err: ",err);
-                resolve(false);
-            }
-            else resolve(true);
-        });
-    });
-}
-export function read(path:string,encoding?:BufferEncoding,nolog=false){
-    return new Promise<any>(resolve=>{
-        fs.readFile(path,{encoding},(err,data)=>{
-            if(err){
-                if(!nolog) console.log("err: ",err);
-                resolve(null);
-            }
-            else resolve(data);
-        });
-    });
-}
-export function removeFile(path:string){
-    return new Promise<boolean>(resolve=>{
-        fs.rm(path,err=>{
-            if(err){
-                console.log("err: ",err);
-                resolve(false);
-            }
-            else resolve(true);
-        });
-    });
-}
-export function removeFolder(path:string,noerr=false){
-    return new Promise<boolean>(resolve=>{
-        fs.rm(path,{recursive:true},err=>{
-            if(err){
-                if(!noerr) console.log("err: ",err);
-                resolve(false);
-            }
-            else resolve(true);
-        });
-    });
-}
-export function mkdir(path:string,encoding?:BufferEncoding){
-    return new Promise<boolean>(resolve=>{
-        fs.mkdir(path,{recursive:true},err=>{
-            if(err){
-                console.log("err: ",err);
-                resolve(false);
-            }
-            else resolve(true);
-        });
-    });
-}
-export function readdir(path:string){
-    return new Promise<string[]|null>(resolve=>{
-        fs.readdir(path,(err,files)=>{
-            if(err){
-                // console.log("err: ",err);
-                resolve(null);
-            }
-            else resolve(files);
-        });
-    });
-}
-export function rename(fromPath:string,toPath:string){
-    return new Promise<boolean>(resolve=>{
-        fs.rename(fromPath,toPath,err=>{
-            if(err){
-                console.log("err renaming...",err);
-                resolve(false);
-            }
-            else resolve(true);
-        });
-    });
-}
-export function internalCP(fromPath:string,toPath:string){
-    return new Promise<boolean>(resolve=>{
-        fs.copyFile(fromPath,toPath,err=>{
-            if(err){
-                resolve(false);
-            }
-            else resolve(true);
-        });
-    });
-}
-export function internalCPDir(fromPath:string,toPath:string){
-    return new Promise<boolean>(resolve=>{
-        fs.cp(fromPath,toPath,{ recursive: true },err=>{
-            if(err){
-                console.log("$ error copying",err);
-                resolve(false);
-            }
-            else resolve(true);
-        });
-    });
 }

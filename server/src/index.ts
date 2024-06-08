@@ -1,11 +1,11 @@
-import { io, server, CredentialResData, User, users, getSession, sanitizeEmail, getProject, attemptToGetProject, access, readdir, read, mkdir, removeFile, write, ULFile, ProjectMeta, allProjects, UserChallengeData, Project, getProject2, ULItem, ULFolder, rename, removeFolder, getDefaultProjectMeta, getProjectFromHD, lessonMetas, LessonMeta, loadProject, LessonMode, writeLessonMeta, deleteLessonMeta, socks, internalCP, internalCPDir } from "./connection";
-import { CSubmission, Challenge, ChallengeData, ChallengeGet, challenges, getDifficultyId, uploadChallenges } from "./s_challenges";
-import {LessonData, PTreeFolder, getLessonFolder, globalLessonFolders, lessonCache, ptreeMap} from "./s_lesson";
+import { io, server, CredentialResData, User, users, getSession, sanitizeEmail, getProject, attemptToGetProject, getDefaultProjectMeta, getProjectFromHD, lessonMetas, LessonMeta, loadProject, LessonMode, writeLessonMeta, deleteLessonMeta, socks, ULFolder, ULItem, ULFile, getProject2, ProjectMeta, allProjects, Project, UserChallengeData, projectCache } from "./connection";
+import { CSubmission, Challenge, ChallengeData, ChallengeGet, challenges, getDifficultyId } from "./s_challenges";
+import {LessonData, getLessonFolder, globalLessonFolders, ptreeMap, reloadLessons} from "./s_lesson";
 import fs, { copyFile } from "fs";
 import { createInterface } from "readline";
 import crypto from "crypto";
-import { createGuidedProject, createLesson } from "./s_util";
-import { ChallengeInst, ChallengeModel, ChallengeSubmissionModel, LessonMetaInst, ProjectInst, ProjectModel, UserModel, UserSessionItem, findChallenge, userSessions } from "./db";
+import { createGuidedProject, createLesson, write, read, readdir, access, mkdir, removeFolder, removeFile, rename, internalCPDir, internalCP, lessonCache } from "./s_util";
+import { ChallengeInst, ChallengeModel, ChallengeSubmissionModel, LessonMetaInst, ProjectInst, ProjectModel, UserModel, UserSessionItem, findChallenge, removeFromList, removeFromListPred, uploadChallenges, uploadLessonProgs, uploadUsers, uploadUsersStage2, userSessions } from "./db";
 import mongoose from "mongoose";
 
 function valVar(v:any,type:string){
@@ -28,26 +28,26 @@ function valVar2(v:any,type:string,f:any){
 }
 
 let usersOnline:string[] = [];
-let allUsers:Record<string,string> = {};
-function readAllUsers(){
-    let str = fs.readFileSync("../data/users.json","utf8");
-    if(!str){
-        console.log("$ error loading user cache; code 1");
-        return;
-    }
-    try{
-        allUsers = JSON.parse(str);
-    }
-    catch(e){
-        console.log("$ error loading user cache; code 2");
-        return;
-    }
-    console.log("$ loaded user cache");
-}
-async function saveUserCache(){
-    await write("../data/users.json",JSON.stringify(allUsers),"utf8");
-}
-readAllUsers();
+// let allUsers:Record<string,string> = {};
+// function readAllUsers(){
+//     let str = fs.readFileSync("../data/users.json","utf8");
+//     if(!str){
+//         console.log("$ error loading user cache; code 1");
+//         return;
+//     }
+//     try{
+//         allUsers = JSON.parse(str);
+//     }
+//     catch(e){
+//         console.log("$ error loading user cache; code 2");
+//         return;
+//     }
+//     console.log("$ loaded user cache");
+// }
+// async function saveUserCache(){
+//     await write("../data/users.json",JSON.stringify(allUsers),"utf8");
+// }
+// readAllUsers();
 
 io.on("connection",socket=>{
     socket.on("logout",async (call:(data:any)=>void)=>{
@@ -236,7 +236,7 @@ io.on("connection",socket=>{
         let user = getSession(socket.id);
         if(!user) return;
         // user.removeSocketId(socket.id);
-        usersOnline.splice(usersOnline.indexOf(user.meta.email),1);
+        removeFromList(usersOnline,user.meta.email);
     });
     socket.on("getUserLastLoggedIn",(token:string)=>{
 
@@ -322,7 +322,7 @@ io.on("connection",socket=>{
                 if(ffL){
                     // ff = ffL[i];
                     ff = ffL.find(v=>v.name == item.name);
-                    if(!ff) ffL.splice(i,0,item);
+                    if(!ff) if(i != -1) ffL.splice(i,0,item);
                 }
                 // if(item instanceof ULFile){
                 if("val" in item){
@@ -365,9 +365,18 @@ io.on("connection",socket=>{
             call(1);
             return;
         }
+
+        let changedUser = false;
+
         lessonMeta.meta.progress = 100;
+        if(!lessonMeta.meta.hasFinished){
+            // if it hasn't been finished then increment lessonsCompleted stat
+            user.meta.lessonsCompleted++;
+            changedUser = true;
+        }
         lessonMeta.meta.hasFinished = true;
         await lessonMeta.save();
+        if(changedUser) await user.save();
         call(0);
     });
     socket.on("postFinishLesson",async (lid:string,call:(data:any)=>void)=>{
@@ -954,7 +963,7 @@ io.on("connection",socket=>{
         await p.save();
         // await user.saveToFile();
 
-        let serialized = p.serialize();
+        let serialized = p.serialize(user.uid);
         let startPath = p.getPath();
         
         // async function search(folder:ULItem[],path:string){
@@ -1011,6 +1020,7 @@ io.on("connection",socket=>{
                 // data = user.projects.map(v=>v.serialize()?.serialize());
                 // data = user.pMeta.filter(v=>v.cid == null).map(v=>v.serialize());
                 query = ProjectModel.find({
+                    uid:user.uid,
                     cid:{
                         $eq:null
                     }
@@ -1019,6 +1029,7 @@ io.on("connection",socket=>{
             case ProjectGroup.challenges:{
                 // data = user.pMeta.filter(v=>v.cid != null).map(v=>v.serialize()); // probably need to optimize the filters at some point
                 query = ProjectModel.find({
+                    uid:user.uid,
                     cid:{
                         $ne:null
                     }
@@ -1027,6 +1038,7 @@ io.on("connection",socket=>{
             case ProjectGroup.recent:{
                 // data = user.pMeta.filter(v=>user?.recent.includes(v.pid)).map(v=>v.serialize());
                 query = ProjectModel.find({
+                    uid:user.uid,
                     pid:{
                         $in:user.meta.recentProjects
                     }
@@ -1035,6 +1047,7 @@ io.on("connection",socket=>{
             case ProjectGroup.starred:{
                 // data = user.pMeta.filter(v=>user?.starred.includes(v.pid)).map(v=>v.serialize());
                 query = ProjectModel.find({
+                    uid:user.uid,
                     pid:{
                         $in:user.meta.starredProjects
                     }
@@ -1053,7 +1066,7 @@ io.on("connection",socket=>{
 
         let res = await query.exec();
 
-        let data = res.map((v:any)=>new ProjectInst(v).serialize());
+        let data = res.map((v:any)=>new ProjectInst(v).serialize(user.uid)); // compliler doesn't like user here for some reason
         f(data);
     });
 
@@ -1082,7 +1095,7 @@ io.on("connection",socket=>{
             return;
         }
 
-        let data = p.serialize();
+        let data = p.serialize(user.uid);
         data.items = await p.getFileItems();
         
         f({p:data});
@@ -1328,7 +1341,6 @@ io.on("connection",socket=>{
     // });
     socket.on("startChallenge",async (cid:string,f:(data:any)=>void)=>{
         if(!valVar2(cid,"string",f)) return;
-        // console.log("starting challenge...",cid);
 
         let user = getSession(socket.id);
         if(!user){
@@ -1562,7 +1574,7 @@ io.on("connection",socket=>{
             return;
         }
         
-        ch.sub.splice(ch.sub.findIndex(v=>v.pid == pid),1);
+        removeFromListPred(ch.sub,v=>v.pid == pid);
         await ch.save();
         p.meta.submitted = false;
         p.meta.isPublic = false;
@@ -1675,7 +1687,7 @@ io.on("connection",socket=>{
                 console.log("$ weird, couldn't find file while trying to move it");
                 continue;
             }
-            fromItems.splice(fromItems.indexOf(file),1);
+            removeFromList(fromItems,file);
             toItems.push(file);
         }
         // console.log(fromF,toF);
@@ -1766,7 +1778,7 @@ io.on("connection",socket=>{
 
         let start = p.getPath();
         // console.log(`deleting NAME (${file})...`,items.map(v=>v.name));
-        items.splice(items.indexOf(item),1);
+        removeFromList(items,item);
         // console.log("after...",items.map(v=>v.name));
         if(item instanceof ULFile) await removeFile(start+fromPath+file);
         else await removeFolder(start+fromPath+file);
@@ -2030,6 +2042,43 @@ io.on("connection",socket=>{
         _feedbackNeedsSaved = true;
         f(null);
     });
+
+    // 
+
+    socket.on("getUserStats",async (call:(res:any)=>void)=>{
+        if(!valVar(call,"function")) return;
+        
+        let session = getSession(socket.id);
+        if(!session){
+            call({err:-3});
+            return;
+        }
+
+        session.meta
+        let stats = {
+            joinDate:session.meta.joinDate.toISOString(),
+            
+            challengesCompleted:session.meta.completedChallenges.length,
+            challengesSubmitted:session.meta.submittedChallenges.length,
+            challengesInProgress:session.meta.inprogressChallenges.length,
+
+            lessonsCompleted:session.meta.lessonsCompleted,
+            ...await session.getLessonStats(),
+
+            totalProjects:session.meta.projects.length,
+            ...await session.getProjectStats()
+        };
+
+        call(stats);
+    });
+
+    // debug
+    socket.on("debug_getStats",async ()=>{
+        let session = getSession(socket.id);
+        if(!session) return;
+
+        session.getLessonStats();
+    });
 });
 
 let _feedbackNeedsSaved = false;
@@ -2094,14 +2143,14 @@ async function deleteProject(user:User,pMeta:ProjectMeta,f:(res:number)=>void){
         return;
     }
     if(pMeta){
-        user.projects.splice(user.projects.findIndex(v=>v.pid == pMeta.pid),1);
+        removeFromListPred(user.projects,v=>v.pid == pMeta.pid);
         allProjects.delete(user.uid+":"+pMeta.pid);
         // allProjects.delete(p.getRefStr());
     }
     let pid = pMeta.pid;
     if(pMeta.cid){
         //remove from challenges
-        user.challenges.splice(user.challenges.findIndex(v=>v.pid == pid),1);
+        removeFromListPred(user.challenges,v=>v.pid == pid);
         // remove from submissions
         let ch = challenges.get(pMeta.cid);
         if(ch){
@@ -2113,11 +2162,11 @@ async function deleteProject(user:User,pMeta:ProjectMeta,f:(res:number)=>void){
         }
         else console.log("warn: couldn't find challenge: ",pMeta.cid);
     }
-    user.pMeta.splice(user.pMeta.findIndex(v=>v.pid == pid),1);
+    removeFromListPred(user.pMeta,v=>v.pid == pid);
 
     // remove from recents & starred
-    user.recent.splice(user.recent.indexOf(pid),1);
-    user.starred.splice(user.starred.indexOf(pid),1);
+    removeFromList(user.recent,pid);
+    removeFromList(user.starred,pid);
     
     await user.saveToFile();
 
@@ -2218,13 +2267,19 @@ type SubmissionsFilterType = {
 };
 
 server.listen(3000,()=>{
-    console.log('listening on *:3000');
+    console.log("listening on *:3000");
 });
 
 let rl = createInterface(process.stdin,process.stdout);
 rl.on("line",async (line)=>{
     line = line.trim();
-    let s = line.split(" ");
+    // let s = line.split(" ");
+    let s = line.split(/(".*?"|[^"\s]+)+(?=\s*|\s*$)/g);
+    s = s.filter(v=>v.length != 0 && v != " ");
+    s = s.map(v=>{
+        if(v.startsWith('"')) return v.substring(1,v.length-1);
+        return v;
+    });
     let cmd = s[0];
     if(line == "challenges"){
         console.log(challenges);
@@ -2259,6 +2314,14 @@ rl.on("line",async (line)=>{
     }
     else if(s[0] == "projects"){
         console.log(allProjects);
+        return;
+    }
+    else if(s[0] == "sessions"){
+        console.log(userSessions);
+        return;
+    }
+    else if(s[0] == "projectCache"){
+        console.log(projectCache);
         return;
     }
     else if(s[0] == "pitems"){
@@ -2318,6 +2381,11 @@ rl.on("line",async (line)=>{
         console.log(lessonMetas);
         return;
     }
+    else if(s[0] == "rl"){
+        await reloadLessons();
+        console.log(":: done");
+        return;
+    }
     else if(s[0] == "reload"){
         // if(s[1] == "lessons"){
         //     let list = [...lessonMetas];
@@ -2328,6 +2396,12 @@ rl.on("line",async (line)=>{
         //     }
         //     console.log("done");
         // }
+        if(s[1] == "lessons"){
+            await reloadLessons();
+            console.log(":: done");
+            return;
+        }
+        console.log("! err - didn't find a reload command with the id: "+s[1]);
         return;
     }
     // CREATE cmd
@@ -2406,6 +2480,25 @@ rl.on("line",async (line)=>{
     else if(s[0] == "upload"){
         if(s[1] == "challenges"){
             await uploadChallenges();
+            return;
+        }
+        else if(s[1] == "all"){
+            if(s[2] != "-confirm"){
+                console.log("this is a dangerous command, please run the command with -confirm to continue.");
+                return;
+            }
+            console.log("$ starting upload of all local items into the current database.\n-------\n");
+
+            console.log("$ uploading challenges...");
+            await uploadChallenges();
+
+            console.log("$ uploading users...");
+            await uploadUsers();
+            
+            console.log("$ uploading lesson progress...");
+            await uploadLessonProgs();
+
+            console.log("$ DONE");
             return;
         }
     }

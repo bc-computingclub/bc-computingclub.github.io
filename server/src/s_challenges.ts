@@ -1,5 +1,5 @@
-import { User, read, readdir, write } from "./connection";
-import { ChallengeDifficulty, ChallengeInst, ChallengeModel, ChallengeSubmissionInst, ChallengeSubmissionModel } from "./db";
+import { User } from "./connection";
+import { read, readdir, write } from "./s_util";
 
 export class CSubmission{
     constructor(url:string,who:string,uid:string,pid:string){
@@ -171,29 +171,29 @@ async function initChallenges(){
 }
 initChallenges();
 
-export async function uploadChallenges(){
-    for(const [cid,challenge] of challenges){
-        let data = await ChallengeModel.findOne({
-            cid
-        });
-        let difficulty = getDifficultyId(challenge.difficulty);
-        if(!data) data = new ChallengeModel({
-            cid,
-            name:challenge.name,
-            desc:challenge.desc,
-            imgUrl:challenge.imgUrl,
-            difficulty
-        });
-        else{
-            data.name = challenge.name;
-            data.desc = challenge.desc;
-            data.imgUrl = challenge.imgUrl;
-            data.difficulty = difficulty;
-        }
-        await data.save();
-    }
-    console.log("$ finished updating challenges");
-}
+// !!! - shouldn't need this because it should be handled enough by uploadUsers()
+// export async function uploadChallengeSubmissions(){
+//     for(const [cid,challenge] of challenges){
+//         if(challenge.sub.length == 0) continue;
+        
+//         let inst = await findChallenge(cid);
+//         if(!inst){
+//             console.log("! err: could not find challenge: "+cid);
+//             continue;
+//         }
+
+//         for(const sub of challenge.sub){
+//             let user = await findUser(sub.uid); // find user could be dangerous right now because it doesn't update the current user session
+//             if(!user){
+//                 console.log("! err: user not found: "+sub.uid);
+//                 continue;
+//             }
+            
+            
+//         }
+//     }
+//     console.log("$ finished updating challenges");
+// }
 
 export function getDifficultyId(difficulty:string){
     return (

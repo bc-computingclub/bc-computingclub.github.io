@@ -50,3 +50,50 @@
 - renamed LessonProgs to Lesson_Progs (mongo collection)
 - fixed lesson type icons and alt type lessons (guided projects) so they aren't broken when not unlocked
 - in the last update lessons were changed from 130x130px to 140x140px and in this update the locked ones are now changed back to 130x130px
+
+### 6/6/24
+- added dev mode to the list of server modes
+- added isNotInMainCache stuff for User but it's not really working at the moment
+- added upload all -confirm command to the server but it's really buggy
+- fixed cSearch wasn't working anymore and caused errors on profile page
+
+### 6/7/24
+<!-- Mostly Back End Stuff -->
+- fixed a lot of locations of stuff on backend to be moved to s_util to prevent circular dependency issues
+- ! - fixed major bug where deleting one of your projects would cause the list stored on your user data of submittedChallenges and unsubmittedChallenges to get wiped
+    - this had to do with me not knowing that splice(-1,1) actually deletes from the end instead of being ignored
+    -> all instances of this are now fixed
+- added lessonsCompleted and challengesCompleted fields to UserSchema
+- fixed submitChallenge so that it doesn't let you submit if there are no files in the project
+- fixed up dirty User data but haven't tested it at all
+- added index.html automatically being added when creating new projects or starting challenges
+- added getLessonStats and getProjectStats to UserInst (UserSessionItem) which return averages and totals for now
+- fixed canEdit() method so that right now if you aren't the owner of a project then you can't edit it
+- fixed project serialization so the edit and view permissions are based on the user trying to access the data instead of the user who owns it
+- changed findUser() to no longer use the user cache, this system still isn't ideal but seems to be good enough for now
+- ! - upload all -confirm should now be working good, at least did good enough in my testing
+- added ability to use quotes for items with spaces in server commands, like writing this is now possible: create guided_project "Simple Dropdown Menu"
+- disabled a bunch of code server side so nothing important should hopefully interact or rely on the old local files
+- ! - fixed when searching for projects for the ProjectDashboard on the server it would list everyones projects (not just yours)
+- ! - added socket.io endpoint "getUserStats" which returns 10 different stat items at the moment
+- removed unessesary logging server side for a lot of places and loading
+- added "reload lessons" or "rl" command to very quickly reload the lesson data without reloading the server
+    - this includes reloading evts.js files on lessons to test changes quickly or changes to meta.json files for renaming or moving lessons around
+    - (this is pretty much a full reload of lesson data so mostly everything should work)
+- fixed loading lesson data from meta.json files so they load in a more abstract way
+- added "parent" field to lesson's meta.json for guided_project lessons that are addition parts but they point to the starting lesson
+- fixed genLID() to support the new system and properly will retry if it generates a new lid that has already been used
+- fixed up default standard lesson meta to be used when creating new lessons (from: create lesson ...) so that it includes x,y,req:[] and the description is more obvious that you need to change it as well as being more abstract now so the default is written once for creating both types of lessons (lesson & guided_project)
+- changed lesson meta.json so that x,y are now relative to it's req[0]'s position
+    - this makes it much easier to position new lessons added and fix them later on
+<!-- Mostly Front End -->
+- fixed front end if issues happen while loading projects the ProjectDashboard will come back up properly and not close
+- fixed front end trying to open public projects that you have in recents but you don't own load properly
+- changed g_user so that it's a class now called GlobalUser which has a data field that contains the data that g_user used to be
+    - this now allows methods to be used for g_user related things in an organized way
+- added getStats() method to GlobalUser
+- fixed TreeLesson constructor to load all data arbitrarily to speed up the addition of new fields added on the server side
+- added prevPathCont field to LessonItem so that it can be colored based on if you have completed a lesson or not, but I disabled the feature because I couldn't get the colors to look right
+- added the ability for lessons to be positioned relatively from each other with the change in lesson meta.json. It's slow to compute with a lot of recursion but it isn't too bad and it's only during page load
+- added guided_project children support that are smaller and the note at the top shows Part 2, Part 3, for the respective ones
+- fixed weird bug on the challenges page that when opening specifically 0010 the Login Menu challenge would show up correctly in the search list but when clicked on would act like it was the Side Scroller challenge
