@@ -1,4 +1,5 @@
-import { User, read, readdir, write } from "./connection";
+import { User } from "./connection";
+import { read, readdir, write } from "./s_util";
 
 export class CSubmission{
     constructor(url:string,who:string,uid:string,pid:string){
@@ -169,6 +170,38 @@ async function initChallenges(){
     }
 }
 initChallenges();
+
+// !!! - shouldn't need this because it should be handled enough by uploadUsers()
+// export async function uploadChallengeSubmissions(){
+//     for(const [cid,challenge] of challenges){
+//         if(challenge.sub.length == 0) continue;
+        
+//         let inst = await findChallenge(cid);
+//         if(!inst){
+//             console.log("! err: could not find challenge: "+cid);
+//             continue;
+//         }
+
+//         for(const sub of challenge.sub){
+//             let user = await findUser(sub.uid); // find user could be dangerous right now because it doesn't update the current user session
+//             if(!user){
+//                 console.log("! err: user not found: "+sub.uid);
+//                 continue;
+//             }
+            
+            
+//         }
+//     }
+//     console.log("$ finished updating challenges");
+// }
+
+export function getDifficultyId(difficulty:string){
+    return (
+        difficulty == "easy" ? 0 :
+        difficulty == "medium" ? 1 : 
+        difficulty == "hard" ? 2 : 3
+    );
+}
 
 // THIS ERROR CHECKING CODE NEEDS TO GO SOMEWHERE BUT THAT PLACE DOESN'T EXIST YET
 /**if(p.cid) if(!p.meta.submitted){ 

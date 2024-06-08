@@ -1129,9 +1129,9 @@ input[type="text"]{
     font-size:13px;
     font-family: var(--font);
 
-    &.c-search-inner{
+    /* &.c-search-inner{
         color: var(--bg) !important;
-    }
+    } */
 }
 input[type="checkbox"]{
     width:18px;

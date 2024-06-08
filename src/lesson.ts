@@ -1577,6 +1577,7 @@ class InstructTask extends Task{
             x:r2.x+r2.width/2 + 17,
             y:r2.y+r2.height/2 - 22
         });
+        this.b.e.classList.add("type-instruct");
 
         await wait(750);
         await this.finish();

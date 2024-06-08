@@ -1,0 +1,27 @@
+{
+    "ver": "0",
+    "fullName": "Simple Menu Bar - Part 2",
+    "name": "Extras",
+    "banner": {
+        "sections": [
+            {
+                "head": "What Will We Be Doing in This Lesson?",
+                "text": [
+                    "<Short summary of lesson here>"
+                ]
+            }
+        ]
+    },
+    "finalInstance": null,
+    "boards": [],
+    "x": 40,
+    "y": 25,
+    "req": [
+        {
+            "lid": "FI8EQAfpS5eh6jkY",
+            "flip": true
+        }
+    ],
+    "type": 1,
+    "parent": "FI8EQAfpS5eh6jkY"
+}

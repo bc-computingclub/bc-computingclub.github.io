@@ -91,7 +91,9 @@ a {
     margin-left: 1em;
     justify-self: self-start;
 
-    background-image:url(/images/CO_logo_v2.svg);
+    /* background-image:url(/images/CO_logo_v2.svg); */
+    background-image:url(/images/warp_0.4.svg);
+    scale:1.5;
     background-size:contain;
     
     width:35px;
@@ -104,7 +106,8 @@ a {
     /* letter-spacing:4px; */
     text-transform:uppercase;
 
-    transition:transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    /* transition:transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275); */
+    transition:transform 1s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 .logo > a{
     display:block;
@@ -112,11 +115,13 @@ a {
     height:100%;
 }
 .logo:hover{
-    transform:rotate(360deg);
+    /* transform:rotate(360deg); */
+    transform:rotate(270deg);
 }
 body.themestyle-light .logo{
-    background-image:url(/images/CO_logo_v2-light.svg);
-    filter:brightness(1.2);
+    /* background-image:url(/images/CO_logo_v2-light.svg); */
+    /* filter:brightness(1.2); */
+    background-image:url(/images/warp_0.4.svg);
 }
 
 .nav-links {

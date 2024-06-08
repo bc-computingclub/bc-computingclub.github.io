@@ -224,6 +224,27 @@ body.hide-bubbles .tut-mouse{
     /* padding-bottom:3px; */
 }
 
+/* Bubble Types */
+
+.bubble.type-instruct{
+    --bubble-bg-solid:var(--practice-col);
+}
+.bubble.type-instruct > div:nth-child(2) > :first-child::before{
+    content: "Practice";
+    display: block;
+    translate: 0px -5px;
+    background-color: var(--practice-col-alt);
+    width: max-content;
+    padding: 4px 8px;
+    border-radius: 3px;
+    font-style: normal;
+    text-transform: uppercase;
+    position: absolute;
+    right: 5px;
+    top: -10px;
+    font-size: 12px;
+}
+
 /*  */
 
 .menu-lesson-banner{

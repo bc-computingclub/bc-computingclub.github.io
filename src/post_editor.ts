@@ -17,7 +17,7 @@ b_publish.addEventListener("click",e=>{
         new ConfirmMenu(
             "Submit Challenge", "Are you sure you want to submit your code?<br><br> You will have to un-submit it to make any changes in the future.<br><br><span class='note'>Submitted projects are publically viewable by anyone.</span>",
             () => {
-                submitChallenge(project.pid)
+                submitChallenge(project.meta.cid,project.pid)
             },
             () => { 
                 // console.log("Submission canceled");

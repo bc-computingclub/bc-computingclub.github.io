@@ -1,23 +1,25 @@
 {
     "ver": "0",
-    "name": "Simple Styling",
+    "name": "More Tips & Tricks",
     "banner": {
         "sections": [
             {
                 "head": "What Will We Be Doing in This Lesson?",
                 "text": [
-                    "We'll be looking at getting CSS setup in our page."
+                    "<Short summary of lesson here>"
                 ]
             }
         ]
     },
     "finalInstance": null,
-    "boards": ["css_board","attr_board"],
-    "x":35,
-    "y":-25,
-    "req":[
+    "boards": [],
+    "x": 30,
+    "y": 30,
+    "req": [
         {
-            "lid":"aw5HFgPdsxJPHMcg"
+            "lid": "EyB1inNhQPsGco61"
         }
-    ]
+    ],
+    "type": 1,
+    "parent": "FI8EQAfpS5eh6jkY"
 }

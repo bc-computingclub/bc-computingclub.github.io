@@ -1,10 +1,12 @@
-import { io, server, CredentialResData, User, users, getUserBySock, sanitizeEmail, getProject, attemptToGetProject, access, readdir, read, mkdir, removeFile, write, ULFile, ProjectMeta, allProjects, UserChallengeData, Project, getProject2, ULItem, ULFolder, rename, removeFolder, getDefaultProjectMeta, getProjectFromHD, lessonMetas, LessonMeta, loadProject, LessonMode, getLessonMeta, writeLessonMeta, deleteLessonMeta, socks, internalCP, internalCPDir } from "./connection";
-import { CSubmission, Challenge, ChallengeData, ChallengeGet, challenges } from "./s_challenges";
-import {LessonData, PTreeFolder, getLessonFolder, globalLessonFolders, lessonCache, ptreeMap} from "./s_lesson";
+import { io, server, CredentialResData, User, users, getSession, sanitizeEmail, getProject, attemptToGetProject, getDefaultProjectMeta, getProjectFromHD, lessonMetas, LessonMeta, loadProject, LessonMode, writeLessonMeta, deleteLessonMeta, socks, ULFolder, ULItem, ULFile, getProject2, ProjectMeta, allProjects, Project, UserChallengeData, projectCache } from "./connection";
+import { CSubmission, Challenge, ChallengeData, ChallengeGet, challenges, getDifficultyId } from "./s_challenges";
+import {LessonData, getLessonFolder, globalLessonFolders, ptreeMap, reloadLessons} from "./s_lesson";
 import fs, { copyFile } from "fs";
 import { createInterface } from "readline";
 import crypto from "crypto";
-import { createGuidedProject, createLesson } from "./s_util";
+import { createGuidedProject, createLesson, write, read, readdir, access, mkdir, removeFolder, removeFile, rename, internalCPDir, internalCP, lessonCache } from "./s_util";
+import { ChallengeInst, ChallengeModel, ChallengeSubmissionModel, LessonMetaInst, ProjectInst, ProjectModel, UserModel, UserSessionItem, findChallenge, removeFromList, removeFromListPred, uploadChallenges, uploadLessonProgs, uploadUsers, uploadUsersStage2, userSessions } from "./db";
+import mongoose from "mongoose";
 
 function valVar(v:any,type:string){
     if(v == null) return false;
@@ -26,148 +28,215 @@ function valVar2(v:any,type:string,f:any){
 }
 
 let usersOnline:string[] = [];
-let allUsers:Record<string,string> = {};
-function readAllUsers(){
-    let str = fs.readFileSync("../data/users.json","utf8");
-    if(!str){
-        console.log("$ error loading user cache; code 1");
-        return;
-    }
-    try{
-        allUsers = JSON.parse(str);
-    }
-    catch(e){
-        console.log("$ error loading user cache; code 2");
-        return;
-    }
-    console.log("$ loaded user cache");
-}
-async function saveUserCache(){
-    await write("../data/users.json",JSON.stringify(allUsers),"utf8");
-}
-readAllUsers();
+// let allUsers:Record<string,string> = {};
+// function readAllUsers(){
+//     let str = fs.readFileSync("../data/users.json","utf8");
+//     if(!str){
+//         console.log("$ error loading user cache; code 1");
+//         return;
+//     }
+//     try{
+//         allUsers = JSON.parse(str);
+//     }
+//     catch(e){
+//         console.log("$ error loading user cache; code 2");
+//         return;
+//     }
+//     console.log("$ loaded user cache");
+// }
+// async function saveUserCache(){
+//     await write("../data/users.json",JSON.stringify(allUsers),"utf8");
+// }
+// readAllUsers();
 
 io.on("connection",socket=>{
     socket.on("logout",async (call:(data:any)=>void)=>{
         if(!valVar(call,"function")) return;
 
-        let user = getUserBySock(socket.id);
+        let user = getSession(socket.id);
         if(!user){
             call(-3);
             return;
         }
 
-        await user.saveToFile();
+        // await user.saveToFile();
 
         users.delete(user.uid);
-        socks.delete(user.uid);
+        socks.delete(socket.id);
+        user.removeSocketId(socket.id);
+
+        userSessions.delete(socket.id);
         
-        user.deleteTokens();
-        user.deleteSocketIds();
+        // user.deleteTokens();
+        // user.deleteSocketIds();
 
         call(0);
     });
     socket.on("login",async (data:CredentialResData,token:string,call:(data:any)=>void)=>{
-        if(!valVar2(data,"object",call)) return;
-        if(!valVar2(data.email,"string",call)) return;
-        // if(!valVar2(data.uid,"string",call)) return; // not until we fully migrate to uid
-        if(!valVar2(token,"string",call)) return;
-        if(!valVar(call,"function")) return;
-        if(token.length < 20){
-            call(1);
-            return;
+        // console.log("login: ",data,token);
+
+        async function post(session:UserSessionItem,isNew=false){
+            session.meta.lastLoggedIn = new Date();
+            await session.meta.save();
+            // console.log("$ logged in: "+data.email);
+
+            socks.set(socket.id,session.meta.email);
+            users.set(session.meta.uid,session);
+            session.addSocketId(socket.id);
+
+            call({
+                ...data,
+                uid:session.meta.uid,
+                _joinDate:session.meta.joinDate.toISOString(),
+                _lastLoggedIn:session.meta.lastLoggedIn.toISOString()
+            });
         }
 
-        let uid = allUsers[data.email];
-        data.uid = uid;
+        async function attempt(){
+            let session = userSessions.get(socket.id);
+            if(!session){
+                // console.log("...creating a session");
+                
+                let result = await UserModel.findOne({
+                    email:data.email
+                });
 
-        let wasNewUser = false;
+                if(!result){ // no account, create one
+                    console.log("...creating new account");
+                    result = new UserModel({
+                        uid:crypto.randomUUID(),
+                        name:data.name,
+                        email:data.email,
+                        picture:data.picture,
+                        joinDate:new Date(),
+                        lastLoggedIn:new Date()
+                    });
+                    await result.save();
+                    // console.log("...SAVED...");
+                }
+                // account already exists, login and create new session
+                // console.log("...creating SESSION...");
+                // @ts-ignore
+                session = new UserSessionItem(token,result);
+                userSessions.set(socket.id,session);
 
-        // ** tmp fix for email to uid conversion
-        // if(data.uid == null) data.uid = data.email;
+                post(session,true);
+            }
+            else if(false){ // there shouldn't be a way you can get to this point unless you manually invoke login from the console
+                // if(session.token != token){
+                //     console.log("!!! token is invalid -> need to relog");
+                //     userSessions.delete(data.email);
+                //     attempt();
+                //     return;
+                // }
+                // console.log("...ALREADY logged in");
 
-        let user = users.get(data.uid);
-        // console.log("... logging in ...",data.uid,data.email);
-        if(!user){ // create account
-            if(!users.has(data.uid)){
-                // let san = sanitizeEmail(data.email);
-                // try to read from file first
-                let fdataStr:string|null = null;
-                try{
-                    fdataStr = await read("../users/"+data.uid+".json","utf8");
-                }
-                catch(e){}
-
-                function newUser(){
-                    if(data.uid == null) data.uid = crypto.randomUUID();
-                    user = new User(data.uid,data.name,data.email,data.picture,data._joinDate,data._lastLoggedIn,socket.id,[]);
-                    let dat = data as any;
-                    user.recent = dat.recent ?? [];
-                    user.starred = dat.starred ?? [];
-                    
-                    user.joinDate = new Date().toISOString();
-                    user.saveToFile();
-                    wasNewUser = true;
-                    allUsers[data.email] = data.uid;
-                    saveUserCache();
-                    console.log(":: created new user: ",user.uid,user.email);
-                    return user;
-                }
-                if(!fdataStr){
-                    // create new user if couldn't find their file
-                    newUser();
-                }
-                else{
-                    let fdata = JSON.parse(fdataStr);
-                    if(!fdata){
-                        console.log("# Err couldn't read user file! using provided data instead");
-                        let u = newUser();
-                        call(u.getTransferData());
-                        return;
-                    }
-                    user = new User(data.uid,fdata.name,fdata.email,fdata.picture,fdata.joinDate,fdata.lastLoggedIn,socket.id,fdata.pMeta);
-                    user.challenges = (fdata.challenges as any[]||[]).map(v=>new UserChallengeData(v.i,v.cid,v.pid));
-                    let dat = fdata as any;
-                    user.recent = dat.recent ?? [];
-                    user.starred = dat.starred ?? [];
-                    // user.lesson = fdata.lesson || {};
-                    // user.saveToFile();
-                }
-                if(user){
-                    users.set(user.uid,user);
-                    if(usersOnline.includes(user.email)) usersOnline.push(user.email);
-                }
+                // post(session,false);
             }
         }
-        if(!user){
-            call(2);
-            return;
-        }
-        if(!user.joinDate) user.joinDate = new Date().toISOString();
-        user.lastLoggedIn = new Date().toISOString();
-
-        if(!await access("../users/"+user.uid)){
-            let path = "../users/"+user.uid;
-            await mkdir(path);
-            await mkdir(path+"/lesson");
-        }
-
-        // login
-        let _prevToken = user.getFirstToken();
-        user.addToken(token);
-        user.addSocketId(socket.id);
-
-        // if(!wasNewUser) user.saveToFile(); // disabled for testing
-
-        call(user.getTransferData());
-
-        // console.log(":: user logged in: ",user.uid,user.email,` (New session? ${user.getFirstToken() != _prevToken}) (SockIds: ${user.getSocketIds().join(", ")})`);
+        attempt();
     });
+    // socket.on("login_old",async (data:CredentialResData,token:string,call:(data:any)=>void)=>{
+    //     if(!valVar2(data,"object",call)) return;
+    //     if(!valVar2(data.email,"string",call)) return;
+    //     // if(!valVar2(data.uid,"string",call)) return; // not until we fully migrate to uid
+    //     if(!valVar2(token,"string",call)) return;
+    //     if(!valVar(call,"function")) return;
+    //     if(token.length < 20){
+    //         call(1);
+    //         return;
+    //     }
+
+    //     let uid = allUsers[data.email];
+    //     data.uid = uid;
+
+    //     let wasNewUser = false;
+
+    //     // ** tmp fix for email to uid conversion
+    //     // if(data.uid == null) data.uid = data.email;
+
+    //     let user = users.get(data.uid);
+    //     // console.log("... logging in ...",data.uid,data.email);
+    //     if(!user){ // create account
+    //         if(!users.has(data.uid)){
+    //             // let san = sanitizeEmail(data.email);
+    //             // try to read from file first
+    //             let fdataStr:string|null = null;
+    //             try{
+    //                 fdataStr = await read("../users/"+data.uid+".json","utf8");
+    //             }
+    //             catch(e){}
+
+    //             function newUser(){
+    //                 if(data.uid == null) data.uid = crypto.randomUUID();
+    //                 user = new User(data.uid,data.name,data.email,data.picture,data._joinDate,data._lastLoggedIn,socket.id,[]);
+    //                 let dat = data as any;
+    //                 user.recent = dat.recent ?? [];
+    //                 user.starred = dat.starred ?? [];
+                    
+    //                 user.joinDate = new Date().toISOString();
+    //                 user.saveToFile();
+    //                 wasNewUser = true;
+    //                 allUsers[data.email] = data.uid;
+    //                 saveUserCache();
+    //                 console.log(":: created new user: ",user.uid,user.email);
+    //                 return user;
+    //             }
+    //             if(!fdataStr){
+    //                 // create new user if couldn't find their file
+    //                 newUser();
+    //             }
+    //             else{
+    //                 let fdata = JSON.parse(fdataStr);
+    //                 if(!fdata){
+    //                     console.log("# Err couldn't read user file! using provided data instead");
+    //                     let u = newUser();
+    //                     call(u.getTransferData());
+    //                     return;
+    //                 }
+    //                 user = new User(data.uid,fdata.name,fdata.email,fdata.picture,fdata.joinDate,fdata.lastLoggedIn,socket.id,fdata.pMeta);
+    //                 user.challenges = (fdata.challenges as any[]||[]).map(v=>new UserChallengeData(v.i,v.cid,v.pid));
+    //                 let dat = fdata as any;
+    //                 user.recent = dat.recent ?? [];
+    //                 user.starred = dat.starred ?? [];
+    //                 // user.lesson = fdata.lesson || {};
+    //                 // user.saveToFile();
+    //             }
+    //             if(user){
+    //                 users.set(user.uid,user);
+    //                 if(usersOnline.includes(user.email)) usersOnline.push(user.email);
+    //             }
+    //         }
+    //     }
+    //     if(!user){
+    //         call(2);
+    //         return;
+    //     }
+    //     if(!user.joinDate) user.joinDate = new Date().toISOString();
+    //     user.lastLoggedIn = new Date().toISOString();
+
+    //     if(!await access("../users/"+user.uid)){
+    //         let path = "../users/"+user.uid;
+    //         await mkdir(path);
+    //         await mkdir(path+"/lesson");
+    //     }
+
+    //     // login
+    //     let _prevToken = user.getFirstToken();
+    //     user.addToken(token);
+    //     user.addSocketId(socket.id);
+
+    //     // if(!wasNewUser) user.saveToFile(); // disabled for testing
+
+    //     call(user.getTransferData());
+
+    //     // console.log(":: user logged in: ",user.uid,user.email,` (New session? ${user.getFirstToken() != _prevToken}) (SockIds: ${user.getSocketIds().join(", ")})`);
+    // });
     socket.on("disconnect",()=>{
-        let user = getUserBySock(socket.id);
+        let user = getSession(socket.id);
         if(!user) return;
-        user.removeSocketId(socket.id);
-        usersOnline.splice(usersOnline.indexOf(user.email),1);
+        // user.removeSocketId(socket.id);
+        removeFromList(usersOnline,user.meta.email);
     });
     socket.on("getUserLastLoggedIn",(token:string)=>{
 
@@ -180,41 +249,43 @@ io.on("connection",socket=>{
     socket.on("restartLessonProgress",async (lid:string,f:(data:any)=>void)=>{
         if(!valVar2(lid,"path",f)) return;
         
-        let user = getUserBySock(socket.id);
+        let user = getSession(socket.id);
         if(!user){
             f(-3);
             return;
         }
 
-        let meta = await getLessonMeta(user.uid,lid);
-        if(!meta){
+        let lessonMeta = await user.getLessonMeta(lid);
+        if(!lessonMeta){
             f(1);
             return;
         }
 
-        meta.eventI = -1;
-        meta.taskI = -1;
-        meta.prog = 0;
-        await writeLessonMeta(user.uid,lid,meta);
+        lessonMeta.meta.eventI = -1;
+        lessonMeta.meta.taskI = -1;
+        lessonMeta.meta.progress = 0;
+
+        // save
+        await lessonMeta.save();
 
         f(0);
     });
     socket.on("deleteLessonProgress",async (lid:string,f:(data:any)=>void)=>{
         if(!valVar2(lid,"path",f)) return;
         
-        let user = getUserBySock(socket.id);
+        let user = getSession(socket.id);
         if(!user){
             f(-3);
             return;
         }
 
-        let meta = await getLessonMeta(user.uid,lid);
-        if(!meta){
+        let lessonMeta = await user.getLessonMeta(lid);
+        if(!lessonMeta){
             f(1);
             return;
         }
         // await deleteLessonMeta(user.uid,lid);
-        await deleteLessonMeta(user.uid,lid,meta);
+        await deleteLessonMeta(lessonMeta);
         await removeFolder("../lesson/"+user.uid+"/"+lid);
 
         f(0);
@@ -225,34 +296,39 @@ io.on("connection",socket=>{
         if(!valVar2(root,"object",f)) return;
         if(!valVar2(root.items,"array",f)) return;
 
-        let user = getUserBySock(socket.id);
+        let user = getSession(socket.id);
         if(!user){
             f(-3);
             return;
         }
 
-        let p = await createProject(user,name,desc,false);
+        let p = await user.createProject({
+            name:name,
+            desc:desc,
+            public:false
+        })
+        // let p = await createProject(user,name,desc,false);
         if(!p){
             f(1);
             return;
         }
 
-        let path = "../project/"+user.uid+"/"+p.pid;
-        if(!await access(path)) await mkdir(path);
+        let path = await p.createPath();
 
-        async function _write(l:ULItem[],pth:string,ffL:ULItem[]){
+        async function _write(l:any[],pth:string,ffL:any[]){
             let i = 0;
             for(const item of l){
                 let ff:ULItem|undefined = undefined;
                 if(ffL){
                     // ff = ffL[i];
                     ff = ffL.find(v=>v.name == item.name);
-                    if(!ff) ffL.splice(i,0,item);
+                    if(!ff) if(i != -1) ffL.splice(i,0,item);
                 }
-                if(item instanceof ULFile){
+                // if(item instanceof ULFile){
+                if("val" in item){
                     await write(path+"/"+pth+"/"+item.name,item.val,item.enc);
                     if(ff){
-                        if(ff instanceof ULFile){
+                        if("val" in ff){
                             ff.name = item.name;
                             ff.val = item.val;
                         }
@@ -260,53 +336,63 @@ io.on("connection",socket=>{
                     }
                     // else console.log("$ err: no ff ref found");
                 }
-                else if(item instanceof ULFolder){
+                else if("items" in item){
                     await mkdir(path+"/"+pth+"/"+item.name);
                     await _write(item.items,pth+"/"+item.name,(ff as ULFolder)?.items);
-                    if(ff) if(ff instanceof ULFolder){
+                    if(ff) if("items" in ff){
                         ff.name = item.name;
                     }
                 }
                 i++;
             }
         }
-        await _write(root.items,"",p.items);
+        // await _write(root.items,"",p.items);
+        await _write(root.items,"",[]);
         
-        f(p.pid);
+        f(p.meta.pid);
     });
     socket.on("finishLesson",async (lid:string,call:(data:any)=>void)=>{
         if(!valVar2(lid,"string",call)) return;
 
-        let user = getUserBySock(socket.id);
+        let user = getSession(socket.id);
         if(!user){
             call(-3);
             return;
         }
 
-        let meta = await getLessonMeta(user.uid,lid);
-        if(!meta){
+        let lessonMeta = await user.getLessonMeta(lid);
+        if(!lessonMeta){
             call(1);
             return;
         }
-        meta.prog = 100;
-        meta.hf = true;
-        await writeLessonMeta(user.uid,lid,meta);
+
+        let changedUser = false;
+
+        lessonMeta.meta.progress = 100;
+        if(!lessonMeta.meta.hasFinished){
+            // if it hasn't been finished then increment lessonsCompleted stat
+            user.meta.lessonsCompleted++;
+            changedUser = true;
+        }
+        lessonMeta.meta.hasFinished = true;
+        await lessonMeta.save();
+        if(changedUser) await user.save();
         call(0);
     });
     socket.on("postFinishLesson",async (lid:string,call:(data:any)=>void)=>{
         if(!valVar2(lid,"string",call)) return;
 
-        let user = getUserBySock(socket.id);
+        let user = getSession(socket.id);
         if(!user){
             call(-3);
             return;
         }
 
-        let meta = await getLessonMeta(user.uid,lid);
-        if(!meta){
-            call(2);
-            return;
-        }
+        let lessonMeta = await user.getLessonMeta(lid);
+        // if(!lessonMeta){
+        //     call(2);
+        //     return;
+        // }
         // if(meta._hp >= __maxHP){ // don't keep repeating after it's been done once // // might need to disable this until I find a more efficient solution
         //     call(0);
         //     return;
@@ -361,22 +447,29 @@ io.on("connection",socket=>{
         let unlockSuccess = true;
         for(const reqLink of ldata.lesson.links){ // requirements for unlock
             // let req = ldata.folder.lessons.find(v=>v.lid == reqLink.to);
-            let meta2 = await getLessonMeta(user.uid,reqLink.to);
+            let meta2 = await user.getLessonMeta(reqLink.to,true,true);
             if(!meta2){
                 unlockSuccess = false;
                 break;
             }
-            if(!meta2.hf){
+            if(!meta2.meta.hasFinished){
                 unlockSuccess = false;
                 break;
             }
         }
 
         if(unlockSuccess){
-            meta.u = true; // unlock
+            if(!lessonMeta) lessonMeta = await user.getLessonMeta(lid,false,false);
+            if(!lessonMeta){
+                call(4);
+                return;
+            }
+            lessonMeta.meta.unlocked = true; // unlock
+            if(!lessonMeta.meta.dateUnlocked) lessonMeta.meta.dateUnlocked = new Date();
 
-            meta._hp = __maxHP;
-            await writeLessonMeta(user.uid,lid,meta);
+            // lessonMeta.meta._hp = __maxHP; // depricated?
+            // await writeLessonMeta(user.uid,lid,lessonMeta);
+            await lessonMeta.save();
             
             // call(ldata.lesson.links.map(v=>v.to));
             call(null);
@@ -394,7 +487,7 @@ io.on("connection",socket=>{
             return;
         }
 
-        let user = getUserBySock(socket.id);
+        let user = getSession(socket.id);
         if(!user){
             call(-3);
             return;
@@ -409,13 +502,22 @@ io.on("connection",socket=>{
         //     return;
         // }
 
-        let meta = await getLessonMeta(user.uid,lid);
-        if(meta.times == 0) meta.ws = new Date().toISOString();
-        meta.times++;
-        meta.s = true;
-        meta.wu = new Date().toISOString();
-        await mkdir("../users/"+user.uid+"/lesson/"+lid);
-        await writeLessonMeta(user.uid,lid,meta);
+        // let meta = await getLessonMeta(user.uid,lid);
+        let lessonMeta = await user.getLessonMeta(lid,false,false);
+        if(!lessonMeta){
+            call(2); // couldn't find progress data
+            return;
+        }
+        let meta = lessonMeta.meta;
+
+        if(meta.times == 0) meta.dateStarted = new Date();
+        if(!meta.started) meta.times++;
+        meta.started = true;
+        // await mkdir("../users/"+user.uid+"/lesson/"+lid);
+        // await writeLessonMeta(user.uid,lid,meta);
+
+        // save
+        meta.save();
 
         // console.log("----started lesson");
         // user.startLesson(lid,mode);
@@ -424,7 +526,7 @@ io.on("connection",socket=>{
     socket.on("getProgressTree",async (path:string,call:(data:any)=>void)=>{     
         if(!valVar2(path,"string",call)) return;
 
-        let user = getUserBySock(socket.id);
+        let user = getSession(socket.id);
         if(!user){
             call(-3);
             return;
@@ -450,13 +552,17 @@ io.on("connection",socket=>{
         for(const l of folder.lessons){
             if(!l.ops) continue;
             let wasChange = false;
-            let meta:LessonMeta|null = null;
+            let meta:LessonMetaInst|undefined;
             if(l.ops.unlocked){
-                meta = await getLessonMeta(user.uid,l.lid);
-                if(!meta.u) wasChange = true;
-                meta.u = true;
+                // meta = await getLessonMeta(user.uid,l.lid);
+                meta = await user.getLessonMeta(l.lid,true);
+                if(meta){
+                    if(!meta.meta.unlocked) wasChange = true;
+                    meta.meta.unlocked = true;
+                }
             }
-            if(wasChange) if(meta) await writeLessonMeta(user.uid,l.lid,meta);
+            if(wasChange) if(meta) meta.meta.save();
+            // if(wasChange) if(meta) await writeLessonMeta(user.uid,l.lid,meta);
         }
         
         call(folder.lessons);
@@ -465,7 +571,7 @@ io.on("connection",socket=>{
         if(!valVar(call,"function")) return;
         if(!valVar2(lids,"array",call)) return;
         
-        let user = getUserBySock(socket.id);
+        let user = getSession(socket.id);
         if(!user){
             call(-3);
             return;
@@ -483,8 +589,10 @@ io.on("connection",socket=>{
         //     return;
         // }
         for(const lid of lids){
-            let data = await getLessonMeta(user.uid,lid);
-            ar[lid] = data;
+            // let data = await getLessonMeta(user.uid,lid);
+            let lessonMeta = await user.getLessonMeta(lid,true);
+            if(!lessonMeta) continue;
+            ar[lid] = lessonMeta.serialize();
         }
 
         call(ar);
@@ -500,7 +608,7 @@ io.on("connection",socket=>{
         //     return;
         // }
         
-        let user = getUserBySock(socket.id);
+        let user = getSession(socket.id);
         if(!user){
             f(-3);
             return;
@@ -535,10 +643,13 @@ io.on("connection",socket=>{
         }
 
         // Initial files (for tutor)
-        if(!await access("../users/"+user.uid+"/lesson/"+lid)){
+        // if(!await access("../users/"+user.uid+"/lesson/"+lid)){
+        //     data.isStart = true;
+        // }
+        if(!await user.hasStartedLesson(lid)){
             data.isStart = true;
         }
-        if(!await access("../lesson/"+user.uid+"/"+lid)) if(data.continueFrom) await copyContinueFromFiles(user,data.continueFrom,lid);
+        if(!await access("../lesson/"+user.uid+"/"+lid)) if(data.continueFrom) await copyContinueFromFiles(user.uid,data.continueFrom,lid);
         let initialFiles = await readdir(path+"initial_files");
         if(initialFiles){
             data.initialFiles = [];
@@ -556,7 +667,7 @@ io.on("connection",socket=>{
         if(!valVar2(list,"array",call)) return;
         if(!valVar2(lessonId,"string",call)) return;
         
-        let user = getUserBySock(socket.id);
+        let user = getSession(socket.id);
         if(!user){
             call(-3);
             return;
@@ -584,26 +695,41 @@ io.on("connection",socket=>{
             await write(filePath+"/"+f.name,f.val,f.enc);
         }
 
-        let metaPath = "../users/"+user.uid+"/lesson/"+lessonId+"/";
-        if(!await access(metaPath)){
-            await mkdir(metaPath);
-            // await mkdir(metaPath+"tut");
-        }
+        // let metaPath = "../users/"+user.uid+"/lesson/"+lessonId+"/";
+        // if(!await access(metaPath)){
+        //     await mkdir(metaPath);
+        //     // await mkdir(metaPath+"tut");
+        // }
         // if(progress.tutFiles){ // need to check for type integrity later
         //     for(const f of progress.tutFiles){
         //         await write(metaPath+"tut/"+f.name,f.val,f.enc);
         //     }
         // }
-        let meta = lessonMetas.get(user.uid+":"+lessonId);
-        if(!meta){
-            meta = await getLessonMeta(user.uid,lessonId);
+
+        let lessonMeta = await user.getLessonMeta(lessonId);
+        if(!lessonMeta){
+            call(2);
+            return;
         }
-        else{
-            meta.eventI = progress.eventI;
-            meta.taskI = progress.taskI;
-            meta.prog = progress.prog;
-        }
-        await write(metaPath+"meta.json",JSON.stringify(meta),"utf8");
+
+        lessonMeta.meta.eventI = progress.eventI;
+        lessonMeta.meta.taskI = progress.taskI;
+        lessonMeta.meta.progress = progress.prog;
+        lessonMeta.updateWhenLastSaved();
+
+        // save
+        await lessonMeta.meta.save();
+
+        // let meta = lessonMetas.get(user.uid+":"+lessonId);
+        // if(!meta){
+        //     meta = await getLessonMeta(user.uid,lessonId);
+        // }
+        // else{
+        //     meta.eventI = progress.eventI;
+        //     meta.taskI = progress.taskI;
+        //     meta.prog = progress.prog;
+        // }
+        // await write(metaPath+"meta.json",JSON.stringify(meta),"utf8");
 
         // todo - cache file values so if they're the same then they don't need to be reuploaded, or do this on the client maybe to speed it up
 
@@ -614,56 +740,71 @@ io.on("connection",socket=>{
         if(!valVar(lessonId,"string")) return;
         if(!valVar(call,"function")) return;
 
-        let user = getUserBySock(socket.id);
+        let user = getSession(socket.id);
         if(!user) return;
 
-        let meta = await getLessonMeta(user.uid,lessonId);
-
-        // console.log("restoring lesson files...");
-        let path = "../lesson/"+user.uid+"/"+lessonId;
-        let filePath = path;
-        if(!await access(path)){
-            await mkdir(path);
-            // await mkdir(filePath);
-
-            // let path2 = "../lessons/"+lessonId+"/initial_files";
-            // let initialFiles = await readdir(path2);
-            // if(initialFiles){
-            //     for(const name of initialFiles){
-            //         await write(filePath+"/"+name,await read(path2+"/"+name));
-            //     }
-            // }
-            // if(meta.continueFrom) await copyContinueFromFiles(user,meta.continueFrom,lessonId);
-            // call(null);
-            // return;
-        }
-        let curFiles = await readdir(filePath);
-        // let tutFilePath = "../users/"+user.uid+"/lesson/"+lessonId+"/tut";
-        // let tutCurFiles = await readdir(tutFilePath);
-        if(!curFiles){
-            console.log("Err: failed to find project curFiles");
+        // let meta = await getLessonMeta(user.uid,lessonId);
+        let lessonMeta = await user.getLessonMeta(lessonId);
+        if(!lessonMeta){
+            call(1);
             return;
         }
-        let files:ULFile[] = [];
-        for(const f of curFiles){
-            files.push(new ULFile(f,await read(filePath+"/"+f,"utf8"),"","utf8"));
-        }
+
+        await lessonMeta.createPath();
+
+        // console.log("restoring lesson files...");
+        // let path = "../lesson/"+user.uid+"/"+lessonId;
+        // let filePath = path;
+        // if(!await access(path)){
+        //     await mkdir(path);
+        //     // await mkdir(filePath);
+
+        //     // let path2 = "../lessons/"+lessonId+"/initial_files";
+        //     // let initialFiles = await readdir(path2);
+        //     // if(initialFiles){
+        //     //     for(const name of initialFiles){
+        //     //         await write(filePath+"/"+name,await read(path2+"/"+name));
+        //     //     }
+        //     // }
+        //     // if(meta.continueFrom) await copyContinueFromFiles(user,meta.continueFrom,lessonId);
+        //     // call(null);
+        //     // return;
+        // }
+        // let curFiles = await readdir(filePath);
+        // // let tutFilePath = "../users/"+user.uid+"/lesson/"+lessonId+"/tut";
+        // // let tutCurFiles = await readdir(tutFilePath);
+        // if(!curFiles){
+        //     console.log("Err: failed to find project curFiles");
+        //     return;
+        // }
+        // let files:ULFile[] = [];
+        // for(const f of curFiles){
+        //     files.push(new ULFile(f,await read(filePath+"/"+f,"utf8"),"","utf8"));
+        // }
+
+        let files = await lessonMeta.getFileItems();
+
         // let tutFiles:ULFile[] = [];
         // if(tutCurFiles) for(const f of tutCurFiles){
         //     tutFiles.push(new ULFile(f,await read(tutFilePath+"/"+f,"utf8"),"","utf8"));
         // }
 
-        if(meta){
-            meta.updateWhenLastSaved();
-            await writeLessonMeta(user.uid,lessonId,meta);
-        }
+        // if(meta){
+        //     meta.updateWhenLastSaved();
+        //     await writeLessonMeta(user.uid,lessonId,meta);
+        // }
+
+        lessonMeta.updateWhenLastSaved();
+        // save
+        await lessonMeta.meta.save();
+        
 
         let info = ptreeMap.get(lessonId);
 
         call({
             files,
             // tutFiles,
-            meta,
+            meta:lessonMeta.serialize(),
             info
         });
     });
@@ -672,7 +813,7 @@ io.on("connection",socket=>{
         if(!valVar2(listData,"array",call)) return;
         if(!valVar2(uid,"string",call)) return;
         if(!valVar2(pid,"string",call)) return;
-        let user = getUserBySock(socket.id);
+        let user = getSession(socket.id);
         if(!user){
             call(1); // you aren't logged in
             return;
@@ -681,13 +822,14 @@ io.on("connection",socket=>{
         let list = listData.map(v=>ULItem.from(v));
 
         // let p = user.projects.find(v=>v.pid == pid);
-        let p = getProject(uid+":"+pid);
+        // let p = getProject(uid+":"+pid);
+        let p = await user.getProject(pid,uid);
         if(!p){
             console.log("Warn: project not found while uploading");
             call(2); // project not found
             return;
         }
-        if(!p.canUserEdit(user.uid)){
+        if(!p.canEdit(user.uid)){
             console.log("$ err: user tried to edit project without permission");
             call(3); // no permission
             return;
@@ -695,8 +837,9 @@ io.on("connection",socket=>{
         
         // console.log("uploading...");
 
-        let path = "../project/"+user.uid+"/"+pid;
-        if(!await access(path)) await mkdir(path);
+        // let path = "../project/"+user.uid+"/"+pid;
+        // if(!await access(path)) await mkdir(path);
+        let path = await p.createPath();
 
         let curFiles = await readdir(path);
         if(!curFiles){
@@ -747,7 +890,8 @@ io.on("connection",socket=>{
                 i++;
             }
         }
-        await _write(list,"",p.items);
+        // await _write(list,"",p.items);
+        await _write(list,"",[]);
 
         if(p) for(const f of list){
             // let ff = p.files.find(v=>v.name == f.name);
@@ -756,15 +900,16 @@ io.on("connection",socket=>{
         }
         else{
             console.log("Err: couldn't find project while uploading files: "+pid,"$ attempting to search");
-            p = await attemptToGetProject(user,pid);
-            if(p) console.log("$ found");
-            else console.log("$ still failed to find project");
+            // p = await attemptToGetProject(user,pid);
+            // if(p) console.log("$ found");
+            // else console.log("$ still failed to find project");
         }
 
         if(p) if(p.meta){
             // p.meta.wls = new Date().toISOString();
-            p.meta.updateWhenLastSaved();
-            await user.saveToFile();
+            p.updateWhenLastSaved();
+            await p.save();
+            // await user.saveToFile();
         }
         
 
@@ -777,25 +922,27 @@ io.on("connection",socket=>{
         if(!valVar2(uid,"string",call)) return;
         if(!valVar(pid,"string")){
             // console.log("Err: pid incorrect format");
-            call(null);
+            call(null,1);
             return;
         }
         if(!valVar(call,"function")){
             // console.log("Err: call incorrect format");
-            call(null);
+            call(null,2);
             return;
         }
 
-        let user = getUserBySock(socket.id);
+        let user = getSession(socket.id);
         if(!user){
-            call(null);
+            call(null,3);
             return;
         }
 
-        let p = await getProjectFromHD(uid,pid);
+        let p = await user.getProject(pid,uid);
+
+        // let p = await getProjectFromHD(uid,pid);
         // let p = getProject2(user.email,pid);
         if(!p){
-            call(null);
+            call(null,4);
             return;
         }
         if(typeof p == "number"){
@@ -803,22 +950,45 @@ io.on("connection",socket=>{
             return;
         }
 
-        if(!p.meta.isPublic){
-            if(uid != user.uid){
-                call(null,-2); // you do not have permission to view this private project
-                return;
-            }
+        if(!p.hasPermissionToView(user.meta.uid)){
+            call(null,-2); // you do not have permission to view this private project
+            return;
         }
 
-        if(!user.projects.includes(p)) user.projects.push(p);
+        // if(!user.projects.includes(p)) user.projects.push(p);
+        // if(!user.meta.projects.includes(p.meta._id)) // NOT SURE IF THIS IS NEEDED? shouldn't be
 
         // p.meta.wls = new Date().toISOString(); // resetting this makes it so time from closing the project to reopening it isn't included in the time spent on the project
-        p.meta.updateWhenLastSaved();
-        await user.saveToFile();
+        p.updateWhenLastSaved();
+        await p.save();
+        // await user.saveToFile();
 
-        call(p.serializeGet(true),null,user.canEdit(p.meta));
+        let serialized = p.serialize(user.uid);
+        let startPath = p.getPath();
+        
+        // async function search(folder:ULItem[],path:string){
+        //     let names = await readdir(path);
+        //     if(!names) return;
+        //     for(const name of names){
+        //         if(!name.includes(".")){
+        //             let subFolder = new ULFolder(name,[]);
+        //             folder.push(subFolder);
+        //             await search(subFolder.items,path+name+"/");
+        //         }
+        //         else{
+        //             let file = await read(path+name+"/","utf8",true);
+        //             folder.push(new ULFile(name,file,"","utf8"));
+        //         }
+        //     }
+        // }
+        // await search(serialized.items,startPath+"/");
+        serialized.items = await p.getFileItems();
 
-        user.addToRecents(p.pid);
+        // call(p.serializeGet(true),null,user.canEdit(p.meta));
+        call(serialized,null,p.canEdit(user.meta.uid));
+
+        user.addToRecents(p.meta.pid);
+        await user.save();
 
         return;
         
@@ -838,29 +1008,65 @@ io.on("connection",socket=>{
     });
 
     // User get stuff
-    socket.on("user-getProjectList",(section:ProjectGroup,f:(d:any)=>void)=>{
-        let user = getUserBySock(socket.id);
+    socket.on("user-getProjectList",async (section:ProjectGroup,f:(d:any)=>void)=>{
+        let user = getSession(socket.id);
         if(!user){
-            f(null);
+            f(-3);
             return;
         }
-        let data:any;
+        let query:mongoose.Query<any,any>|null = null;
         switch(section){
             case ProjectGroup.personal:{
                 // data = user.projects.map(v=>v.serialize()?.serialize());
-                data = user.pMeta.filter(v=>v.cid == null).map(v=>v.serialize());
+                // data = user.pMeta.filter(v=>v.cid == null).map(v=>v.serialize());
+                query = ProjectModel.find({
+                    uid:user.uid,
+                    cid:{
+                        $eq:null
+                    }
+                });
             } break;
             case ProjectGroup.challenges:{
-                data = user.pMeta.filter(v=>v.cid != null).map(v=>v.serialize()); // probably need to optimize the filters at some point
+                // data = user.pMeta.filter(v=>v.cid != null).map(v=>v.serialize()); // probably need to optimize the filters at some point
+                query = ProjectModel.find({
+                    uid:user.uid,
+                    cid:{
+                        $ne:null
+                    }
+                });
             } break;
             case ProjectGroup.recent:{
-                data = user.pMeta.filter(v=>user?.recent.includes(v.pid)).map(v=>v.serialize());
+                // data = user.pMeta.filter(v=>user?.recent.includes(v.pid)).map(v=>v.serialize());
+                query = ProjectModel.find({
+                    uid:user.uid,
+                    pid:{
+                        $in:user.meta.recentProjects
+                    }
+                });
             } break;
             case ProjectGroup.starred:{
-                data = user.pMeta.filter(v=>user?.starred.includes(v.pid)).map(v=>v.serialize());
+                // data = user.pMeta.filter(v=>user?.starred.includes(v.pid)).map(v=>v.serialize());
+                query = ProjectModel.find({
+                    uid:user.uid,
+                    pid:{
+                        $in:user.meta.starredProjects
+                    }
+                });
             } break;
         }
-        
+
+        if(!query){
+            f([]);
+            return;
+        }
+
+        query = query.sort({
+            dateLastSaved:1
+        });
+
+        let res = await query.exec();
+
+        let data = res.map((v:any)=>new ProjectInst(v).serialize(user.uid)); // compliler doesn't like user here for some reason
         f(data);
     });
 
@@ -877,17 +1083,28 @@ io.on("connection",socket=>{
         if(!valVar2(ownerUid,"string",f)) return 1;
         if(!valVar2(pid,"string",f)) return 2;
 
-        let user = getUserBySock(socket.id);
+        let user = getSession(socket.id);
         if(!user){
             f(null);
             return 3;
         }
 
-        let p = await getProjectFromHD(ownerUid,pid);
-        if(typeof p == "number") f(p);
-        else f({
-            p:p.serializeGet(true)
-        });
+        let p = await user.getProject(pid,ownerUid);
+        if(!p){
+            f(2);
+            return;
+        }
+
+        let data = p.serialize(user.uid);
+        data.items = await p.getFileItems();
+        
+        f({p:data});
+        
+        // let p = await getProjectFromHD(ownerUid,pid);
+        // if(typeof p == "number") f(p);
+        // else f({
+        //     p:p.serializeGet(true)
+        // });
     });
     socket.on("getSubmissions",async (cid:string,perPage:number,pageI:number,filter:SubmissionsFilterType,option:string,desc:boolean,f:(data:any)=>void)=>{
         if(!valVar2(perPage,"number",f)) return;
@@ -896,7 +1113,7 @@ io.on("connection",socket=>{
         if(!valVar2(option,"string",f)) return;
         if(!valVar2(desc,"boolean",f)) return;
 
-        let user = getUserBySock(socket.id);
+        let user = getSession(socket.id);
         if(!user){
             f(-3);
             return;
@@ -946,28 +1163,27 @@ io.on("connection",socket=>{
         
         f(list);
     });
-    socket.on("getChallenge",(cid:string,mode:number,f:(data:any)=>void)=>{
+    socket.on("getChallenge",async (cid:string,mode:number,f:(data:any)=>void)=>{
         if(!valVar2(cid,"string",f)) return;
         if(!valVar2(mode,"number",f)) return;
         
-        let user = getUserBySock(socket.id);
+        let user = getSession(socket.id);
         if(!user){
             f(null);
             return;
         }
 
-        let c = challenges.get(cid);
+        // let c = challenges.get(cid);
+        let c = await findChallenge(cid);
         if(!c){
             f(null);
             return;
         }
 
-        f(c.serializeGet(user,mode));
+        // f(c.serializeGet(user,mode));
+        f(await c.serialize(user,mode));
     });
-    socket.on("getChallenges",(perPage:number,pageI:number,filter:FilterType,option:string,desc:boolean,f:(data:any)=>void)=>{
-        let user = getUserBySock(socket.id);
-        if(!user) return;
-        
+    socket.on("getChallenges",async (search:string|undefined,perPage:number,pageI:number,filter:FilterType,option:string,desc:boolean,f:(data:any)=>void)=>{
         if(!option) option = "popularity";
         if(desc == null) desc = true;
         
@@ -977,78 +1193,158 @@ io.on("connection",socket=>{
         if(!valVar2(option,"string",f)) return;
         if(!valVar2(desc,"boolean",f)) return;
         
-        let list:ChallengeGet[] = [];
-        let clist:Challenge[] = [];
-        for(const [k,v] of challenges){
-            clist.push(v);
+        let user = getSession(socket.id);
+        if(!user){
+            f(1);
+            return;
         }
-        clist = clist.sort((a,b)=>{
-            switch(option) {
-                case "popularity":
-                    if(desc) {
-                        return b.sub.length - a.sub.length;
-                    }
-                    return a.sub.length - b.sub.length;
-                case "alphabetical":
-                    if(desc) {
-                        return a.name.localeCompare(b.name);
-                    }
-                    return b.name.localeCompare(a.name);
-                default:
-                    return 0;
-            }
-        });
 
-        // my optimized method
-        let i = 0;
-        let skip = pageI*perPage;
-        for(const v of clist){
-            if(filter.difficulty?.length){
-                if(!filter.difficulty.includes(v.difficulty)) continue;
-            }
-            // else continue; // comment this so if no boxes are checked to default to all checked
-            let ongoing = v.ongoing;
-            if(filter.ongoing?.length) if(!ongoing) continue;
-            // if(filter.ongoing?.length ? !ongoing : ongoing) continue;
-
-            if(filter.completed?.length) if(!v.isCompleted(user)) continue;
+        let difficulty = filter.difficulty?.map(v=>getDifficultyId(v)) ?? [];
+        
+        let qq = {
+            // ongoing is not implemented
             
-            if(i >= skip) list.push(v.serializeGet(user,0));
-
-            if(list.length >= perPage) break;
-            i++;
+            // $where:function(){
+            //     let inst = new ChallengeInst(this);
+            //     if(filter.completed.length) if(!inst.isCompleted(user)) return false;
+            //     if(filter.ongoing.length) if(!inst.isOngoing()) return false;
+            //     return true;
+            // },
+        } as any;
+        if(search != undefined){
+            qq["$text"] = {
+                $search:search
+            };
         }
-        // partly chatgpt from Paul
-        if(false){
-            let challengeList:Challenge[] = [];
-            for(const [k,v] of challenges){
-                list.push(v);
-            }
-            list = challengeList.filter(challenge=>{
-                Object.keys(filter).every(filterType => {
-                    switch (filterType) {
-                        case "difficulty":
-                            return filter[filterType].includes(challenge.difficulty);
-                        // case "ongoing":
-                                // return challenge.ongoing === true;
-                        // case "completed":
-                                // return challenge.submitted === true;
-                        default:
-                            return true;
-                    }
+        if(filter.difficulty?.length){
+            qq.difficulty = {
+                $in:difficulty
+            };
+        }
+        if(filter.completed?.length){
+            qq.cid = { // is completed
+                $in:user.meta.completedChallenges
+            };
+        }
+        let query = ChallengeModel.find(qq);
+
+        switch(option) {
+            case "popularity":
+                query = query.sort({
+                    submission_count:desc?-1:1
                 });
-            });
+                // if(desc) {
+                //     return b.sub.length - a.sub.length;
+                // }
+                // return a.sub.length - b.sub.length;
+            case "alphabetical":
+                query = query.sort({
+                    name:desc?1:-1
+                });
+                // if(desc) {
+                //     return a.name.localeCompare(b.name);
+                // }
+                // return b.name.localeCompare(a.name);
+            // default:
+                // return 0;
+        }
+
+        // query = query.skip(pageI*perPage).limit(perPage);
+
+        let res = await query.exec();
+
+        let list:any[] = [];
+        for(const c of res){
+            let inst = new ChallengeInst(c);
+            list.push(await inst.serialize(user,0));
         }
 
         f(list);
     });
+    // socket.on("getChallenges_old",async (perPage:number,pageI:number,filter:FilterType,option:string,desc:boolean,f:(data:any)=>void)=>{
+    //     let user = getSession(socket.id);
+    //     if(!user) return;
+        
+    //     if(!option) option = "popularity";
+    //     if(desc == null) desc = true;
+        
+    //     if(!valVar2(perPage,"number",f)) return;
+    //     if(!valVar2(pageI,"number",f)) return;
+    //     if(!valVar2(filter,"object",f)) return;
+    //     if(!valVar2(option,"string",f)) return;
+    //     if(!valVar2(desc,"boolean",f)) return;
+        
+    //     let list:ChallengeGet[] = [];
+    //     let clist:Challenge[] = [];
+    //     for(const [k,v] of challenges){
+    //         clist.push(v);
+    //     }
+    //     clist = clist.sort((a,b)=>{
+    //         switch(option) {
+    //             case "popularity":
+    //                 if(desc) {
+    //                     return b.sub.length - a.sub.length;
+    //                 }
+    //                 return a.sub.length - b.sub.length;
+    //             case "alphabetical":
+    //                 if(desc) {
+    //                     return a.name.localeCompare(b.name);
+    //                 }
+    //                 return b.name.localeCompare(a.name);
+    //             default:
+    //                 return 0;
+    //         }
+    //     });
+
+    //     // my optimized method
+    //     let i = 0;
+    //     let skip = pageI*perPage;
+    //     for(const v of clist){
+    //         if(filter.difficulty?.length){
+    //             if(!filter.difficulty.includes(v.difficulty)) continue;
+    //         }
+    //         // else continue; // comment this so if no boxes are checked to default to all checked
+    //         let ongoing = v.ongoing;
+    //         if(filter.ongoing?.length) if(!ongoing) continue;
+    //         // if(filter.ongoing?.length ? !ongoing : ongoing) continue;
+
+    //         if(filter.completed?.length) if(!v.isCompleted(user)) continue;
+            
+    //         if(i >= skip) list.push(await v.serializeGet(user,0));
+
+    //         if(list.length >= perPage) break;
+    //         i++;
+    //     }
+    //     // partly chatgpt from Paul
+    //     if(false){
+    //         let challengeList:Challenge[] = [];
+    //         for(const [k,v] of challenges){
+    //             list.push(v);
+    //         }
+    //         list = challengeList.filter(challenge=>{
+    //             Object.keys(filter).every(filterType => {
+    //                 switch (filterType) {
+    //                     case "difficulty":
+    //                         return filter[filterType].includes(challenge.difficulty);
+    //                     // case "ongoing":
+    //                             // return challenge.ongoing === true;
+    //                     // case "completed":
+    //                             // return challenge.submitted === true;
+    //                     default:
+    //                         return true;
+    //                 }
+    //             });
+    //         });
+    //     }
+
+    //     f(list);
+    // });
     socket.on("startChallenge",async (cid:string,f:(data:any)=>void)=>{
         if(!valVar2(cid,"string",f)) return;
-        // console.log("starting challenge...",cid);
 
-        let user = getUserBySock(socket.id);
+        let user = getSession(socket.id);
         if(!user){
-            f(null);
+            f(-3);
             return;
         }
 
@@ -1057,147 +1353,206 @@ io.on("connection",socket=>{
         //     f(null);
         //     return;
         // }
-        let p = await createChallengeProject(user,cid);
-        if(typeof p == "number"){
-            console.log("Err: failed starting challenge with error code: "+p);
-            f(p);
+        // let p = await createChallengeProject(user,cid);
+        let p = await user.createChallengeProject(cid);
+        if(!p){
+            // console.log("Err: failed starting challenge with error code: ");
+            f(1);
             return;
         }
         // ch.sub.push(new CSubmission("",user.name,p.pid));
         // await ch.save();
 
-        f(p.pid);
+        f(p.meta.pid);
         // console.log(">> created challenge project");
     });
-    socket.on("submitChallenge",async (pid:string,f:(res:number)=>void)=>{
-        if(!valVar2(pid,"string",f)) return;
+    socket.on("submitChallenge",async (cid:string,pid:string,call:(res:number)=>void)=>{
+        if(!valVar2(pid,"string",call)) return;
 
-        let user = getUserBySock(socket.id);
+        let user = getSession(socket.id);
         if(!user){
-            f(1);
+            call(-3);
+            return;
+        }
+        
+        if(!user.meta.projects.includes(pid)){
+            call(1); // either this isn't your project or it doesn't exist
+            return;
+        }
+        
+        let challenge = await findChallenge(cid);
+        if(!challenge){
+            call(2); // challenge doesn't exist
             return;
         }
 
-        let p = getProject2(user.uid,pid);
+        let p = await user.getProject(pid);
         if(!p){
-            f(2);
-            return;
-        }
-        if(p.cid == null){
-            f(3); // wasn't a challenge project
-            return;
-        }
-
-        let ch = challenges.get(p.cid);
-        if(!ch){
-            f(4); // challenge doesn't exist anymore
+            call(3);
             return;
         }
         
-        let c = new CSubmission("",user.name,user.uid,p.pid);
-        ch.sub.push(c);
-        let meta = user.pMeta.find(v=>v.pid == p?.pid);
-        if(!meta){
-            f(5);
-            return;
-        }
-        meta.submitted = true;
-        meta.isPublic = true;
-        meta.ws = new Date().toISOString();
-        p.meta.submitted = true;
-        p.meta.isPublic = true;
-        p.meta.ws = meta.ws
-
-        c.ws = meta.ws;
-        
-        function calcSubmissionLang(){
-            if(!p) return [];
-            let lang:string[] = [];
-            let allowed = ["html","css","js"];
-            function search(list:ULItem[]){
-                for(const item of list){
-                    if(item instanceof ULFolder){
-                        search(item.items);
-                        continue;
-                    }
-                    let ind = item.name.lastIndexOf(".");
-                    if(ind == -1) continue;
-                    let ext = item.name.substring(ind+1);
-                    if(allowed.includes(ext)) lang.push(ext);
-                }
-            }
-            if(p.items) search(p.items);
-            return lang;
-            // return lang.length ? lang.sort((a,b)=>a.localeCompare(b)).join(", ") : "None";
-        }
-        let allowed = ["html","css","js"];
-        function calcSubmissionCharCount(){
-            if(!p) return 0;
-            let amt = 0;
-            function search(list:ULItem[]){
-                for(const item of list){
-                    if(item instanceof ULFolder){
-                        search(item.items);
-                        continue;
-                    }
-                    let it = item as ULFile;
-                    let ind = item.name.lastIndexOf(".");
-                    if(ind == -1) continue;
-                    let ext = item.name.substring(ind+1);
-                    if(allowed.includes(ext)){
-                        let after = it.val.replace(/\s/g,"");
-                        amt += after.length;
-                    }
-                }
-            }
-            if(p.items) search(p.items);
-            return amt;
-        }
-        function calcLineCount(){
-            if(!p) return 0;
-            let amt = 0;
-            function search(list:ULItem[]){
-                for(const item of list){
-                    if(item instanceof ULFolder){
-                        search(item.items);
-                        continue;
-                    }
-                    let it = item as ULFile;
-                    let ind = item.name.lastIndexOf(".");
-                    if(ind == -1) continue;
-                    let ext = item.name.substring(ind+1);
-                    if(allowed.includes(ext)){
-                        it.val = it.val.replace(/\r/g,"");
-                        let lines = it.val.split("\n");
-                        for(const l of lines){
-                            if(l.length > 0) amt++;
-                        }
-                        // let v = it.val.match(/\n/g);
-                        // console.log((v ? v.length : 0),v);
-                        // amt += (v ? v.length : 0);
-                    }
-                }
-            }
-            if(p.items) search(p.items);
-            return amt;
-        }
-        c.cc = calcSubmissionCharCount();
-        c.lc = calcLineCount();
-        c.lang = calcSubmissionLang();
-        c.t = meta.time;
-
-        await ch.save();
-
-        p.validateMetaLink();
-        await user.saveToFile();
-
-        f(0);
-        // console.log(">> submitted challenge");
+        let res = await challenge.submitProject(user,p);
+        call(res);
     });
-    socket.on("unsubmitChallenge",async (pid:string,f:(res:number)=>void)=>{
+    socket.on("unsubmitChallenge",async (pid:string,call:(res:number)=>void)=>{
+        if(!valVar2(pid,"string",call)) return;
+
+        let user = getSession(socket.id);
+        if(!user){
+            call(-3);
+            return;
+        }
+
+        let p = await user.getProject(pid);
+        if(!p){
+            call(1); // couldn't find project to unsubmit
+            return;
+        }
+
+        if(!p.meta.cid){
+            call(2); // wasn't a challenge project
+            return;
+        }
+
+        let challenge = await findChallenge(p.meta.cid);
+        if(!challenge){
+            call(3); // couldn't find challenge to unsubmit from
+            return;
+        }
+
+        let res = await challenge.unsubmitProject(user,p);
+        call(res);
+    });
+    // socket.on("submitChallenge_old",async (pid:string,f:(res:number)=>void)=>{
+    //     if(!valVar2(pid,"string",f)) return;
+
+    //     let user = getSession(socket.id);
+    //     if(!user){
+    //         f(1);
+    //         return;
+    //     }
+
+    //     let p = getProject2(user.uid,pid);
+    //     if(!p){
+    //         f(2);
+    //         return;
+    //     }
+    //     if(p.cid == null){
+    //         f(3); // wasn't a challenge project
+    //         return;
+    //     }
+
+    //     let ch = challenges.get(p.cid);
+    //     if(!ch){
+    //         f(4); // challenge doesn't exist anymore
+    //         return;
+    //     }
+        
+    //     let c = new CSubmission("",user.name,user.uid,p.pid);
+    //     ch.sub.push(c);
+    //     let meta = user.pMeta.find(v=>v.pid == p?.pid);
+    //     if(!meta){
+    //         f(5);
+    //         return;
+    //     }
+    //     meta.submitted = true;
+    //     meta.isPublic = true;
+    //     meta.ws = new Date().toISOString();
+    //     p.meta.submitted = true;
+    //     p.meta.isPublic = true;
+    //     p.meta.ws = meta.ws
+
+    //     c.ws = meta.ws;
+        
+    //     function calcSubmissionLang(){
+    //         if(!p) return [];
+    //         let lang:string[] = [];
+    //         let allowed = ["html","css","js"];
+    //         function search(list:ULItem[]){
+    //             for(const item of list){
+    //                 if(item instanceof ULFolder){
+    //                     search(item.items);
+    //                     continue;
+    //                 }
+    //                 let ind = item.name.lastIndexOf(".");
+    //                 if(ind == -1) continue;
+    //                 let ext = item.name.substring(ind+1);
+    //                 if(allowed.includes(ext)) lang.push(ext);
+    //             }
+    //         }
+    //         if(p.items) search(p.items);
+    //         return lang;
+    //         // return lang.length ? lang.sort((a,b)=>a.localeCompare(b)).join(", ") : "None";
+    //     }
+    //     let allowed = ["html","css","js"];
+    //     function calcSubmissionCharCount(){
+    //         if(!p) return 0;
+    //         let amt = 0;
+    //         function search(list:ULItem[]){
+    //             for(const item of list){
+    //                 if(item instanceof ULFolder){
+    //                     search(item.items);
+    //                     continue;
+    //                 }
+    //                 let it = item as ULFile;
+    //                 let ind = item.name.lastIndexOf(".");
+    //                 if(ind == -1) continue;
+    //                 let ext = item.name.substring(ind+1);
+    //                 if(allowed.includes(ext)){
+    //                     let after = it.val.replace(/\s/g,"");
+    //                     amt += after.length;
+    //                 }
+    //             }
+    //         }
+    //         if(p.items) search(p.items);
+    //         return amt;
+    //     }
+    //     function calcLineCount(){
+    //         if(!p) return 0;
+    //         let amt = 0;
+    //         function search(list:ULItem[]){
+    //             for(const item of list){
+    //                 if(item instanceof ULFolder){
+    //                     search(item.items);
+    //                     continue;
+    //                 }
+    //                 let it = item as ULFile;
+    //                 let ind = item.name.lastIndexOf(".");
+    //                 if(ind == -1) continue;
+    //                 let ext = item.name.substring(ind+1);
+    //                 if(allowed.includes(ext)){
+    //                     it.val = it.val.replace(/\r/g,"");
+    //                     let lines = it.val.split("\n");
+    //                     for(const l of lines){
+    //                         if(l.length > 0) amt++;
+    //                     }
+    //                     // let v = it.val.match(/\n/g);
+    //                     // console.log((v ? v.length : 0),v);
+    //                     // amt += (v ? v.length : 0);
+    //                 }
+    //             }
+    //         }
+    //         if(p.items) search(p.items);
+    //         return amt;
+    //     }
+    //     c.cc = calcSubmissionCharCount();
+    //     c.lc = calcLineCount();
+    //     c.lang = calcSubmissionLang();
+    //     c.t = meta.time;
+
+    //     await ch.save();
+
+    //     p.validateMetaLink();
+    //     await user.save();
+
+    //     f(0);
+    //     // console.log(">> submitted challenge");
+    // });
+    socket.on("unsubmitChallenge_old",async (pid:string,f:(res:number)=>void)=>{
         if(!valVar2(pid,"string",f)) return;
 
-        let user = getUserBySock(socket.id);
+        let user = getSession(socket.id);
         if(!user){
             f(1);
             return;
@@ -1219,11 +1574,11 @@ io.on("connection",socket=>{
             return;
         }
         
-        ch.sub.splice(ch.sub.findIndex(v=>v.pid == pid),1);
+        removeFromListPred(ch.sub,v=>v.pid == pid);
         await ch.save();
         p.meta.submitted = false;
         p.meta.isPublic = false;
-        await user.saveToFile();
+        await user.save();
 
         f(0);
         // console.log(">> unsubmitted challenge");
@@ -1231,41 +1586,55 @@ io.on("connection",socket=>{
     socket.on("continueChallenge",async (cid:string,f:(data:any)=>void)=>{
         if(!valVar2(cid,"string",f)) return;
         
-        let user = getUserBySock(socket.id);
+        let user = getSession(socket.id);
         if(!user){
             f(null);
             return;
         }
 
-        let m = user.pMeta.find(v=>v.cid == cid && !v.submitted);
-        if(!m){
+        // let m = user.pMeta.find(v=>v.cid == cid && !v.submitted);
+        let data = await ProjectModel.findOne({
+            cid,
+            submitted:false
+        });
+        if(!data){
             f(null);
             return;
         }
-        f(m.pid);
+        f(data.pid);
     });
     socket.on("deleteChallengeProgress",async (cid:string,f:(data:any)=>void)=>{
         if(!valVar2(cid,"string",f)) return;
 
-        let user = getUserBySock(socket.id);
+        let user = getSession(socket.id);
         if(!user){
             f(1);
             return;
         }
 
-        let m = user.pMeta.find(v=>v.cid == cid);
-        if(!m){
+        let p = await user.getUnfinishedChallengeProject(cid);
+        if(!p){
             f(2);
             return;
         }
 
-        let p = user.pMeta.find(v=>v.pid == m?.pid);
-        if(!p){
-            f(3);
-            return;
-        }
+        let res = await p.deleteThis(user.uid);
 
-        deleteProject(user,p,f);
+        f(res);
+
+        // let m = user.pMeta.find(v=>v.cid == cid);
+        // if(!m){
+        //     f(2);
+        //     return;
+        // }
+
+        // let p = await user.
+        // if(!p){
+        //     f(3);
+        //     return;
+        // }
+
+        // deleteProject(user,p,f);
     });
 
     // 
@@ -1273,10 +1642,14 @@ io.on("connection",socket=>{
         if(!valVar2(name,"string",f)) return;
         if(!valVar2(desc,"string",f)) return;
 
-        let user = getUserBySock(socket.id);
+        let user = getSession(socket.id);
         if(!user) return;
-        let p = await createProject(user,name,desc,false);
-        f(p.pid);
+        // let p = await createProject(user,name,desc,false);
+        let p = await user.createProject({
+            name,desc,public:false
+        });
+        if(!p) f(null);
+        else f(p.meta.pid);
     });
     socket.on("moveFiles",async (pid:string,files:string[],fromPath:string,toPath:string,f:(data:any)=>void)=>{
         if(!valVar2(pid,"string",f)) return;
@@ -1288,7 +1661,7 @@ io.on("connection",socket=>{
             return; // you trying to hack or something there?
         }
 
-        let user = getUserBySock(socket.id);
+        let user = getSession(socket.id);
         if(!user){
             f(2);
             return;
@@ -1314,7 +1687,7 @@ io.on("connection",socket=>{
                 console.log("$ weird, couldn't find file while trying to move it");
                 continue;
             }
-            fromItems.splice(fromItems.indexOf(file),1);
+            removeFromList(fromItems,file);
             toItems.push(file);
         }
         // console.log(fromF,toF);
@@ -1336,7 +1709,7 @@ io.on("connection",socket=>{
             return; // you trying to hack or something there?
         }
 
-        let user = getUserBySock(socket.id);
+        let user = getSession(socket.id);
         if(!user){
             f(2);
             return;
@@ -1376,7 +1749,7 @@ io.on("connection",socket=>{
             return; // you trying to hack or something there?
         }
 
-        let user = getUserBySock(socket.id);
+        let user = getSession(socket.id);
         if(!user){
             f(2);
             return;
@@ -1405,7 +1778,7 @@ io.on("connection",socket=>{
 
         let start = p.getPath();
         // console.log(`deleting NAME (${file})...`,items.map(v=>v.name));
-        items.splice(items.indexOf(item),1);
+        removeFromList(items,item);
         // console.log("after...",items.map(v=>v.name));
         if(item instanceof ULFile) await removeFile(start+fromPath+file);
         else await removeFolder(start+fromPath+file);
@@ -1416,38 +1789,43 @@ io.on("connection",socket=>{
         if(!valVar2(pid,"string",f)) return;
         if(!valVar2(newName,"string",f)) return;
 
-        let user = getUserBySock(socket.id);
+        let user = getSession(socket.id);
         if(!user){
             f(1);
             return;
         }
 
-        let m = user.pMeta.find(v=>v.pid == pid);
-        if(!m){
+        // let m = user.pMeta.find(v=>v.pid == pid);
+        let p = await user.getProject(pid);
+        if(!p){
             f(2);
             return;
         }
 
-        m.name = newName;
+        // save
+        p.meta.name = newName;
+        await p.save();
+
         // let p = user.projects.find(v=>v.pid == pid);
         // if(p) p.name = newName;
-        await user.saveToFile();
+        // await user.save();
 
-        m.name = newName;
+        // m.name = newName;
         f(0);
     });
     socket.on("updatePMeta",async (pid:string,data:any,f:(res:number,name?:string,desc?:string)=>void)=>{
         if(!valVar2(pid,"string",f)) return;
         if(!valVar2(data,"object",f)) return;
 
-        let user = getUserBySock(socket.id);
+        let user = getSession(socket.id);
         if(!user){
             f(1);
             return;
         }
 
-        let m = user.pMeta.find(v=>v.pid == pid);
-        if(!m){
+        // let m = user.pMeta.find(v=>v.pid == pid);
+        let p = await user.getProject(pid);
+        if(!p){
             f(2);
             return;
         }
@@ -1455,15 +1833,17 @@ io.on("connection",socket=>{
         // let p = user.projects.find(v=>v.pid == pid);
 
         if(data.name) if(valVar(data.name,"string")){
-            m.name = data.name;
+            p.meta.name = data.name;
             // if(p) p.name = data.name;
         }
         if(data.desc) if(valVar(data.desc,"string")){
-            m.desc = data.desc;
+            p.meta.desc = data.desc;
             // if(p) p.desc = data.desc;
         }
         
-        await user.saveToFile();
+        // save
+        await p.save();
+        // await user.save();
 
         // m.name = newName;
         f(0,data.name,data.desc);
@@ -1471,123 +1851,183 @@ io.on("connection",socket=>{
     socket.on("deleteProject",async (pid:string,f:(res:number)=>void)=>{
         if(!valVar2(pid,"string",f)) return;
 
-        let user = getUserBySock(socket.id);
+        let user = getSession(socket.id);
         if(!user){
             f(1);
             return;
         }
 
-        let m = user.pMeta.find(v=>v.pid == pid);
-        if(!m){
-            f(2);
-            return;
-        }
-
-        if(!user.canEdit(m)){
-            f(-5); // can't edit
-            return;
-        }
-
-        let p = user.pMeta.find(v=>v.pid == pid);
+        // let m = user.pMeta.find(v=>v.pid == pid);
+        let p = await user.getProject(pid);
         if(!p){
-            f(3);
-            return;
-        }
-
-        deleteProject(user,p,f);
-    });
-    socket.on("unlinkProject",async (pid:string,f:(res:number)=>void)=>{
-        if(!valVar2(pid,"string",f)) return;
-
-        let user = getUserBySock(socket.id);
-        if(!user){
-            f(1);
-            return;
-        }
-
-        let m = user.pMeta.find(v=>v.pid == pid);
-        if(!m){
             f(2);
             return;
         }
 
-        if(!user.canEdit(m)){
+        if(!p.canEdit(user.uid)){
             f(-5); // can't edit
             return;
         }
 
-        let cid = m.cid;
-        let p = user.projects.find(v=>v.pid == pid);
-        if(p){
-            p.meta.cid = undefined;
-        }
-        if(cid){
-            //remove from challenges
-            let ind = user.challenges.findIndex(v=>v.pid == pid);
-            user.challenges.splice(ind,1);
-            // remove from submissions
-            let ch = challenges.get(cid);
-            if(ch){
-                let ind = ch.sub.findIndex(v=>v.pid == pid);
-                if(ind != -1){
-                    ch.sub.splice(ind,1);
-                    await ch.save();
-                }
-            }
-            else console.log("warn: couldn't find challenge: ",m.cid);
-        }
-        m.cid = undefined;
-        await user.saveToFile();
+        // let p = user.pMeta.find(v=>v.pid == pid);
+        // if(!p){
+        //     f(3);
+        //     return;
+        // }
 
-        f(0);
+        let res = await p.deleteThis(user.meta.uid);
+        f(res);
+        // deleteProject(user,p,f);
     });
-    socket.on("removeFromRecents",(pid:string,call:(data:any)=>void)=>{
+    socket.on("unlinkProject",async (pid:string,call:(res:number)=>void)=>{
         if(!valVar2(pid,"string",call)) return;
 
-        let user = getUserBySock(socket.id);
+        let user = getSession(socket.id);
         if(!user){
             call(-3);
             return;
         }
-        call(user.removeFromRecents(pid));
+
+        let p = await user.getProject(pid);
+        if(!p){
+            call(1);
+            return;
+        }
+        if(!p.isOwner(user.uid)){ // <-- this might not be needed but just in case
+            call(2); // you don't own this project
+            return;
+        }
+        if(p.meta.cid == null){
+            call(3); // project wasn't even a challenge project
+            return;
+        }
+        
+        // 
+
+        let res = await p.unlinkFromChallenge(user);
+        call(res);
     });
-    socket.on("starProject",(pid:string,v:boolean,call:(data:any)=>void)=>{
+    // socket.on("unlinkProject_old",async (pid:string,f:(res:number)=>void)=>{
+    //     if(!valVar2(pid,"string",f)) return;
+
+    //     let user = getSession(socket.id);
+    //     if(!user){
+    //         f(1);
+    //         return;
+    //     }
+
+    //     // let m = user.pMeta.find(v=>v.pid == pid);
+    //     let p = await user.getProject(pid);
+    //     if(!p){
+    //         f(2);
+    //         return;
+    //     }
+
+    //     if(!p.canEdit(user.uid)){
+    //         f(-5); // can't edit
+    //         return;
+    //     }
+
+    //     let cid = p.meta.cid;
+    //     // let p = user.projects.find(v=>v.pid == pid);
+    //     if(p){
+    //         p.meta.cid = undefined;
+    //     }
+    //     if(cid){
+    //         //remove from challenges
+    //         let ind = user.challenges.findIndex(v=>v.pid == pid);
+    //         user.challenges.splice(ind,1);
+    //         // remove from submissions
+    //         let ch = challenges.get(cid);
+    //         if(ch){
+    //             let ind = ch.sub.findIndex(v=>v.pid == pid);
+    //             if(ind != -1){
+    //                 ch.sub.splice(ind,1);
+    //                 await ch.save();
+    //             }
+    //         }
+    //         else console.log("warn: couldn't find challenge: ",p.meta.cid);
+    //     }
+    //     p.meta.cid = undefined;
+    //     // await user.save();
+
+    //     // save
+    //     await p.save();
+
+    //     f(0);
+    // });
+    socket.on("removeFromRecents",async (pid:string,call:(data:any)=>void)=>{
+        if(!valVar2(pid,"string",call)) return;
+
+        let user = getSession(socket.id);
+        if(!user){
+            call(-3);
+            return;
+        }
+        user.removeFromRecents(pid);
+
+        // save
+        await user.save();
+
+        call(true);
+    });
+    socket.on("starProject",async (pid:string,v:boolean,call:(data:any)=>void)=>{
         if(!valVar2(pid,"string",call)) return;
         if(!valVar2(v,"boolean",call)) return;
 
-        let user = getUserBySock(socket.id);
+        let user = getSession(socket.id);
         if(!user){
             call(-3);
             return;
         }
 
-        let res = true;
-        if(v) res = user.addToStarred(pid)
-        else res = user.removeFromStarred(pid);
-        call(res);
+        let p = await user.getProject(pid);
+        if(!p){
+            call(1);
+            return;
+        }
+
+        // let res = true;
+        if(!user.meta.starredProjects.includes(pid)){
+            user.addToStarred(pid)
+            p.meta.starred = true;
+        }
+        else{
+            user.removeFromStarred(pid);
+            p.meta.starred = false;
+        }
+
+        // save
+        await user.save();
+        await p.save();
+
+        call(true);
     });
     socket.on("setProjVisibility",async (pid:string,v:boolean,call:(data:any,v?:boolean)=>void)=>{
         if(!valVar2(pid,"string",call)) return;
         if(!valVar2(v,"boolean",call)) return;
 
-        let user = getUserBySock(socket.id);
+        let user = getSession(socket.id);
         if(!user){
             call(-3);
             return;
         }
 
-        if(!user.pMeta.some(v=>v.pid == pid)){
+        if(!user.meta.projects.includes(pid)){
             call(-4); // you don't own this project
             return;
         }
 
-        let m = user.pMeta.find(v=>v.pid == pid);
-        if(!m){
+        // let m = user.pMeta.find(v=>v.pid == pid);
+        let p = await user.getProject(pid);
+        if(!p){
             call(1);
             return;
         }
-        m.isPublic = v;
-        await user.saveToFile();
+        p.meta.public = v;
+        
+        // save
+        await p.save();
 
         call(0,v);
     });
@@ -1601,6 +2041,43 @@ io.on("connection",socket=>{
         cachedFeedbackData.push(new FeedbackData(title,type,desc));
         _feedbackNeedsSaved = true;
         f(null);
+    });
+
+    // 
+
+    socket.on("getUserStats",async (call:(res:any)=>void)=>{
+        if(!valVar(call,"function")) return;
+        
+        let session = getSession(socket.id);
+        if(!session){
+            call({err:-3});
+            return;
+        }
+
+        session.meta
+        let stats = {
+            joinDate:session.meta.joinDate.toISOString(),
+            
+            challengesCompleted:session.meta.completedChallenges.length,
+            challengesSubmitted:session.meta.submittedChallenges.length,
+            challengesInProgress:session.meta.inprogressChallenges.length,
+
+            lessonsCompleted:session.meta.lessonsCompleted,
+            ...await session.getLessonStats(),
+
+            totalProjects:session.meta.projects.length,
+            ...await session.getProjectStats()
+        };
+
+        call(stats);
+    });
+
+    // debug
+    socket.on("debug_getStats",async ()=>{
+        let session = getSession(socket.id);
+        if(!session) return;
+
+        session.getLessonStats();
     });
 });
 
@@ -1651,10 +2128,9 @@ async function initFeedback(){
 }
 initFeedback();
 
-async function copyContinueFromFiles(user:User,fromLID:string,toLID:string){
-    if(!user) return;
-    let fromPath = `../lesson/${user.uid}/${fromLID}`;
-    let toPath = `../lesson/${user.uid}/${toLID}`;
+async function copyContinueFromFiles(uid:string,fromLID:string,toLID:string){
+    let fromPath = `../lesson/${uid}/${fromLID}`;
+    let toPath = `../lesson/${uid}/${toLID}`;
     let res = await internalCPDir(fromPath,toPath);
 }
 async function deleteProject(user:User,pMeta:ProjectMeta,f:(res:number)=>void){
@@ -1667,14 +2143,14 @@ async function deleteProject(user:User,pMeta:ProjectMeta,f:(res:number)=>void){
         return;
     }
     if(pMeta){
-        user.projects.splice(user.projects.findIndex(v=>v.pid == pMeta.pid),1);
+        removeFromListPred(user.projects,v=>v.pid == pMeta.pid);
         allProjects.delete(user.uid+":"+pMeta.pid);
         // allProjects.delete(p.getRefStr());
     }
     let pid = pMeta.pid;
     if(pMeta.cid){
         //remove from challenges
-        user.challenges.splice(user.challenges.findIndex(v=>v.pid == pid),1);
+        removeFromListPred(user.challenges,v=>v.pid == pid);
         // remove from submissions
         let ch = challenges.get(pMeta.cid);
         if(ch){
@@ -1686,11 +2162,11 @@ async function deleteProject(user:User,pMeta:ProjectMeta,f:(res:number)=>void){
         }
         else console.log("warn: couldn't find challenge: ",pMeta.cid);
     }
-    user.pMeta.splice(user.pMeta.findIndex(v=>v.pid == pid),1);
+    removeFromListPred(user.pMeta,v=>v.pid == pid);
 
     // remove from recents & starred
-    user.recent.splice(user.recent.indexOf(pid),1);
-    user.starred.splice(user.starred.indexOf(pid),1);
+    removeFromList(user.recent,pid);
+    removeFromList(user.starred,pid);
     
     await user.saveToFile();
 
@@ -1791,13 +2267,19 @@ type SubmissionsFilterType = {
 };
 
 server.listen(3000,()=>{
-    console.log('listening on *:3000');
+    console.log("listening on *:3000");
 });
 
 let rl = createInterface(process.stdin,process.stdout);
 rl.on("line",async (line)=>{
     line = line.trim();
-    let s = line.split(" ");
+    // let s = line.split(" ");
+    let s = line.split(/(".*?"|[^"\s]+)+(?=\s*|\s*$)/g);
+    s = s.filter(v=>v.length != 0 && v != " ");
+    s = s.map(v=>{
+        if(v.startsWith('"')) return v.substring(1,v.length-1);
+        return v;
+    });
     let cmd = s[0];
     if(line == "challenges"){
         console.log(challenges);
@@ -1834,18 +2316,27 @@ rl.on("line",async (line)=>{
         console.log(allProjects);
         return;
     }
+    else if(s[0] == "sessions"){
+        console.log(userSessions);
+        return;
+    }
+    else if(s[0] == "projectCache"){
+        console.log(projectCache);
+        return;
+    }
     else if(s[0] == "pitems"){
         let u = users.get(s[1]);
         if(!u){
             console.log("couldn't find user.");
             return;
         }
-        let p = u.projects.find(v=>v.pid == s[2]);
+        let p = u.meta.projects.find(v=>v == s[2]);
         if(!p){
             console.log("couldn't find project.");
             return;
         }
-        let cur = p.items;
+        // let cur = p.items;
+        let cur = [] as ULItem[];
         for(let i = 3; i < s.length; i++){
             let res = cur[parseInt(s[i])];
             if(!res){
@@ -1890,16 +2381,27 @@ rl.on("line",async (line)=>{
         console.log(lessonMetas);
         return;
     }
+    else if(s[0] == "rl"){
+        await reloadLessons();
+        console.log(":: done");
+        return;
+    }
     else if(s[0] == "reload"){
+        // if(s[1] == "lessons"){
+        //     let list = [...lessonMetas];
+        //     lessonMetas.clear();
+        //     for(const c of list){
+        //         let spl = c[0].split(":");
+        //         getLessonMeta(spl[0],spl[1]);
+        //     }
+        //     console.log("done");
+        // }
         if(s[1] == "lessons"){
-            let list = [...lessonMetas];
-            lessonMetas.clear();
-            for(const c of list){
-                let spl = c[0].split(":");
-                getLessonMeta(spl[0],spl[1]);
-            }
-            console.log("done");
+            await reloadLessons();
+            console.log(":: done");
+            return;
         }
+        console.log("! err - didn't find a reload command with the id: "+s[1]);
         return;
     }
     // CREATE cmd
@@ -1972,6 +2474,50 @@ rl.on("line",async (line)=>{
                 else console.log("...skipped: "+f);
             }
             console.log("done");
+            return;
+        }
+    }
+    else if(s[0] == "upload"){
+        if(s[1] == "challenges"){
+            await uploadChallenges();
+            return;
+        }
+        else if(s[1] == "all"){
+            if(s[2] != "-confirm"){
+                console.log("this is a dangerous command, please run the command with -confirm to continue.");
+                return;
+            }
+            console.log("$ starting upload of all local items into the current database.\n-------\n");
+
+            console.log("$ uploading challenges...");
+            await uploadChallenges();
+
+            console.log("$ uploading users...");
+            await uploadUsers();
+            
+            console.log("$ uploading lesson progress...");
+            await uploadLessonProgs();
+
+            console.log("$ DONE");
+            return;
+        }
+    }
+    else if(s[0] == "test"){
+        // 2024-06-03T00:53:57.859+00:00
+        // 2024-06-03T00:53:57.859+00:00
+        // 2024-06-03T00:58:58.251+00:00 // <- caching with sessions works :D
+        if(s[1] == "lastLoggedIn"){
+            let sid = s[2];
+            if(!sid) return;
+            let session = userSessions.get(sid);
+            if(!session){
+                console.log("no session found");
+                return;
+            }
+            session.meta.lastLoggedIn = new Date();
+            console.log("...saving...");
+            await session.meta.save();
+            console.log("SAVED");
             return;
         }
     }

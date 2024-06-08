@@ -374,7 +374,7 @@ class LogInMenu extends Menu{
             this.body.style.gap = "5px";
             this.body.innerHTML = `
                 <div>Log in to access lessons, challenges, and an editor to experiment in!</div>
-                ${g_user ? `<div class="l-currently-logged-in">Currently logged in as ${g_user.email}</div>` : ""}
+                ${g_user ? `<div class="l-currently-logged-in">Currently logged in as ${g_user.data.email}</div>` : ""}
                 <div class="sign-in-btn"></div>
                 <!--<div class="two-col" style="grid-template-columns:unset">
                     <div>
@@ -463,11 +463,11 @@ function promptSignIn(){
     google.accounts.id.prompt();
 }
 function handleCredentialResponse(response:CredentialResponse){
-    console.log("LOGGED IN: ",response);
+    // console.log("LOGGED IN: ",response);
     // Your code here
 
     let data = decodeJwtResponse(response.credential);
-    console.log("DATA",data);
+    // console.log("DATA",data);
 
     logUserIn(data,response.credential);
     closeAllMenus();
@@ -480,7 +480,47 @@ let _loginRes:()=>void;
 loginProm = new Promise<void>(resolve=>{
     _loginRes = resolve;
 });
-let g_user:CredentialResData;
+
+type UserStats = {
+    joinDate:string,
+    
+    challengesCompleted:number,
+    challengesSubmitted:number,
+    challengesInProgress:number,
+    
+    lessonsCompleted:number,
+    totalLessonTime:number,
+    averageLessonTime:number
+    
+    totalProjects:number,
+    totalProjectTime:number,
+    averageProjectTime:number
+};
+class GlobalUser{
+    constructor(data:CredentialResData){
+        this.data = data;
+    }
+    data:CredentialResData;
+
+    getStats(){
+        return new Promise<UserStats>(resolve=>{
+            socket.emit("getUserStats",(data:any)=>{
+                if(!data){
+                    resolve(null);
+                    return;
+                }
+                if(data.err){
+                    alert(`Error ${data.err} while trying to get user stats`);
+                    resolve(null);
+                    return;
+                }
+                resolve(data);
+            });
+        });
+    }
+}
+
+let g_user:GlobalUser;
 async function waitForUser(){
     if(!loginProm) return false;
     await loginProm;
@@ -508,7 +548,7 @@ function logUserIn(data?:CredentialResData,token?:string){
         localStorage.setItem("logData",JSON.stringify(data));
         h_profile.classList.add("logged-in");
         h_profile.innerHTML = `
-            <img referrerpolicy="no-referrer" src="${data.picture}">
+            <img referrerpolicy="no-referrer" draggable="false" src="${data.picture}">
         `;
         let img = h_profile.querySelector("img");
         img.onerror = (err:Event,source,lineno,colno,error)=>{
@@ -945,18 +985,18 @@ class Project{
         if(this.i_previewURL) this.i_previewURL.value = page;
         if(PAGE_ID == PAGEID.editor){
             if(!this.canEdit) return serverURL+"/public/"+this.meta.owner+"/"+this.pid+"/"+page;
-            return serverURL+"/project/"+g_user.uid+"/"+socket.id+"/"+this.meta.owner+"/"+this.pid+"/"+page;
+            return serverURL+"/project/"+g_user.data.uid+"/"+socket.id+"/"+this.meta.owner+"/"+this.pid+"/"+page;
         }
-        else if(PAGE_ID == PAGEID.lesson) return serverURL+"/lesson/"+g_user.uid+"/"+socket.id+"/"+g_user.uid+"/"+lesson.lid+"/"+page;
+        else if(PAGE_ID == PAGEID.lesson) return serverURL+"/lesson/"+g_user.data.uid+"/"+socket.id+"/"+g_user.data.uid+"/"+lesson.lid+"/"+page;
     }
     getExternalURL(){
         let page = (this.i_previewURL?.value ?? "index.html");
         if(this.i_previewURL) this.i_previewURL.value = page;
         if(PAGE_ID == PAGEID.editor){
             if(!this.canEdit || this.meta.isPublic) return location.origin+"/viewer.html?a="+this.meta.owner+"&b="+this.pid+"/"+page;
-            return location.origin+`/viewer.html?t=p&a=${g_user.uid}&b=${socket.id}&c=${this.meta.owner}&d=${this.pid}/`+page;
+            return location.origin+`/viewer.html?t=p&a=${g_user.data.uid}&b=${socket.id}&c=${this.meta.owner}&d=${this.pid}/`+page;
         }
-        else return location.origin+`/viewer.html?t=l&a=${g_user.uid}&b=${socket.id}&c=${lesson.lid}/`+page;
+        else return location.origin+`/viewer.html?t=l&a=${g_user.data.uid}&b=${socket.id}&c=${lesson.lid}/`+page;
     }
 
     findFile(name:string){
@@ -1104,7 +1144,7 @@ class Project{
 /**Gets the url (for iframes) to a `"private"` project */
 function getProjectURL(uid:string,pid:string){
     // return location.origin+"/viewer.html?t=p&a="+uid+"&b="+pid+"/index.html";
-    return serverURL+"/project/"+g_user.uid+"/"+socket.id+"/"+uid+"/"+pid;
+    return serverURL+"/project/"+g_user.data.uid+"/"+socket.id+"/"+uid+"/"+pid;
 }
 /**Gets the url (for iframes) to a `"public"` project */
 function getPublicProjectURL(ownerUid:string,pid:string){
@@ -1115,10 +1155,10 @@ function getPublicProjectURL(ownerUid:string,pid:string){
 
 // submitting challenges
 
-async function submitChallenge(pid:string){
+async function submitChallenge(cid:string,pid:string){
     await saveProject(true);
     let res = await new Promise<number>(resolve=>{
-        socket.emit("submitChallenge",pid,(res:number)=>{
+        socket.emit("submitChallenge",cid,pid,(res:number)=>{
             resolve(res);
         });
     });
@@ -2317,7 +2357,6 @@ async function refreshPreview(){
 }
 function postIFrameRefresh(){
     iframe.onload = function(){
-        console.log("load");
         if(_iframeKeydown) iframe.contentDocument.removeEventListener("keydown",_iframeKeydown);
         iframe.contentDocument.addEventListener("keydown",_iframeKeydown);
     };
@@ -2493,13 +2532,16 @@ function screenshot(){
     });
 }
 
-function goToProject(pid:string){
+function goToProject(pid:string,uid?:string,useReload=true){
     // location.pathname = "/editor/index.html?pid="+pid;
+    if(uid == null) uid = g_user.data.uid;
     let url = new URL(location.href);
     url.pathname = "/editor/index.html";
     url.searchParams.set("pid",pid);
+    if(uid != g_user.data.uid) url.searchParams.set("uid",uid);
+    else url.searchParams.delete("uid");
     history.pushState(null,null,url);
-    reloadPage();
+    if(useReload) reloadPage();
 }
 
 let closeThis:ConfirmMenu | DeleteMenu;
@@ -3044,7 +3086,7 @@ class DetailedChallenge extends Challenge {
   
 let curChallengeMenu: ChallengeMenu;
 async function createChallengePopup(c: Challenge) {
-    console.log("Creating Challenge Menu");
+    // console.log("Creating Challenge Menu",c.cID,c.name);
     if (curChallengeMenu) curChallengeMenu.close();
     curChallengeMenu = new ChallengeMenu(c);
     curChallengeMenu.load();
@@ -3639,7 +3681,7 @@ class SubmissionMenu extends Menu {
     load() {
       let p = this.data.p;
       let url = getPublicProjectURL(this.submission.uid,this.submission.pid);
-  
+
       super.load();
       this.menu.innerHTML = `
         <div class="s-popup">
@@ -3797,8 +3839,12 @@ function reloadPage(){
 
 
 let challengeArray: Challenge[] = [];
+let cSearch:HTMLInputElement;
+setTimeout(()=>{
+    cSearch = document.querySelector("#search") as HTMLInputElement;
+},100);
 async function getChallenges() {
-    challengeArray = await getServerChallenges();
+    challengeArray = await getServerChallenges(cSearch?.value);
     if (challengeArray == null) {
       alert("Failed to fetch challenges. Please try again later.");
       return;

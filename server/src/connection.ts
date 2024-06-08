@@ -1,39 +1,13 @@
 import * as http from "http";
 import express, { NextFunction, Request, Response } from "express";
 import {Server, Socket} from "socket.io";
-import fs from "fs";
-import { challenges } from "./s_challenges";
 // import cors from "cors";
 
-import { MongoClient, ServerApiVersion } from "mongodb";
-const uri = "mongodb+srv://claebcode:2Z6WY3Nv3AgE0vke@code-otter-0.67qhyto.mongodb.net/?retryWrites=true&w=majority&appName=code-otter-0";
+import {LessonMetaInst, LessonProgressModel, ProjectInst, ProjectModel, UserSessionItem, postInitMongoDB, removeFromList, userSessions} from "./db";
+import { write, read, readdir, access, mkdir, removeFolder } from "./s_util";
+// initMongoDB();
+postInitMongoDB();
 
-// Mongo Init
-
-const client = new MongoClient(uri,{
-    serverApi:{
-        version:ServerApiVersion.v1,
-        strict:true,
-        deprecationErrors:true
-    }
-});
-
-async function initMongoDB(){
-    try{
-        await client.connect();
-        await client.db("admin").command({ping:1});
-        console.log("pinged!!!");
-    }
-    finally{
-        await client.close();
-        console.log("-- closed");
-    }
-}
-initMongoDB();
-
-// 
-
-console.log("started...");
 const app = express();
 // app.use(cors({
 //     origin:"http://localhost:5501"
@@ -87,7 +61,7 @@ function checkAuth(req:Request,res:Response,next:NextFunction){
     }
 }
 
-function genPID(){
+export function genPID(){
     return crypto.randomUUID();
 }
 export function getDefaultProjectMeta(user:User,pid:string,name:string){
@@ -220,6 +194,12 @@ export class ProjectMeta{
     /**
      * Note: This method does not save the meta data, you must user.saveToFile() on your own
      */
+
+    // ONLY FOR AUTOCOMPLETE
+    sub:boolean = false;
+    starred:boolean = false;
+    // 
+
     updateWhenLastSaved(){
         if(!this.wls || this.wls == ""){
             this.time = 0;
@@ -407,7 +387,7 @@ export class User{
     }
     removeSocketId(sockId:string){
         if(!this.sockIds.includes(sockId)) return;
-        this.sockIds.splice(this.sockIds.indexOf(sockId),1);
+        removeFromList(this.sockIds,sockId);
         socks.delete(sockId);
     }
     deleteSocketIds(){
@@ -542,13 +522,13 @@ export class LessonMeta{
     }
 }
 
-export const users = new Map<string,User>();
+export const users = new Map<string,UserSessionItem>();
 export const socks = new Map<string,string>();
 export const allProjects = new Map<string,Project>();
 const hasntFoundProject:string[] = [];
 export const lessonMetas = new Map<string,LessonMeta>();
 
-export async function getLessonMeta(uid:string,lid:string){
+export async function _getLessonMeta(uid:string,lid:string){
     let metaPath = "../users/"+uid+"/lesson/"+lid+"/";
     let meta = lessonMetas.get(uid+":"+lid);
     if(!meta){
@@ -575,13 +555,14 @@ export async function deleteLessonMeta_old(uid:string,lid:string){
     await removeFolder(metaPath);
     lessonMetas.delete(uid+":"+lid);
 }
-export async function deleteLessonMeta(uid:string,lid:string,meta:LessonMeta){
-    meta.eventI = -1;
-    meta.taskI = -1;
-    meta.prog = 0;
-    meta.mode = 0;
-    meta.s = false;
-    await writeLessonMeta(uid,lid,meta);
+export async function deleteLessonMeta(meta:LessonMetaInst){
+    meta.meta.eventI = -1;
+    meta.meta.taskI = -1;
+    meta.meta.progress = 0;
+    meta.meta.mode = 0;
+    meta.meta.started = false;
+    // await writeLessonMeta(uid,lid,meta);
+    await meta.save();
 }
 
 // for indexing, need to make a deloadProject at some point
@@ -599,6 +580,20 @@ export function getProject(ref:string){
 }
 export function getProject2(uid:string,pid:string){
     return allProjects.get(uid+":"+pid);
+}
+export async function _findProject(uid:string,pid:string){
+    let res = await ProjectModel.findOne({
+        pid,uid
+    });
+    if(!res) return;
+    return new ProjectInst(res);
+}
+export async function _findLessonMeta(uid:string,lid:string){
+    let res = await LessonProgressModel.findOne({
+        lid,uid
+    });
+    if(!res) return;
+    return new LessonMetaInst(res);
 }
 export async function getProjectFromHD(uid:string,pid:string){
     if(!uid) return -2;
@@ -734,20 +729,100 @@ export async function attemptToGetProject(user:User,pid:string){
     return p2;
 }
 
-export function getUserBySock(sockId:string){
-    let email = socks.get(sockId);
-    if(!email) return;
-    return users.get(email);
+export function getSession(sockId:string){
+    // let email = socks.get(sockId);
+    // if(!email) return;
+    // return users.get(email);
+    // return userSessions.get(email)?.user;
+    return userSessions.get(sockId);
 }
+// export function getMUserBySock(sockId:string){
+//     let email = socks.get(sockId);
+//     if(!email) return;
+//     // return users.get(email);
+//     return userSessions.get(email)?.meta;
+// }
+
+const projectCacheTimeLimit = 500000; // 500 seconds
+
+class ProjectCacheItem{
+    constructor(p:ProjectInst){
+        this.time = performance.now();
+        this.p = p;
+    }
+    time = 0;
+    p:ProjectInst;
+    _dirty = false;
+    makeDirty(){
+        // console.log(".. project was made dirty");
+        this._dirty = true;
+    }
+
+    static async find(pid:string,uid:string){
+        let item = projectCache.get(pid);
+        if(item){
+            if(!item._dirty) if(performance.now()-item.time <= projectCacheTimeLimit) return item;
+        }
+        
+        let inst = await _findProject(uid,pid);
+        // console.log("---- a project fetch...");
+        if(!inst) return;
+
+        item = new ProjectCacheItem(inst);
+        projectCache.set(pid,item);
+        return item;
+    }
+}
+export const projectCache = new Map<string,ProjectCacheItem>(); // pid, data
 
 app.use("/public",async (req,res,next)=>{
     let arr = req.originalUrl.split("/");
-    // let project = getProject2(arr[2],arr[3]);
-    let project = await getProjectFromHD(arr[2],arr[3]);
-    if(typeof project == "number"){
-        res.send("Error getting project, code "+project);
+
+    let uid = arr[2];
+    let pid = arr[3];
+
+    if(!uid || !pid){
+        res.send("Query invalid");
         return;
     }
+    
+    // TODO (done) - need to make some kind of expiring cache for this so if you refresh constantly it doesn't have to keep getting it from the database but after a few seconds it'll empty the cache and get it fresh from the database again
+
+    let item = await ProjectCacheItem.find(pid,uid);
+    if(!item){
+        res.send("Project or User not found");
+        return;
+    }
+
+    // let p = await _findProject(uid,pid);
+    // console.log("---- a project fetch...");
+    // if(!p){
+    //     res.send("Project or User not found");
+    //     return;
+    // }
+
+    // auth/permission check
+    if(item.p.meta.public){
+        next(); // if it's public then you're all good
+        return;
+    }
+
+    // todo... - check if your uid is in the list of allowed people to view/edit
+
+    res.send("You don't have permission to view this project (or it's private)");
+    
+    ///////////////////
+    
+    // let project = getProject2(arr[2],arr[3]);
+    
+    
+    // let project = await getProjectFromHD(arr[2],arr[3]);
+    // if(typeof project == "number"){
+    //     res.send("Error getting project, code "+project);
+    //     return;
+    // }
+
+
     // let pid = arr[2];
     // let owner = arr[3];
     // let user = users.get(owner);
@@ -764,15 +839,16 @@ app.use("/public",async (req,res,next)=>{
     //     res.send("Error getting project, query invalid");
     //     return;
     // }
-    if(!project){
-        res.send("Project not found or loaded");
-        return;
-    }
-    if(!project.meta.isPublic){
-        res.send("Project is private");
-        return;
-    }
-    next();
+
+    // if(!project){
+    //     res.send("Project not found or loaded");
+    //     return;
+    // }
+    // if(!project.meta.isPublic){
+    //     res.send("Project is private");
+    //     return;
+    // }
+    // next();
 },express.static("../project/"));
 app.use("/project/:userId/:auth",(req,res,next)=>{
     let p = req.params;
@@ -860,114 +936,4 @@ export class ULFile extends ULItem{
     val:string;
     path:string;
     enc:BufferEncoding;
-}
-
-export function access(path:string){
-    return new Promise<boolean>(resolve=>{
-        fs.access(path,err=>{
-            if(err){
-                // console.log("err: ",err);
-                resolve(false);
-            }
-            else resolve(true);
-        });
-    });
-}
-export function write(path:string,data:any,encoding?:BufferEncoding){
-    return new Promise<boolean>(resolve=>{
-        fs.writeFile(path,data,{encoding},err=>{
-            if(err){
-                console.log("err: ",err);
-                resolve(false);
-            }
-            else resolve(true);
-        });
-    });
-}
-export function read(path:string,encoding?:BufferEncoding,nolog=false){
-    return new Promise<any>(resolve=>{
-        fs.readFile(path,{encoding},(err,data)=>{
-            if(err){
-                if(!nolog) console.log("err: ",err);
-                resolve(null);
-            }
-            else resolve(data);
-        });
-    });
-}
-export function removeFile(path:string){
-    return new Promise<boolean>(resolve=>{
-        fs.rm(path,err=>{
-            if(err){
-                console.log("err: ",err);
-                resolve(false);
-            }
-            else resolve(true);
-        });
-    });
-}
-export function removeFolder(path:string){
-    return new Promise<boolean>(resolve=>{
-        fs.rm(path,{recursive:true},err=>{
-            if(err){
-                console.log("err: ",err);
-                resolve(false);
-            }
-            else resolve(true);
-        });
-    });
-}
-export function mkdir(path:string,encoding?:BufferEncoding){
-    return new Promise<boolean>(resolve=>{
-        fs.mkdir(path,{recursive:true},err=>{
-            if(err){
-                console.log("err: ",err);
-                resolve(false);
-            }
-            else resolve(true);
-        });
-    });
-}
-export function readdir(path:string){
-    return new Promise<string[]|null>(resolve=>{
-        fs.readdir(path,(err,files)=>{
-            if(err){
-                // console.log("err: ",err);
-                resolve(null);
-            }
-            else resolve(files);
-        });
-    });
-}
-export function rename(fromPath:string,toPath:string){
-    return new Promise<boolean>(resolve=>{
-        fs.rename(fromPath,toPath,err=>{
-            if(err){
-                console.log("err renaming...",err);
-                resolve(false);
-            }
-            else resolve(true);
-        });
-    });
-}
-export function internalCP(fromPath:string,toPath:string){
-    return new Promise<boolean>(resolve=>{
-        fs.copyFile(fromPath,toPath,err=>{
-            if(err){
-                resolve(false);
-            }
-            else resolve(true);
-        });
-    });
-}
-export function internalCPDir(fromPath:string,toPath:string){
-    return new Promise<boolean>(resolve=>{
-        fs.cp(fromPath,toPath,{ recursive: true },err=>{
-            if(err){
-                console.log("$ error copying",err);
-                resolve(false);
-            }
-            else resolve(true);
-        });
-    });
 }

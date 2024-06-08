@@ -52,21 +52,20 @@ function _logout(){
 }
 let _usedConfirmLeavePopup = false;
 function _login(data:CredentialResData,token:string){
-    console.log("...starting login");
     socket.emit("login",data,token,(data:CredentialResData)=>{
-        console.log("Log in successful: ",data);
+        console.log("Log in successful");
         if(!_usedConfirmLeavePopup){
             if(g_user || _hasAlertedNotLoggedIn){
                 location.reload();
                 return;
             }
-            if(g_user) if(g_user.email != data.email){
+            if(g_user) if(g_user.data.email != data.email){
                 location.reload();
                 return;
             }
         }
         _usedConfirmLeavePopup = false;
-        g_user = data;
+        g_user = new GlobalUser(data);
         if(loginProm){
             _loginRes();
             _loginRes = null;
@@ -269,14 +268,17 @@ async function restoreProjectFiles(uid:string,pid:string){
             resolve({meta,canEdit});
         });
     });
-   if(!data) return {meta:null,canEdit:false};
+   if(!data){
+        console.log("ERR: couldn't get data when restoring project files");
+        return {meta:null,canEdit:false};
+   }
    return data;
 }
 
 // Challenge
-async function getServerChallenges(){
+async function getServerChallenges(search?:string){
     let list = await new Promise<Challenge[]>(resolve=>{
-        socket.emit("getChallenges",20,0,selectedFilters,searchOption,searchDesc,(list:any[])=>{
+        socket.emit("getChallenges",search?.length?search:undefined,20,0,selectedFilters,searchOption,searchDesc,(list:any[])=>{
             resolve(list);
         });
     });

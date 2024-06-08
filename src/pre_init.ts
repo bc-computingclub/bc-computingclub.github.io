@@ -3,6 +3,9 @@ let serverURL = (location.origin == "https://codeotter.dev" ? location.origin : 
 // let serverURL = "http://claebcode.top:3000";
 // let serverURL = "http://157.245.10.20:3000" // DigitalOcean URL
 
+let iconRef = ([...document.head.children].find(v=>v.getAttribute("rel") == "shortcut icon") as HTMLLinkElement);
+if(iconRef) iconRef.href = "/images/warp_icon2.svg"
+
 let themes:Record<string,{style:string}> = {
     light:{
         style:"light"

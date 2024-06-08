@@ -1,5 +1,4 @@
-import { read, readdir } from "./connection";
-import { LessonType } from "./s_util";
+import { LessonCacheItem, LessonType, PTreeFolder, PTreeLesson, PTreeLink, PTreeOps, lessonCache, read, readdir, registeredLessonFolders } from "./s_util";
 
 export class TextSection{
     constructor(text:string[]){
@@ -104,54 +103,6 @@ export class LessonData{
     // continueFrom:string|null = null;
 }
 
-class PTreeLink{
-    constructor(to:string,flip=false){
-        this.to = to;
-        this.flip = flip;
-    }
-    to:string;
-    flip:boolean;
-}
-class PTreeLesson{
-    constructor(name:string,lid:string,x:number,y:number,links:PTreeLink[]=[],ops:PTLessonOps={}){
-        this.name = name;
-        this.lid = lid;
-        this.x = x;
-        this.y = y;
-        this.links = links;
-        this.ops = ops;
-    }
-    name:string;
-    lid:string;
-    x:number;
-    y:number;
-    links:PTreeLink[];
-    ops:PTLessonOps;
-}
-type PTLessonOps = {
-    unlocked?:boolean;
-    type?:LessonType;
-};
-type PTreeOps = {
-    initialUnlocks?:string[]
-};
-export class PTreeFolder{
-    constructor(name:string,lessons:PTreeLesson[]=[],folders:Record<string,PTreeFolder>={},ops:PTreeOps={}){
-        this.name = name;
-        this.lessons = lessons;
-        this.folders = folders;
-        this.ops = ops;
-
-        // if(ops){
-        //     if(ops.initialUnlocks)
-        // }
-    }
-    name:string;
-    lessons:PTreeLesson[];
-    folders:Record<string,PTreeFolder>;
-    ops:PTreeOps;
-}
-
 export let globalLessonFolders = new Map<string,PTreeFolder>();
 export function getLessonFolder(keys:string[]){
     let folder = globalLessonFolders.get(keys[0]);
@@ -162,23 +113,12 @@ export function getLessonFolder(keys:string[]){
     return folder;
 }
 
-class LessonCacheItem{
-    constructor(lid:string,path:string,lesson:PTreeLesson,folder:PTreeFolder){
-        this.lid = lid;
-        this.path = path;
-        this.lesson = lesson;
-        this.folder = folder;
-    }
-    lid:string;
-    path:string;
-    lesson:PTreeLesson;
-    folder:PTreeFolder;
-    get fullPath(){
-        return this.path+this.lid+"/";
-    }
-}
-export const lessonCache = new Map<string,LessonCacheItem>();
 async function registerLessonFolder(name:string,firstLID:string,pathKeys:string[]=[],ops?:PTreeOps){
+    if(!registeredLessonFolders.has(name)){
+        // first time register
+        registeredLessonFolders.set(name,{firstLID,pathKeys,ops});
+    }
+    
     let path = "../lessons/"+name+"/";
     for(const key of pathKeys){
         path += key+"/";
@@ -201,6 +141,7 @@ async function registerLessonFolder(name:string,firstLID:string,pathKeys:string[
         let l = new PTreeLesson(meta.name,lid,meta.x??Math.random()*100,meta.y??Math.random()*100,[],{
             type:meta.type??0
         });
+        l.loadExtraData(meta);
         folder.lessons.push(l);
 
         if(meta.req){
@@ -208,6 +149,7 @@ async function registerLessonFolder(name:string,firstLID:string,pathKeys:string[
                 l.links.push(new PTreeLink(link.lid,!!link.flip));
             }
         }
+        if(meta.req ? meta.req.length == 0 : true) l.ops.unlocked = true;
 
         lessonCache.set(lid,new LessonCacheItem(lid,path,l,folder));
 
@@ -223,6 +165,19 @@ async function registerLessonFolder(name:string,firstLID:string,pathKeys:string[
 }
 
 registerLessonFolder("theBeginnings","AqCOreapkT8uu8sC");
+
+/**
+ * This should only be used for debugging and not on the public/production server without restarting the server.
+ * There may not be any problems with it but could possibly due to some cached items becoming stale, but they may be fixed on a client reload.
+ */
+export async function reloadLessons(){
+    ptreeMap.clear();
+    lessonCache.clear();
+
+    for(const [name,data] of registeredLessonFolders){
+        await registerLessonFolder(name,data.firstLID,data.pathKeys,data.ops);
+    }
+}
 
 const progressTree = new PTreeFolder("root",[],{
     __0_theBeginnings:new PTreeFolder("The Beginnings",[
@@ -293,12 +248,12 @@ function initPTreeMappings(folder:PTreeFolder){
         }
     }
 }
-function initPTreeMap(){
+// function initPTreeMap(){
     // initPTreeMappings(progressTree);
 
     // console.log("$ loaded ptree mappings");
-}
-initPTreeMap();
+// }
+// initPTreeMap();
 
 /*const progressTree_raw = {
     theBeginnings:{
