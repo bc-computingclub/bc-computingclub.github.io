@@ -10,6 +10,8 @@
     "exclude": [
         "node_modules",
         "project",
-        "lessons"
+        "lessons",
+        "project_old",
+        "lessons_old"
     ]
 }

@@ -28,12 +28,12 @@ async function genProfile() {
     }
 
     // Adding in join date, username, pfp.
-    let date = new Date(g_user._joinDate);
+    let date = new Date(g_user.data._joinDate);
     let formattedDate = date.toLocaleDateString();
     dateJoined.innerHTML = "<i>Joined " + formattedDate; + "</i>";
-    username.textContent = g_user.name.length < 24 ? g_user.name : g_user.name.substring(0,24) + "...";
+    username.textContent = g_user.data.name.length < 24 ? g_user.data.name : g_user.data.name.substring(0,24) + "...";
     let pfp = document.querySelector(".p-pfp") as HTMLImageElement;
-    pfp.src = `${g_user.picture}`;
+    pfp.src = `${g_user.data.picture}`;
     // profileHeader.insertBefore(profilePicture, username);
 
     await showLoadingAnim([challengeStatContainer,lessonStatContainer],400);

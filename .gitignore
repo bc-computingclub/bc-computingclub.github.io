@@ -18,3 +18,10 @@ server/lesson
 server/project
 server/projects
 server/users
+
+server/challenges_old
+server/data_old
+server/lesson_old
+server/project_old
+server/projects_old
+server/users_old

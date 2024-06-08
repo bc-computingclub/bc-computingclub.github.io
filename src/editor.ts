@@ -47,25 +47,27 @@ b_newFile.addEventListener("click",e=>{
 
 async function loadProject(uid:string,pid:string){
     project = null;
+    console.log("TRYINGT O RESTORE: ",uid,pid);
     let {meta,canEdit} = await restoreProjectFiles(uid,pid);
     if(!meta){
         console.warn(`selected project ${pid}: doesn't exist`);
-        new ProjectDashboard().load();
+        if(!menusOpen.some(v=>v instanceof ProjectDashboard)) new ProjectDashboard().load();
         return;
     }
 
-    let url = new URL(location.href);
-    if(url.searchParams.get("pid") != pid){
-        url.searchParams.set("pid",pid);
-        history.replaceState(null,null,url);
-    }
+    // let url = new URL(location.href);
+    // if(url.searchParams.get("pid") != pid){
+    //     url.searchParams.set("pid",pid);
+    //     history.replaceState(null,null,url);
+    // }
+    goToProject(pid,uid,false);
 
     project = new Project(meta.name,pane_code);
     project.meta = meta;
     project.pid = pid;
     project.desc = meta.desc;
     project.isPublic = meta.isPublic;
-    project.meta.isOwner = (project.meta.owner == g_user.uid);
+    project.meta.isOwner = (project.meta.owner == g_user.data.uid);
     project.meta.canEdit = canEdit;
     if(!pid) project.pid = "tmp_project";
     setupEditor(pane_code,EditorType.self);
@@ -115,7 +117,7 @@ async function loadProject(uid:string,pid:string){
     
     if(project.files.length == 0){ // create boilerplate files
         console.warn(":: no files found");
-        return;
+        return true;
         console.warn(":: no files found, loading boilerplate");
         project.createFile("index.html",`<html>
     <head>
@@ -149,6 +151,8 @@ async function loadProject(uid:string,pid:string){
     if(!project.isOwner){
         b_publish.style.display = "none";
     }
+
+    return true;
 }
 
 async function init(){
@@ -171,7 +175,7 @@ async function init(){
     let pid = url.searchParams.get("pid");
     // @ts-ignore
     if(bypassLogin) g_user = {uid:"b49000e0-ae3e-4d27-9b7e-cc1006ba6cd4"};
-    await loadProject(url.searchParams.has("uid")?uid:g_user.uid,pid);
+    await loadProject(url.searchParams.has("uid")?uid:g_user.data.uid,pid);
 
     onResize(true);
 }
@@ -494,7 +498,7 @@ class ProjectDashboard extends Menu{
         let l_pname = div.querySelector(".l-project-name-label");
         let b_openProject = div.querySelector(".b-open-project");
         b_openProject.addEventListener("click",e=>{
-            openProjectSuper(meta.pid);
+            openProjectSuper(meta.pid,meta.owner);
         });
         if(meta.cid != null){
             b_openProject.classList.add("challenge");
@@ -585,11 +589,16 @@ async function createNewProject(name:string,desc="A project for experiments."){
     });
     if(pid == null) return;
     console.log("succesfully created");
-    await openProjectSuper(pid);
+    await openProjectSuper(pid,g_user.data.uid);
+    closeAllMenus();
 }
-async function openProjectSuper(pid:string){
-    if(!project) await loadProject(g_user.uid,pid);
-    else goToProject(pid);
+async function openProjectSuper(pid:string,uid:string){
+    // if(!project) await loadProject(g_user.data.uid,pid);
+    if(!project){
+        let res = await loadProject(uid,pid);
+        if(!res) return;
+    }
+    else goToProject(pid,uid);
     closeAllMenus();
 }
 

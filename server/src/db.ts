@@ -1,12 +1,20 @@
 import { MongoClient, ServerApiVersion } from "mongodb";
 import mongoose, { mongo } from "mongoose";
-import { Project, ProjectMeta, ULFile, ULFolder, ULItem, _findLessonMeta, _findProject, access, genPID, mkdir, projectCache, read, readdir, removeFolder, socks, users } from "./connection";
+import { LessonMeta, ProjectMeta, ULFile, ULFolder, ULItem, _findLessonMeta, _findProject, genPID, projectCache, users } from "./connection";
+import { challenges, getDifficultyId } from "./s_challenges";
+import { write, read, readdir, access, mkdir, removeFolder } from "./s_util";
 
 export enum ServerMode{
     dev,
-    public
+    public,
+    main
 }
-let _serverModes = ["dev","public"];
+let _serverModes = ["dev","public","main"];
+let _dbs = [
+    "code-otter-dev",
+    "code-otter-public",
+    "code-otter-main"
+];
 export let serverMode = ServerMode.dev;
 
 function processArgs(){
@@ -33,10 +41,7 @@ function processArgs(){
 processArgs();
 console.log("SERVER MODE: ",ServerMode[serverMode]);
 
-const dbName = (
-    serverMode == ServerMode.dev ? "code-otter-main" :
-    serverMode == ServerMode.public ? "code-otter-public" : "code-otter-main"
-);
+const dbName = _dbs[serverMode];
 const uri = "mongodb+srv://claebcode:2Z6WY3Nv3AgE0vke@code-otter-0.67qhyto.mongodb.net/"+dbName+"?retryWrites=true&w=majority&appName=code-otter-0";
 
 // Mongo Init
@@ -91,6 +96,10 @@ type MUser = {
     }[],
     completedChallenges:string[],
 
+    // stats
+    lessonsCompleted:number, // total number of unique lessons completed
+    
+
     save:()=>Promise<void>
 };
 const UserSchema = new Schema({
@@ -124,6 +133,16 @@ const UserSchema = new Schema({
     }],
     completedChallenges: [String],
 
+    // stats
+    lessonsCompleted:{
+        type:Number,
+        default:0
+    },
+    challengesCompleted:{
+        type:Number,
+        default:0
+    },
+
     // recentProjects:{
     //     type: [mongoose.Schema.Types.ObjectId],
     //     ref: "Project",
@@ -146,7 +165,10 @@ const UserSchema = new Schema({
     //     ref: "ChallengeIteration"
     // }
 });
-
+UserSchema.pre("save",function(next){
+    this.challengesCompleted = this.completedChallenges.length; // future proofing just in case
+    next();
+});
 
 type MProject = {
     _id:mongoose.Types.ObjectId,
@@ -471,6 +493,11 @@ export class ChallengeInst{
         }) != null;
         if(exists) return -5;
 
+        let items = await p.getFileItems();
+        if(items.length == 0){
+            return -6; // you can't submit a project with nothing in it xD
+        }
+
         // 
         
         p.meta.submitted = true;
@@ -479,8 +506,6 @@ export class ChallengeInst{
         p.meta.cid = this.meta.cid; // override this just in case you tried to submit a regular project as a challenge project, it should just work instead of do nothing :)
 
         // 
-
-        let items = await p.getFileItems();
 
         function calcSubmissionLang(){
             if(!p) return [];
@@ -687,6 +712,12 @@ export class UserSessionItem{
     token:string;
     meta:MUser;
 
+    isNotMainCache = false;
+    _dirty = false;
+    makeDirty(){
+        this._dirty = true;
+    }
+
     // 
 
     project:ProjectInst|undefined;
@@ -752,6 +783,17 @@ export class UserSessionItem{
      */
     async save(){
         await this.meta.save();
+
+        if(this.isNotMainCache){
+            // this.makeDirty();
+            
+            // TODO - REALLY NEED TO FIX AND INDEX THIS BC THIS IS VERY SLOW RIGHT NOW - well when scaling
+            for(const [sid,session] of userSessions){
+                if(session.uid != this.uid) continue;
+                
+                session.meta = this.meta; // this is the "de-stale" the cache hahaha
+            }
+        }
     }
     
     /**
@@ -764,7 +806,7 @@ export class UserSessionItem{
      * Removes the following pid from the list of recent projects.
      */
     removeFromRecents(pid:string){
-        this.meta.recentProjects.splice(this.meta.recentProjects.indexOf(pid,1));
+        removeFromList(this.meta.recentProjects,pid);
     }
 
     /**
@@ -777,7 +819,7 @@ export class UserSessionItem{
      * Removes the following pid from the list of starred projects.
      */
     removeFromStarred(pid:string){
-        this.meta.starredProjects.splice(this.meta.starredProjects.indexOf(pid,1));
+        removeFromList(this.meta.starredProjects,pid);
     }
 
     async _createProjectBase(data:any){
@@ -813,13 +855,17 @@ export class UserSessionItem{
         public?:boolean
     }){
         let p = await this._createProjectBase(data);
+        let inst = new ProjectInst(p);
 
+        // create path
+        let path = await inst.createPath();
+        await write(path+"/index.html","","utf8");
+        
         // finish/flush
         await p.save();
         await this.meta.save();
 
-        // @ts-ignore
-        return new ProjectInst(p);
+        return inst;
     }
     async createChallengeProject(cid:string){
         let challenge = await findChallenge(cid);
@@ -835,17 +881,21 @@ export class UserSessionItem{
             name:challenge.meta.name+(iteration != 0 ? " "+(iteration+1) : ""),
             desc:`An attempt at the ${challenge.meta.name} challenge.`
         });
+        let inst = new ProjectInst(p);
 
         this.meta.inprogressChallenges.push({
             cid,pid:p.pid
         });
 
+        // create path
+        let path = await inst.createPath();
+        await write(path+"/index.html","","utf8");
+
         // finish/flush
         await p.save();
         await this.meta.save();
 
-        // @ts-ignore
-        return new ProjectInst(p);
+        return inst;
     }
 
 
@@ -865,9 +915,7 @@ export class UserSessionItem{
         // socks.set(sockId,this.uid);
     }
     removeSocketId(sockId:string){
-        if(!this.sockIds.includes(sockId)) return;
-        this.sockIds.splice(this.sockIds.indexOf(sockId),1);
-        // socks.delete(sockId);
+        removeFromList(this.sockIds,sockId);
     }
     deleteSocketIds(){
         let list = [...this.sockIds];
@@ -875,10 +923,67 @@ export class UserSessionItem{
             this.removeSocketId(id);
         }
     }
+
+    // Stat Functions
+    async getLessonStats(){
+        let val = await LessonProgressModel.aggregate([
+            {
+                $match:{
+                    uid:this.uid
+                }
+            },
+            {
+                $group:{
+                    _id:"$uid",
+                    totalLessonTime:{
+                        $sum:"$time"
+                    },
+                    // averageTime:{
+                    //     $avg:"$time"
+                    // }
+                }
+            }
+        ]);
+        let v = val[0];
+        delete v._id;
+        
+        v.averageLessonTime = v.totalLessonTime/this.meta.lessonsCompleted; // calc this so it's a little faster hopefully :D
+        return v as {
+            totalLessonTime:number,
+            averageLessonTime:number
+        };
+    }
+    async getProjectStats(){
+        let val = await ProjectModel.aggregate([
+            {
+                $match:{
+                    uid:this.uid
+                }
+            },
+            {
+                $group:{
+                    _id:"$uid",
+                    totalProjectTime:{
+                        $sum:"$time"
+                    },
+                    oldestProjectStarted:{
+                        $min:"$dateCreated"
+                    }
+                }
+            }
+        ]);
+        let v = val[0];
+        delete v._id;
+
+        v.averageProjectTime = v.totalProjectTime/this.meta.projects.length;
+        return v as {
+            totalProjectTime:number,
+            averageProjectTime:number
+        };
+    }
 }
 
 export class ProjectInst{
-    // constructor(meta:MProject){
     constructor(meta:any){
         this.meta = meta;
     }
@@ -906,10 +1011,11 @@ export class ProjectInst{
 
     hasPermissionToView(uid:string){
         if(!this.meta.public){
-            if(uid != this.meta.uid){
+            if(uid != this.meta.uid){ // for now
                 return false;
             }
         }
+
         return true;
     }
     canEdit(uid:string){
@@ -917,12 +1023,16 @@ export class ProjectInst{
 
         let canEdit = true;
         if(this.meta.submitted) canEdit = false;
+
+        // for now
+        if(!this.isOwner(uid)) canEdit = false;
+
         return canEdit;
     }
     isOwner(uid:string){
         return this.meta.uid == uid;
     }
-    serialize(){
+    serialize(uid:string){ // who's getting it
         let items:any[] = [];
         return {
             pid:this.meta.pid,
@@ -939,7 +1049,7 @@ export class ProjectInst{
             // starred:this.session?this.session.meta.starredProjects.includes(this.meta.pid):false,
             starred:this.meta.starred,
 
-            canEdit:this.canEdit(this.meta.uid),
+            canEdit:this.canEdit(uid),
             isOwner:true,
 
             meta:{
@@ -958,7 +1068,7 @@ export class ProjectInst{
                 wls:this.meta.dateLastSaved,
                 owner:this.meta.uid,
 
-                canEdit:this.canEdit(this.meta.uid), // seems weird??
+                canEdit:this.canEdit(uid), // seems weird??
                 isOwner:true // hmm ^^^
             }
         };
@@ -989,9 +1099,9 @@ export class ProjectInst{
         let owner = ownerSession.meta;
         let pid = this.meta.pid;
         
-        owner.projects.splice(owner.projects.indexOf(pid),1);
-        owner.recentProjects.splice(owner.recentProjects.indexOf(pid),1);
-        owner.starredProjects.splice(owner.starredProjects.indexOf(pid),1);
+        removeFromList(owner.projects,pid);
+        removeFromList(owner.recentProjects,pid);
+        removeFromList(owner.starredProjects,pid);
 
         // clear from challenges
         removeFromListPred(owner.inprogressChallenges,item=>item.pid == pid);
@@ -1005,7 +1115,6 @@ export class ProjectInst{
             });
             if(res){
                 let c = await findChallenge(this.meta.cid);
-                console.log("ID: ",res._id);
                 if(c){
                     removeFromListPred(c.meta.submissions,item=>item.equals(res?._id));
                     await c.save();
@@ -1015,7 +1124,8 @@ export class ProjectInst{
         }
         
         // save
-        await owner.save();
+        // await owner.save();
+        await ownerSession.save();
 
         // finish deletion
         await ProjectModel.deleteOne({
@@ -1083,10 +1193,12 @@ export class ProjectInst{
 }
 
 export function removeFromList(list:any[],item:any){
-    list.splice(list.indexOf(item),1);
+    let ind = list.indexOf(item);
+    if(ind != -1) list.splice(ind,1);
 }
 export function removeFromListPred<T>(list:T[],pred:(item:T)=>boolean){
-    list.splice(list.findIndex(pred),1);
+    let ind = list.findIndex(v=>pred(v));
+    if(ind != -1) list.splice(ind,1);
 }
 export function addUnique(list:any[],item:any){
     if(!list.includes(item)) list.push(item);
@@ -1116,14 +1228,17 @@ export async function findChallengeSubmission(id:any){
 }
 
 export async function findUser(uid:string){
-    let inst = users.get(uid);
-    if(inst) return inst;
+    // let inst = users.get(uid);
+    // if(inst?._dirty ? false : true) if(inst) return inst;
+    // if(inst) inst._dirty = false;
     
     let res = await UserModel.findOne({
         uid
     });
     if(!res) return;
-    return new UserSessionItem("",res);
+    let session = new UserSessionItem("",res);
+    session.isNotMainCache = true;
+    return session;
 }
 
 async function testModel(){
@@ -1138,3 +1253,263 @@ async function testModel(){
     console.log("...SAVED...");
 }
 // testModel();
+
+// 
+
+export async function uploadChallenges(){
+    for(const [cid,challenge] of challenges){
+        let data = await ChallengeModel.findOne({
+            cid
+        });
+        let difficulty = getDifficultyId(challenge.difficulty);
+        if(!data) data = new ChallengeModel({
+            cid,
+            name:challenge.name,
+            desc:challenge.desc,
+            imgUrl:challenge.imgUrl,
+            difficulty
+        });
+        else{
+            data.name = challenge.name;
+            data.desc = challenge.desc;
+            data.imgUrl = challenge.imgUrl;
+            data.difficulty = difficulty;
+        }
+        await data.save();
+    }
+    console.log("$ finished updating challenges");
+}
+export async function uploadUsers(){
+    let uids = await readdir("../users");
+    if(!uids) return;
+    let allProjs = new Map<string,ProjectInst[]>;
+    for(const uid1 of uids){
+        if(!uid1.endsWith(".json")) continue;
+        let uid = uid1.replace(".json","");
+
+        let str = await read("../users/"+uid1);
+        if(!str) continue;
+        let data = JSON.parse(str);
+        if(!data) continue;
+
+        let pMeta = data.pMeta;
+        if(typeof pMeta[0] == "string") pMeta = pMeta.map((v:any)=>JSON.parse(v));
+
+        // upload projects
+        console.log("$ uploading projects");
+        // console.log("\n\nPMETA:\n",pMeta,"\n\n");
+        let projs:ProjectInst[] = [];
+        for(const p of pMeta){
+            let pInst = await uploadProject(uid,p);
+            if(!pInst) continue;
+            projs.push(pInst);
+        }
+        allProjs.set(uid,projs);
+        // 
+    }
+
+    await uploadUsersStage2(allProjs);
+}
+export async function uploadUsersStage2(allProjs:Map<string,ProjectInst[]>){
+    let uids = await readdir("../users");
+    if(!uids) return;
+    for(const uid1 of uids){
+        if(!uid1.endsWith(".json")) continue;
+        let uid = uid1.replace(".json","");
+
+        let projs = allProjs.get(uid);
+        if(!projs) continue;
+
+        let str = await read("../users/"+uid1);
+        if(!str) continue;
+        let data = JSON.parse(str);
+        if(!data) continue;
+
+        let pMeta = data.pMeta as ProjectMeta[];
+        if(typeof pMeta[0] == "string") pMeta = pMeta.map((v:any)=>JSON.parse(v));
+
+        console.log("...started making user: "+uid);
+
+        let inprogressChallenges:ProjectInst[] = [];
+        let submittedChallenges:ProjectInst[] = [];
+        for(const pm of pMeta){
+            let cid = pm.cid;
+            let pid = pm.pid;
+            if(cid == null) continue;
+
+            let cInst = await findChallenge(cid);
+            if(!cInst){
+                console.warn("! err - challenge not found: "+cid);
+                continue;
+            }
+            let proj = await _findProject(uid,pid);
+            if(!proj){
+                console.warn("! err - project not found associated with challenge, not good!",uid,pid);
+                continue;
+            }
+            // let proj = projs.find(v=>v.meta.pid == c.pid);
+            // if(!proj){
+            //     console.warn("! err - not good! couldn't find project associated with challenge data");
+            //     continue;
+            // }
+
+            let chData = challenges.get(cid);
+            if(!chData){
+                console.warn("! err - chData not found: "+cid);
+                continue;
+            }
+
+            if(proj.meta.submitted){
+                console.log("--- found submitted challenge",cid);
+                submittedChallenges.push(proj);
+                
+                let subData = chData.sub.find(v=>v.pid == pid);
+                if(!subData){
+                    console.warn("! err - could not find subData: ",pid,cid);
+                    continue;
+                }
+                let subMeta = new ChallengeSubmissionModel({
+                    name:subData.who,
+                    cid,
+                    uid:subData.uid,
+                    pid:subData.pid,
+                    characterCount:subData.cc,
+                    lineCount:subData.lc,
+                    lang:subData.lang,
+                    dateSubmitted:subData.ws != "" ? new Date(subData.ws) : null,
+                    time:subData.t
+                });
+                await subMeta.save();
+                console.log("saved challenge sub: "+cid);
+
+                cInst.meta.submissions.push(subMeta._id);
+                await cInst.save();
+            }
+            else{
+                console.log("--- found IN-PROGRESS challenge",cid);
+                inprogressChallenges.push(proj);
+            }
+        }
+
+        let userExists = await UserModel.exists({uid}) != null;
+        if(userExists) continue;
+
+        let userMeta = new UserModel({
+            uid,
+            name:data.name,
+            email:data.email,
+            picture:data.picture,
+            joinDate:data.joinDate != "" ? new Date(data.joinDate) : null,
+            lastLoggedIn:data.lastLoggedIn != "" ? new Date(data.lastLoggedIn) : null,
+            
+            projects:pMeta.map((v:any)=>v.pid),
+            recentProjects:data.recent,
+            starredProjects:data.starred,
+
+            completedChallenges:[...new Set(submittedChallenges.map(v=>v.meta.cid))],
+            submittedChallenges:submittedChallenges.map(v=>{
+                return {
+                    cid:v.meta.cid,
+                    pid:v.meta.pid
+                };
+            }),
+            inprogressChallenges:inprogressChallenges.map(v=>{
+                return {
+                    cid:v.meta.cid,
+                    pid:v.meta.pid
+                };
+            })
+        });
+        await userMeta.save();
+        console.log("saved user: "+uid);
+    }
+}
+
+export async function uploadProject(uid:string,meta:ProjectMeta){
+    let exists = (await ProjectModel.exists({uid,pid:meta.pid})) != null;
+    if(exists){
+        console.log("% (skipping) project already exists: "+meta.pid);
+        return;
+    }
+
+    // if(meta.wls == null){
+    //     console.warn("---skipped, could not find WLS");
+    //     return;
+    // }
+
+    let dateCreated = new Date(meta.wc);
+    let dateLastSaved = new Date(meta.wls);
+    let dateSubmitted = new Date(meta.ws);
+
+    let data = {
+        uid,pid:meta.pid,
+        name:meta.name,
+        desc:meta.desc,
+        public:meta.isPublic,
+        submitted:meta.sub,
+        starred:meta.starred,
+        cid:meta.cid,
+        
+        time:meta.time,
+    } as MProject;
+
+    if(isValidDate(dateCreated)) data.dateCreated = dateCreated;
+    if(isValidDate(dateLastSaved)) data.dateLastSaved = dateLastSaved;
+    if(isValidDate(dateSubmitted)) data.dateSubmitted = dateSubmitted;
+
+    let pMeta = new ProjectModel(data);
+    await pMeta.save();
+    console.log("saved project: ",meta.pid);
+
+    return new ProjectInst(pMeta);
+}
+
+export function isValidDate(date:Date){
+    return !isNaN(date.getTime());
+}
+
+export async function uploadLessonProgs(){
+    let uids = await readdir("../users");
+    if(!uids) return;
+    for(const uid of uids){
+        if(uid.endsWith(".json")) continue;
+
+        let lids = await readdir("../users/"+uid+"/lesson");
+        if(!lids) continue;
+        
+        for(const lid of lids){
+            let metaStr = await read("../users/"+uid+"/lesson/"+lid+"/meta.json");
+            if(!metaStr) continue;
+            let meta = JSON.parse(metaStr) as LessonMeta;
+
+            let exists = await LessonProgressModel.exists({lid,uid}) != null;
+            if(exists) continue;
+
+            let lessonMeta = new LessonProgressModel({
+                lid,uid,
+                eventI:meta.eventI,
+                taskI:meta.taskI,
+                progress:meta.prog,
+                mode:meta.mode,
+                dateUnlocked:meta.wu != "" && meta.wu ? new Date(meta.wu) : null,
+                started:meta.s,
+                unlocked:meta.u,
+                times:meta.times,
+                dateStarted:meta.ws != "" && meta.ws ? new Date(meta.ws) : null,
+                hasFinished:meta.hf,
+                dateLastSaved:meta.wls != "" && meta.wls ? new Date(meta.wls) : null,
+                time:meta.time
+            });
+            await lessonMeta.save();
+
+            let userMeta = await findUser(uid);
+            if(userMeta){
+                userMeta.meta.lessonsCompleted++;
+                userMeta.makeDirty();
+                await userMeta.save();
+            }
+
+            console.log("saved lesson meta: "+lid);
+        }
+    }
+}

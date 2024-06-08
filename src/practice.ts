@@ -211,7 +211,7 @@ function setChallengeHTML(c: Challenge) {
         ${(c.desc.length > 120) ? c.desc.slice(0, 120) + "..." : c.desc}
         </span>
         <div class="c-button-options">
-            <button class="c-preview" onclick="setupButton(${c.cID});">
+            <button class="c-preview" onclick="setupButton('${c.cID}');">
                 View <span class="material-symbols-outlined">info</span>
             </button>
             <button class="c-submissions" onclick="showSubmissions('${c.cID}','')">

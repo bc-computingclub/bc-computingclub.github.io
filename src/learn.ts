@@ -18,13 +18,14 @@ class LessonTar{
     pathCont:HTMLElement;
 }
 class TreeLesson{
-    constructor(name:string,lid:string,x:number,y:number,next:LessonTar[]){
-        this.name = name;
-        this.lid = lid;
-        this.x = x;
-        this.y = y;
-        this.next = next || [];
-        this.prev = [];
+    // constructor(name:string,lid:string,x:number,y:number,next:LessonTar[]){
+    constructor(){
+        // this.name = name;
+        // this.lid = lid;
+        // this.x = x;
+        // this.y = y;
+        // this.next = next || [];
+        // this.prev = [];
     }
     type:LessonType;
     name:string;
@@ -37,6 +38,22 @@ class TreeLesson{
     _y:number;
     root:TreeLesson[];
     rootProg:ProgressData[];
+
+    parent:string|undefined;
+
+    loadFromData(data:any){
+        let ok = Object.keys(data);
+        for(const key of ok){
+            let v = data[key];
+            this[key] = v;
+        }
+
+        if(!this.next) this.next = [];
+        else{
+            this.next = this.next.filter(v=>v.id != this.lid);
+        }
+        if(!this.prev) this.prev = [];
+    }
 
     animateUnlocks(tree:TreeLesson[],lids:string[]){
         if(false) for(const lid of lids){
@@ -66,55 +83,57 @@ class TreeLesson{
         to.update();
     }
 }
-let progressTree_testing = {
-    lessons:[
-        new TreeLesson("The First Lesson","0001",-40,-20,[
-            new LessonTar("GUR5zKAcaZgObqWk")
-        ]),
-        new TreeLesson("The Second","GUR5zKAcaZgObqWk",0,0,[
-            new LessonTar("_0",true),
-            new LessonTar("_1"),
-            new LessonTar("_2",false),
-        ]),
-        new TreeLesson("The Third","_0",-30,40,null),
-        new TreeLesson("The Fourth","_1",30,-30,null),
+// let progressTree_testing = {
+//     lessons:[
+//         new TreeLesson("The First Lesson","0001",-40,-20,[
+//             new LessonTar("GUR5zKAcaZgObqWk")
+//         ]),
+//         new TreeLesson("The Second","GUR5zKAcaZgObqWk",0,0,[
+//             new LessonTar("_0",true),
+//             new LessonTar("_1"),
+//             new LessonTar("_2",false),
+//         ]),
+//         new TreeLesson("The Third","_0",-30,40,null),
+//         new TreeLesson("The Fourth","_1",30,-30,null),
 
-        new TreeLesson("Branch 1","_b1",280,30,null),
-        new TreeLesson("Branch 2","_b2",300,50,null),
-        new TreeLesson("Branch 3","_b3",310,80,null),
-        new TreeLesson("Branch 4","_b4",280,95,null),
-        new TreeLesson("555","_2",250,70,[
-            new LessonTar("_b1",true),
-            new LessonTar("_b2",true),
-            new LessonTar("_b3"),
-            new LessonTar("_b4"),
-        ]),
-    ] as TreeLesson[]
-};
-let progressTree_client = {
-    lessons:[
-        new TreeLesson("The First Lesson","0001",0,0,[
-            new LessonTar("GUR5zKAcaZgObqWk")
-        ]),
-        new TreeLesson("The Second","GUR5zKAcaZgObqWk",35,20,[
-            new LessonTar("RYRFcZXnLyJJm1Jc",true)
-        ]),
-        new TreeLesson("The Short Lesson","RYRFcZXnLyJJm1Jc",70,40,[
+//         new TreeLesson("Branch 1","_b1",280,30,null),
+//         new TreeLesson("Branch 2","_b2",300,50,null),
+//         new TreeLesson("Branch 3","_b3",310,80,null),
+//         new TreeLesson("Branch 4","_b4",280,95,null),
+//         new TreeLesson("555","_2",250,70,[
+//             new LessonTar("_b1",true),
+//             new LessonTar("_b2",true),
+//             new LessonTar("_b3"),
+//             new LessonTar("_b4"),
+//         ]),
+//     ] as TreeLesson[]
+// };
+// let progressTree_client = {
+//     lessons:[
+//         new TreeLesson("The First Lesson","0001",0,0,[
+//             new LessonTar("GUR5zKAcaZgObqWk")
+//         ]),
+//         new TreeLesson("The Second","GUR5zKAcaZgObqWk",35,20,[
+//             new LessonTar("RYRFcZXnLyJJm1Jc",true)
+//         ]),
+//         new TreeLesson("The Short Lesson","RYRFcZXnLyJJm1Jc",70,40,[
             
-        ]),
-    ]
-};
+//         ]),
+//     ]
+// };
 function parseProgTree(data:any){
     console.log(data);
     let ar:TreeLesson[] = [];
     for(const l of data){
-        console.log("LINK INFO:",l.name,l.links);
-        let t = new TreeLesson(l.name,l.lid,l.x,l.y,[]);
+        // console.log("LINK INFO:",l.name,l.links);
+        // let t = new TreeLesson(l.name,l.lid,l.x,l.y,[]);
+        let t = new TreeLesson();
+        t.loadFromData(l);
         t.prev = l.links?.map((v:any)=>new LessonTar(v.to,v.flip)??[]);
         t.type = (l.ops.type ?? LessonType.lesson);
         ar.push(t);
     }
-    console.log(ar);
+    // console.log(ar);
     return ar;
 }
 
@@ -165,6 +184,8 @@ class LessonItem{
     private tmp:string;
     private isHovering:boolean;
 
+    prevPathCont:HTMLElement;
+
     close(){
         if(!this.b_start) return;
         this.b_start.classList.remove("open");
@@ -199,6 +220,13 @@ class LessonItem{
         
         cont.appendChild(f);
     }
+
+    partNum = 0;
+    setPartNum(num:number){
+        this.partNum = num;
+        this.e.style.setProperty("--content-override",'"// Part '+this.partNum+'"');
+    }
+
     update(){
         let e = this.e;
         let unlocked = this.data.u;
@@ -210,6 +238,9 @@ class LessonItem{
             e.parentElement.classList.remove("locked");
             e.classList.remove("locked");
         }
+
+        e.parentElement.style.left = this.l._x+"px";
+        e.parentElement.style.top = this.l._y+"px";
         
         if(unlocked){
             // lesson icon
@@ -221,7 +252,33 @@ class LessonItem{
             }
             
             // lesson type
-            if(this.l.type == 1) e.parentElement.classList.add("type-guided-project");
+            if(this.l.type == 1){
+                e.parentElement.classList.add("type-guided-project");
+                if(!this.l.parent) e.parentElement.classList.add("type-guided-project-parent");
+                else{
+                    let t = this;
+                    let partNum = 1;
+                    function search(l:TreeLesson){
+                        if(!l) return;
+                        if(!l.parent) return;
+                        partNum++;
+                        for(const c of l.prev){
+                            search(items.find(v=>v.lid == c.id)?.l);
+                        }
+                    }
+                    search(this.l);
+                    this.setPartNum(partNum);
+                }
+            }
+        }
+
+        if(this.prevPathCont){
+            console.log(this.data.hf,this.data.prog);
+            if(this.data.hf){
+                console.log("HAS FINISHED");
+                this.prevPathCont.classList.add("done");
+            }
+            else this.prevPathCont.classList.remove("done");
         }
 
         if(unlocked) e.innerHTML = `
@@ -439,10 +496,10 @@ class LessonItem{
 }
 let items:LessonItem[] = [];
 
+let moveScale = 10;
 async function loadProgressTree(){
     let cx = pTree.offsetWidth/2;
     let cy = pTree.offsetHeight/2;
-    let moveScale = 10;
 
     // User Data
     // let progress = [
@@ -529,7 +586,7 @@ async function loadProgressTree(){
         setTimeout(()=>{
             if(l.prev.every(v=>items.find(w=>w.lid == v.id)?.data.hf)){
                 socket.emit("postFinishLesson",ref.lid,(data:any)=>{
-                    console.log("FROM: ",ref.lid,data);
+                    // console.log("FROM: ",ref.lid,data);
                     if(data == 0) return;
                     if(typeof data == "number"){
                         alert(`Error ${data} while post finishing lesson`);
@@ -653,6 +710,7 @@ async function loadProgressTree(){
                     pathCont.className = "path-cont";
                     cont.appendChild(pathCont);
                     tar.pathCont = pathCont;
+                    ref.prevPathCont = pathCont;
                     
                     pathCont.appendChild(test);
 
@@ -691,7 +749,44 @@ async function loadProgressTree(){
                     // update();
                 }
             }
+            // ref.update(); // might be needed but takes extra processing power
         },0);
+    }
+    // let maxRecur = 50;
+    // let recurI = 0;
+    function check(l:TreeLesson,path:string[]){
+        // recurI++;
+        // if(recurI > maxRecur) return [0,0];
+
+        if(path.includes(l.lid)) return [0,0]; // prevents over recursion and infinite loops
+
+        path.push(l.lid);
+        let prev = l.prev[0];
+        if(prev){
+            let item = items.find(v=>v.lid == l.lid);
+            let prevItem = items.find(v=>v.lid == prev.id);
+            if(!item) return [0,0];
+            if(!prevItem) return [0,0];
+            let [tx,ty] = check(prevItem.l,path);
+            // console.log("L: ",l.name,l.x,prevItem.l.x);
+
+            l._x = cx+(l.x+tx)*moveScale;
+            l._y = cy+(l.y+ty)*moveScale;
+            
+            // l._x += prevItem.l._x;
+            // l._y += prevItem.l._y;
+            // l._x = prevItem.l._x+l._x;
+            // l._y = prevItem.l._y+l._y;
+            // l.x = prevItem.l.x+l.x;
+            // l.y = prevItem.l.y+l.y;
+
+            item.update();
+            return [l.x+tx,l.y+ty];
+        }
+        return [0,0];
+    }
+    for(const l of progressTree){
+        check(l,[]);
     }
     cont.appendChild(lessonCont);
     setTimeout(()=>{
@@ -718,7 +813,7 @@ function testWarpZone(){
         </div>
     `; // 0.4 or 0.7 are good
 
-    console.log("added: ",itemCont);
+    // console.log("added: ",itemCont);
 }
 
 // Back pan blocking

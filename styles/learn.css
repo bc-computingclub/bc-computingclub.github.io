@@ -227,6 +227,10 @@ body.themestyle-light .btn-start.open{
     transition:filter 0.2s ease-out, translate 0.5s ease-out;
     pointer-events:none;
 }
+/* .path-cont.done{
+    --c:#328b32 !important;
+    opacity:0.3;
+} */
 .path-cont.hov{
     /* --c:red; */
     filter:brightness(1.5);
@@ -443,25 +447,20 @@ body.themestyle-light .item-actions > div:hover{
 
 /* Lesson Types */
 .item-cont.type-guided-project{
-    /* border-left:solid 8px var(--practice-col); */
-    /* padding-left:3px; */
-    /* --stroke-col:var(--practice-col); */
-
-    
+    --content-override:"//";
     &{
         .circle{
-
-            padding:20px;
-            padding-top:34px;
-            width:200px;
+            width:145px;
             height:145px;
+            /* padding:20px; */
+            padding-top:34px;
             /* height:200px; */
 
             /* border-top-left-radius:0px; */
             /* border-bottom-left-radius:0px; */
         }
         .circle::after{
-            content:"// Guided Project";
+            content:var(--content-override,"//");
             font-size:14px;
             opacity:0.5;
             position:absolute;
@@ -472,6 +471,23 @@ body.themestyle-light .item-actions > div:hover{
             /* color:whitesmoke; */
             /* background-color:black; */
             border-radius:3px;
+        }
+    }
+}
+.item-cont.type-guided-project-parent{
+    /* border-left:solid 8px var(--practice-col); */
+    /* padding-left:3px; */
+    /* --stroke-col:var(--practice-col); */
+
+    --content-override:"// Guided Project";
+    
+    &{
+        .circle{
+            width:200px;
+            height:145px;
+        }
+        .circle::after{
+            content:"// Guided Project";
         }
     }
 }
