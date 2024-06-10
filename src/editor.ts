@@ -47,7 +47,6 @@ b_newFile.addEventListener("click",e=>{
 
 async function loadProject(uid:string,pid:string){
     project = null;
-    console.log("TRYINGT O RESTORE: ",uid,pid);
     let {meta,canEdit} = await restoreProjectFiles(uid,pid);
     if(!meta){
         console.warn(`selected project ${pid}: doesn't exist`);
@@ -368,6 +367,10 @@ class ProjectDashboard extends Menu{
                             <div class="material-symbols-outlined">face</div>
                             <div>Personal</div>
                         </button>
+                        <button class="icon-btn regular sel">
+                            <div class="material-symbols-outlined">experiment</div>
+                            <div>Projects</div>
+                        </button>
                         <button class="icon-btn regular">
                             <div class="material-symbols-outlined">fitness_center</div>
                             <div>Challenges</div>
@@ -382,6 +385,10 @@ class ProjectDashboard extends Menu{
                         </button>
                     </div>
                     <div class="edb-nav-cont">
+                        <button class="b-new-folder icon-btn regular">
+                            <div class="material-symbols-outlined">create_new_folder</div>
+                            <div>New Folder</div>
+                        </button>
                         <button class="b-new-project icon-btn accent">
                             <div class="material-symbols-outlined">add</div>
                             <div>New Project</div>
@@ -397,7 +404,7 @@ class ProjectDashboard extends Menu{
         b_newProject.addEventListener("click",e=>{
             // let name = prompt("Enter project name:","New Project");
             let name = "New Project";
-            new InputMenu(
+            let menu = new InputMenu(
                 "New Project","Enter project name",
                 (projname:string)=>{
                     name = projname;
@@ -407,8 +414,27 @@ class ProjectDashboard extends Menu{
                 () => {
                     console.log("Canceled new project creation");
                 }
-            ).load();
+            );
+            menu._newLayer = true;
+            menu.load();
         });
+        let b_newFolder = this.body.querySelector(".b-new-folder") as HTMLButtonElement;
+        b_newFolder.addEventListener("click",e=>{
+            let menu = new InputMenu(
+                "New Folder","Enter folder name",
+                async (name:string)=>{
+                    if(!name) return;
+                    let res = await g_user.createNewFolder(name);
+                    if(!res) return;
+                    
+                    await this.reloadSection();
+                },
+                ()=>{}
+            );
+            menu._newLayer = true;
+            menu.load();
+        });
+
         let navCont = this.body.querySelector(".edb-nav-cont");
         let content = this.body.querySelector(".edb-content-list");
         this.navCont = navCont;
@@ -438,37 +464,73 @@ class ProjectDashboard extends Menu{
         curProjectSettingsMeta = null;
         curProjectSettingsMetaPID = null;
         this.content.textContent = "";
-        async function tryGet(){
-            return new Promise<any[]>(resolve=>{
-                console.log("send...");
-                socket.emit("user-getProjectList",i,(data:any[])=>{
-                    console.log("DATA",data);
-                    if(typeof data == "number") data = [];
-                    resolve(data || []);
+    
+        if(i > 0){
+            async function tryGet(){
+                return new Promise<any[]>(resolve=>{
+                    // console.log("send...");
+                    socket.emit("user-getProjectList",i,null,(data:any[])=>{ // TODO - null right now is the fid for the folder to search in
+                        // console.log("DATA",data);
+                        if(typeof data == "number") data = [];
+                        resolve(data || []);
+                    });
                 });
+            }
+            let raw = await tryGet();
+            // if(raw == -3){ // might need this because of weird chromium browser cache
+    
+            // }
+            // let list = raw.map(v=>JSON.parse(v) as ProjectMeta);
+            let list = raw.map(v=>v as ProjectMeta);
+    
+            // sorting
+            list = list.sort((a,b)=>{
+                // let aTime = a.wc ? new Date(a.wc).getTime() : 0;
+                // let bTime = b.wc ? new Date(b.wc).getTime() : 0;
+                let aTime = a.wls ? new Date(a.wls).getTime() : 0;
+                let bTime = b.wls ? new Date(b.wls).getTime() : 0;
+                return aTime-bTime;
             });
+            
+            for(const c of list){
+                this.loadProjectItem(c);
+            }
+
+            return;
         }
-        let raw = await tryGet();
-        // if(raw == -3){ // might need this because of weird chromium browser cache
 
-        // }
-        // let list = raw.map(v=>JSON.parse(v) as ProjectMeta);
-        let list = raw.map(v=>v as ProjectMeta);
+        // load personal
 
-        // sorting
-        list = list.sort((a,b)=>{
-            // let aTime = a.wc ? new Date(a.wc).getTime() : 0;
-            // let bTime = b.wc ? new Date(b.wc).getTime() : 0;
-            let aTime = a.wls ? new Date(a.wls).getTime() : 0;
-            let bTime = b.wls ? new Date(b.wls).getTime() : 0;
-            return aTime-bTime;
+        let data = await new Promise<{
+            projects:any[], // add more things later here if needed
+            folders:any[]
+        }>(resolve=>{
+            socket.emit("user-getFilesList",null,(data:any)=>{
+                if(!data || data?.err){
+                    alert(`Error ${data?.err} while trying to get personal files`);
+                    resolve(null);
+                }
+                else resolve(data);
+            });
         });
-        
-        for(const c of list){
-            this.loadItem(c);
+        if(!data) return;
+
+        console.log("GOT DATA:",data.projects,data.folders);
+
+        if(data.folders){
+            data.folders.sort((a,b)=>a.name.localeCompare(b.name));
+            for(const item of data.folders){
+                this.loadFolderItem(item);
+            }
+        }
+        if(data.projects){
+            data.projects.sort((a,b)=>a.name.localeCompare(b.name));
+            for(const item of data.projects){
+                this.loadProjectItem(item);
+            }
         }
     }
-    loadItem(meta:ProjectMeta){
+    loadProjectItem(meta:ProjectMeta){
         let div = document.createElement("div");
         div.className = "project-item";
         div.classList.add("pi-"+meta.pid);
@@ -571,6 +633,30 @@ class ProjectDashboard extends Menu{
         // div.addEventListener("click",e=>{
 
         // });
+    }
+    loadFolderItem(item:{name:string,itemCount:number,parent:string}){
+        let div = document.createElement("div");
+        div.className = "project-item folder-item";
+        // div.classList.add("pi-"+meta.pid);
+        div.innerHTML = `
+            <div class="project-info">
+                <div class="l-project-name">
+                    <div class="main-icon material-symbols-outlined">folder</div>
+                    <div class="l-project-name-label">${item.name}</div>
+                    <div style="margin-right:10px"></div>
+                </div>
+            </div>
+            <!--<div class="flx-sb" style="gap:5px">
+                <button class="icon-btn accent smaller b-open-project">
+                    <div class="material-symbols-outlined">edit</div>
+                    <div>Tinker</div>
+                </button>
+                <button class="icon-btn-single accent smaller b-ops">
+                    <div class="material-symbols-outlined">discover_tune</div>
+                </button>
+            </div>-->
+        `;
+        this.content.appendChild(div);
     }
 }
 

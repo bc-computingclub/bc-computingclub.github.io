@@ -176,7 +176,6 @@ class Menu{
 
             // restore other menus
 
-            console.log("on close");
             let list = [...menusOpen];
             for(const m of list){
                 if(m._priority < this._priority) m.menu.style.display = "block";
@@ -515,6 +514,20 @@ class GlobalUser{
                     return;
                 }
                 resolve(data);
+            });
+        });
+    }
+
+    // 
+    
+    async createNewFolder(name:string,fid?:string){
+        return new Promise<boolean>(resolve=>{
+            socket.emit("createFolder",name,fid,(data:any)=>{
+                if(!data || data?.err){
+                    alert(`Error ${data?.err} while trying to create folder`);
+                    resolve(false);
+                }
+                else resolve(true);
             });
         });
     }

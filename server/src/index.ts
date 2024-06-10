@@ -5,7 +5,7 @@ import fs, { copyFile } from "fs";
 import { createInterface } from "readline";
 import crypto from "crypto";
 import { createGuidedProject, createLesson, write, read, readdir, access, mkdir, removeFolder, removeFile, rename, internalCPDir, internalCP, lessonCache } from "./s_util";
-import { ChallengeInst, ChallengeModel, ChallengeSubmissionModel, LessonMetaInst, ProjectInst, ProjectModel, UserModel, UserSessionItem, findChallenge, removeFromList, removeFromListPred, uploadChallenges, uploadLessonProgs, uploadUsers, uploadUsersStage2, userSessions } from "./db";
+import { ChallengeInst, ChallengeModel, ChallengeSubmissionModel, FolderInst, FolderModel, LessonMetaInst, ProjectInst, ProjectModel, UserModel, UserSessionItem, findChallenge, removeFromList, removeFromListPred, uploadChallenges, uploadLessonProgs, uploadUsers, uploadUsersStage2, userSessions } from "./db";
 import mongoose from "mongoose";
 
 function valVar(v:any,type:string){
@@ -1008,7 +1008,42 @@ io.on("connection",socket=>{
     });
 
     // User get stuff
-    socket.on("user-getProjectList",async (section:ProjectGroup,f:(d:any)=>void)=>{
+    socket.on("user-getFilesList",async (fid:string|undefined,call:(data:any)=>void)=>{
+        if(fid != null) if(!valVar2(fid,"string",call)) return;
+        
+        let user = getSession(socket.id);
+        if(!user){
+            call({err:-3});
+            return;
+        }
+
+        
+        let projects:any[] = [];
+        let folders:any[] = [];
+        
+        // let parent = await user.getFolder(fid);
+        
+        projects = await ProjectModel.find({
+            uid:user.uid,
+            folder:fid
+        });
+        folders = await FolderModel.find({
+            uid:user.uid,
+            folder:fid
+        });
+
+        // let files = await FileModel.find({
+        //     uid:user.uid,
+        //     folder:fid,
+
+        // });
+
+        call({
+            projects:projects.filter(v=>v != null).map(v=>new ProjectInst(v).serialize(user.uid)),
+            folders:folders.filter(v=>v != null).map(v=>new FolderInst(v).serialize())
+        });
+    });
+    socket.on("user-getProjectList",async (section:ProjectGroup,fid:string,f:(d:any)=>void)=>{
         let user = getSession(socket.id);
         if(!user){
             f(-3);
@@ -1016,11 +1051,12 @@ io.on("connection",socket=>{
         }
         let query:mongoose.Query<any,any>|null = null;
         switch(section){
-            case ProjectGroup.personal:{
+            case ProjectGroup.projects:{
                 // data = user.projects.map(v=>v.serialize()?.serialize());
                 // data = user.pMeta.filter(v=>v.cid == null).map(v=>v.serialize());
                 query = ProjectModel.find({
                     uid:user.uid,
+                    folder:fid,
                     cid:{
                         $eq:null
                     }
@@ -1030,6 +1066,7 @@ io.on("connection",socket=>{
                 // data = user.pMeta.filter(v=>v.cid != null).map(v=>v.serialize()); // probably need to optimize the filters at some point
                 query = ProjectModel.find({
                     uid:user.uid,
+                    folder:fid,
                     cid:{
                         $ne:null
                     }
@@ -1039,6 +1076,7 @@ io.on("connection",socket=>{
                 // data = user.pMeta.filter(v=>user?.recent.includes(v.pid)).map(v=>v.serialize());
                 query = ProjectModel.find({
                     uid:user.uid,
+                    folder:fid,
                     pid:{
                         $in:user.meta.recentProjects
                     }
@@ -1048,6 +1086,7 @@ io.on("connection",socket=>{
                 // data = user.pMeta.filter(v=>user?.starred.includes(v.pid)).map(v=>v.serialize());
                 query = ProjectModel.find({
                     uid:user.uid,
+                    folder:fid,
                     pid:{
                         $in:user.meta.starredProjects
                     }
@@ -1061,7 +1100,7 @@ io.on("connection",socket=>{
         }
 
         query = query.sort({
-            dateLastSaved:1
+            dateLastSaved:-1
         });
 
         let res = await query.exec();
@@ -1375,10 +1414,10 @@ io.on("connection",socket=>{
             return;
         }
         
-        if(!user.meta.projects.includes(pid)){
-            call(1); // either this isn't your project or it doesn't exist
-            return;
-        }
+        // if(!user.meta.projects.includes(pid)){
+        //     call(1); // either this isn't your project or it doesn't exist
+        //     return;
+        // }
         
         let challenge = await findChallenge(cid);
         if(!challenge){
@@ -1388,7 +1427,11 @@ io.on("connection",socket=>{
 
         let p = await user.getProject(pid);
         if(!p){
-            call(3);
+            call(3); // project doesn't exist
+            return;
+        }
+        if(!p.isOwner(user.uid)){
+            call(4); // you can't submit if you don't own it
             return;
         }
         
@@ -2013,10 +2056,10 @@ io.on("connection",socket=>{
             return;
         }
 
-        if(!user.meta.projects.includes(pid)){
-            call(-4); // you don't own this project
-            return;
-        }
+        // if(!user.meta.projects.includes(pid)){
+        //     call(-4); // you don't own this project
+        //     return;
+        // }
 
         // let m = user.pMeta.find(v=>v.pid == pid);
         let p = await user.getProject(pid);
@@ -2024,6 +2067,11 @@ io.on("connection",socket=>{
             call(1);
             return;
         }
+        if(!p.canEdit(user.uid)){
+            call(2); // can't edit
+            return;
+        }
+
         p.meta.public = v;
         
         // save
@@ -2065,11 +2113,47 @@ io.on("connection",socket=>{
             lessonsCompleted:session.meta.lessonsCompleted,
             ...await session.getLessonStats(),
 
-            totalProjects:session.meta.projects.length,
+            // totalProjects:session.meta.projects.length,
+            totalProjects:session.meta.projectCount,
             ...await session.getProjectStats()
         };
 
         call(stats);
+    });
+
+    socket.on("createFolder",async (name:string,fid:string|undefined,call:(data:any)=>void)=>{
+        if(!valVar2(name,"string",call)) return;
+        if(fid != null) if(!valVar2(fid,"string",call)) return;
+
+        if(name == ""){ // need to write a folder name validatation function at some point
+            call({err:1}); // invalid name
+            return;
+        }
+
+        let user = getSession(socket.id);
+        if(!user){
+            call({err:-3});
+            return;
+        }
+
+        // let folder = await FolderModel.find({
+        //     _id:
+        //     // uid:user.uid,
+        // })
+
+        let folder:FolderInst|undefined;
+        
+        if(fid != null && !folder){
+            folder = await user.getFolder(fid);
+            if(!folder){
+                call({err:2}); // failed to find folder inst (when it was specified)
+                return;
+            }
+        }
+
+        let newFolder = await user.createFolder(name);
+        if(newFolder) call({});
+        else call({err:3}); // something went wrong creating the folder
     });
 
     // debug
@@ -2252,6 +2336,7 @@ async function createProject(user:User,name:string,desc:string,isPublic=false){
 }
 enum ProjectGroup{
     personal,
+    projects,
     challenges,
     recent,
     starred,
@@ -2325,33 +2410,33 @@ rl.on("line",async (line)=>{
         return;
     }
     else if(s[0] == "pitems"){
-        let u = users.get(s[1]);
-        if(!u){
-            console.log("couldn't find user.");
-            return;
-        }
-        let p = u.meta.projects.find(v=>v == s[2]);
-        if(!p){
-            console.log("couldn't find project.");
-            return;
-        }
-        // let cur = p.items;
-        let cur = [] as ULItem[];
-        for(let i = 3; i < s.length; i++){
-            let res = cur[parseInt(s[i])];
-            if(!res){
-                console.log("Cannot find.");
-                return;
-            }
-            if(res instanceof ULFile){
-                console.log("FILE: ",res);
-                return;
-            }
-            cur = (res as ULFolder).items;
-        }
-        console.log(cur);
-        // pitems gyhar.ce@gmail.com e8bc2db5-9443-4c8d-a894-7d8a1deea591
-        return;
+        // let u = users.get(s[1]);
+        // if(!u){
+        //     console.log("couldn't find user.");
+        //     return;
+        // }
+        // let p = u.meta.projects.find(v=>v == s[2]);
+        // if(!p){
+        //     console.log("couldn't find project.");
+        //     return;
+        // }
+        // // let cur = p.items;
+        // let cur = [] as ULItem[];
+        // for(let i = 3; i < s.length; i++){
+        //     let res = cur[parseInt(s[i])];
+        //     if(!res){
+        //         console.log("Cannot find.");
+        //         return;
+        //     }
+        //     if(res instanceof ULFile){
+        //         console.log("FILE: ",res);
+        //         return;
+        //     }
+        //     cur = (res as ULFolder).items;
+        // }
+        // console.log(cur);
+        // // pitems gyhar.ce@gmail.com e8bc2db5-9443-4c8d-a894-7d8a1deea591
+        // return;
     }
     else if(s[0] == "cls" || s[0] == "clear"){
         process.stdout.cursorTo(0,0);

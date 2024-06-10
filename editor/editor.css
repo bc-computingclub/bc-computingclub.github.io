@@ -200,7 +200,7 @@ div.b-editor-dashboard .material-symbols-outlined{
 
 /* Editor Dash Board */
 .menu-project-dashboard{
-    width:800px;
+    width:900px;
     height:600px;
 
     & .menu-body{
@@ -229,7 +229,7 @@ div.b-editor-dashboard .material-symbols-outlined{
     border-radius:3px;
     display:flex;
     flex-direction:column;
-    gap:3px;
+    gap:5px;
     padding:10px;
     & > button.icon-btn.regular{
         background-color:var(--bg);
@@ -272,7 +272,8 @@ div.b-editor-dashboard .material-symbols-outlined{
 }
 .edb-content-list{
     display:flex;
-    flex-direction:column-reverse;
+    /* flex-direction:column-reverse; */
+    flex-direction:column;
     gap:10px;
     padding:10px;
 }
@@ -336,12 +337,24 @@ body.themestyle-light .project-item.starred .star{
     color:goldenrod;
 }
 
+.main-icon{
+    font-size:18px;
+}
+
 /*  */
 
 .menu-project-dashboard{
     &{
         .b-new-project{
             background-color:var(--experiment-col) !important;
+        }
+        .b-new-folder{
+            /* background-color:var(--darken0) !important; */
+            /* color:var(--col) !important; */
+            /* background-color:var(--experiment-col) !important; */
+        }
+        .b-new-folder:hover{
+            background-color:var(--darken) !important;
         }
         .b-open-project{
             background-color:var(--experiment-col) !important;

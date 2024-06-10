@@ -749,3 +749,26 @@
 - added lessonCache for easier access to PTree information
 - fixed learn page with new system so the arrows go the right way
 - experiementing with how to display a "Guided Project" type of lesson on the learn page
+
+<!-- MongoDB transition finished -->
+
+### 6/9/24
+- changed the project dashboard menu to be a little larger
+- fixed order of project dashboard list to be column instead of column-reverse and flipped the wrong sort values on the server
+- added an "Add Folder" button to the project dashboard
+- added loadFolderItem to ProjectDashboard for loading folders (doesn't do anything right now)
+- added Folder system with FolderSchema to server and added folder property to the ProjectSchema
+- removed projects array from UserSchema as it'll now be based on the folder property of the projects
+- added projectCount property to UserSchema
+- added support for folders to createProject (untested but should work)
+- added support for folders to deleteProject (untested but should work)
+- added getFolder and createFolder methods to UserInst
+- added addUniquePred helper function
+- added endpoint user-getFilesList that get's all the files and folders in a particular folder
+- added support for folders to user-getProjectList (untested but should work)
+- in Project Dashboard moved persional tab to "projects" tab and then made personal be the one that loads folders and files
+- [idea]
+    - make folder have a list of items that follow the type: { id:oid, kind:number }[]
+    - then when querying in user-getFilesList it can make a list of all the required collections it needs to query based on the kinds that it found in the list and then it can query by _id: $in: ids,
+    - I think I've decided not to use the FileSchema middle man bc it would require extra queries every time
+    - technically on this type for items I can have starred in there too bc it's essentially the FileSchema without the extra query

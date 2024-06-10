@@ -74,6 +74,139 @@ export async function postInitMongoDB(){
 
 const Schema = mongoose.Schema;
 
+type MFolder = {
+    // fid:string,
+    _id:string,
+    name:string,
+    uid:string,
+    folder:mongoose.Types.ObjectId,
+
+    // items:{
+    //     id:string|mongoose.Types.ObjectId,
+    //     kind:number
+    // }[],
+    itemCount:number
+};
+const FolderSchema = new Schema({
+    // fid: String,
+    name:{
+        type: String,
+        required: true
+    },
+    uid:{
+        type: String,
+        required: true
+    },
+
+    folder:{
+        type:mongoose.Schema.Types.ObjectId,
+        ref:"Folder"
+    },
+    file:{
+        type:mongoose.Schema.Types.ObjectId,
+        ref:"File"
+    },
+    
+    itemCount:{
+        type: Number,
+        default: 0
+    },
+
+    // items:[{
+    //     id: mongoose.Schema.Types.ObjectId,
+    //     kind: Number,
+    //     _id: false
+    // }]
+});
+
+export class FolderInst{
+    constructor(meta:any){
+        this.meta = meta;
+    }
+    meta:MFolder;
+
+    async save(){
+        // @ts-ignore
+        await this.meta.save();
+    }
+
+    /**
+     * Add to folder's item count
+     */
+    // add(_id:mongoose.Types.ObjectId,kind:number){
+    add(){
+        this.meta.itemCount++;
+        // addUniquePred(this.meta.items,{
+        //     id:_id,kind
+        // },item=>_id.equals(item.id));
+        // this.meta.itemCount = this.meta.items.length;
+    }
+    /**
+     * Remove from folder's item count
+     */
+    // remove(_id:mongoose.Types.ObjectId){
+    remove(){
+        this.meta.itemCount--;
+        // removeFromListPred(this.meta.items,item=>_id.equals(item.id));
+        // this.meta.itemCount = this.meta.items.length;
+    }
+
+    serialize(){
+        return {
+            name:this.meta.name,
+            itemCount:this.meta.itemCount,
+            folder:this.meta.folder
+        };
+    }
+}
+
+// FolderSchema.index({
+//     fid:"asc"
+// });
+
+// async function genFID(){ // not really sure if this is needed
+//     let len = 16;
+//     let s = "";
+//     let abc = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+//     for(let i = 0; i < len; i++){
+//         s += abc[Math.floor(Math.random()*abc.length)];
+//     }
+//     if(await ) return genFID();
+//     else return s;
+// }
+
+// type MFile = {
+//     file:mongoose.Types.ObjectId,
+//     uid:string,
+
+//     name:string,
+//     desc:string,
+//     starred:boolean,
+    
+//     folder:mongoose.Types.ObjectId,
+//     kind:number
+// };
+// const FileSchema = new Schema({
+//     file:mongoose.Schema.Types.ObjectId,
+//     uid: String,
+
+//     name: String,
+//     desc: String,
+//     starred:{
+//         type: Boolean,
+//         default: false
+//     },
+
+//     folder:{
+//         type:mongoose.Schema.Types.ObjectId,
+//         ref:"Folder"
+//     },
+//     kind:{
+//         type: Number,
+//         required: true
+//     }
+// });
+
 type MUser = {
     uid:string,
     name:string,
@@ -83,7 +216,7 @@ type MUser = {
     lastLoggedIn:Date,
 
     recentProjects:string[],
-    projects:string[],
+    // projects:string[],
     starredProjects:string[],
 
     inprogressChallenges:{
@@ -98,7 +231,8 @@ type MUser = {
 
     // stats
     lessonsCompleted:number, // total number of unique lessons completed
-    
+    challengesCompleted:number,
+    projectCount:number,
 
     save:()=>Promise<void>
 };
@@ -142,6 +276,10 @@ const UserSchema = new Schema({
         type:Number,
         default:0
     },
+    projectCount:{
+        type:Number,
+        default:0
+    }
 
     // recentProjects:{
     //     type: [mongoose.Schema.Types.ObjectId],
@@ -189,6 +327,8 @@ type MProject = {
     dateLastSaved:Date,
 
     time:number,
+
+    folder:mongoose.Types.ObjectId
 };
 const ProjectSchema = new Schema({
     pid:{
@@ -210,7 +350,16 @@ const ProjectSchema = new Schema({
     dateSubmitted: Date,
     dateLastSaved: Date,
     
-    time: Number
+    time: Number,
+
+    folder:{
+        type:mongoose.Schema.Types.ObjectId,
+        ref:"Folder"
+    },
+    // file:{
+    //     type:mongoose.Schema.Types.ObjectId,
+    //     ref:"File"
+    // }
 });
 
 // const ChallengeIterationSchema = new Schema({
@@ -702,6 +851,9 @@ export const ProjectModel = mongoose.model("Project",ProjectSchema);
 export const LessonProgressModel = mongoose.model("Lesson_Prog",LessonProgressSchema);
 export const ChallengeModel = mongoose.model("Challenge",ChallengeSchema);
 export const ChallengeSubmissionModel = mongoose.model("Challenge_Submission",ChallengeSubmissionSchema);
+// export const FolderItemModel = mongoose.model("Folder_Item",FolderItemSchema);
+// export const FileModel = mongoose.model("File",FileSchema);
+export const FolderModel = mongoose.model("Folder",FolderSchema);
 
 // export const userSessions = new Map<string,{token:string,user:typeof UserModel}>();
 export class UserSessionItem{
@@ -822,15 +974,23 @@ export class UserSessionItem{
         removeFromList(this.meta.starredProjects,pid);
     }
 
-    async _createProjectBase(data:any){
+    async _createProjectBase(data:any,fid?:string){
         let pid = genPID();
 
         // defaults
         if(data.public == null) data.public = false;
+
+        let folder = await this.getFolder(fid);
+
+        // let file = new FileModel({
+        //     uid:this.uid,
+        //     folder:folder?.meta._id,
+        //     kind:1, // project
+        // });
         
         let p = new ProjectModel({
             pid,
-            uid:this.meta.uid,
+            uid:this.uid,
             
             ...data,
             
@@ -841,11 +1001,24 @@ export class UserSessionItem{
             dateCreated:new Date(),
             dateLastSaved:new Date(),
 
-            time:0
+            time:0,
+
+            folder:folder?.meta._id,
+            // file:file._id
         });
 
+        // file.file = p._id;
+
+        // await file.save();
+
         // post
-        this.meta.projects.push(pid);
+        // this.meta.projects.push(pid);
+        this.meta.projectCount++;
+        if(folder){
+            // folder.add(p._id,1); // 0 for folder, 1 for project
+            folder.add();
+            await folder.save();
+        }
 
         return p;
     }
@@ -975,12 +1148,48 @@ export class UserSessionItem{
         let v = val[0];
         delete v._id;
 
-        v.averageProjectTime = v.totalProjectTime/this.meta.projects.length;
+        // v.averageProjectTime = v.totalProjectTime/this.meta.projects.length;
+        v.averageProjectTime = v.totalProjectTime/this.meta.projectCount;
         return v as {
             totalProjectTime:number,
             averageProjectTime:number
         };
     }
+
+    // 
+    
+    async getFolder(_id:string|mongoose.Types.ObjectId|undefined){
+        if(_id == null) return;
+        let data = await FolderModel.findById(_id);
+        if(!data) return;
+
+        if(data.uid != this.uid) return; // found but you didn't own the folder xD
+
+        return new FolderInst(data);
+    }
+    async createFolder(name:string,parentId?:string|FolderInst){
+        let parent = (parentId ? (typeof parentId == "string" ? await this.getFolder(parentId) : parentId) : undefined);
+        
+        let data = new FolderModel({
+            name,uid:this.uid,
+            folder:parent?.meta._id
+        });
+        await data.save();
+
+        if(parent){
+            // parent.add(data._id,0);
+            parent.add();
+            await parent.save();
+        }
+
+        return new FolderInst(data);
+    }
+    // async folderExists(_id:string){ // probably don't want this bc it doesn't do ownership check
+    //     let res = await FolderModel.exists({
+    //         _id
+    //     });
+    //     return res != null;
+    // }
 }
 
 export class ProjectInst{
@@ -1098,8 +1307,15 @@ export class ProjectInst{
         
         let owner = ownerSession.meta;
         let pid = this.meta.pid;
+
+        let folder = await ownerSession.getFolder(this.meta.folder);
+        if(folder){
+            // folder.remove(this.meta._id);
+            folder.remove();
+            await folder.save();
+        }
         
-        removeFromList(owner.projects,pid);
+        // removeFromList(owner.projects,pid);
         removeFromList(owner.recentProjects,pid);
         removeFromList(owner.starredProjects,pid);
 
@@ -1202,6 +1418,9 @@ export function removeFromListPred<T>(list:T[],pred:(item:T)=>boolean){
 }
 export function addUnique(list:any[],item:any){
     if(!list.includes(item)) list.push(item);
+}
+export function addUniquePred<T>(list:T[],item:T,pred:(item:T)=>boolean){
+    if(!list.some(v=>pred(v))) list.push(item);
 }
 
 export const userSessions = new Map<string,UserSessionItem>();
