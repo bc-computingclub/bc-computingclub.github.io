@@ -249,50 +249,6 @@ function setChallengeHTML(c: Challenge) {
   return tempCard;
 }
 
-class DeleteMenu extends Menu {
-  constructor(cID: Challenge["cID"]) {
-    super("Delete Progress", "delete");
-    this.cID = cID;
-  }
-  cID: Challenge["cID"];
-
-  load(priority?: number) {
-    super.load();
-    let challengeName = challengeArray.find((v) => v.cID == this.cID).name;
-    this.body.innerHTML = `
-            <div class="c-confirm-div">
-                <span class="c-confirm-text">Are you sure you want to delete your progress on the <strong>${challengeName}</strong> Challenge? You won't be able to get it back...</span>
-                <div class="c-confirm-options">
-                    <button class="c-confirm-btn">
-                        Yes
-                    </button>
-                    <button class="c-cancel-btn">
-                        No (Cancel)
-                    </button>
-                </div>
-            </div>
-        `;
-    document.querySelector(".c-cancel-btn").addEventListener("click", () => {
-      cancelProgressDeletion();
-      this.close();
-    });
-    document.querySelector(".c-confirm-btn").addEventListener("click", () => {
-      deleteProgress(this.cID);
-      this.close();
-    });
-    return this;
-  }
-
-  confirmChoice() {
-    deleteProgress(this.cID);
-    this.close();
-  }
-
-  onClose(): void {
-    cancelProgressDeletion();
-  }
-}
-
 let deleteMenu: DeleteMenu;
 function confirmProgressDeletion(cID: Challenge["cID"]) {
   if (deleteMenu) deleteMenu.close();

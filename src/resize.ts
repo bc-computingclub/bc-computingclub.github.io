@@ -137,7 +137,14 @@ document.addEventListener("mouseup",e=>{
     }
 });
 document.addEventListener("dragstart",e=>{
-    if(dragging){
+    if(dragging || dragItem){
         e.preventDefault();
+        return false;
+    }
+}); 
+document.addEventListener("selectionchange",e=>{
+    if(dragging || dragItem?.drag){
+        e.preventDefault();
+        getSelection().removeAllRanges();
     }
 }); 

@@ -6,7 +6,7 @@ import { createInterface } from "readline";
 import crypto from "crypto";
 import { createGuidedProject, createLesson, write, read, readdir, access, mkdir, removeFolder, removeFile, rename, internalCPDir, internalCP, lessonCache } from "./s_util";
 import { ChallengeInst, ChallengeModel, ChallengeSubmissionModel, FolderInst, FolderModel, LessonMetaInst, ProjectInst, ProjectModel, UserModel, UserSessionItem, findChallenge, removeFromList, removeFromListPred, uploadChallenges, uploadLessonProgs, uploadUsers, uploadUsersStage2, userSessions } from "./db";
-import mongoose from "mongoose";
+import mongoose, { QuerySelector } from "mongoose";
 
 function valVar(v:any,type:string){
     if(v == null) return false;
@@ -77,16 +77,56 @@ io.on("connection",socket=>{
 
         async function post(session:UserSessionItem,isNew=false){
             session.meta.lastLoggedIn = new Date();
-            await session.meta.save();
             // console.log("$ logged in: "+data.email);
 
             socks.set(socket.id,session.meta.email);
             users.set(session.meta.uid,session);
             session.addSocketId(socket.id);
 
+            if(!session.meta.rootFolder){
+                let root = new FolderModel({
+                    name:"Root Folder",
+                    itemCount:0,
+                    uid:session.uid
+                });
+                
+                // run fix to convert all projects to use root folder instead of null
+
+                let folderList = await FolderModel.find({
+                    uid:session.uid,
+                    folder:null
+                });
+                let projectList = await ProjectModel.find({
+                    uid:session.uid,
+                    folder:null
+                });
+                for(const folder of folderList){
+                    folder.folder = root._id;
+                    await folder.save();
+                }
+                for(const project of projectList){
+                    project.folder = root._id;
+                    await project.save();
+                }
+
+                root.itemCount += folderList.length;
+                root.itemCount += projectList.length;
+
+                // 
+                
+                await root.save();
+                console.log("Created root folder that didn't exist for user: "+session.meta.name);
+                
+                session.meta.rootFolder = root._id;
+            }
+
+            // save user inst
+            await session.save();
+
             call({
                 ...data,
                 uid:session.meta.uid,
+                rootFolder:session.meta.rootFolder,
                 _joinDate:session.meta.joinDate.toISOString(),
                 _lastLoggedIn:session.meta.lastLoggedIn.toISOString()
             });
@@ -1008,7 +1048,7 @@ io.on("connection",socket=>{
     });
 
     // User get stuff
-    socket.on("user-getFilesList",async (fid:string|undefined,call:(data:any)=>void)=>{
+    socket.on("user-getFilesList",async (searchQuery:string,fid:string|undefined,call:(data:any)=>void)=>{
         if(fid != null) if(!valVar2(fid,"string",call)) return;
         
         let user = getSession(socket.id);
@@ -1023,14 +1063,35 @@ io.on("connection",socket=>{
         
         // let parent = await user.getFolder(fid);
         
-        projects = await ProjectModel.find({
-            uid:user.uid,
-            folder:fid
+        let projectQuery = ProjectModel.find({
+            uid:user.uid
         });
-        folders = await FolderModel.find({
-            uid:user.uid,
-            folder:fid
+        let folderQuery = FolderModel.find({
+            uid:user.uid
         });
+
+        projectQuery = projectQuery.where("folder").equals(fid);
+        folderQuery = folderQuery.where("folder").equals(fid);
+
+        if(searchQuery != null && searchQuery != ""){
+            projectQuery = projectQuery.find({
+                $text:{
+                    $search:searchQuery
+                }
+            });
+            folderQuery = folderQuery.find({
+                $text:{
+                    $search:searchQuery
+                }
+            });
+        }
+        // else{ // at least for now don't want to only search within the current folder
+        //     projectQuery = projectQuery.where("folder").equals(fid);
+        //     folderQuery = folderQuery.where("folder").equals(fid);
+        // }
+
+        projects = await projectQuery;
+        folders = await folderQuery;
 
         // let files = await FileModel.find({
         //     uid:user.uid,
@@ -1043,7 +1104,7 @@ io.on("connection",socket=>{
             folders:folders.filter(v=>v != null).map(v=>new FolderInst(v).serialize())
         });
     });
-    socket.on("user-getProjectList",async (section:ProjectGroup,fid:string,f:(d:any)=>void)=>{
+    socket.on("user-getProjectList",async (searchQuery:string,section:ProjectGroup,fid:string,f:(d:any)=>void)=>{
         let user = getSession(socket.id);
         if(!user){
             f(-3);
@@ -1056,7 +1117,6 @@ io.on("connection",socket=>{
                 // data = user.pMeta.filter(v=>v.cid == null).map(v=>v.serialize());
                 query = ProjectModel.find({
                     uid:user.uid,
-                    folder:fid,
                     cid:{
                         $eq:null
                     }
@@ -1066,7 +1126,6 @@ io.on("connection",socket=>{
                 // data = user.pMeta.filter(v=>v.cid != null).map(v=>v.serialize()); // probably need to optimize the filters at some point
                 query = ProjectModel.find({
                     uid:user.uid,
-                    folder:fid,
                     cid:{
                         $ne:null
                     }
@@ -1076,7 +1135,6 @@ io.on("connection",socket=>{
                 // data = user.pMeta.filter(v=>user?.recent.includes(v.pid)).map(v=>v.serialize());
                 query = ProjectModel.find({
                     uid:user.uid,
-                    folder:fid,
                     pid:{
                         $in:user.meta.recentProjects
                     }
@@ -1086,7 +1144,6 @@ io.on("connection",socket=>{
                 // data = user.pMeta.filter(v=>user?.starred.includes(v.pid)).map(v=>v.serialize());
                 query = ProjectModel.find({
                     uid:user.uid,
-                    folder:fid,
                     pid:{
                         $in:user.meta.starredProjects
                     }
@@ -1098,6 +1155,19 @@ io.on("connection",socket=>{
             f([]);
             return;
         }
+
+        if(fid != null) query = query.where("folder").equals(fid);
+
+        if(searchQuery != null && searchQuery != ""){
+            query = query.find({
+                $text:{
+                    $search:searchQuery
+                }
+            });
+        }
+        // else{ // at least for now don't want to only search within the current folder
+        //     if(fid != null) query = query.where("folder").equals(fid);
+        // }
 
         query = query.sort({
             dateLastSaved:-1
@@ -1681,15 +1751,16 @@ io.on("connection",socket=>{
     });
 
     // 
-    socket.on("createProject",async (name:string,desc:string,f:(data:any)=>void)=>{
+    socket.on("createProject",async (name:string,desc:string,fid:string|undefined,f:(data:any)=>void)=>{
         if(!valVar2(name,"string",f)) return;
         if(!valVar2(desc,"string",f)) return;
+        if(fid != null) if(!valVar2(fid,"string",f)) return;
 
         let user = getSession(socket.id);
         if(!user) return;
         // let p = await createProject(user,name,desc,false);
         let p = await user.createProject({
-            name,desc,public:false
+            name,desc,public:false,fid
         });
         if(!p) f(null);
         else f(p.meta.pid);
@@ -1709,20 +1780,23 @@ io.on("connection",socket=>{
             f(2);
             return;
         }
-        let p = getProject2(user.uid,pid);
+        // let p = getProject2(user.uid,pid);
+        let p = await user.getProject(pid);
         if(!p){
             f(1);
             return;
         }
+
+        let items = await p.getFileItems();
         
-        let fromF = parseFolderStr(p,fromPath);
-        let toF = parseFolderStr(p,toPath);
+        let fromF = parseFolderStr(p,fromPath,items);
+        let toF = parseFolderStr(p,toPath,items);
         // if(!fromF || !toF){
         //     f(null);
         //     return;
         // }
-        let fromItems = (fromF?.items ?? p.items);
-        let toItems = (toF?.items ?? p.items);
+        let fromItems = (fromF?.items ?? items);
+        let toItems = (toF?.items ?? items);
         
         for(const f of files){
             let file = fromItems.find(v=>v.name == f);
@@ -1735,7 +1809,7 @@ io.on("connection",socket=>{
         }
         // console.log(fromF,toF);
 
-        let start = p.getPath();
+        let start = p.getPath()+"/";
         for(const f of files){
             // console.log("...moving...",fromPath+f,toPath+f);
             await rename(start+fromPath+f,start+toPath+f);
@@ -1757,16 +1831,19 @@ io.on("connection",socket=>{
             f(2);
             return;
         }
-        let p = getProject2(user.uid,pid);
+        // let p = getProject2(user.uid,pid);
+        let p = await user.getProject(pid);
         if(!p){
             f(1);
             return;
         }
 
-        let fromF = parseFolderStr(p,fromPath);
+        let fileItems = await p.getFileItems();
+
+        let fromF = parseFolderStr(p,fromPath,fileItems);
         let items = fromF?.items;
         if(!fromF){
-            items = p.items;
+            items = fileItems;
             // f(4); // couldn't find path
             // return;
         }
@@ -1778,7 +1855,7 @@ io.on("connection",socket=>{
             return;
         }
 
-        let start = p.getPath();
+        let start = p.getPath()+"/";
         item.name = newName;
         await rename(start+fromPath+file,start+fromPath+newName);
         f(0);
@@ -1797,16 +1874,19 @@ io.on("connection",socket=>{
             f(2);
             return;
         }
-        let p = getProject2(user.uid,pid);
+        // let p = getProject2(user.uid,pid);
+        let p = await user.getProject(pid);
         if(!p){
             f(1);
             return;
         }
 
-        let fromF = parseFolderStr(p,fromPath);
+        let fileItems = await p.getFileItems();
+
+        let fromF = parseFolderStr(p,fromPath,fileItems);
         let items = fromF?.items;
         if(!items){
-            items = p.items;
+            items = fileItems;
             // f(4); // couldn't find path
             // return;
         }
@@ -1819,7 +1899,7 @@ io.on("connection",socket=>{
             return;
         }
 
-        let start = p.getPath();
+        let start = p.getPath()+"/";
         // console.log(`deleting NAME (${file})...`,items.map(v=>v.name));
         removeFromList(items,item);
         // console.log("after...",items.map(v=>v.name));
@@ -2151,9 +2231,103 @@ io.on("connection",socket=>{
             }
         }
 
-        let newFolder = await user.createFolder(name);
+        let newFolder = await user.createFolder(name,folder);
         if(newFolder) call({});
         else call({err:3}); // something went wrong creating the folder
+    });
+    
+    socket.on("moveProjectToFolder",async (pid:string,fid:string,call:(data:any)=>void)=>{
+        if(!valVar2(pid,"string",call)) return;
+        if(!valVar2(fid,"string",call)) return;
+
+        let user = getSession(socket.id);
+        if(!user){
+            call({err:-3});
+            return;
+        }
+
+        let project = await user.getProject(pid);
+        if(!project){
+            call({err:1});
+            return;
+        }
+
+        let res = await project.moveToFolder(fid);
+        if(!res){
+            call({err:2});
+            return;
+        }
+
+        call({});
+    });
+    socket.on("moveFolderToFolder",async (fromFID:string,toFID:string,call:(data:any)=>void)=>{
+        if(!valVar2(fromFID,"string",call)) return;
+        if(!valVar2(toFID,"string",call)) return;
+
+        let user = getSession(socket.id);
+        if(!user){
+            call({err:-3});
+            return;
+        }
+
+        let fromFolder = await user.getFolder(fromFID);
+        if(!fromFolder){
+            call({err:1});
+            return;
+        }
+
+        let res = await fromFolder.moveToFolder(toFID);
+        if(!res){
+            call({err:2});
+            return;
+        }
+
+        call({});
+    });
+
+    socket.on("updateFolderMeta",async (fid:string,name:string,call:(data:any)=>void)=>{
+        if(!valVar2(name,"string",call)) return;
+        if(!valVar2(fid,"string",call)) return;
+        if(name.length == 0){
+            call({err:1}); // name invalid // TODO - need to write a name validator at some point
+            return;
+        }
+
+        let session = getSession(socket.id);
+        if(!session){
+            call({err:-3});
+            return;
+        }
+
+        let folder = await session.getFolder(fid);
+        if(!folder){
+            call({err:2});
+            return;
+        }
+
+        folder.meta.name = name;
+        await folder.save();
+
+        call({});
+    });
+    socket.on("deleteFolder",async (fid:string,call:(data:any)=>void)=>{
+        if(!valVar2(fid,"string",call)) return;
+
+        let session = getSession(socket.id);
+        if(!session){
+            call({err:-3});
+            return;
+        }
+
+        let folder = await session.getFolder(fid);
+        if(!folder){
+            call({err:1});
+            return;
+        }
+
+        let res = await folder.deleteThis(session.uid);
+        if(res) call({});
+        else call({err:2});
     });
 
     // debug
@@ -2258,11 +2432,11 @@ async function deleteProject(user:User,pMeta:ProjectMeta,f:(res:number)=>void){
     f(res ? 0 : 3);
 }
 
-function parseFolderStr(p:Project,path:string){
+function parseFolderStr(p:ProjectInst,path:string,items:ULItem[]){
     if(!p) return;
     let s = path.split("/").filter(v=>v != null && v != "");
     if(!s.length) return null;
-    let f = p.items.find(v=>v.name == s[0]) as ULFolder;
+    let f = items.find(v=>v.name == s[0]) as ULFolder;
     if(!f) return null;
     // if(!(f instanceof ULFolder)) return null;
     // s.splice(0,1);
@@ -2323,7 +2497,7 @@ async function createChallengeProject(user:User,cid:string):Promise<Project|numb
     loadProject(p);
     return p;
 }
-async function createProject(user:User,name:string,desc:string,isPublic=false){
+async function createProject1(user:User,name:string,desc:string,isPublic=false){
     let pid = genPID();
     let meta = new ProjectMeta(user,pid,name,desc,isPublic,false);
     meta.wc = new Date().toISOString();

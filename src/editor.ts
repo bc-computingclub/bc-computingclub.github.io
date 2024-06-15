@@ -349,6 +349,34 @@ s_loader.onload = async function(){
 // @ts-ignore
 function updateBubbles(){}
 
+class FolderMeta{
+    constructor(data:any){
+        let ok = Object.keys(data);
+        for(const key of ok){
+            this[key] = data[key];
+        }
+    }
+    name:string;
+    itemCount:number;
+    parent:string;
+    fid:string;
+    folder:string;
+
+    // 
+
+    moveToFolder(fid:string){
+        return new Promise<boolean>(resolve=>{
+            socket.emit("moveFolderToFolder",this.fid,fid,(res:any)=>{
+                if(!handleEndpointError(res,"while trying to move project to folder")){
+                    resolve(false);
+                    return;
+                }
+                resolve(true);
+            });
+        });
+    }
+}
+
 // Editor Dashboard
 class ProjectDashboard extends Menu{
     constructor(){
@@ -357,34 +385,49 @@ class ProjectDashboard extends Menu{
     navCont:Element;
     content:Element;
     _sectionI:number;
+
+    path:{
+        fid:string,
+        name:string,
+        isRoot?:boolean
+    }[] = [];
+
+    i_searchQuery:HTMLInputElement;
+    lastSearchQuery:string;
+
     load(priority?: number){
         super.load(priority);
         this.body.innerHTML = `
             <div class="flx edb-body">
                 <div class="edb-nav">
-                    <div class="edb-nav-cont">
-                        <button class="icon-btn regular sel">
-                            <div class="material-symbols-outlined">face</div>
-                            <div>Personal</div>
-                        </button>
-                        <button class="icon-btn regular sel">
-                            <div class="material-symbols-outlined">experiment</div>
-                            <div>Projects</div>
-                        </button>
-                        <button class="icon-btn regular">
-                            <div class="material-symbols-outlined">fitness_center</div>
-                            <div>Challenges</div>
-                        </button>
-                        <button class="icon-btn regular">
-                            <div class="material-symbols-outlined">schedule</div>
-                            <div>Recent</div>
-                        </button>
-                        <button class="icon-btn regular">
-                            <div class="material-symbols-outlined">star_rate</div>
-                            <div>Starred</div>
-                        </button>
+                    <div class="edb-cont">
+                        <div>
+                            <input type="text" placeholder="Search..." class="i-search-query">
+                        </div>
+                        <div class="edb-nav-cont">
+                            <button class="icon-btn regular sel">
+                                <div class="material-symbols-outlined">face</div>
+                                <div>Personal</div>
+                            </button>
+                            <button class="icon-btn regular sel">
+                                <div class="material-symbols-outlined">experiment</div>
+                                <div>Projects</div>
+                            </button>
+                            <button class="icon-btn regular">
+                                <div class="material-symbols-outlined">fitness_center</div>
+                                <div>Challenges</div>
+                            </button>
+                            <button class="icon-btn regular">
+                                <div class="material-symbols-outlined">schedule</div>
+                                <div>Recent</div>
+                            </button>
+                            <button class="icon-btn regular">
+                                <div class="material-symbols-outlined">star_rate</div>
+                                <div>Starred</div>
+                            </button>
+                        </div>
                     </div>
-                    <div class="edb-nav-cont">
+                    <div class="edb-cont">
                         <button class="b-new-folder icon-btn regular">
                             <div class="material-symbols-outlined">create_new_folder</div>
                             <div>New Folder</div>
@@ -400,20 +443,38 @@ class ProjectDashboard extends Menu{
                 </div>
             </div>
         `;
+
+        // setup path
+        this.path = [{
+            name:"",
+            fid:g_user.data.rootFolder,
+            isRoot:true
+        }];
+
+        this.i_searchQuery = this.body.querySelector(".i-search-query");
+        whenEnter(this.i_searchQuery,v=>{
+            if(this.i_searchQuery.value == this.lastSearchQuery) return;
+            this.reloadSection();
+        });
+        this.i_searchQuery.focus();
+
+        // 
+
         let b_newProject = this.body.querySelector(".b-new-project") as HTMLButtonElement;
         b_newProject.addEventListener("click",e=>{
             // let name = prompt("Enter project name:","New Project");
             let name = "New Project";
             let menu = new InputMenu(
-                "New Project","Enter project name",
+                "New Project","Project Name",
                 (projname:string)=>{
                     name = projname;
                     if(!name) return;
-                    createNewProject(name);
+                    createNewProject(name,undefined,this.getCurFolderFID());
                 },
                 () => {
                     console.log("Canceled new project creation");
-                }
+                },
+                undefined,undefined,"Choose a name to identify your project with.<br><br>","<br>"
             );
             menu._newLayer = true;
             menu.load();
@@ -421,15 +482,16 @@ class ProjectDashboard extends Menu{
         let b_newFolder = this.body.querySelector(".b-new-folder") as HTMLButtonElement;
         b_newFolder.addEventListener("click",e=>{
             let menu = new InputMenu(
-                "New Folder","Enter folder name",
+                "New Folder","Folder Name",
                 async (name:string)=>{
                     if(!name) return;
-                    let res = await g_user.createNewFolder(name);
+                    let res = await g_user.createNewFolder(name,this.getCurFolderFID());
                     if(!res) return;
                     
                     await this.reloadSection();
                 },
-                ()=>{}
+                ()=>{},
+                undefined,undefined,"Choose a name for your new folder.<br><br>","<br>"
             );
             menu._newLayer = true;
             menu.load();
@@ -446,6 +508,7 @@ class ProjectDashboard extends Menu{
             });
         }
         this.loadSection(project ? (project.meta?.cid != null ? 1 : 0) : 0);
+
         return this;
     }
     async reloadSection(){
@@ -453,7 +516,19 @@ class ProjectDashboard extends Menu{
         await this.loadSection(this._sectionI);
         this.content.parentElement.scrollTop = top;
     }
+    _isLoadingSection = false;
+    startLoadingSection(){
+        if(this._isLoadingSection) return false;
+        this._isLoadingSection = true;
+        return true;
+    }
+    endLoadingSection(){
+        this._isLoadingSection = false;
+    }
     async loadSection(i:number){
+        if(!this.startLoadingSection()) return;
+        this.lastSearchQuery = this.i_searchQuery.value;
+
         this._sectionI = i;
         let navCont = this.navCont;
         let b = navCont.children[i];
@@ -466,10 +541,11 @@ class ProjectDashboard extends Menu{
         this.content.textContent = "";
     
         if(i > 0){
+            let t = this;
             async function tryGet(){
                 return new Promise<any[]>(resolve=>{
                     // console.log("send...");
-                    socket.emit("user-getProjectList",i,null,(data:any[])=>{ // TODO - null right now is the fid for the folder to search in
+                    socket.emit("user-getProjectList",t.i_searchQuery.value,i,null,(data:any[])=>{ // TODO - null right now is the fid for the folder to search in
                         // console.log("DATA",data);
                         if(typeof data == "number") data = [];
                         resolve(data || []);
@@ -493,9 +569,13 @@ class ProjectDashboard extends Menu{
             });
             
             for(const c of list){
-                this.loadProjectItem(c);
+                this.loadProjectItem(new ProjectMeta2(c));
             }
 
+            // reset for when coming back to personal
+            // this.path = []; // actually I decided it's better without the reset
+
+            this.endLoadingSection();
             return;
         }
 
@@ -505,7 +585,7 @@ class ProjectDashboard extends Menu{
             projects:any[], // add more things later here if needed
             folders:any[]
         }>(resolve=>{
-            socket.emit("user-getFilesList",null,(data:any)=>{
+            socket.emit("user-getFilesList",this.i_searchQuery.value,this.path.length > 0 ? this.path[this.path.length-1].fid : null,(data:any)=>{
                 if(!data || data?.err){
                     alert(`Error ${data?.err} while trying to get personal files`);
                     resolve(null);
@@ -513,24 +593,69 @@ class ProjectDashboard extends Menu{
                 else resolve(data);
             });
         });
-        if(!data) return;
+        if(!data){
+            this.endLoadingSection();
+            return;
+        }
 
-        console.log("GOT DATA:",data.projects,data.folders);
+        // console.log("GOT DATA:",data.projects,data.folders);
+
+        this.loadCurrentPathItem();
+        if(this.path.length){
+            let cur = this.getCurFolder();
+            if(cur ? !cur.isRoot : false) this.loadGoUpLevelItem();
+        }
 
         if(data.folders){
             data.folders.sort((a,b)=>a.name.localeCompare(b.name));
             for(const item of data.folders){
-                this.loadFolderItem(item);
+                this.loadFolderItem(new FolderMeta(item));
             }
         }
         if(data.projects){
             data.projects.sort((a,b)=>a.name.localeCompare(b.name));
             for(const item of data.projects){
-                this.loadProjectItem(item);
+                this.loadProjectItem(new ProjectMeta2(item));
             }
         }
+
+        this.endLoadingSection();
     }
-    loadProjectItem(meta:ProjectMeta){
+    getCurFolderFID(){
+        if(this.path.length == 0) return null;
+        return this.path[this.path.length-1].fid;
+    }
+    getCurFolder(){
+        return this.path[this.path.length-1];
+    }
+    getLastFolderFID(){
+        return this.path[this.path.length-2]?.fid;
+    }
+    async goUpFolder(){
+        this.path.pop();
+        await this.reloadSection();
+    }
+    async openFolder(data:FolderMeta){
+        this.path.push(data);
+        await this.reloadSection();
+    }
+    scrollToItem(data:ProjectMeta2|FolderMeta){
+        let div:HTMLElement;
+        if(data instanceof ProjectMeta2){
+            div = this.body.querySelector(".pi-"+data.pid);
+        }
+        else if(data instanceof FolderMeta){
+            div = this.body.querySelector(".fi-"+data.fid);
+        }
+        if(!div) return;
+        console.log("...scrolling to...");
+        div.scrollIntoView({behavior:"smooth"});
+        div.classList.add("highlight");
+        setTimeout(()=>{
+            div.classList.remove("highlight");
+        },1500);
+    }
+    loadProjectItem(meta:ProjectMeta2){
         let div = document.createElement("div");
         div.className = "project-item";
         div.classList.add("pi-"+meta.pid);
@@ -633,37 +758,126 @@ class ProjectDashboard extends Menu{
         // div.addEventListener("click",e=>{
 
         // });
+
+        if(this._sectionI == 0) div.addEventListener("mousedown",e=>{
+            dragItem = new DragData<ProjectMeta2>(e,down=>{
+                return div.cloneNode(true) as HTMLElement;
+            },last=>{
+
+            },div,{
+                className:""
+            });
+            dragItem.down = meta;
+        });
     }
-    loadFolderItem(item:{name:string,itemCount:number,parent:string}){
+    loadFolderItem(item:FolderMeta){
         let div = document.createElement("div");
         div.className = "project-item folder-item";
-        // div.classList.add("pi-"+meta.pid);
+        div.classList.add("fi-"+item.fid);
+        div.tabIndex = 0; // not sure if this is necessary because it don't work for selection now anyways
         div.innerHTML = `
             <div class="project-info">
                 <div class="l-project-name">
                     <div class="main-icon material-symbols-outlined">folder</div>
-                    <div class="l-project-name-label">${item.name}</div>
+                    <div class="l-project-name-label">${item.name} (${item.itemCount})</div>
                     <div style="margin-right:10px"></div>
                 </div>
             </div>
-            <!--<div class="flx-sb" style="gap:5px">
-                <button class="icon-btn accent smaller b-open-project">
-                    <div class="material-symbols-outlined">edit</div>
-                    <div>Tinker</div>
-                </button>
+            <div class="flx-sb" style="gap:5px">
                 <button class="icon-btn-single accent smaller b-ops">
                     <div class="material-symbols-outlined">discover_tune</div>
                 </button>
-            </div>-->
+            </div>
         `;
         this.content.appendChild(div);
+
+        div.children[0].addEventListener("click",e=>{
+            if(!dragItem) return; // if there was no drag item then that means it was destroyed before the click finished, so a drag had occured
+            this.openFolder(item);
+        });
+
+        div.addEventListener("mousedown",e=>{
+            dragItem = new DragData<FolderMeta>(e,down=>{
+                return div.cloneNode(true) as HTMLElement;
+            },last=>{
+
+            },div,{
+                className:""
+            });
+            dragItem.down = item;
+        });
+        setupHoverDestination<ProjectMeta2|FolderMeta>(div,async data=>{
+            if(!data) return;
+
+            if(await data.moveToFolder(item.fid)){
+                await this.openFolder(item);
+                this.scrollToItem(data);
+            }
+        });
+
+        let b_ops = div.querySelector(".b-ops");
+        b_ops.addEventListener("click",e=>{
+            new FolderSettingsMenu(item,this).load(undefined,true);
+        });
+    }
+    loadCurrentPathItem(){
+        let div = document.createElement("div");
+        div.className = "current-path-item";
+        div.innerHTML = `
+            <div class="project-info">
+                <div class="l-project-name">
+                    <div class="l-project-name-label d-list"></div>
+                    <div style="margin-right:10px"></div>
+                </div>
+            </div>
+        `;
+        let list = div.querySelector(".d-list");
+        
+        for(let i = 0; i < this.path.length; i++){
+            let data = this.path[i];
+            let item = document.createElement("div");
+            item.textContent = data.name;
+            list.appendChild(item);
+        }
+
+        this.content.appendChild(div);
+    }
+    loadGoUpLevelItem(){
+        let div = document.createElement("div");
+        div.className = "project-item folder-item";
+        div.innerHTML = `
+            <div class="project-info">
+                <div class="l-project-name">
+                    <!--<div class="main-icon material-symbols-outlined">folder</div>-->
+                    <div class="l-project-name-label">[Go Up Level]</div>
+                    <div style="margin-right:10px"></div>
+                </div>
+            </div>
+        `;
+        this.content.appendChild(div);
+
+        div.addEventListener("click",e=>{
+            this.goUpFolder();
+        });
+
+        setupHoverDestination<ProjectMeta2|FolderMeta>(div,async data=>{
+            if(!data) return;
+            
+            let fid = this.getLastFolderFID();
+            if(fid){
+                if(await data.moveToFolder(fid)){
+                    await this.goUpFolder();
+                    this.scrollToItem(data);
+                }
+            }
+        });
     }
 }
 
-async function createNewProject(name:string,desc="A project for experiments."){
+async function createNewProject(name:string,desc="A project for experiments.",fid:string){
     let pid = await new Promise<string>(resolve=>{
         console.log("...creating project");
-        socket.emit("createProject",name,desc,(pid:string)=>{
+        socket.emit("createProject",name,desc,fid,(pid:string)=>{
             if(pid == null){
                 alert("Error creating project");
                 resolve(null);
@@ -883,6 +1097,94 @@ function openCurProjSettingsMeta(meta:ProjectMeta,ops:any){
     return div;
 }
 
+class FolderSettingsMenu extends Menu{
+    constructor(meta:FolderMeta,dash:ProjectDashboard){
+        super("Folder Settings","settings");
+        this.meta = meta;
+        this.dash = dash;
+    }
+    meta:FolderMeta;
+    dash:ProjectDashboard;
+
+    i_name:HTMLInputElement;
+    b_save:HTMLButtonElement;
+    b_delete:HTMLButtonElement;
+        
+    load(priority?: number, newLayer?: boolean): this {
+        super.load(priority,newLayer);
+        this.menu.style.height = "max-content";
+        this.menu.style.width = "420px";
+        
+        this.body.innerHTML = `
+            <div>
+                <div class="i-name">
+                    <div class="title">Name</div>
+                    <input type="text" class="i-name">
+                </div>
+            </div>
+            <br><br>
+            <div style="display:flex;gap:20px;justify-content:space-between">
+                <button class="b-save-changes load-btn icon-btn normal" disabled>
+                    <div class="material-symbols-outlined">save</div>
+                    <div>Save Changes</div>
+                </button>
+
+                <button class="b-delete-folder icon-btn warn">
+                    <div class="material-symbols-outlined">delete</div>
+                    <div>Delete Folder</div>
+                </button>
+            </div>
+        `;
+
+        let i_name = this.setupTextInput(".i-name",{
+            label:"Name"
+        });
+        this.i_name = i_name.inp;
+        i_name.div.style.width = "max-content";
+        i_name.inp.focus();
+        i_name.inp.placeholder = this.meta.name;
+        i_name.inp.value = this.meta.name;
+
+        i_name.inp.addEventListener("input",e=>{
+            if(i_name.inp.value != this.meta.name && i_name.inp.value != ""){
+                this.b_save.disabled = false;
+            }
+            else this.b_save.disabled = true;
+        });
+        whenEnter(i_name.inp,v=>{
+            this.saveChanges();
+        },true);
+
+        this.b_save = this.body.querySelector(".b-save-changes");
+        this.b_save.addEventListener("click",e=>{
+            this.saveChanges();
+        });
+
+        this.b_delete = this.body.querySelector(".b-delete-folder");
+        this.b_delete.addEventListener("click",e=>{
+            this.deleteFolder();
+        });
+
+        return this;
+    }
+    saveChanges(){
+        this.b_save.classList.add("loading");
+        socket.emit("updateFolderMeta",this.meta.fid,this.i_name.value,async (res:any)=>{
+            if(!handleEndpointError(res,"while trying to update folder meta")) return;
+            await this.dash.reloadSection();
+            this.close();
+        });
+    }
+    deleteFolder(){
+        if(!confirm(`Are you sure you want to delete the folder: "${this.meta.name}"?\n\nIf this folder contains other folders or projects they will be deleted as well!\n\nThis is not reversable!`)) return;
+        this.b_save.classList.add("loading");
+        socket.emit("deleteFolder",this.meta.fid,async (res:any)=>{
+            if(!handleEndpointError(res,"while trying to delete folder")) return;
+            await this.dash.reloadSection();
+            this.close();
+        });
+    }
+}
 class ProjSettingsMenu extends Menu{
     constructor(meta:ProjectMeta,dash?:ProjectDashboard,divItem?:Element){
         super("Project Settings","settings");

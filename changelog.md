@@ -772,3 +772,73 @@
     - then when querying in user-getFilesList it can make a list of all the required collections it needs to query based on the kinds that it found in the list and then it can query by _id: $in: ids,
     - I think I've decided not to use the FileSchema middle man bc it would require extra queries every time
     - technically on this type for items I can have starred in there too bc it's essentially the FileSchema without the extra query
+
+### 6/14/24
+<!-- Project/Editor -->
+- slightly abstractified menu styling in project dashboard regardding buttons and containers
+- added a fade-in animation for items in the project dashboard to be smoother when reloading
+- added button to edit settings for folders and fixed the width of the clickable area to be max-content instead of 100% so the button is more easily clickable without conflicting with opening the folder
+- added styling for folder-item/going up level, current-path-item
+- added FolderMeta and ProjectMeta2 class to front end to be able to add a more organized way for methods for meta related things (just moveToFolder() right now)
+- added moveToFolder() for folders and projects
+- added path array for storing where you are
+- added i_searchQuery for project dashboard to filter results by search (and it doesn't research if the current query is the same as what was last searched)
+- fixed createNewPProject() and createNewFolder() so that they use the current folder shown in the dashboard as the folder to create them in
+- adjusted text on create project and create folder menu to be more user friendly
+- added _isLoadingSection to project dashboard which stores whether or not the list is currently loading and if the user tries to reload the list while it is already reloading then it just ignores it
+    - this fixed a bug where clicking too fast would cause two responses to come in and duplicate the results
+    - also it just slightly reduces the load on the server
+- added pathItem to show a bread crumbs like path for what folder you are currently viewing in the project dashboard
+- added folderItem to project dashboard that apppears at the top and is clickable to open that folder with what's inside
+- added goUpLevelItem that let's you go to the parent folder if there is one
+
+- added drag support to project dashboard projects and folders so you can drag them on top of folders or goUpLevel to move them there
+    - once moved it'll then open the target folder and scroll to and highlight the one that you just moved
+    - this feature includes setupHoverDestination() system for ease of use with the drag api
+- added scrollToItem to project dashboard
+
+- added FolderSettingsMenu that let's you change the name of the folder and delete it
+
+<!-- Learn -->
+- fixed pinch to zoom so it isn't so slow and should be as fast as regular zooming at least on Windows laptops
+
+<!-- Network/Util/Resize -->
+- added handleEndPointError() helper function
+
+- moved DeleteMenu into util.ts so when pressing Enter on some pages wouldn't cause class not found error
+- added rootFolder:string to g_user
+- fixed bug for ConfirmMenu & DeleteMenu where if they were closed too early when a keybind was used to close them it would create a null pointer exception
+- added endDragItemHover and startDragItemHover functions for the drag api to have extra functionality when hovering over items while dragging
+- tweaked and fixed some bugs with the drag api
+- changed styling on drag-cont to be more contrasty
+- added highlight element styling (currently only used with ProjectDashboard.scrollToItem())
+
+- fixed while dragging using the drag api would still select text underneath
+
+<!-- Backend -->
+- added indexes for name to folder schema and project schema
+- fixed folder serialization so it included its fid
+- added moveToFolder() and deleteThis() on FolderInst
+    - delete folder will recursively go through and delete everything inside the folder including all sub folders and projects
+- added rootFolder to UserSchema
+    - all created projects and folders that are in the root are now within the root folder instead of having folder:null for ease and consistency of development
+- added fid option to createProject for what folder to create it in
+- added generic getFolderInst helper function when you don't have a UserInst
+
+- in the login endpoint, it now checks to see if rootFolder is defined, if not then it does:
+    - creates a new folder for the root and sets that on the user
+    - searchs for all your folders and projects that have folder:null and then set's their folder's to be the new root folder
+    - properly sets the itemCount property on the root folder for how many things are now inside it
+
+- fixed project search queries so that if folder is null then they get everything but this is kinda depricated now since the root folder is defined now
+- added fid to createProject
+
+- fixed all project item endpoints (moveFiles, deleteFiles, renameFiles...)
+    - these weren't updated to use mongo apparently
+    - they've now been updated to work with the new system and methods/functions
+
+- added moveFolderToFolder and moveProjectToProject endpoints
+- added updateFolderMeta and deleteFolder endpoints
+
+- fixed old parseFolderStr() function so that it works with the new system of not storing ULItem[] on the server and only getting when needed
+- depricated index.ts createProject() function, you should only use UserInst.createProject() (it's actually called UserSessionItem.createProject() but I need to change the class name at some point to be more consistent)

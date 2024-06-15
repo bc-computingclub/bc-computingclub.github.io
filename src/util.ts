@@ -242,7 +242,7 @@ class Menu{
                 if(ops.onClick) ops.onClick();
             });
         }
-        return {div,inp:_inp};
+        return {div:div as HTMLElement,inp:_inp};
     }
 }
 
@@ -416,6 +416,8 @@ interface CredentialResData{
 
     _joinDate:string;
     _lastLoggedIn:string;
+
+    rootFolder:string;
 }
 
 function decodeJwtResponse(token:string) {
@@ -2535,7 +2537,54 @@ type ProjectMeta = {
     ws?:string;
 
     meta?:any;
+
+    folder?:string;
 };
+class ProjectMeta2{
+    constructor(data:any){
+        let ok = Object.keys(data);
+        for(const key of ok){
+            this[key] = data[key];
+        }
+    }
+    pid:string;
+    name:string;
+    desc:string;
+    isPublic:boolean;
+    // files:ULFile[],
+    items:ULItem[];
+    cid?:string;
+    submitted:boolean;
+    sub?:boolean;
+    owner?:string;
+    starred?:boolean;
+
+    canEdit?:boolean;
+    isOwner?:boolean;
+
+    wc?:string;
+    time?:number;
+    wls?:string;
+    ws?:string;
+
+    meta?:any;
+
+    folder?:string;
+
+    // 
+
+    moveToFolder(fid:string){
+        return new Promise<boolean>(resolve=>{
+            socket.emit("moveProjectToFolder",this.pid,fid,(res:any)=>{
+                if(!handleEndpointError(res,"while trying to move project to folder")){
+                    resolve(false);
+                    return;
+                }
+                resolve(true);
+            });
+        });
+    }
+}
 
 // screenshot util
 function screenshot(){
@@ -2567,7 +2616,7 @@ document.addEventListener("keydown",e=>{
             closeAllMenus();
         } else if (k == "enter") {
             closeThis = menusOpen.slice().reverse().find(v=>v instanceof ConfirmMenu || v instanceof DeleteMenu) as ConfirmMenu | DeleteMenu;
-            closeThis.confirmChoice();
+            if(closeThis) closeThis.confirmChoice();
         }
         return;
     }
@@ -2599,34 +2648,87 @@ document.addEventListener("mouseup",e=>{
     if(dragItem){
         if(dragItem.down) dragItem.down = null;
         if(dragItem.drag){
+            let last = dragItem.drag;
+            
+            if(!endDragItemHover(last)){
+                e.stopImmediatePropagation();
+                e.stopPropagation();
+            }
+            
             if(dragItem.tmp) dragItem.tmp.remove();
             dragItem.tmp = null;
             // document.body.classList.remove("dragging");
-            let last = dragItem.drag;
             dragItem.drag = null;
             dragItem.end(last);
+
+            dragItem = null;
+            // if(_lastDragHover){
+            //     _lastDragHover.classList.remove("drag-hover");
+            //     _lastDragHover = null;
+            // }
         }
     }
     _hadClosedSubMenu = false;
 });
 
 class DragData<T>{
-    constructor(e:MouseEvent,clone:(down:T)=>HTMLElement,end:(last:T)=>void){
+    constructor(e:MouseEvent,clone:(down:T)=>HTMLElement,end:(last:T)=>void,div?:Element,ops?:{className?:string}){
+        this.div = div;
         this._sx = e.clientX;
         this._sy = e.clientY;
         this.clone = clone;
         this.end = end;
+
+        if(ops){
+            this.className = ops.className;
+        }
     }
     down:T;
     drag:T;
     tmp:HTMLElement;
+    div?:Element; // this can be undefined if you don't mind dragging an element to itself
     clone:(down:T)=>HTMLElement;
     end:(last:T)=>void;
 
     _sx:number;
     _sy:number;
+
+    className?:string;
 }
-let dragItem:DragData<FItem>;
+let dragItem:DragData<any>;
+// let _lastDragHover:Element;
+let _dragItemHover:{
+    e:Element,
+    onend:(data:any)=>void
+};
+function setupHoverDestination<T>(div:Element,onend:(data:T)=>void){
+    div.addEventListener("mouseenter",e=>{
+        startDragItemHover(div,onend);
+    });
+    div.addEventListener("mouseleave",e=>{
+        endDragItemHover(null);
+    });
+}
+function startDragItemHover(hover:Element,onend:(data:any)=>void){
+    if(!dragItem) return;
+    if(dragItem.div) if(dragItem.div == hover) return;
+    if(_dragItemHover) _dragItemHover.e.classList.remove("drag-hover");
+    if(!hover) return;
+    _dragItemHover = {
+        e:hover,
+        onend
+    };
+}
+function endDragItemHover(data:any){
+    if(!_dragItemHover) return;
+    if(dragItem?.div) if(dragItem.div == _dragItemHover.e) return;
+
+    _dragItemHover.e.classList.remove("drag-hover");
+    _dragItemHover.onend(data);
+    _dragItemHover = null;
+
+    return true;
+}
 
 document.addEventListener("mousemove",e=>{
     if(dragItem){
@@ -2641,7 +2743,7 @@ document.addEventListener("mousemove",e=>{
                 let clone = dragItem.clone(down);
                 clone.style.pointerEvents = "none";
                 let cont = document.createElement("div");
-                cont.className = "d-open-files";
+                cont.className = dragItem.className ?? "d-open-files";
                 cont.style.position = "absolute";
                 cont.classList.add("drag-cont");
                 cont.appendChild(clone);
@@ -2652,6 +2754,20 @@ document.addEventListener("mousemove",e=>{
         if(dragItem.drag){
             dragItem.tmp.style.left = (e.clientX)+"px";
             dragItem.tmp.style.top = (e.clientY)+"px";
+
+            if(_dragItemHover){
+                if(dragItem.div ? dragItem.div != _dragItemHover.e : true) _dragItemHover.e.classList.add("drag-hover");
+            }
+
+            // if(_lastDragHover) _lastDragHover.classList.remove("drag-hover");
+
+            // let hover = document.elementFromPoint(e.clientX,e.clientY);
+            // console.log("HOVER",hover);
+            // if(hover){
+            //     if(_lastDragHover) _lastDragHover.classList.remove("drag-hover");
+            //     _lastDragHover = hover;
+            //     hover.classList.add("drag-hover");
+            // }
         }
     }
 });
@@ -3389,6 +3505,8 @@ class InputMenu extends Menu {
     
     async postLoad() {
         this.body.innerHTML = `<div class="inputref"></div>`;
+        this.menu.style.height = "max-content";
+        
         let inputObj = this.setupTextInput(".inputref", {label: this.inputMessage});
         if (this.beforeInputPrompt) {
             let  beforeElm = document.createElement("span");
@@ -3863,6 +3981,51 @@ async function getChallenges() {
       return;
     }
 }
+
+// delete menu from Paul
+class DeleteMenu extends Menu {
+    constructor(cID: Challenge["cID"]) {
+      super("Delete Progress", "delete");
+      this.cID = cID;
+    }
+    cID: Challenge["cID"];
+  
+    load(priority?: number) {
+      super.load();
+      let challengeName = challengeArray.find((v) => v.cID == this.cID).name;
+      this.body.innerHTML = `
+              <div class="c-confirm-div">
+                  <span class="c-confirm-text">Are you sure you want to delete your progress on the <strong>${challengeName}</strong> Challenge? You won't be able to get it back...</span>
+                  <div class="c-confirm-options">
+                      <button class="c-confirm-btn">
+                          Yes
+                      </button>
+                      <button class="c-cancel-btn">
+                          No (Cancel)
+                      </button>
+                  </div>
+              </div>
+          `;
+      document.querySelector(".c-cancel-btn").addEventListener("click", () => {
+        cancelProgressDeletion();
+        this.close();
+      });
+      document.querySelector(".c-confirm-btn").addEventListener("click", () => {
+        deleteProgress(this.cID);
+        this.close();
+      });
+      return this;
+    }
+  
+    confirmChoice() {
+      deleteProgress(this.cID);
+      this.close();
+    }
+  
+    onClose(): void {
+      cancelProgressDeletion();
+    }
+  }
 
 // String util
 function countChars(str:string,char:string,start?:number,end?:number){

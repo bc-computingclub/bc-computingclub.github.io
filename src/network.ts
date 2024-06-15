@@ -306,3 +306,13 @@ async function sendFeedback(title:string,type:number,desc:string){
         });
     });
 }
+
+// some util
+
+function handleEndpointError(res:any,msg:string){
+    if(!res || res?.err){
+        alert(`Error ${res?.err} ${msg}`);
+        return false;
+    }
+    return true;
+}

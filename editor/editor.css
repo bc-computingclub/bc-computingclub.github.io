@@ -224,26 +224,38 @@ div.b-editor-dashboard .material-symbols-outlined{
     width:200px;
     flex-shrink:0;
 }
-.edb-nav-cont{
+.edb-cont{
     background-color:var(--bg);
     border-radius:3px;
+    padding:10px;
+}
+.edb-cont > *{
+    width:100%;
+}
+.edb-cont > *:not(:last-child){
+    margin-bottom:10px;
+}
+.edb-cont input{
+    width:100%;
+}
+.edb-nav-cont{
     display:flex;
     flex-direction:column;
     gap:5px;
-    padding:10px;
-    & > button.icon-btn.regular{
+    & button.icon-btn.regular{
         background-color:var(--bg);
         color:var(--col);
         padding:6px 12px;
         margin:2px 4px;
+        margin-left:8px;
     }
-    & > button.sel{
+    & button.sel{
         /* background-color:var(--secondary-bg-col) !important; */
         /* background-color:var(--darken2) !important; */
         background-color:var(--col) !important;
         color:var(--bg) !important;
     }
-    & > button::before{
+    & button::before{
         height:0%;
         opacity:0;
         transition:all 0.1s ease-out;
@@ -255,10 +267,10 @@ div.b-editor-dashboard .material-symbols-outlined{
         top:50%;
         /* left:-14px; */
         /* left:-3px; */
-        left:-6px;
+        left:-10px;
         transform:translate(0px,-50%);
     }
-    & > button.sel::before{
+    & button.sel::before{
         opacity:1;
         height:65%;
     }
@@ -277,6 +289,21 @@ div.b-editor-dashboard .material-symbols-outlined{
     gap:10px;
     padding:10px;
 }
+.edb-content-list > div{
+    animation:ShowEDBItem 0.1s ease-out;
+    animation-fill-mode:forwards;
+    user-select:none;
+    -webkit-user-select:none;
+}
+@keyframes ShowEDBItem {
+    0%{
+        opacity:0;
+    }
+    100%{
+        opacity:1;
+    }
+}
+
 .project-item{
     padding:12px;
     border-radius:5px;
@@ -289,8 +316,10 @@ div.b-editor-dashboard .material-symbols-outlined{
 .project-item .project-info{
     display:flex;
     flex-direction:column;
+    justify-content:center;
     gap:5px;
-    width:100%;
+    /* width:100%; */
+    width:max-content;
 }
 .project-item .l-project-name{
     font-size:16px;
@@ -339,6 +368,37 @@ body.themestyle-light .project-item.starred .star{
 
 .main-icon{
     font-size:18px;
+}
+
+/* folder item */
+.folder-item > div:first-child{
+    cursor:pointer;
+}
+.folder-item.drag-hover{
+    outline:dashed 2px var(--cta-btn-col);
+}
+
+.current-path-item .d-list{
+    display:flex;
+    align-items:center;
+    flex-wrap:wrap;
+    font-size:14px;
+    height:20px;
+}
+.current-path-item .d-list > div{
+    user-select:none;
+    -webkit-user-select:none;
+    /* cursor:pointer; */
+}
+.current-path-item .d-list > div:not(:last-child)::after,
+.current-path-item .d-list > div:last-child:first-child::after{
+    content:"/";
+    font-family:monospace;
+    font-size:16px;
+    opacity:0.3;
+    margin:0px 6px;
+    padding:3px;
+    /* border-radius:3px; */
 }
 
 /*  */

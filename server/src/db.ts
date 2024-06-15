@@ -118,6 +118,10 @@ const FolderSchema = new Schema({
     //     _id: false
     // }]
 });
+FolderSchema.index({
+    name:"text",
+    desc:"text"
+});
 
 export class FolderInst{
     constructor(meta:any){
@@ -153,10 +157,80 @@ export class FolderInst{
 
     serialize(){
         return {
+            fid:this.meta._id,
             name:this.meta.name,
             itemCount:this.meta.itemCount,
             folder:this.meta.folder
         };
+    }
+
+    // 
+
+    async moveToFolder(fid:string){
+        if(!this.meta.folder) return false; // can't move the root
+        
+        if(this.meta.folder == null ? (fid == null) : this.meta.folder.equals(fid)) return false; // trying to move it to the same folder
+        
+        // last folder
+        let thisFolder = await getFolderInst(this.meta.uid,this.meta.folder);
+        if(!thisFolder) return false;
+
+        thisFolder.remove();
+        await thisFolder.save();
+        
+        // new folder
+        let folder = await getFolderInst(this.meta.uid,fid);
+        if(!folder) return false;
+
+        folder.add();
+        await folder.save();
+
+        // save
+        this.meta.folder = new mongoose.Types.ObjectId(fid);
+        await this.save();
+
+        return true;
+    }
+
+    async deleteThis(uid:string,isFirst=true){ // uid is only here for permissions that may be added in the future
+        let projectList = await ProjectModel.find({
+            uid:this.meta.uid,
+            folder:this.meta._id
+        });
+        if(!projectList) return false;
+        
+        let folderList = await FolderModel.find({
+            uid:this.meta.uid,
+            folder:this.meta._id
+        });
+        if(!folderList) return false;
+
+        // 
+
+        for(const project of projectList){
+            let inst = new ProjectInst(project);
+            await inst.deleteThis(uid);
+        }
+        for(const folder of folderList){
+            let inst = new FolderInst(folder);
+            await inst.deleteThis(uid,false);
+        }
+
+        // 
+
+        if(isFirst && this.meta.folder){
+            let parentFolder = await getFolderInst(uid,this.meta.folder);
+            if(parentFolder){
+                parentFolder.remove();
+                await parentFolder.save();
+            }
+        }
+        
+        let res = await FolderModel.deleteOne({
+            _id:this.meta._id,
+            uid:this.meta.uid
+        });
+        return (res.deletedCount == 1);
     }
 }
 
@@ -234,6 +308,9 @@ type MUser = {
     challengesCompleted:number,
     projectCount:number,
 
+    // 
+    rootFolder:mongoose.Types.ObjectId,
+
     save:()=>Promise<void>
 };
 const UserSchema = new Schema({
@@ -279,6 +356,11 @@ const UserSchema = new Schema({
     projectCount:{
         type:Number,
         default:0
+    },
+
+    rootFolder:{
+        type:mongoose.Types.ObjectId,
+        ref:"Folder"
     }
 
     // recentProjects:{
@@ -360,6 +442,10 @@ const ProjectSchema = new Schema({
     //     type:mongoose.Schema.Types.ObjectId,
     //     ref:"File"
     // }
+});
+ProjectSchema.index({
+    name:"text",
+    desc:"text"
 });
 
 // const ChallengeIterationSchema = new Schema({
@@ -1007,6 +1093,8 @@ export class UserSessionItem{
             // file:file._id
         });
 
+        // this.addToRecents(pid); // this might already happen not sure, disabled for now
+
         // file.file = p._id;
 
         // await file.save();
@@ -1025,9 +1113,10 @@ export class UserSessionItem{
 
     async createProject(data:{
         name:string,desc:string,
-        public?:boolean
+        public?:boolean,
+        fid?:string
     }){
-        let p = await this._createProjectBase(data);
+        let p = await this._createProjectBase(data,data.fid);
         let inst = new ProjectInst(p);
 
         // create path
@@ -1261,6 +1350,8 @@ export class ProjectInst{
             canEdit:this.canEdit(uid),
             isOwner:true,
 
+            folder:this.meta.folder, // folder that this project is in
+
             meta:{
                 pid:this.meta.pid,
                 name:this.meta.name,
@@ -1406,6 +1497,47 @@ export class ProjectInst{
         await search(list,this.getPath()+"/");
         return list;
     }
+
+    async moveToFolder(fid:string){
+        if(!this.meta.folder) return false; // can't move the root
+        
+        if(this.meta.folder == null ? (fid == null) : this.meta.folder.equals(fid)) return false; // trying to move it to the same folder
+        
+        // last folder
+        let thisFolder = await getFolderInst(this.meta.uid,this.meta.folder);
+        if(!thisFolder) return false;
+
+        thisFolder.remove();
+        await thisFolder.save();
+        
+        // new folder
+        let folder = await getFolderInst(this.meta.uid,fid);
+        if(!folder) return false;
+
+        folder.add();
+        await folder.save();
+
+        // save
+        this.meta.folder = new mongoose.Types.ObjectId(fid);
+        await this.save();
+
+        return true;
+    }
+}
+
+/**
+ * Get's a folder instance when you don't have the user instance. But UserInst.getFolder() should be used instead of this when possible for future proofing.
+ * @param uid owner
+ * @param _id fid
+ */
+export async function getFolderInst(uid:string,_id:string|mongoose.Types.ObjectId|undefined){
+    if(_id == null) return;
+    let data = await FolderModel.findById(_id);
+    if(!data) return;
+
+    if(data.uid != uid) return; // found but you didn't own the folder xD
+
+    return new FolderInst(data);
 }
 
 export function removeFromList(list:any[],item:any){

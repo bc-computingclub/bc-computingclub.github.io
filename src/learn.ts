@@ -917,6 +917,12 @@ document.addEventListener("wheel",e=>{
     if(menusOpen.length) return;
     e.preventDefault();
     let speed = Math.abs(e.deltaY)/500;
+
+    if(e.deltaY != Math.trunc(e.deltaY)){
+        // pinch zooming
+        speed *= 8;
+    }
+
     let scale = 1.001+speed; //1.1
     zoomBy(e.deltaY > 0 ? 1/scale : scale);
 },{passive:false});
