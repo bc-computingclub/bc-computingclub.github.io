@@ -970,6 +970,14 @@ body .nav-links > .active{
     transform:scale(0.75);
     filter:invert(1);
 }
+.b-show-files-pane{
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    aspect-ratio:1;
+    transform:scale(0.75);
+    filter:invert(1);
+}
 
 /* Text Decorators */
 .l-i{

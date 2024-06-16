@@ -4047,6 +4047,11 @@ class PromptLoginMenu extends Menu{
 async function initLessonPage(){
     setupEditor(pane_tutor_code,EditorType.tutor);
     setupEditor(pane_code,EditorType.self);
+
+    setupFilesPane(pane_tutor_code.querySelector(".pane-files"));
+    setupFilesPane(pane_code.querySelector(".pane-files"));
+    
+    // 
     
     if(!await waitForUser()) return;
     

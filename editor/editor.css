@@ -318,8 +318,7 @@ div.b-editor-dashboard .material-symbols-outlined{
     flex-direction:column;
     justify-content:center;
     gap:5px;
-    /* width:100%; */
-    width:max-content;
+    width:100%;
 }
 .project-item .l-project-name{
     font-size:16px;
@@ -371,6 +370,9 @@ body.themestyle-light .project-item.starred .star{
 }
 
 /* folder item */
+.folder-item .project-info{
+    width:max-content;
+}
 .folder-item > div:first-child{
     cursor:pointer;
 }
@@ -414,7 +416,7 @@ body.themestyle-light .project-item.starred .star{
             /* background-color:var(--experiment-col) !important; */
         }
         .b-new-folder:hover{
-            background-color:var(--darken) !important;
+            /* background-color:var(--darken) !important; */
         }
         .b-open-project{
             background-color:var(--experiment-col) !important;

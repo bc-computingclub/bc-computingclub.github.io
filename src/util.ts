@@ -1099,9 +1099,9 @@ class Project{
         if(folder) folder.items.push(f);
         else this.items.push(f);
 
-        if(PAGE_ID == PAGEID.editor){
+        // if(PAGE_ID == PAGEID.editor){
             createFileListItem(f);
-        }
+        // }
         if(PAGE_ID == PAGEID.lesson) f.open();
         if(!isNew) f.setSaved(true);
         else{
@@ -1142,9 +1142,9 @@ class Project{
         let f = new FFolder(this,name,folder);
         if(folder) folder.items.push(f);
         else this.items.push(f);
-        if(PAGE_ID == PAGEID.editor){
+        // if(PAGE_ID == PAGEID.editor){
             createFolderListItem(f);
-        }
+        // }
         // this.needsSave = true;
         if(isNew){
             f._fiLabel.click();
@@ -1341,13 +1341,21 @@ function applyMultiSelectFI(e:MouseEvent|any,f:FItem){
 //     fiList.insertBefore(div,fiList.children[i1]);
 // }
 function createFileListItem(f:FFile){
+    let fileList = f.p.parent.querySelector(".file-list") as HTMLElement; // maybe should optimize this better at some point
     if(!fileList){
-        fileList = document.querySelector(".file-list");
-        if(!fileList) return;
-        fileList.oncontextmenu = function(e){
-            e.preventDefault();
-        };
+        console.log("ERR: couldn't find file list...");
+        return;
     }
+    // if(!fileList){
+    //     fileList = document.querySelector(".file-list");
+    //     if(!fileList) return;
+    //     fileList.oncontextmenu = function(e){
+    //         e.preventDefault();
+    //     };
+    // }
+
+    // 
+
     let div = document.createElement("div");
     div.className = "file-item";
     div.textContent = f.name;
@@ -1530,13 +1538,19 @@ async function moveFile(f:FItem,toFolder:FFolder,noSave=false){
 }
 
 function createFolderListItem(f:FFolder){
+    let fileList = f.p.parent.querySelector(".file-list") as HTMLElement; // maybe should optimize this better at some point
     if(!fileList){
-        fileList = document.querySelector(".file-list");
-        if(!fileList) return;
-        fileList.oncontextmenu = function(e){
-            e.preventDefault();
-        };
+        console.log("ERR: couldn't find file list...");
+        return;
     }
+    
+    // if(!fileList){
+    //     fileList = document.querySelector(".file-list");
+    //     if(!fileList) return;
+    //     fileList.oncontextmenu = function(e){
+    //         e.preventDefault();
+    //     };
+    // }
     let div = document.createElement("div");
     div.className = "folder-item";
     div.innerHTML = `
@@ -2278,6 +2292,19 @@ function setupEditor(parent:HTMLElement,type:EditorType,fromSub=false){
     parent.appendChild(contJs);
 
     if(!fromSub){
+        let b_showFilesPane = document.createElement("button");
+        b_showFilesPane.className = "b-show-files-pane";
+        b_showFilesPane.innerHTML = "<div class='material-symbols-outlined'>menu</div>";
+        let _open = false;
+        b_showFilesPane.addEventListener("click",e=>{
+            _open = !_open;
+            b_showFilesPane.classList.toggle("f-hover");
+
+            let fileList = parent.querySelector(".file-list") as HTMLElement;
+            fileList.parentElement.classList.toggle("hide");
+        });
+        d_files.appendChild(b_showFilesPane);
+        
         let add_file = document.createElement("button");
         add_file.className = "b-add-file";
         add_file.innerHTML = "<div class='material-symbols-outlined'>add</div>";
@@ -2346,12 +2373,92 @@ function postSetupEditor(project:Project,isUser=true){
     // project.files[0].codeCont;
     // project.files[0].bubbles_ov;
 
+    // other meta
+    if(project.meta) project.setPublished(project.meta.submitted);
+    else project.setPublished(false);
+
+    if(project.meta) if(project.meta.cid != null) b_publish.classList.remove("hide");
+
+    if(isUser) postSetupPreview(project);
+}
+function setupFilesPane(div:Element){
+    div.innerHTML = `
+        <div class="header flx-sb">
+            <div>Files</div>
+            <div>
+                <button class="icon-btn-single b-new-file co-item" co-label="Create file">
+                    <div class="material-symbols-outlined">note_add</div>
+                </button>
+                <button class="icon-btn-single b-new-folder co-item" co-label="Create folder">
+                    <div class="material-symbols-outlined">create_new_folder</div>
+                </button>
+            </div>
+        </div>
+        <div class="file-list">
+            <!-- <div class="file-item">index.html</div> -->
+            <!-- <div class="file-item">style.css</div> -->
+            <!-- <div class="file-item">script.js</div> -->
+        </div>
+        <div class="file-ops">
+            <button class="icon-btn-single ops-rename">
+                <div class="material-symbols-outlined">edit</div>
+            </button>
+            <button class="icon-btn-single ops-delete">
+                <div class="material-symbols-outlined">delete</div>
+            </button>
+            <button class="icon-btn-single ops-cut">
+                <div class="material-symbols-outlined">content_cut</div>
+            </button>
+            <button class="icon-btn-single ops-copy">
+                <div class="material-symbols-outlined">content_copy</div>
+            </button>
+            <button class="icon-btn-single ops-paste">
+                <div class="material-symbols-outlined">content_paste</div>
+            </button>
+        </div>
+    `;
+
+    const b_newFolder = div.querySelector(".b-new-folder") as HTMLButtonElement;
+    const b_newFile = div.querySelector(".b-new-file") as HTMLButtonElement;
+
+    b_newFolder.addEventListener("click",e=>{
+        if(!project) return;
+        if(!project.canEdit) return;
+        // let name = prompt("Enter folder name:");
+        new InputMenu(
+            "New Folder","Enter folder name",
+            (v:string)=>{
+                if(!v) return;
+                project.createFolder(v,project.lastFolder ?? project.curFile?.folder);
+            },
+            () => {
+                console.log("Canceled new folder creation");
+            }
+        ).load();
+    });
+
+    b_newFile.addEventListener("click",e=>{
+        if(!project) return;
+        if(!project.canEdit) return;
+        // let name = prompt("Enter file name:");
+        new InputMenu(
+            "New File","Enter file name",
+            (inputname:string)=>{
+                if(!inputname) return;
+                project.createFile(inputname,new Uint8Array(),null,project.lastFolder ?? project.curFile?.folder,true);
+            },
+            () => {
+                console.log("Canceled new file creation");
+            }
+        ).load();
+    });
+
     // INIT OPS BUTTONS
-    const ops_rename = document.querySelector(".ops-rename");
-    const ops_delete = document.querySelector(".ops-delete");
-    const ops_cut = document.querySelector(".ops-cut");
-    const ops_copy = document.querySelector(".ops-copy");
-    const ops_paste = document.querySelector(".ops-paste");
+    const ops_rename = div.querySelector(".ops-rename");
+    const ops_delete = div.querySelector(".ops-delete");
+    const ops_cut = div.querySelector(".ops-cut");
+    const ops_copy = div.querySelector(".ops-copy");
+    const ops_paste = div.querySelector(".ops-paste");
     if(ops_rename){
         async function flashHL(f:FItem){
             if(!f) return;
@@ -2389,15 +2496,8 @@ function postSetupEditor(project:Project,isUser=true){
             });
         });
     }
-
-    // other meta
-    if(project.meta) project.setPublished(project.meta.submitted);
-    else project.setPublished(false);
-
-    if(project.meta) if(project.meta.cid != null) b_publish.classList.remove("hide");
-
-    if(isUser) postSetupPreview(project);
 }
+
 function createHTMLPreviewsDropdown(inp:HTMLInputElement){
     console.log("...setup preview dropdown");
     let list:string[] = [];

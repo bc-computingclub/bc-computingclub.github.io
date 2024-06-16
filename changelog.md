@@ -868,3 +868,7 @@
 - !!! fixed front end and backend so when uploading files for a project, it only uploads the ones that weren't saved and everything is done as a buffer so no extra work for images or non-text files
 
 - ! added "calc lines" command to server which gives some stats about line counts in the entire project, server, and client
+
+### 6/16/24
+- fixed new folder button in light theme on hover coloring in project dashboard
+- 

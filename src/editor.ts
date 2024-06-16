@@ -7,43 +7,10 @@ main = document.querySelector(".main") as HTMLElement;
 // codeCont = document.querySelector(".cont-js");
 
 pane_files = document.querySelector(".pane-files") as HTMLElement;
+setupFilesPane(pane_files);
+
 pane_code = document.querySelector(".pane-code") as HTMLElement;
 pane_preview = document.querySelector(".pane-preview") as HTMLElement;
-
-const b_newFolder = document.querySelector(".b-new-folder") as HTMLButtonElement;
-const b_newFile = document.querySelector(".b-new-file") as HTMLButtonElement;
-
-b_newFolder.addEventListener("click",e=>{
-    if(!project) return;
-    if(!project.canEdit) return;
-    // let name = prompt("Enter folder name:");
-    new InputMenu(
-        "New Folder","Enter folder name",
-        (v:string)=>{
-            if(!v) return;
-            project.createFolder(v,project.lastFolder ?? project.curFile?.folder);
-        },
-        () => {
-            console.log("Canceled new folder creation");
-        }
-    ).load();
-});
-
-b_newFile.addEventListener("click",e=>{
-    if(!project) return;
-    if(!project.canEdit) return;
-    // let name = prompt("Enter file name:");
-    new InputMenu(
-        "New File","Enter file name",
-        (inputname:string)=>{
-            if(!inputname) return;
-            project.createFile(inputname,new Uint8Array(),null,project.lastFolder ?? project.curFile?.folder,true);
-        },
-        () => {
-            console.log("Canceled new file creation");
-        }
-    ).load();
-});
 
 async function loadProject(uid:string,pid:string){
     project = null;
@@ -808,6 +775,7 @@ class ProjectDashboard extends Menu{
         });
         setupHoverDestination<ProjectMeta2|FolderMeta>(div,async data=>{
             if(!data) return;
+            if(!data.moveToFolder) return;
 
             if(await data.moveToFolder(item.fid)){
                 await this.openFolder(item);
@@ -912,6 +880,7 @@ b_editorDashboard.addEventListener("click",e=>{
 });
 d_curProject.addEventListener("click",e=>{
     // openCurProjSettings();
+    if(!project) return;
     new ProjSettingsMenu(project.meta).load();
 });
 
