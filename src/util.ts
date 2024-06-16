@@ -760,6 +760,9 @@ class Project{
 
         this.readonly = settings.readonly || false;
         this.disableCopy = settings.disableCopy || false;
+
+        this.textEncoder = new TextEncoder();
+        this.textDecoder = new TextDecoder();
     }
     meta:ProjectMeta;
     pid:string;
@@ -818,10 +821,16 @@ class Project{
         if(!f.p.canEdit) return;
         // let newName = prompt("Old name: "+f.name+"\n\nEnter new name: ",f.name);
         let newName = f.name;
-        new InputMenu(
+        let m = new InputMenu(
             "Rename File","New name",
             (data:string) => {
                 newName = data;
+
+                if(getExt(newName).toLowerCase() != getExt(f.name).toLowerCase()){
+                    alert("Sorry, you can't change the file extension of non-text files.");
+                    return 1;
+                }
+
                 if(newName == f.name || newName == null || newName == ""){
                     if(close) close();
                     return;
@@ -856,6 +865,9 @@ class Project{
             "",
             `Old name: ${f.name.substring(0,30) + (f.name.length > 30 ? "..." : "")}`
         ).load();
+        m.inp.placeholder = f.name;
+        m.inp.value = f.name;
+        m.inp.spellcheck = false;
     }
     async deleteFItem(f:FItem){
         if(!f) return;
@@ -945,7 +957,7 @@ class Project{
                 effected.push(f1);
             }
             else if(fclipboard.action == "copy"){
-                if(f1 instanceof FFile) item = f.p.createFile(f1.name,f1.text,null,folder,true);
+                if(f1 instanceof FFile) item = await f.p.createFile(f1.name,f1.buf?.slice(),null,folder,true);
                 else if(f1 instanceof FFolder) item = f.p.createFolder(f1.name,folder,true);
                 effected.push(item);
             }
@@ -1017,7 +1029,25 @@ class Project{
     findFile(name:string){
         return this.files.find(v=>v.name == name);
     }
-    createFile(name:string,text:string,lang?:string,folder?:FFolder,isNew=false){
+
+    textEncoder:TextEncoder;
+    textDecoder:TextDecoder;
+
+    async createFile(name:string,buf:Uint8Array,lang?:string,folder?:FFolder,isNew=false){
+        // let buf:Uint8Array;
+        // if(isExtTextFile(getExt(name))){
+        //     text = this.textDecoder.decode(buf);
+        // }
+        // else{
+        //     buf = _buf;
+        // }
+
+        // let text:string = null;
+        // if(isExtTextFile(getExt(name))){
+        //     text = this.textDecoder.decode(buf);
+        // }
+
+        // let text = await blob.text();
         let same = (folder ? folder.items : this.items).find(v=>v.name == name);
         if(same){
             new ConfirmMenu(
@@ -1025,9 +1055,9 @@ class Project{
                 () => {
                     if(same instanceof FFile) {
                         if(same.editor){
-                            same.editor.setValue(text);
+                            same.editor.setValue(this.textDecoder.decode(f.buf));
                         }
-                        same.text = text;
+                        same.buf = f.buf.slice();
                         same.setSaved(false);
                     }
                 },
@@ -1062,7 +1092,8 @@ class Project{
                 return q;
             }
         }
-        let f = new FFile(this,name,text,folder,lang);
+        let f = new FFile(this,name,buf,folder,lang);
+        if(isNew) f.beenUploaded = false;
         // f.isNew = true;
         this.files.push(f);
         if(folder) folder.items.push(f);
@@ -1216,7 +1247,7 @@ let hoverFolderListItems:FFolder[] = [];
 // let hoverFolderListItem:FFolder;
 function sortFiles(l:any[]){
     l.sort((a,b)=>{
-        let dif = ((a.val != null || a.curI != null) && (b.val == null && b.curI == null) ? 1 : ((a.val == null && a.curI == null) && (b.val != null || b.curI != null) ? -1 : 0));
+        let dif = ((a.items == null || a.curI != null) && (b.items != null && b.curI == null) ? 1 : ((a.items != null && a.curI == null) && (b.items == null || b.curI != null) ? -1 : 0));
         if(dif == 0) dif = a.name.localeCompare(b.name);
         return dif;
     });
@@ -1670,9 +1701,22 @@ class FFolder extends FItem{
 }
 // let downOpenFile:FFile;
 // let dragOpenFile:FFile;
+
+let nonTextFileFormats = [
+    {
+        ext:"png"
+    }
+];
+function isExtTextFile(ext:string){
+    return !nonTextFileFormats.some(v=>v.ext == ext);
+}
+function getExt(name:string){
+    return name.split(".").pop();
+}
+
 let hoverOpenFile:FFile;
 class FFile extends FItem{
-    constructor(p:Project,name:string,text:string,folder:FFolder,lang?:string){
+    constructor(p:Project,name:string,buf:Uint8Array,folder:FFolder,lang?:string){
         super(p,name,folder);
         if(!lang){
             let ext = name.split(".").pop();
@@ -1682,15 +1726,27 @@ class FFile extends FItem{
                 "js":"javascript",
                 "ts":"typescript",
                 "rs":"rust",
-                "md":"markdown"
+                "md":"markdown",
+                "java":"java"
             };
             lang = map[ext] || "text";
         }
-        this.text = text;
+        this.buf = buf;
+        // this.text = text;
         this.lang = lang;
     }
 
-    text:string;
+    isTextFile(){
+        return isExtTextFile(getExt(this.name));
+    }
+
+    encode(){
+        if(this.editor) return this.p.textEncoder.encode(this.editor.getValue());
+        else return this.buf;
+    }
+
+    buf:Uint8Array;
+    // text:string;
     lang:string;
     path = "";
 
@@ -1715,10 +1771,14 @@ class FFile extends FItem{
 
     _lastSavedText:string;
     _saved = true;
+    beenUploaded = true;
     setSaved(v:boolean,noChange=false){
         this._saved = v;
         // if(this.isNew && v) this.isNew = false;
-        if(v) if(this.editor) this.text = this.editor.getValue();
+        if(v){
+            // only want to save the text in the editor to buf if it is a text file (too many issues with unsupported characters in png cause them to become corrupted after this encode)
+            if(this.isTextFile()) if(this.editor) this.buf = this.p.textEncoder.encode(this.editor.getValue());
+        }
         if(this.link){
             // this.link.children[0].textContent = this.name+(v?"":"*");
             if(!v){
@@ -1729,7 +1789,9 @@ class FFile extends FItem{
                 this.link.classList.remove("unsaved");
             }
         }
-        if(!noChange) if(this.editor) this._lastSavedText = this.editor.getValue();
+        if(!noChange){
+            if(this.isTextFile()) if(this.editor) this._lastSavedText = this.editor.getValue();
+        }
     }
 
     type(lineno:number,colno:number,text:string){
@@ -1763,7 +1825,9 @@ class FFile extends FItem{
                 // return; 
                 // if(!confirm("This file is unsaved, are you sure you want to close it?")) return
             }
-            if(this._saved) this.text = this.editor.getValue();
+            if(this._saved){
+                if(this.editor) if(this.isTextFile()) this.buf = this.p.textEncoder.encode(this.editor.getValue()); // probably don't need this but good to do just in case
+            }
             this.p.d_files.removeChild(this.link);
             let ind = this.p.openFiles.indexOf(this);
             this.p.openFiles.splice(ind,1);
@@ -1784,8 +1848,10 @@ class FFile extends FItem{
                     }
                 }
             }
-            this.editor.dispose();
-            this.editor = null;
+            if(this.editor){
+                this.editor.dispose();
+                this.editor = null;
+            }
             return 1;
         }
     }
@@ -1806,6 +1872,11 @@ class FFile extends FItem{
             else this.link.classList.remove("is-tmp");
         }
     }
+
+    isReadOnly(){
+        return !this.p.canEdit||this.p.isTutor||!this.isTextFile();
+    }
+
     open(isTemp?:boolean){
         if(isTemp == null){
             isTemp = (PAGE_ID != PAGEID.lesson);
@@ -1882,102 +1953,153 @@ class FFile extends FItem{
             cont.className = "js-cont cont";
             this.cont = cont;
 
-            let editor = monaco.editor.create(cont, {
-                value: [this.text].join('\n'),
-                language: this.lang,
-                theme:"vs-"+themes[curTheme].style,
-                bracketPairColorization:{
-                    enabled:false
-                },
-                minimap:{
-                    enabled:false
-                },
-                contextmenu:!this.p.isTutor,
-                readOnly:!this.p.canEdit||this.p.isTutor
-                // cursorSmoothCaretAnimation:"on"
-            });
-            // editor.onDidContentSizeChange(e=>{
-            //     if(!this._saved) return;
-            //     let v = editor.getValue();
-            //     if(this._lastSavedText != v) this.setSaved(false);
-            //     //monaco-mouse-cursor-text
-            //     // else this.setSaved(true,true);
-            // });
-            if(this.p.readonly){
-                editor.onDidFocusEditorText(e=>{
-                    if (document.activeElement instanceof HTMLElement) {
-                        document.activeElement.blur();
-
-
-                        // is tutor editor
-                        let cursor = cont.querySelector(".inputarea.monaco-mouse-cursor-text") as HTMLElement;
-                        cursor.style.backgroundColor = "var(--col)";
-                        cursor.style.zIndex = "1";
-                        cursor.style.width = "2px";
-                        cursor.style.height = "19px";
-                        cursor.style.border = "solid 1px var(--col)";
-                        cursor.classList.add("custom-cursor");
-                    }
-                    // console.warn("trigger!");
-                    // editor.trigger("blur","",[]);
+            if(this.isTextFile()){
+                let editor = monaco.editor.create(cont, {
+                    value: [this.p.textDecoder.decode(this.buf)].join("\n"),
+                    language: this.lang,
+                    theme:"vs-"+themes[curTheme].style,
+                    bracketPairColorization:{
+                        enabled:false
+                    },
+                    minimap:{
+                        enabled:false
+                    },
+                    contextmenu:!this.p.isTutor,
+                    readOnly:this.isReadOnly()
+                    // cursorSmoothCaretAnimation:"on"
                 });
-                editor.onDidChangeCursorPosition(e=>{
-                    // if(t._mouseOver) editor.setPosition({column:1,lineNumber:1});
-                    if(t.blockPosChange) editor.setPosition({column:this.curCol,lineNumber:this.curRow});
-                    else{
-                        lesson.tut.curFile.curCol = e.position.column;
-                        lesson.tut.curFile.curRow = e.position.lineNumber;
-                    }
-                    if(lesson) if(!lesson.isResuming){
+                // editor.onDidContentSizeChange(e=>{
+                //     if(!this._saved) return;
+                //     let v = editor.getValue();
+                //     if(this._lastSavedText != v) this.setSaved(false);
+                //     //monaco-mouse-cursor-text
+                //     // else this.setSaved(true,true);
+                // });
+                if(this.p.readonly){
+                    editor.onDidFocusEditorText(e=>{
+                        if (document.activeElement instanceof HTMLElement) {
+                            document.activeElement.blur();
+    
+                            // is tutor editor
+                            let cursor = cont.querySelector(".inputarea.monaco-mouse-cursor-text") as HTMLElement;
+                            cursor.style.backgroundColor = "var(--col)";
+                            cursor.style.zIndex = "1";
+                            cursor.style.width = "2px";
+                            cursor.style.height = "19px";
+                            cursor.style.border = "solid 1px var(--col)";
+                            cursor.classList.add("custom-cursor");
+                        }
+                        // console.warn("trigger!");
+                        // editor.trigger("blur","",[]);
+                    });
+                    editor.onDidChangeCursorPosition(e=>{
+                        // if(t._mouseOver) editor.setPosition({column:1,lineNumber:1});
+                        if(t.blockPosChange) editor.setPosition({column:this.curCol,lineNumber:this.curRow});
+                        else{
+                            lesson.tut.curFile.curCol = e.position.column;
+                            lesson.tut.curFile.curRow = e.position.lineNumber;
+                        }
+                        if(lesson) if(!lesson.isResuming){
+                            syncMousePos(editor);
+                            // moveTutMouseTo(this.curCol,this.curRow);
+                        }
+                    });
+                    editor.onDidContentSizeChange(e=>{
                         syncMousePos(editor);
-                        // moveTutMouseTo(this.curCol,this.curRow);
+                    });
+                    editor.onDidScrollChange(e=>{
+                        syncMousePos(editor);
+                    });
+                    // editor.onMouseMove(e=>{
+                    //     t._mouseOver = true;
+                    // });
+                    // editor.onMouseLeave(e=>{
+                    //     t._mouseOver = false;
+                    // });
+                    setTimeout(()=>{
+                        editor.focus();
+                    },100);
+                }
+                if(this.p.disableCopy) editor.onKeyDown(e=>{
+                    if(e.ctrlKey && e.keyCode == monaco.KeyCode.KeyC){
+                        alert("Please don't try to copy and paste from the tutor's code");
+                        e.preventDefault();
                     }
                 });
-                editor.onDidContentSizeChange(e=>{
-                    syncMousePos(editor);
+    
+                let textArea = cont.querySelector("textarea");
+                let overflowGuard = cont.querySelector(".overflow-guard");
+                textArea.oninput = function(){
+                    overflowGuard.scrollTo({top:0,left:0,behavior:"instant"});
+                };
+                this.curEditor = editor;
+                this.editor = editor;
+                this.p.curFile = this;
+    
+                // @ts-ignore
+                if(PAGE_ID == PAGEID.lesson) editor.onDidScrollChange(function(){
+                    t.scrollOffset = editor.getScrollTop();
+                    t.scrollOffsetX = editor.getScrollLeft();
+                    updateBubbles();
                 });
-                editor.onDidScrollChange(e=>{
-                    syncMousePos(editor);
-                });
-                // editor.onMouseMove(e=>{
-                //     t._mouseOver = true;
-                // });
-                // editor.onMouseLeave(e=>{
-                //     t._mouseOver = false;
-                // });
-                setTimeout(()=>{
-                    editor.focus();
-                },100);
+    
+                // create ov_bubbles
+                let bubbles_ov = document.createElement("div");
+                bubbles_ov.className = "bubbles-overlay";
+                this.bubbles_ov = bubbles_ov;
+                cont.appendChild(bubbles_ov);
+                this.setSaved(true);
             }
-            if(this.p.disableCopy) editor.onKeyDown(e=>{
-                if(e.ctrlKey && e.keyCode == monaco.KeyCode.KeyC){
-                    alert("Please don't try to copy and paste from the tutor's code");
-                    e.preventDefault();
+            else{
+                // load custom based on file ext
+                let ext = getExt(this.name);
+
+                switch(ext){
+                    case "png":{
+
+                        let blob = new Blob([this.buf]);
+                        let url = URL.createObjectURL(blob);
+                        let img = document.createElement("img");
+                        img.addEventListener("load",e=>{
+                            let imgCont = document.createElement("div");
+                            imgCont.classList.add("editor-img-cont");
+
+                            let size = blob.size;
+                            let sizeUnit = "B";
+                            if(size >= 1000){
+                                size /= 1000;
+                                sizeUnit = "KB";
+
+                                if(size >= 1000){
+                                    size /= 1000;
+                                    sizeUnit = "MB";
+                                }
+                            }
+
+                            imgCont.innerHTML = `
+                                <div>
+                                    <div>Dimensions: ${img.width} x ${img.height} PX</div>
+                                    <div>Size: ${size.toFixed(2)} ${sizeUnit}</div>
+                                </div>
+                                <div class="view"></div>
+                            `;
+                            imgCont.querySelector(".view").appendChild(img);
+                            cont.appendChild(imgCont);
+
+                            console.log(img.width,img.height);
+                            if(img.width >= img.height/2) img.style.width = "75%";
+                            else img.style.height = "75%";
+                            
+                            URL.revokeObjectURL(url); // should be done with the url now
+                        });
+                        img.addEventListener("error",e=>{
+                            alert("Failed to load img: "+e.message);
+                        });
+                        img.src = url;
+                        
+                    } break;
                 }
-            });
-
-            let textArea = cont.querySelector("textarea");
-            let overflowGuard = cont.querySelector(".overflow-guard");
-            textArea.oninput = function(){
-                overflowGuard.scrollTo({top:0,left:0,behavior:"instant"});
-            };
-            this.curEditor = editor;
-            this.editor = editor;
-            this.p.curFile = this;
-
-            // @ts-ignore
-            if(PAGE_ID == PAGEID.lesson) editor.onDidScrollChange(function(){
-                t.scrollOffset = editor.getScrollTop();
-                t.scrollOffsetX = editor.getScrollLeft();
-                updateBubbles();
-            });
-
-            // create ov_bubbles
-            let bubbles_ov = document.createElement("div");
-            bubbles_ov.className = "bubbles-overlay";
-            this.bubbles_ov = bubbles_ov;
-            cont.appendChild(bubbles_ov);
-            this.setSaved(true);
+            }
         }
         else this.setTemp(false); // <-- should this be moved onto to when opening files from the left menu? 
         // deselect others
@@ -1990,7 +2112,7 @@ class FFile extends FItem{
             this.p.codeCont.removeChild(c);
         }
         this.p.codeCont.appendChild(this.cont);
-        this.editor.layout();
+        if(this.editor) this.editor.layout();
         
         loadEditorTheme();
 
@@ -2208,7 +2330,7 @@ function postSetupEditor(project:Project,isUser=true){
         new InputMenu(
             "New File","Enter file name",
             (data?:string)=>{
-                project.createFile(data,"",null,project.lastFolder ?? project.curFile?.folder,true);
+                project.createFile(data,new Uint8Array(),null,project.lastFolder ?? project.curFile?.folder,true);
             },
             () => {
                 console.log("File Creation Canceled");
@@ -2633,6 +2755,7 @@ document.addEventListener("keyup",e=>{
             return;
         }
         function check(){
+            if(f.isReadOnly()) return;
             let v = f.editor.getValue();
             if(f._lastSavedText != v){
                 f.setSaved(false);
@@ -3490,12 +3613,14 @@ class InputMenu extends Menu {
         this.afterInputPrompt = afterInputPrompt || null;
     }
     inputMessage:string;
-    onConfirm:(data?:any) => void;
-    onCancel:() => void;
+    onConfirm:(data?:any) => any;
+    onCancel:() => any;
     confirmText:string;
     cancelText:string;
     beforeInputPrompt:string;
     afterInputPrompt:string;
+
+    inp:HTMLInputElement;
 
     load() {
         super.load();
@@ -3523,6 +3648,8 @@ class InputMenu extends Menu {
         let temp = document.createElement("div") as HTMLElement;
         temp.className = "confirm-menu-options";
         this.body.appendChild(temp);
+
+        this.inp = inputObj.inp; // Claeb: gotta have a little more control xD
     
         let btn1 = document.createElement("button");
         btn1.textContent = this.confirmText?? "Submit";
@@ -3548,13 +3675,15 @@ class InputMenu extends Menu {
     // ran on click of "confirm" button, or on enter key press
     confirmChoice(data?:any) {
         console.log("Choice confirmed. Input data: " + data);
-        this.onConfirm(data);
+        let res = this.onConfirm(data);
+        if(res == 1) return; // return 1 in the onConfirm method of your menu so that it stays open and cancels the close
         this.close();
     }
     
     // ran on click of "cancel" button
     cancelChoice() {
-        this.onCancel();
+        let res = this.onCancel();
+        if(res == 1) return;
         this.close();
     }
 }
@@ -3689,6 +3818,8 @@ function calcSubmissionLang(data:ProjectMeta){
     return lang.length ? lang.sort((a,b)=>a.localeCompare(b)).join(", ") : "None";
 }
 function calcSubmissionCharCount(data:ProjectMeta){
+    let decoder = new TextDecoder();
+    
     let allowed = ["html","css","js"];
     let amt = 0;
     function search(list:ULItem[]){
@@ -3702,7 +3833,8 @@ function calcSubmissionCharCount(data:ProjectMeta){
             if(ind == -1) continue;
             let ext = item.name.substring(ind+1);
             if(allowed.includes(ext)){
-                let after = it.val.replace(/\s/g,"");
+                let val = decoder.decode(it.buf);
+                let after = val.replace(/\s/g,"");
                 amt += after.length;
             }
         }
@@ -3762,12 +3894,12 @@ class SubmissionMenu extends Menu {
             tmpp.init();
             // @ts-ignore
             window.tmpp = tmpp;
-            function run(l:any[],cur:FFolder){
+            async function run(l:any[],cur:FFolder){
                 sortFiles(l);
                 let list = [];
                 for(const f of l){
-                    if(f.val != null){
-                        let ff = tmpp.createFile(f.name,f.val,null,cur);
+                    if(f.items == null){
+                        let ff = await tmpp.createFile(f.name,f.buf,null,cur);
                         createFileListItem(ff);
                         list.push(ff);
                     }
@@ -3775,12 +3907,12 @@ class SubmissionMenu extends Menu {
                         let ff = tmpp.createFolder(f.name,cur,false);
                         createFolderListItem(ff);
                         list.push(ff);
-                        ff.items = run(f.items,ff);
+                        ff.items = await run(f.items,ff);
                     }
                 }
                 return list;
             }
-            run(p.items,null);
+            await run(p.items,null);
             let height = par.getBoundingClientRect().height;
             par.parentElement.style.height = height+"px";
             let b_openInFull = par.parentElement.querySelector(".b-fullscreen") as HTMLButtonElement;
@@ -3965,6 +4097,7 @@ document.addEventListener("selectstart",e=>{
  * This is needed because for some reason location.reload doesn't work in firefox on the lesson page
  */
 function reloadPage(){
+    return;
     location.href = location.href;
 }
 

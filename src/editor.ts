@@ -37,7 +37,7 @@ b_newFile.addEventListener("click",e=>{
         "New File","Enter file name",
         (inputname:string)=>{
             if(!inputname) return;
-            project.createFile(inputname,"",null,project.lastFolder ?? project.curFile?.folder,true);
+            project.createFile(inputname,new Uint8Array(),null,project.lastFolder ?? project.curFile?.folder,true);
         },
         () => {
             console.log("Canceled new file creation");
@@ -83,12 +83,12 @@ async function loadProject(uid:string,pid:string){
             nav.nextElementSibling.classList.remove("active");
         }
     }
-    console.log("project meta:",meta);
+    // console.log("project meta:",meta);
 
     // for(const f of meta.files){
     //     project.createFile(f.name,f.val);
     // }
-    function run(l:any[],cur:FFolder){
+    async function run(l:any[],cur:FFolder){
         sortFiles(l);
         // l.sort((a,b)=>{
         //     let dif = (a.val != null && b.val == null ? 1 : (a.val == null && b.val != null ? -1 : 0));
@@ -97,45 +97,45 @@ async function loadProject(uid:string,pid:string){
         // });
         let list = [];
         for(const f of l){
-            if(f.val != null){
+            if(f.items == null){
                 // console.log("created file: ",f.name,cur?.name);
-                let ff = project.createFile(f.name,f.val,null,cur);
+                let ff = await project.createFile(f.name,f.buf,null,cur);
                 list.push(ff);
             }
             else if(f.items != null){
                 // console.log("created folder: ",f.name);
                 let ff = project.createFolder(f.name,cur,false);
                 list.push(ff);
-                ff.items = run(f.items,ff);
+                ff.items = await run(f.items,ff);
             }
         }
         return list;
     }
-    run(meta.items,null);
+    await run(meta.items,null);
     if(meta.items.length) project.hasSavedOnce = true;
     
     if(project.files.length == 0){ // create boilerplate files
         console.warn(":: no files found");
         return true;
-        console.warn(":: no files found, loading boilerplate");
-        project.createFile("index.html",`<html>
-    <head>
-        <link rel="stylesheet" href="style.css">
-    </head>
-    <body>
-        <div>Hello</div>
+//         console.warn(":: no files found, loading boilerplate");
+//         project.createFile("index.html",`<html>
+//     <head>
+//         <link rel="stylesheet" href="style.css">
+//     </head>
+//     <body>
+//         <div>Hello</div>
 
-        <script src="script.js"></script>
-    </body>
-</html>`,"html");
-        project.createFile("style.css",`body{
-    color:royalblue;
-}`,"css");
-        project.createFile("script.js",`console.log("page loaded!");`,"javascript");
+//         <script src="script.js"></script>
+//     </body>
+// </html>`,"html");
+//         project.createFile("style.css",`body{
+//     color:royalblue;
+// }`,"css");
+//         project.createFile("script.js",`console.log("page loaded!");`,"javascript");
 
-        project.files[0].open();
-        project.files[1].open();
-        project.files[2].open();
+//         project.files[0].open();
+//         project.files[1].open();
+//         project.files[2].open();
     }
     else project.hasSavedOnce = true;
 

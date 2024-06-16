@@ -56,11 +56,11 @@ function _login(data:CredentialResData,token:string){
         console.log("Log in successful");
         if(!_usedConfirmLeavePopup){
             if(g_user || _hasAlertedNotLoggedIn){
-                location.reload();
+                reloadPage();
                 return;
             }
             if(g_user) if(g_user.data.email != data.email){
-                location.reload();
+                reloadPage();
                 return;
             }
         }
@@ -123,6 +123,25 @@ h_profile.addEventListener("mousedown",e=>{
     });
 });
 
+// 
+async function testBuffers(){
+    let can = document.createElement("canvas");
+    let ctx = can.getContext("2d");
+    ctx.fillStyle = "red";
+    ctx.fillRect(20,20,40,30);
+    
+    let u = new Uint8Array(ctx.getImageData(0,0,can.width,can.height).data.buffer);
+    
+    let blob = await new Promise<Blob>(resolve=>{
+        can.toBlob(blob=>{
+            resolve(blob);
+        });
+    });
+    let u2 = new Uint8Array(await blob.arrayBuffer());
+    
+    console.log(u,u2);
+}
+
 // lesson
 class ULItem{
     constructor(name:string){
@@ -138,20 +157,28 @@ class ULFolder extends ULItem{
     items:ULItem[];
 }
 class ULFile extends ULItem{
-    constructor(name:string,val:string,path:string,enc:string){
+    constructor(name:string,buf:Uint8Array){
         super(name);
-        this.val = val;
-        this.path = path;
-        this.enc = enc;
+        this.buf = buf;
+        this.type = getExt(name); // might not even need this
+        // this.val = val;
+        // this.path = path;
+        // this.enc = enc;
     }
-    val:string;
-    path:string;
-    enc:string;
+    // val:string;
+    // path:string;
+    // enc:string;
+
+    buf:Uint8Array;
+    type:string;
 }
 function uploadLessonFiles(lesson:Lesson){ // for refresh
+    let encoder = new TextEncoder();
+    
     let list:ULFile[] = [];
     for(const f of lesson.p.files){
-        list.push(new ULFile(f.name,f.editor.getValue(),"","utf8"));
+        if(f.editor) f.buf = encoder.encode(f.editor.getValue());
+        list.push(new ULFile(f.name,f.buf));
     }
     let prog = {
         eventI:lesson.progress.eventI,
@@ -186,7 +213,7 @@ async function restoreLessonFiles(lesson:Lesson){
         return;
     }
     for(const f of data.files){
-        lesson.p.createFile(f.name,f.val);
+        await lesson.p.createFile(f.name,f.buf,undefined,f.val); // TODO - make this work with the blob system
     }
     // if(data.tutFiles) for(const f of data.tutFiles){
     //     lesson.tut.createFile(f.name,f.val);
@@ -206,24 +233,32 @@ async function restoreLessonFiles(lesson:Lesson){
     if(lesson.tut.files.length) lesson.tut.files[0].open();
 }
 // 
-function old_uploadProjectFiles(project:Project){ // for refresh
-    let list:ULFile[] = [];
-    for(const f of project.files){
-        list.push(new ULFile(f.name,f.editor.getValue(),"","utf8"));
-    }
-    return new Promise<void>(resolve=>{
-        socket.emit("uploadProjectFiles",project.pid||"tmp_project",list,(err:any)=>{
-            if(err) console.log("ERR while uploading files:",err);
-            resolve();
-        });
-    });
-}
-function uploadProjectFiles(project:Project){ // for refresh
+// function old_uploadProjectFiles(project:Project){ // for refresh
+//     let list:ULFile[] = [];
+//     for(const f of project.files){
+//         list.push(new ULFile(f.name,f.editor.getValue(),"","utf8"));
+//     }
+//     return new Promise<void>(resolve=>{
+//         socket.emit("uploadProjectFiles",project.pid||"tmp_project",list,(err:any)=>{
+//             if(err) console.log("ERR while uploading files:",err);
+//             resolve();
+//         });
+//     });
+// }
+function uploadProjectFiles(project:Project){ // for refresh    
     let list:ULItem[] = [];
     function sant(l:FItem[]){
         let ll:ULItem[] = [];
         for(const f of l){
-            if(f instanceof FFile) ll.push(new ULFile(f.name,(f.editor ? f.editor.getValue() : f.text),"","utf8"));
+            // if(f instanceof FFile) ll.push(new ULFile(f.name,f.blob,f.isTextFile() ? (f.editor ? f.editor.getValue() : f.text) : null,"","utf8"));
+            if(f instanceof FFile){
+                // if(f.editor) f.buf = project.textEncoder.encode(f.editor.getValue());
+
+                if(!f._saved ? true : !f.beenUploaded){
+                    ll.push(new ULFile(f.name,f.encode()));
+                    f.beenUploaded = true;
+                }
+            }
             else if(f instanceof FFolder) ll.push(new ULFolder(f.name,sant(f.items)));
         }
         return ll;
@@ -236,27 +271,27 @@ function uploadProjectFiles(project:Project){ // for refresh
         });
     });
 }
-/**@deprecated */
-async function _restoreProjectFiles(project:Project){
-    let files = await new Promise<ULFile[]>(resolve=>{
-        socket.emit("restoreProjectFiles",project.pid||"tmp_project",(files:ULFile[])=>{
-            if(!files){
-                console.log("ERR while restoring files");
-                resolve([]);
-                return;
-            }
-            console.log("FOUND FILES",files);
-            resolve(files);
-        });
-    });
-    for(const f of files){
-        project.createFile(f.name,f.val);
-    }
-    if(files.length) project.hasSavedOnce = true;
-}
+// /**@deprecated */
+// async function _restoreProjectFiles(project:Project){
+//     let files = await new Promise<ULFile[]>(resolve=>{
+//         socket.emit("restoreProjectFiles",project.pid||"tmp_project",(files:ULFile[])=>{
+//             if(!files){
+//                 console.log("ERR while restoring files");
+//                 resolve([]);
+//                 return;
+//             }
+//             console.log("FOUND FILES",files);
+//             resolve(files);
+//         });
+//     });
+//     for(const f of files){
+//         project.createFile(f.name,f.val);
+//     }
+//     if(files.length) project.hasSavedOnce = true;
+// }
 async function restoreProjectFiles(uid:string,pid:string){
     let data = await new Promise<{meta:ProjectMeta,canEdit:boolean}>(resolve=>{
-        socket.emit("restoreProjectFiles",uid,pid,(meta:ProjectMeta,err:any,canEdit:boolean)=>{
+        socket.emit("restoreProjectFiles",uid,pid,async (meta:ProjectMeta,err:any,canEdit:boolean)=>{
             console.warn("CAN EDIT THIS PROJECT: ",canEdit);
             if(meta == null){
                 console.log("ERR while restoring files","code",err);
@@ -264,7 +299,35 @@ async function restoreProjectFiles(uid:string,pid:string){
                 resolve(null);
                 return;
             }
-            console.log("FOUND META",meta);
+            // console.log("FOUND META",meta);
+
+            // load array buffers into blobs
+
+            let encoder = new TextEncoder();
+            async function loadBufs(items:ULItem[]){
+                for(let i = 0; i < items.length; i++){
+                    let item = items[i];
+                    if("items" in item){ // folder
+                        await loadBufs(item.items as ULItem[]);
+                    }
+                    else{ // file
+                        let it1 = item as any;
+                        // it1.buf = encoder.encode(it1.buf);
+                        it1.buf = new Uint8Array(it1.buf);
+                        let it = new ULFile(it1.name,it1.buf);
+                        items[i] = it;
+                        // it.blob = new Blob([it.buf]);
+                        // it.val = await it.blob.text();
+                    }
+                }
+            }
+            await loadBufs(meta.items);
+
+            // @ts-ignore
+            window.mitems = meta.items;
+            
+            // 
+
             resolve({meta,canEdit});
         });
     });

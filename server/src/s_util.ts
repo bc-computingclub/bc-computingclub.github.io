@@ -1,5 +1,13 @@
 import fs from "fs";
 
+// const mimeProm = import("mime");
+
+// export async function getMimeType(path:string){
+//     let mime = await mimeProm;
+//     let m = new mime.Mime();
+//     return m.getType(path);
+// }
+
 export function access(path:string){
     return new Promise<boolean>(resolve=>{
         fs.access(path,err=>{
@@ -13,7 +21,7 @@ export function access(path:string){
 }
 export function write(path:string,data:any,encoding?:BufferEncoding){
     return new Promise<boolean>(resolve=>{
-        fs.writeFile(path,data,{encoding},err=>{
+        fs.writeFile(path,data??"",{encoding:encoding as BufferEncoding},err=>{
             if(err){
                 console.log("err: ",err);
                 resolve(false);
@@ -267,4 +275,19 @@ return [
     ])
 ]`,"utf8");
     console.log("guided project created");
+}
+
+// 
+
+let nonTextFileFormats = [
+    {
+        ext:"png"
+    }
+];
+export function isExtTextFile(ext:string){
+    if(!ext || ext == "") return false; // false or true here?
+    return !nonTextFileFormats.some(v=>v.ext == ext);
+}
+export function getExt(name:string){
+    return name.split(".").pop() ?? "";
 }

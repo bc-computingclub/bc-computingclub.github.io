@@ -842,3 +842,29 @@
 
 - fixed old parseFolderStr() function so that it works with the new system of not storing ULItem[] on the server and only getting when needed
 - depricated index.ts createProject() function, you should only use UserInst.createProject() (it's actually called UserSessionItem.createProject() but I need to change the class name at some point to be more consistent)
+
+### 6/15/24
+- moved socket.io.min file to a ts file with no checking
+- added depricated label or commented out some functions on server side that aren't used anymore
+
+- Project.createFile() is now async for future proofing but doesn't has to be right now, might change it back not sure
+- fixed renaming files in editor so it puts in the name as a placeholder and value in the input box
+- added alert when renaming files preventing you from changing the extension for non-text files (b/c if you change change a .png to text then open it as text it would then corrupt the png format when saving again)
+- added isReadOnly() method to FFile to get if the file is readonly or not
+- added ability for non-text files to have custom HTML displayed instead of a monaco editor when that file has been opened
+    - I've only added pngs for now but they open a preview of the png while when hovered shows the boundaries of the image and it also has text above labeling the dimensions of the image and the size of the file in bytes
+- changed InputMenu class so onConfirm and onCancel can return "any" and when it is a "1" that means cancel and don't close the menu after, this way you can have the user fix whatever they did wrong on input instead of closing the menu afterward b/c it was unsuccessful
+- added inp:HTMLInputElement field to InputMenu for more control
+
+- !!! added save support for other file types for editor
+    - changed ULFile structure so it only takes name,buf and does not need val,path,enc anymore
+    - added text encoder/decoder to Project on client side
+    - changed saving and opening files server side so they don't use utf8 anymore and everything uses the buffer default, even the text files
+    - adjusted anything that used File.val to now decode the buffer when needed
+    - added isTextFile() and getExt() helper functions
+
+    - lessons aren't broken but custom files probably don't work but not sure, still uploads all files at once
+
+- !!! fixed front end and backend so when uploading files for a project, it only uploads the ones that weren't saved and everything is done as a buffer so no extra work for images or non-text files
+
+- ! added "calc lines" command to server which gives some stats about line counts in the entire project, server, and client

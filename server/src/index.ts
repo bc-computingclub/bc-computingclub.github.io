@@ -732,7 +732,7 @@ io.on("connection",socket=>{
             await removeFile(filePath+"/"+f);
         }
         for(const f of list){
-            await write(filePath+"/"+f.name,f.val,f.enc);
+            await write(filePath+"/"+f.name,f.buf);
         }
 
         // let metaPath = "../users/"+user.uid+"/lesson/"+lessonId+"/";
@@ -859,7 +859,11 @@ io.on("connection",socket=>{
             return;
         }
 
+        // console.log("INPUT:",listData);
+
         let list = listData.map(v=>ULItem.from(v));
+        // console.log("UPLOAD LIST:",list[0].items);
+        // return;
 
         // let p = user.projects.find(v=>v.pid == pid);
         // let p = getProject(uid+":"+pid);
@@ -900,6 +904,8 @@ io.on("connection",socket=>{
         //     }
         // }
 
+        // let encoder = new TextEncoder();
+
         async function _write(l:ULItem[],pth:string,ffL:ULItem[]){
             let i = 0;
             for(const item of l){
@@ -910,11 +916,15 @@ io.on("connection",socket=>{
                     if(!ff) ffL.splice(i,0,item);
                 }
                 if(item instanceof ULFile){
-                    await write(path+"/"+pth+"/"+item.name,item.val,item.enc);
+                    // let buf2 = item.buf ? Buffer.from(item.buf.buffer) : new Uint8Array();
+                    // console.log("WRITE:",path+"/"+pth+"/"+item.name,item.buf);
+
+                    await write(path+"/"+pth+"/"+item.name,item.buf);
                     if(ff){
                         if(ff instanceof ULFile){
                             ff.name = item.name;
-                            ff.val = item.val;
+                            ff.buf = item.buf;
+                            // ff.val = item.val;
                         }
                         // else console.log("$ err: ff wasn't a file..?",ff.name,item.name);
                     }
@@ -2777,6 +2787,89 @@ rl.on("line",async (line)=>{
             console.log("...saving...");
             await session.meta.save();
             console.log("SAVED");
+            return;
+        }
+    }
+    else if(s[0] == "calc"){
+        if(s[1] == "lines"){ // calc total lines of code :D
+            let root = "../../";
+            let amts = {
+                backend:0,
+                frontend:0
+            } as Record<string,number>;
+            let lines1 = {
+                backend:0,
+                frontend:0
+            } as Record<string,number>;
+            let lines1NoBlank = {
+                backend:0,
+                frontend:0
+            } as Record<string,number>;
+            
+            async function search(path:string,key:string,ignore:string[],allowedTypes:string[]){
+                let items = await readdir(path);
+                if(!items) return;
+                for(const item of items){
+                    let fullPath = path+item;
+                    if(ignore.includes(fullPath)) continue;
+                    if(!item.includes(".")){ // is folder
+                        await search(fullPath+"/",key,ignore,allowedTypes);
+                    }
+                    else{ // is file
+                        let type = item.split(".").pop();
+                        if(type) if(allowedTypes.includes(type.toLowerCase())){
+                            amts[key]++; // file total
+
+                            // line total
+                            let text = await read(fullPath,"utf8");
+                            text = text.replace(/\r/g,"");
+                            let lines = text.split("\n");
+                            lines1[key] += lines.length;
+                            for(const l of lines){
+                                if(l.length > 0){
+                                    lines1NoBlank[key]++;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            // 
+
+            let types = ["html","css","ts"];
+
+            await search(root+"server/","backend",[
+                root+"server/project",
+                root+"server/out",
+                root+"server/_tmp_data",
+                root+"server/challenges_old",
+                root+"server/data",
+                root+"server/lesson",
+                root+"server/lessons",
+                root+"server/queries",
+                root+"server/transfer",
+                root+"server/users_old",
+            ],types);
+            await search(root,"frontend",[
+                root+"server",
+                root+"js-challenges",
+                root+"out",
+                root+"lib",
+                root+"node_modules"
+            ],types);
+
+            console.log("--------------------------------");
+            console.log("Total Files: ",amts.backend+amts.frontend);
+            // console.log("Total Lines: ",lines1.backend+lines1.frontend);
+            console.log("");
+            console.log("-- Backend: \n",amts.backend," files\n",lines1.backend," lines\n",lines1NoBlank.backend," lines (non blank)\n");
+            console.log("-- Frontend: \n",amts.frontend," files\n",lines1.frontend," lines\n",lines1NoBlank.frontend," lines (non blank)");
+
+            console.log("");
+            console.log("TOTAL LINES: ",lines1.backend+lines1.frontend);
+            console.log("TOTAL LINES (non blank): ",lines1NoBlank.backend+lines1NoBlank.frontend);
+
             return;
         }
     }

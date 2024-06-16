@@ -471,7 +471,7 @@ class AddFileTask extends Task{
             existingFile.open();
             lesson.tut.curFile = existingFile;
         }
-        if(!goesBack) this.file = lesson.tut.createFile(this.name,"");
+        if(!goesBack) this.file = await lesson.tut.createFile(this.name,new Uint8Array());
         this.file.open();
         if(!goesBack) await wait(500);
 
@@ -3353,7 +3353,7 @@ class Lesson{
                 return folder;
             }
             else if(f instanceof FFile){
-                return new ULFile(f.name,f.editor.getValue(),null,null);
+                return new ULFile(f.name,f.encode());
             }
         }
         return add(root);
@@ -3469,10 +3469,11 @@ class Lesson{
         // unfinished, not a priority right now, probably going to disable the go back system for now
 
         // hey guess what the time to come back to it is now hahahha
+        let t = this;
         function calcItems(list:FItem[]){
             let ar = [];
             for(const item of list){
-                if(item instanceof FFile) ar.push(new ULFile(item.name,item.editor.getValue(),"","utf8"));
+                if(item instanceof FFile) ar.push(new ULFile(item.name,item.encode()));
                 else if(item instanceof FFolder) ar.push(new ULFolder(item.name,calcItems(item.items)));
             }
             return ar;
@@ -3494,7 +3495,7 @@ class Lesson{
             if(item instanceof ULFile){
                 let existing = t.files.find(v=>v.name == item.name);
                 if(existing){
-                    existing.editor.setValue(item.val);
+                    if(existing.editor) existing.editor.setValue(this.p.textDecoder.decode(item.buf));
                 }
             }
         }
@@ -3520,7 +3521,7 @@ class Lesson{
                 await wait(300);
                 await fakeClickButton(elm);
                 // item.open();
-                t.createFile(item.name,item.val);
+                t.createFile(item.name,item.buf.slice()); // copy buf just in case
                 await wait(500);
             }
         }

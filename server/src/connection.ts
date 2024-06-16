@@ -595,6 +595,7 @@ export async function _findLessonMeta(uid:string,lid:string){
     if(!res) return;
     return new LessonMetaInst(res);
 }
+/**@deprecated */
 export async function getProjectFromHD(uid:string,pid:string){
     if(!uid) return -2;
     if(!pid) return -3;
@@ -632,7 +633,7 @@ export async function getProjectFromHD(uid:string,pid:string){
         let list:ULItem[] = [];
         for(const s of l){
             if(s.includes(".")){
-                let ff = new ULFile(s,await read(path+"/"+pth+"/"+s,"utf8"),"","utf8");
+                let ff = new ULFile(s,await read(path+"/"+pth+"/"+s,"binary"));
                 list.push(ff);
             }
             else{
@@ -650,6 +651,7 @@ export async function getProjectFromHD(uid:string,pid:string){
     loadProject(p); // hopefully this doesn't cause crashes
     return p;
 }
+/**@deprecated */
 export async function attemptToGetProject(user:User,pid:string){
     let ref = user.uid+":"+pid;
 
@@ -694,7 +696,7 @@ export async function attemptToGetProject(user:User,pid:string){
         let list:ULItem[] = [];
         for(const s of l){
             if(s.includes(".")){
-                let ff = new ULFile(s,await read(path+"/"+pth+"/"+s,"utf8"),"","utf8");
+                let ff = new ULFile(s,await read(path+"/"+pth+"/"+s,"binary"));
                 list.push(ff);
             }
             else{
@@ -914,7 +916,11 @@ export class ULItem{
             if(data.items){
                 return new ULFolder(data.name,data.items.map((v:any)=>sanitize(v)));
             }
-            else return new ULFile(data.name,data.val,data.path,data.enc);
+            else{
+                let f = new ULFile(data.name,data.buf);
+                // f.blob = data.blob;
+                return f;
+            }
         }
         return sanitize(d);
     }
@@ -927,13 +933,24 @@ export class ULFolder extends ULItem{
     items:ULItem[];
 }
 export class ULFile extends ULItem{
-    constructor(name:string,val:string,path:string,enc:BufferEncoding){
+    constructor(name:string,buf:Buffer){
         super(name);
-        this.val = val;
-        this.path = path;
-        this.enc = enc;
+        this.buf = buf;
+        // this.val = val;
+        // this.path = path;
+        this.type = name.split(".").pop();
     }
-    val:string;
-    path:string;
-    enc:BufferEncoding;
+    static make2(name:string,buf:Buffer){
+        let f = new ULFile(name,buf);
+        // f.blob = blob;
+        f.type = name.split(".").pop();
+        
+        return f;
+    }
+    // val:string;
+    // path:string;
+
+    // blob:Blob|undefined;
+    buf:Buffer|undefined;
+    type:string|undefined;
 }

@@ -2,7 +2,7 @@ import { MongoClient, ServerApiVersion } from "mongodb";
 import mongoose, { mongo } from "mongoose";
 import { LessonMeta, ProjectMeta, ULFile, ULFolder, ULItem, _findLessonMeta, _findProject, genPID, projectCache, users } from "./connection";
 import { challenges, getDifficultyId } from "./s_challenges";
-import { write, read, readdir, access, mkdir, removeFolder } from "./s_util";
+import { write, read, readdir, access, mkdir, removeFolder, isExtTextFile, getExt } from "./s_util";
 
 export enum ServerMode{
     dev,
@@ -579,6 +579,7 @@ export class LessonMetaInst{
     }
     async getFileItems(){
         let list:ULItem[] = [];
+        let decoder = new TextDecoder();
         async function search(folder:ULItem[],path:string){
             let names = await readdir(path);
             if(!names) return;
@@ -589,8 +590,8 @@ export class LessonMetaInst{
                     await search(subFolder.items,path+name+"/");
                 }
                 else{
-                    let file = await read(path+name+"/","utf8",true);
-                    folder.push(new ULFile(name,file,"","utf8"));
+                    let file = await read(path+name+"/",undefined,true) as Buffer;
+                    folder.push(new ULFile(name,file));
                 }
             }
         }
@@ -762,6 +763,9 @@ export class ChallengeInst{
             return lang;
         }
         let allowed = ["html","css","js"];
+
+        let decoder = new TextDecoder();
+
         function calcSubmissionCharCount(){
             if(!p) return 0;
             let amt = 0;
@@ -776,7 +780,8 @@ export class ChallengeInst{
                     if(ind == -1) continue;
                     let ext = item.name.substring(ind+1);
                     if(allowed.includes(ext)){
-                        let after = it.val.replace(/\s/g,"");
+                        let val = decoder.decode(it.buf);
+                        let after = val.replace(/\s/g,"");
                         amt += after.length;
                     }
                 }
@@ -798,8 +803,9 @@ export class ChallengeInst{
                     if(ind == -1) continue;
                     let ext = item.name.substring(ind+1);
                     if(allowed.includes(ext)){
-                        it.val = it.val.replace(/\r/g,"");
-                        let lines = it.val.split("\n");
+                        let val = decoder.decode(it.buf); // TODO - might be able to optimize this? it may call decode twice per file but maybe it doesn't really matter
+                        val = val.replace(/\r/g,"");
+                        let lines = val.split("\n");
                         for(const l of lines){
                             if(l.length > 0) amt++;
                         }
@@ -1489,8 +1495,29 @@ export class ProjectInst{
                     await search(subFolder.items,path+name+"/");
                 }
                 else{
-                    let file = await read(path+name+"/","utf8",true);
-                    folder.push(new ULFile(name,file,"","utf8"));
+                    // let file = await read(path+name+"/","utf8",true);
+                    // folder.push(new ULFile(name,file,"","utf8"));
+                    // let b = await read(path+name+"/","utf8") as string;
+                    let buf = await read(path+name+"/") as Buffer;
+
+                    console.log("READ: ",path+name,buf);
+                    console.log("READ LEN: ",buf.length);
+
+                    // await write(path+name,buf); // only for testing
+                    
+                    // let enc = getEncodingType2(buf);
+                    // let fEnc = enc == "ASCII-7-bit" ? "utf8" : "binary";
+                    // console.log("ENCODE TYPE 2:",fEnc);
+
+                    // await write(path+name+"/",buf,fEnc); // works directly with Buffer
+
+                    // let b2 = Buffer.from(await new Blob([buf]).arrayBuffer()); // works with blob converted
+                    // await write(path+name+"/",b2,fEnc);
+                    
+                    // console.log("PATH:",path+name);
+                    // let type = await getMimeType(path+name);
+                    // console.log("TYPE:",type);
+                    folder.push(ULFile.make2(name,buf));
                 }
             }
         }
