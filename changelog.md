@@ -871,4 +871,8 @@
 
 ### 6/16/24
 - fixed new folder button in light theme on hover coloring in project dashboard
-- 
+- added button on lesson page for "built in files" that toggles a small files pane that let's you create files and folders (but the other things don't work yet like renaming and deleting bc those only work for projects)
+- added setupFilesPane() function and converted the editor, lesson, and submissions page to use it properly
+- added "Top Secret" button to user dropdown but it doesn't do anything yet
+- fixed upload lesson files and restore lesson files so it works with custom files and folders
+- fixed editor dashboard sizing of project items from last update so it doesn't mess up the banner icons like submitted and in-progress

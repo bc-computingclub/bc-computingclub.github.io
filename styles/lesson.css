@@ -627,4 +627,11 @@ div.pane-files{
     left:0px;
     box-shadow:0px 0px 5px rgba(0,0,0,0.2);
     z-index:2;
+
+    /* width:calc(100% - 8px); */
+    /* height:calc(100% - 58px); */
+
+    /* Cool Transparent effect */
+    /* background-color:var(--darken2); */
+    /* backdrop-filter:blur(3px); */
 }

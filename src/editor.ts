@@ -4,10 +4,8 @@ PAGE_ID = PAGEID.editor;
 
 // d_files = document.querySelector(".d-open-files");
 main = document.querySelector(".main") as HTMLElement;
+pane_files = document.querySelector(".pane-files");
 // codeCont = document.querySelector(".cont-js");
-
-pane_files = document.querySelector(".pane-files") as HTMLElement;
-setupFilesPane(pane_files);
 
 pane_code = document.querySelector(".pane-code") as HTMLElement;
 pane_preview = document.querySelector(".pane-preview") as HTMLElement;

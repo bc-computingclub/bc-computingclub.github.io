@@ -579,7 +579,6 @@ export class LessonMetaInst{
     }
     async getFileItems(){
         let list:ULItem[] = [];
-        let decoder = new TextDecoder();
         async function search(folder:ULItem[],path:string){
             let names = await readdir(path);
             if(!names) return;
@@ -590,8 +589,8 @@ export class LessonMetaInst{
                     await search(subFolder.items,path+name+"/");
                 }
                 else{
-                    let file = await read(path+name+"/",undefined,true) as Buffer;
-                    folder.push(new ULFile(name,file));
+                    let buf = await read(path+name+"/") as Buffer;
+                    folder.push(ULFile.make2(name,buf));
                 }
             }
         }
@@ -1499,9 +1498,6 @@ export class ProjectInst{
                     // folder.push(new ULFile(name,file,"","utf8"));
                     // let b = await read(path+name+"/","utf8") as string;
                     let buf = await read(path+name+"/") as Buffer;
-
-                    console.log("READ: ",path+name,buf);
-                    console.log("READ LEN: ",buf.length);
 
                     // await write(path+name,buf); // only for testing
                     

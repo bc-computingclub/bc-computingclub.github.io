@@ -81,6 +81,7 @@ h_profile.addEventListener("mousedown",e=>{
         g_user ? "View Profile" : " --- ",
         g_user ? "Switch Account" : "Log In",
         g_user ? "Log Out" : " --- ",
+        g_user ? "<Top Secret>" : " --- ",
         "Switch Theme",
         "Reconnect to Server"
     ];
@@ -97,12 +98,15 @@ h_profile.addEventListener("mousedown",e=>{
         if(i == 2 && g_user){
             _logout();
         }
+        if(i == 3 && g_user){
+            
+        }
         // else if(l == "Switch Theme"){
-        if(i == 3){
+        if(i == 4){
             setTheme(curTheme == "dark" ? "light" : "dark");
             return;
         }
-        else if(i == 4){
+        else if(i == 5){
             socket.disconnect();
             await wait(500);
             socket.connect();
@@ -112,7 +116,7 @@ h_profile.addEventListener("mousedown",e=>{
     },{
         openToLeft:true,
         getIcons(){
-            return ["person","switch_account","logout","light","wifi"];
+            return ["person","switch_account","logout","deployed_code","light","wifi"]; // not sure if I want "landscape" or "question_mark" or "deployed_code" here or maybe "cloud"/"filter_drama"
         },
         useHold:false, // true doesn't quite work right yet
         onopen(dd){
@@ -173,13 +177,27 @@ class ULFile extends ULItem{
     type:string;
 }
 function uploadLessonFiles(lesson:Lesson){ // for refresh
-    let encoder = new TextEncoder();
-    
-    let list:ULFile[] = [];
-    for(const f of lesson.p.files){
-        if(f.editor) f.buf = encoder.encode(f.editor.getValue());
-        list.push(new ULFile(f.name,f.buf));
+    let list:ULItem[] = [];
+    // for(const f of lesson.p.files){
+    //     if(f.editor) f.buf = encoder.encode(f.editor.getValue());
+    //     list.push(new ULFile(f.name,f.buf));
+    // }
+
+    function sant(l:FItem[]){
+        let ll:ULItem[] = [];
+        for(const f of l){
+            if(f instanceof FFile){
+                if(!f._saved ? true : !f.beenUploaded){
+                    ll.push(new ULFile(f.name,f.encode()));
+                    f.beenUploaded = true;
+                }
+            }
+            else if(f instanceof FFolder) ll.push(new ULFolder(f.name,sant(f.items)));
+        }
+        return ll;
     }
+    list = sant(project.items);
+
     let prog = {
         eventI:lesson.progress.eventI,
         taskI:lesson.progress.taskI,
@@ -199,12 +217,29 @@ function uploadLessonFiles(lesson:Lesson){ // for refresh
 }
 async function restoreLessonFiles(lesson:Lesson){
     let data = await new Promise<any>(resolve=>{
-        socket.emit("restoreLessonFiles",lesson.lid,(data:any)=>{
+        socket.emit("restoreLessonFiles",lesson.lid,async (data:any)=>{
             if(!data){
                 console.log("ERR while restoring files");
                 resolve(null);
                 return;
             }
+
+            async function loadBufs(items:ULItem[]){
+                for(let i = 0; i < items.length; i++){
+                    let item = items[i];
+                    if("items" in item){ // folder
+                        await loadBufs(item.items as ULItem[]);
+                    }
+                    else{ // file
+                        let it1 = item as any;
+                        it1.buf = new Uint8Array(it1.buf);
+                        let it = new ULFile(it1.name,it1.buf);
+                        items[i] = it;
+                    }
+                }
+            }
+            await loadBufs(data.files);
+
             resolve(data);
         });
     });
@@ -212,15 +247,36 @@ async function restoreLessonFiles(lesson:Lesson){
         alert("Err: while trying to restore lesson files");
         return;
     }
-    for(const f of data.files){
-        await lesson.p.createFile(f.name,f.buf,undefined,f.val); // TODO - make this work with the blob system
+    // for(const f of data.files){
+    //     await lesson.p.createFile(f.name,f.buf,undefined,f.val); // TODO - make this work with the blob system
+    // }
+
+    // NEW SYSTEM
+    async function run(l:any[],cur:FFolder){
+        sortFiles(l);
+        let list = [];
+        for(const f of l){
+            if(f.items == null){
+                let ff = await project.createFile(f.name,f.buf,null,cur);
+                list.push(ff);
+            }
+            else if(f.items != null){
+                let ff = project.createFolder(f.name,cur,false);
+                list.push(ff);
+                ff.items = await run(f.items,ff);
+            }
+        }
+        return list;
     }
+    await run(data.files,null);
+
     // if(data.tutFiles) for(const f of data.tutFiles){
     //     lesson.tut.createFile(f.name,f.val);
     // }
     if(data.files.length) lesson.p.hasSavedOnce = true;
-
-    console.log("LESSON META",data);
+    project.files.forEach(v=>v.setSaved(true));
+    
+    // console.log("LESSON META",data);
     lesson.progress.eventI = data.meta.eventI;
     lesson.progress.taskI = data.meta.taskI;
     
@@ -229,8 +285,18 @@ async function restoreLessonFiles(lesson:Lesson){
 
     // select the first file to be consistent (usually this will be the index.html)
     await wait(0);
-    if(lesson.p.files.length) lesson.p.files[0].open();
-    if(lesson.tut.files.length) lesson.tut.files[0].open();
+    // if(lesson.p.files.length) lesson.p.files[0].open();
+    // if(lesson.tut.files.length) lesson.tut.files[0].open();
+
+
+    // Claeb: I don't think this stuff actually works at all lol xD
+    let index = lesson.p.items.find(v=>v.name == "index.html") as FFile;
+    if(index) index.open();
+    else lesson.p.files[0]?.open();
+
+    let indexTut = lesson.tut.items.find(v=>v.name == "index.html") as FFile;
+    if(indexTut) indexTut.open();
+    else lesson.tut.files[0]?.open();
 }
 // 
 // function old_uploadProjectFiles(project:Project){ // for refresh
@@ -303,7 +369,6 @@ async function restoreProjectFiles(uid:string,pid:string){
 
             // load array buffers into blobs
 
-            let encoder = new TextEncoder();
             async function loadBufs(items:ULItem[]){
                 for(let i = 0; i < items.length; i++){
                     let item = items[i];
@@ -323,9 +388,6 @@ async function restoreProjectFiles(uid:string,pid:string){
             }
             await loadBufs(meta.items);
 
-            // @ts-ignore
-            window.mitems = meta.items;
-            
             // 
 
             resolve({meta,canEdit});

@@ -3281,6 +3281,8 @@ class Lesson{
             readonly:true,
             disableCopy:true
         });
+        this.p.builtInFileList = true;
+        this.tut.builtInFileList = true;
     }
     lid:string;
     events:LEvent[];
@@ -4048,8 +4050,8 @@ async function initLessonPage(){
     setupEditor(pane_tutor_code,EditorType.tutor);
     setupEditor(pane_code,EditorType.self);
 
-    setupFilesPane(pane_tutor_code.querySelector(".pane-files"));
-    setupFilesPane(pane_code.querySelector(".pane-files"));
+    // setupFilesPane(pane_tutor_code.querySelector(".pane-files"));
+    // setupFilesPane(pane_code.querySelector(".pane-files"));
     
     // 
     

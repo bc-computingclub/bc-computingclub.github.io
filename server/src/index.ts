@@ -703,9 +703,10 @@ io.on("connection",socket=>{
         
         f(data);
     });
-    socket.on("uploadLessonFiles",async (lessonId:string,list:ULFile[],progress:LessonMeta,call:(data:any)=>void)=>{        
-        if(!valVar2(list,"array",call)) return;
+    socket.on("uploadLessonFiles",async (lessonId:string,listData:any[],progress:LessonMeta,call:(data:any)=>void)=>{        
         if(!valVar2(lessonId,"string",call)) return;
+        if(!valVar2(listData,"array",call)) return;
+        if(!valVar2(progress,"object",call)) return;
         
         let user = getSession(socket.id);
         if(!user){
@@ -715,10 +716,8 @@ io.on("connection",socket=>{
         // need to validate type integrity here
 
         let path = "../lesson/"+user.uid+"/"+lessonId;
-        let filePath = path;
         if(!await access(path)){
             await mkdir(path);
-            await mkdir(filePath);
         }
 
         let curFiles = await readdir(path);
@@ -727,13 +726,49 @@ io.on("connection",socket=>{
             return;
         }
 
-        curFiles = curFiles.filter(v=>!list.some(w=>w.name == v));
-        for(const f of curFiles){
-            await removeFile(filePath+"/"+f);
+        // ///////// OLD SYSTEM
+        // curFiles = curFiles.filter(v=>!list.some(w=>w.name == v));
+        // for(const f of curFiles){
+        //     await removeFile(filePath+"/"+f);
+        // }
+        // for(const f of list){
+        //     await write(filePath+"/"+f.name,f.buf);
+        // }
+        // ////////////////////////
+
+        let list = listData.map(v=>ULItem.from(v));
+
+        async function _write(l:ULItem[],pth:string,ffL:ULItem[]){
+            let i = 0;
+            for(const item of l){
+                let ff:ULItem|undefined = undefined;
+                if(ffL){
+                    ff = ffL.find(v=>v.name == item.name);
+                    if(!ff) ffL.splice(i,0,item);
+                }
+                if(item instanceof ULFile){
+                    await write(path+"/"+pth+"/"+item.name,item.buf);
+                    if(ff){
+                        if(ff instanceof ULFile){
+                            ff.name = item.name;
+                            ff.buf = item.buf;
+                        }
+                    }
+                }
+                else if(item instanceof ULFolder){
+                    await mkdir(path+"/"+pth+"/"+item.name);
+                    await _write(item.items,pth+"/"+item.name,(ff as ULFolder)?.items);
+                    if(ff) if(ff instanceof ULFolder){
+                        ff.name = item.name;
+                    }
+                }
+                i++;
+            }
         }
-        for(const f of list){
-            await write(filePath+"/"+f.name,f.buf);
-        }
+        // await _write(list,"",p.items);
+        await _write(list,"",[]);
+                
+        // ////
 
         // let metaPath = "../users/"+user.uid+"/lesson/"+lessonId+"/";
         // if(!await access(metaPath)){
@@ -749,7 +784,7 @@ io.on("connection",socket=>{
         let lessonMeta = await user.getLessonMeta(lessonId);
         if(!lessonMeta){
             call(2);
-            return;
+            return; // should this be up higher so it doesn't save first??? eh maybe it doesn't really matter
         }
 
         lessonMeta.meta.eventI = progress.eventI;
@@ -758,7 +793,7 @@ io.on("connection",socket=>{
         lessonMeta.updateWhenLastSaved();
 
         // save
-        await lessonMeta.meta.save();
+        await lessonMeta.save();
 
         // let meta = lessonMetas.get(user.uid+":"+lessonId);
         // if(!meta){
@@ -853,9 +888,10 @@ io.on("connection",socket=>{
         if(!valVar2(listData,"array",call)) return;
         if(!valVar2(uid,"string",call)) return;
         if(!valVar2(pid,"string",call)) return;
+
         let user = getSession(socket.id);
         if(!user){
-            call(1); // you aren't logged in
+            call(-3); // you aren't logged in
             return;
         }
 
@@ -943,17 +979,17 @@ io.on("connection",socket=>{
         // await _write(list,"",p.items);
         await _write(list,"",[]);
 
-        if(p) for(const f of list){
-            // let ff = p.files.find(v=>v.name == f.name);
-            // if(ff) ff.val = f.val;
-            // else console.log("Err: null file in project files list");
-        }
-        else{
-            console.log("Err: couldn't find project while uploading files: "+pid,"$ attempting to search");
-            // p = await attemptToGetProject(user,pid);
-            // if(p) console.log("$ found");
-            // else console.log("$ still failed to find project");
-        }
+        // if(p) for(const f of list){
+        //     // let ff = p.files.find(v=>v.name == f.name);
+        //     // if(ff) ff.val = f.val;
+        //     // else console.log("Err: null file in project files list");
+        // }
+        // else{
+        //     console.log("Err: couldn't find project while uploading files: "+pid,"$ attempting to search");
+        //     // p = await attemptToGetProject(user,pid);
+        //     // if(p) console.log("$ found");
+        //     // else console.log("$ still failed to find project");
+        // }
 
         if(p) if(p.meta){
             // p.meta.wls = new Date().toISOString();
@@ -2869,6 +2905,7 @@ rl.on("line",async (line)=>{
             console.log("");
             console.log("TOTAL LINES: ",lines1.backend+lines1.frontend);
             console.log("TOTAL LINES (non blank): ",lines1NoBlank.backend+lines1NoBlank.frontend);
+            console.log("--------------------------------");
 
             return;
         }

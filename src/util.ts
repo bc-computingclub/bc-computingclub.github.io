@@ -777,6 +777,8 @@ class Project{
     // canEdit = true;
     // isOwner = true;
 
+    builtInFileList = false;
+
     get canEdit(){
         if(PAGE_ID == PAGEID.lesson) return true;
         return this.meta?.canEdit;
@@ -1179,8 +1181,8 @@ class Project{
         return this.curFile?.curEditor;
     }
 
-    init(){
-        postSetupEditor(this,!this.isTutor);
+    init(ignoreFilesPane=false){ // this is a bandaid fix for the submissions page but hopefully should work for now
+        postSetupEditor(this,!this.isTutor,ignoreFilesPane);
     }
 
     get isTutor(){ //temp for now
@@ -1341,7 +1343,7 @@ function applyMultiSelectFI(e:MouseEvent|any,f:FItem){
 //     fiList.insertBefore(div,fiList.children[i1]);
 // }
 function createFileListItem(f:FFile){
-    let fileList = f.p.parent.querySelector(".file-list") as HTMLElement; // maybe should optimize this better at some point
+    let fileList = (f.p.builtInFileList ? f.p.parent.querySelector(".file-list") as HTMLElement : document.querySelector(".file-list") as HTMLElement); // maybe should optimize this better at some point
     if(!fileList){
         console.log("ERR: couldn't find file list...");
         return;
@@ -1538,7 +1540,7 @@ async function moveFile(f:FItem,toFolder:FFolder,noSave=false){
 }
 
 function createFolderListItem(f:FFolder){
-    let fileList = f.p.parent.querySelector(".file-list") as HTMLElement; // maybe should optimize this better at some point
+    let fileList = (f.p.builtInFileList ? f.p.parent.querySelector(".file-list") as HTMLElement : pane_files.querySelector(".file-list") as HTMLElement); // maybe should optimize this better at some point
     if(!fileList){
         console.log("ERR: couldn't find file list...");
         return;
@@ -2283,6 +2285,7 @@ enum EditorType{
     self,
     tutor
 }
+// function setupEditor(parent:HTMLElement,type:EditorType,fromSub=false,builtInFiles=false){
 function setupEditor(parent:HTMLElement,type:EditorType,fromSub=false){
     let d_files = document.createElement("div");
     d_files.className = "d-open-files pane";
@@ -2292,19 +2295,6 @@ function setupEditor(parent:HTMLElement,type:EditorType,fromSub=false){
     parent.appendChild(contJs);
 
     if(!fromSub){
-        let b_showFilesPane = document.createElement("button");
-        b_showFilesPane.className = "b-show-files-pane";
-        b_showFilesPane.innerHTML = "<div class='material-symbols-outlined'>menu</div>";
-        let _open = false;
-        b_showFilesPane.addEventListener("click",e=>{
-            _open = !_open;
-            b_showFilesPane.classList.toggle("f-hover");
-
-            let fileList = parent.querySelector(".file-list") as HTMLElement;
-            fileList.parentElement.classList.toggle("hide");
-        });
-        d_files.appendChild(b_showFilesPane);
-        
         let add_file = document.createElement("button");
         add_file.className = "b-add-file";
         add_file.innerHTML = "<div class='material-symbols-outlined'>add</div>";
@@ -2319,10 +2309,47 @@ function setupEditor(parent:HTMLElement,type:EditorType,fromSub=false){
         d_files.appendChild(label);
     }
 }
-function postSetupEditor(project:Project,isUser=true){
+function postSetupEditor(project:Project,isUser=true,ignoreFilesPane=false){
     let parent = project.parent;
+
+    // 
+
     project.d_files = parent.querySelector(".d-open-files");
     project.codeCont = parent.querySelector(".cont-js");
+
+    // 
+
+    if(!ignoreFilesPane){
+        let pane_files:Element;
+        if(project.builtInFileList){
+            // pane_files = document.querySelector(".pane-files") as HTMLElement;
+            // setupFilesPane(pane_files);
+
+            let b_showFilesPane = document.createElement("button");
+            b_showFilesPane.className = "b-show-files-pane";
+            b_showFilesPane.innerHTML = "<div class='material-symbols-outlined'>menu</div>";
+            let _open = false;
+            b_showFilesPane.addEventListener("click",e=>{
+                _open = !_open;
+                b_showFilesPane.classList.toggle("f-hover");
+
+                let fileList = parent.querySelector(".file-list") as HTMLElement;
+                fileList.parentElement.classList.toggle("hide");
+            });
+            project.d_files.insertBefore(b_showFilesPane,project.d_files.children[0]);
+
+            pane_files = document.createElement("div");
+            pane_files.className = "pane-files pane hide";
+            parent.insertBefore(pane_files,parent.children[0]);
+        }
+        else{
+            pane_files = document.querySelector(".pane-files") as HTMLElement;
+        }
+
+        setupFilesPane(pane_files);
+    }
+
+    // 
 
     project.d_files.addEventListener("wheel",e=>{
         e.preventDefault();
@@ -3991,21 +4018,18 @@ class SubmissionMenu extends Menu {
                 readonly:false
             });
             setupEditor(tmpp.parent,EditorType.none,true);
-            tmpp.init();
-            // @ts-ignore
-            window.tmpp = tmpp;
+            tmpp.init(true);
+
             async function run(l:any[],cur:FFolder){
                 sortFiles(l);
                 let list = [];
                 for(const f of l){
                     if(f.items == null){
                         let ff = await tmpp.createFile(f.name,f.buf,null,cur);
-                        createFileListItem(ff);
                         list.push(ff);
                     }
                     else if(f.items != null){
                         let ff = tmpp.createFolder(f.name,cur,false);
-                        createFolderListItem(ff);
                         list.push(ff);
                         ff.items = await run(f.items,ff);
                     }
@@ -4013,6 +4037,7 @@ class SubmissionMenu extends Menu {
                 return list;
             }
             await run(p.items,null);
+
             let height = par.getBoundingClientRect().height;
             par.parentElement.style.height = height+"px";
             let b_openInFull = par.parentElement.querySelector(".b-fullscreen") as HTMLButtonElement;
@@ -4036,6 +4061,11 @@ class SubmissionMenu extends Menu {
                 }
             };
             fileList = null; // this is to reset it so that it will check if this is null or not and research since it's a new editor when you open it again
+
+            // open file
+            let indexFile = tmpp.files.find(v=>v.name == "index.html");
+            if(indexFile) indexFile.open();
+            else tmpp.files[0]?.open();
         } else {
             document.querySelector(".submission-editor").innerHTML = "<i>In order to view the code, please upload your own submission first!</i>";
             document.querySelector(".submission-editor").classList.add("empty");
@@ -4197,7 +4227,6 @@ document.addEventListener("selectstart",e=>{
  * This is needed because for some reason location.reload doesn't work in firefox on the lesson page
  */
 function reloadPage(){
-    return;
     location.href = location.href;
 }
 
