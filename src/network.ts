@@ -82,6 +82,7 @@ h_profile.addEventListener("mousedown",e=>{
         g_user ? "Switch Account" : "Log In",
         g_user ? "Log Out" : " --- ",
         g_user ? "<Top Secret>" : " --- ",
+        // "<Top Secret>",
         "Switch Theme",
         "Reconnect to Server"
     ];
@@ -99,7 +100,8 @@ h_profile.addEventListener("mousedown",e=>{
             _logout();
         }
         if(i == 3 && g_user){
-            
+        // if(i == 3){
+            new NotYetMenu().load();
         }
         // else if(l == "Switch Theme"){
         if(i == 4){
@@ -290,13 +292,18 @@ async function restoreLessonFiles(lesson:Lesson){
 
 
     // Claeb: I don't think this stuff actually works at all lol xD
-    let index = lesson.p.items.find(v=>v.name == "index.html") as FFile;
-    if(index) index.open();
-    else lesson.p.files[0]?.open();
 
-    let indexTut = lesson.tut.items.find(v=>v.name == "index.html") as FFile;
-    if(indexTut) indexTut.open();
-    else lesson.tut.files[0]?.open();
+    // let indexTut = lesson.tut.items.find(v=>v.name == "index.html") as FFile;
+    // if(indexTut) indexTut.open();
+    // else lesson.tut.files[0]?.open();
+
+    for(const f of lesson.p.files){
+        f.open(false);
+    }
+
+    // let index = lesson.p.files.find(v=>v.name == "index.html") as FFile;
+    // if(index) index.open();
+    // else lesson.p.files[0]?.open();
 }
 // 
 // function old_uploadProjectFiles(project:Project){ // for refresh
@@ -440,4 +447,202 @@ function handleEndpointError(res:any,msg:string){
         return false;
     }
     return true;
+}
+
+// not ready just yet ;)
+class NotYetMenu extends Menu{
+    constructor(){
+        super("not-yet");
+    }
+    load(priority?: number, newLayer?: boolean): this {
+        super.load(priority,newLayer);
+        
+        this.startTheNotReadyYet();
+        return this;
+    }
+    async startTheNotReadyYet(){
+        function create(tag:string,text:string){
+            let d = document.createElement(tag);
+            d.innerHTML = text;
+            return d;
+        }
+        function makeCenterCont(){
+            let d = document.createElement("div");
+            d.className = "flx-c";
+            d.style.width = "100%";
+            d.style.height = "100%";
+            // d.style.width = "400px";
+            // d.style.height = "400px";
+            return d;
+        }
+        function makeCont(){
+            let d = document.createElement("div");
+            d.style.margin = "40px";
+            d.style.width = "100%";
+            d.style.height = "100%";
+            return d;
+        }
+        async function SWait(delay:number){
+            await DWait(delay);
+        }
+
+        await SWait(1000);
+    
+        // loading
+        let loadCont = makeCenterCont();
+        let l_load = create("div","");
+        let loadI = 0;
+
+        loadCont.appendChild(l_load);
+        this.body.appendChild(loadCont);
+
+        for(let i = 0; i < 3; i++){
+            l_load.textContent = ".".repeat(loadI%3+1);
+            loadI++;
+            await SWait(500);
+        }
+
+        loadCont.remove();
+        await SWait(500);
+
+        // terminal
+        // let terminalCont = makeCont();
+        let terminalCont = makeCenterCont();
+        let terminal = create("div","");
+        terminal.className = "ny-terminal";
+
+        type TypeOps = {
+            delay?:number,
+            choices?:{
+                text:string
+            }[],
+
+            prom?:Promise<string>,
+            res?:(s:string)=>void
+        };
+
+        let cur:TypeOps;
+        let listen = (e:KeyboardEvent)=>{
+            let k = e.key;
+            
+            if(cur.choices){
+                let c = cur.choices.find(v=>v.text == k);
+                if(c){
+                    terminal.textContent = "";
+                    cur.res(k);
+                }
+            }
+        };
+        document.addEventListener("keydown",listen);
+
+        async function typeText(text:string,ops:TypeOps={}){
+            // terminal.textContent = "";
+            
+            // 
+
+            cur = ops;
+            
+            if(ops.delay == null) ops.delay = 1500;
+            if(ops.choices) text += ` (${ops.choices.map(v=>v.text).join("/")})`;
+            
+            let div = create("div",text);
+            terminal.appendChild(div);
+            await SWait(ops.delay);
+
+            if(ops.choices){
+                ops.prom = new Promise<string>(resolve=>ops.res = resolve);
+                return await ops.prom;
+            }
+        }
+        async function clearText(){
+            terminal.textContent = "";
+            await SWait(1500);
+        }
+
+        terminalCont.appendChild(terminal);
+        this.body.appendChild(terminalCont);
+
+        // type (start)
+        await typeText("You realize there's something hidden behind the menu.");
+        await typeText("It's top secret.");
+        let choice = await typeText("Look closer?",{
+            choices:[
+                {
+                    text:"y"
+                },
+                {
+                    text:"n"
+                }
+            ]
+        });
+        if(choice == "n"){
+            await typeText("I see you're not ready then.");
+            await SWait(2000);
+            this.close();
+            return;
+        }
+
+        await typeText("You decide to look closer.");
+
+        await SWait(1500);
+        this.menu.classList.add("flip");
+        await SWait(2000);
+        this.body.style.animation = "none";
+        await SWait(500);
+
+        await clearText();
+        await typeText("You see an inscription on it, it writes:<br>");
+        await typeText("There will come a time when humans can pass, but only the worthy will survive. Are you ready for this?");
+
+        choice = await typeText("Continue reading?",{
+            choices:[
+                {
+                    text:"y"
+                },
+                {
+                    text:"n"
+                }
+            ]
+        });
+        if(choice == "n"){
+            await typeText("You scared to work hard or something? Alright then.");
+            await typeText("But trust me, you'll be missing out.");
+            await SWait(2000);
+            this.close();
+            return;
+        }
+
+        // await typeText("Come back when you get stronger and show me your strength.");
+        await typeText("Come back when you get stronger, and show me just how strong you are.",{
+            choices:[
+                {
+                    text:"Enter"
+                }
+            ]
+        });
+        await typeText("It won't be easy, great power requires great dedication and effort.",{
+            choices:[
+                {
+                    text:"Enter"
+                }
+            ]
+        });
+        await typeText("Train, and train hard, and maybe some day I'll let you pass if you prove yourself worthy.",{
+            choices:[
+                {
+                    text:"Enter"
+                }
+            ]
+        });
+        choice = await typeText("Some day I'll let you pass, but true reward comes from true dedication.",{
+            choices:[
+                {
+                    text:"Enter"
+                }
+            ]
+        });
+
+        await SWait(500);
+        this.close();
+    }
 }

@@ -404,6 +404,8 @@ type MProject = {
     submitted:boolean,
     cid:string|undefined,
 
+    // lid:string,
+
     dateCreated:Date,
     dateSubmitted:Date,
     dateLastSaved:Date,
@@ -425,8 +427,12 @@ const ProjectSchema = new Schema({
     public: Boolean,
     starred: Boolean, // do we need this?
 
+    // challenges
     submitted: Boolean,
     cid: String,
+
+    // lessons
+    // lid: String,
 
     dateCreated: Date,
     dateSubmitted: Date,
@@ -977,6 +983,10 @@ export class UserSessionItem{
         this.project = inst;
         if(inst) inst.session = this;
         return inst;
+    }
+    async getProjectOrLesson(pid?:string,lid?:string){
+        if(lid != null) return await this.getLessonMeta(lid);
+        else if(pid != null) return await this.getProject(pid);
     }
     async getUnfinishedChallengeProject(cid:string){
         let data = await ProjectModel.findOne({

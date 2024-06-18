@@ -876,3 +876,56 @@
 - added "Top Secret" button to user dropdown but it doesn't do anything yet
 - fixed upload lesson files and restore lesson files so it works with custom files and folders
 - fixed editor dashboard sizing of project items from last update so it doesn't mess up the banner icons like submitted and in-progress
+
+### 6/17/24
+- fixed files panel in editor so that it's resizable again
+- added display for opening unsupported file formats with a button to open them as text anyways (readonly and it doesn't encrypt so it never corrupts) and a button to download the file
+- fixed PonderBoard while resuming had missing await in the chain and resume wouldn't wait for it to finish
+- fixed lesson so it properly opens the index.html file first if it exists for the tutor and you
+- fixed files menu with delete, rename, move, etc. to work for lessons
+- fixed folder support for lessons
+- fixed folders so they don't expand even though the files get opened in lessons
+- fixed closing files in lesson doesn't delete them anymore and it's treated like the editor
+- fixed temp file stuff in lessons
+- added flx-c helper class
+- fixed files and folders with spaces in their names in the files pane and open files list from wrapping
+- adjusted hit area on files pane to more easily target the root folder at the top of the list
+- added file-item icon with support for HTML, CSS, JS, and JSON right now
+- added hr support to dropdowns
+
+- added getLID_ifLesson() helper function
+- fixed fileList reference to be stored on the project instead of queried every time it was needed
+- changed isTextFile logic to be based on whitelist of allowed files instead of blacklist
+- fixed renaming files so the input box sets the placeholder to be the old name, put the name into the value of the box, and then auto select it all besides the extension so you can rename stuff intuitively and quickly
+- added noConfirm param to deleteFItem to force it
+- fixed deleting FItems so they get deleted from the global p.files list if they were a FFile
+- added duplicateItems option to FItem dropdown with name detection
+- added skipSave system on project for more efficient saving with nested/chained events (duplicate running pasteItems which runs createFile)
+- added getNewName() param to pasteFItems so you can modify the names of the newly pasted items if needed
+- fixed various FItem dropdown actions so they use the item you clicked as the target instead of the currently selected file or folder
+- fixed pasteFItems and moveItems so that if nothing was moved it won't auto save the project after
+- fixed pasteFItems so that if it was a folder then it also recursively pastes all of its child folders and files along with it
+- added support for merging folder's content if you try to move or paste a folder into a location where there is already one with the same name
+- added better override support for files when they have the same name
+- moved these merging functions into doOverrideFile() and doOverrideFolder() helper functions
+- fixed saveProject() so that if it's a lesson it'll run saveLesson() instead
+- added "more options" button to files pane
+- added upload files (multiple files or singular) button to the more options dropdown which works and uploads them to the current folder selected
+- added downloadAsZip() button but it's not implemented yet
+- fixed clicking on folders wouldn't deselect like they do with files
+- fixed clicking elsewhere on the files pane deselects
+- added dropdown when right clicking in free space in files pane which gives you the options: Create file, Create folder, and paste
+- added Create file and Create folder options to regular FItem dropdown
+- added reopen() method to FFile so when a file's contents change by being overriden but the file is currently open, it'll update in the preview
+- added FItem dropdown menu when you right click on items in the open files list
+- added support for "jpg","jpeg","bmp","gif","jfif" files alongside png in the non-text file preview
+- added scrollIntoView to happen in the open files list at the top when a file is opened
+- moved New File and New Folder to their own classes for ease of use and consistency
+
+- added extensive name validators for creating new files and folders (front-end only for now)
+- added NotYetMenu stuff with some dialog :D
+
+- extended max upload size to 10mb in socket.io
+- added getProjectOrLesson() method on backend to ease use of actions that happen for both projects and lessons
+
+<!-- 27,223 lines as of this point (25,007 non-blank lines) -->

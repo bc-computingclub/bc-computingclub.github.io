@@ -579,6 +579,26 @@ button.load-btn.loading::before{
     width:100%;
     height:100%;
 }
+.editor-img-cont img{
+    image-rendering:pixelated;
+}
 .editor-img-cont img:hover{
     outline:dashed 2px var(--col);
+}
+
+.editor-unsupported-file-cont{
+    display:flex;
+    justify-content:center;
+    align-items:center;
+}
+.editor-unsupported-file-cont .view{
+    width:350px;
+    gap:25px;
+}
+.js-cont .icon-btn{
+    padding:6px 12px;
+    font-size:12px;
+}
+.js-cont .icon-btn > div:first-child{
+    font-size:18px;
 }

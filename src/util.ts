@@ -170,7 +170,7 @@ class Menu{
                     menusOpen = menuLayers[0];
                 }
                 else for(const m of menusOpen){
-                    m.menu.classList.remove("force-hidden");
+                    m.menu?.classList.remove("force-hidden");
                 }
             }
 
@@ -178,7 +178,7 @@ class Menu{
 
             let list = [...menusOpen];
             for(const m of list){
-                if(m._priority < this._priority) m.menu.style.display = "block";
+                if(m._priority < this._priority) if(m.menu) m.menu.style.display = "block";
             }
 
             // 
@@ -749,6 +749,11 @@ async function unstarProject(pid:string){
     return await this._star(pid,false);
 }
 
+function getLID_ifLesson(){
+    if(PAGE_ID == PAGEID.lesson) return lesson.lid;
+    return null;
+}
+
 class Project{
     constructor(title:string,parent:HTMLElement,settings:{readonly?:boolean,disableCopy?:boolean}={}){
         this.title = title;
@@ -778,6 +783,7 @@ class Project{
     // isOwner = true;
 
     builtInFileList = false;
+    fileList:HTMLElement;
 
     get canEdit(){
         if(PAGE_ID == PAGEID.lesson) return true;
@@ -828,7 +834,7 @@ class Project{
             (data:string) => {
                 newName = data;
 
-                if(getExt(newName).toLowerCase() != getExt(f.name).toLowerCase()){
+                if(f instanceof FFile) if(!isExtTextFile(getExt(data)) || !isExtTextFile(getExt(newName))) if(getExt(newName).toLowerCase() != getExt(f.name).toLowerCase()){
                     alert("Sorry, you can't change the file extension of non-text files.");
                     return 1;
                 }
@@ -848,17 +854,24 @@ class Project{
                     if(f._fi) f._fi.textContent = newName;
                     close();
                 }
-                else */socket.emit("renameFItem",f.p.pid,calcFolderPath(f.folder),f.name,newName,((res:number)=>{
-                    console.log("RES RENAME: ",res);
+                else */
+
+                socket.emit("renameFItem",f.p.pid,calcFolderPath(f.folder),f.name,newName,getLID_ifLesson(),(res:number)=>{
                     if(res != 0) return;
+                    let ext = getExt(f.name).replaceAll(" ","_");
+                    f._fi.classList.remove("lang-"+ext);
+                    
                     f.name = newName;
                     if(f instanceof FFile){
                         if(f.link) f.link.children[0].textContent = newName;
-                        if(f._fi) f._fi.textContent = newName;
+                        if(f._fi) f._fi.children[0].textContent = newName;
                     }
                     else if(f._fi) f._fi.children[0].children[2].textContent = newName;
+
+                    f._fi.classList.add("lang-"+ext);
+
                     if(close) close();
-                }));
+                });
             },
             () => {
                 console.log("Canceled file rename");
@@ -867,11 +880,14 @@ class Project{
             "",
             `Old name: ${f.name.substring(0,30) + (f.name.length > 30 ? "..." : "")}`
         ).load();
+
         m.inp.placeholder = f.name;
         m.inp.value = f.name;
         m.inp.spellcheck = false;
+        m.inp.focus();
+        m.inp.setSelectionRange(0,m.inp.value.lastIndexOf("."));
     }
-    async deleteFItem(f:FItem){
+    async deleteFItem(f:FItem,noConfirm=false){
         if(!f) return;
         if(!f.p.canEdit) return;
         let list:FItem[] = [];
@@ -884,6 +900,10 @@ class Project{
         let deleting = list.map(v=>v.name);
         // if(!confirm("Are you sure you want to delete: ["+list.map(v=>v.name).join(", ")+"] ?\n\nThere is no reversing this option!")) return;
         let confirmres = await new Promise<number>(resolve=>{
+            if(noConfirm){
+                resolve(0);
+                return;
+            }
             new ConfirmMenu(
                 "Delete Item","Are you sure you want to delete: ["+deleting.join(", ")+"] ?<br><br>There is no reversing this option!",
                 () => {
@@ -897,7 +917,7 @@ class Project{
         if(confirmres != 0) return;
         for(const f1 of list){
             let res = await new Promise<number>(resolve=>{
-                socket.emit("deleteFItem",f1.p.pid,calcFolderPath(f1.folder),f1.name,((res:number)=>{
+                socket.emit("deleteFItem",f1.p.pid,calcFolderPath(f1.folder),f1.name,getLID_ifLesson(),((res:number)=>{
                     console.log("RES delete: ",res);
                     resolve(res);
                 }));
@@ -905,6 +925,8 @@ class Project{
             if(res == 0){
                 let items = (f1.folder ? f1.folder.items : f1.p.items);
                 items.splice(items.indexOf(f1),1);
+                let gInd = this.files.findIndex(v=>v == f1);
+                if(gInd != -1) this.files.splice(gInd,1);
                 f1._fi.remove();
             }
             await wait(100);
@@ -942,35 +964,102 @@ class Project{
         f.p.deselectHLItems();
         console.log("Copied "+fclipboard.files.length+" items into the clipboard");
     }
-    async pasteFItems(f:FItem,cb:(list:FItem[])=>void,close?:()=>void){
-        if(!f) return;
-        if(!f.p.canEdit) return;
+    async duplicateItems(folder:FFolder,list:FItem[]){
+        this.startSkipSave();
+        
+        let oldList = fclipboard.files;
+        fclipboard.files = [...list];
+        fclipboard.action = "copy";
+
+        await this.pasteFItems(this,folder,list=>{},()=>{closeAllSubMenus()},(folder:FFolder,oldName:string)=>{            
+            let amt = 0;
+            let search = (name:string[])=>{
+                let find = (folder ? folder.items : this.items).find(w=>w.name == (name[0]+(amt == 0 ? "" : " ("+amt+")")+name[1]));
+                if(find){
+                    amt++;
+                    search(name);
+                }
+            };
+            let dotInd = oldName.lastIndexOf(".");
+            let s = (dotInd == -1 ? [oldName,""] : [oldName.substring(0,dotInd),oldName.substring(dotInd)]);
+            search(s);
+
+            if(amt == 0) return oldName;
+            return s[0]+" ("+amt+")"+s[1]; // this isn't perfect but hopefully good enough for now
+        });
+        
+        fclipboard.files = [...oldList];
+
+        this.endSkipSave();
+        await saveProject();
+    }
+    get _skipSave(){
+        return this._skipSaveCnt > 0; // if it's greater than 0 that means it should be skipping, 0 is good or normal, <0 shouldn't happen but would mean it's still normal
+    }
+    _skipSaveCnt = 0;
+    startSkipSave(){
+        // this._skipSave = true;
+        this._skipSaveCnt++;
+    }
+    endSkipSave(){
+        // this._skipSave = false;
+        this._skipSaveCnt--;
+    }
+    async pasteFItems(p:Project,f:FItem,cb:(list:FItem[])=>void,close?:()=>void,getNewName?:(folder:FFolder,name:string)=>string){
+        this.startSkipSave();
+        
+        // if(!f) return;
+        // console.log("NEW NAMES:",newNames,fclipboard.files);
+        if(!p) return;
+        if(!p.canEdit) return;
         if(!fclipboard.files.length) return;
-        let folder = (f instanceof FFolder ? f : f.folder);
-        // let folder = f.p.lastFolder;
-        // if(!folder) folder = f.p.curFile?.folder;
+
+        let folder = (f instanceof FFolder ? f : f?.folder);
+
         let amt = fclipboard.files.length;
         let effected:FItem[] = [];
+        let i = 0;
         for(const f1 of fclipboard.files){
+            i++;
             let item:FItem;
             if(fclipboard.action == "cut"){
-                await moveFile(f1,folder,true);
-                item = f1;
-                effected.push(f1);
+                let res = await moveFile(f1,folder,true);
+                if(res){
+                    item = f1;
+                    effected.push(f1);
+                }
             }
             else if(fclipboard.action == "copy"){
-                if(f1 instanceof FFile) item = await f.p.createFile(f1.name,f1.buf?.slice(),null,folder,true);
-                else if(f1 instanceof FFolder) item = f.p.createFolder(f1.name,folder,true);
+                let name = f1.name;
+                // if(newNames) name = newNames[i-1];
+                if(getNewName) name = getNewName(folder,name);
+                // console.log("CREATE NAME: ",name,i-1);
+                if(f1 instanceof FFile) item = await p.createFile(name,f1.buf?.slice(),null,folder,true);
+                else if(f1 instanceof FFolder){
+                    async function loop(name1:string,folder1:FFolder,ref:FFolder){ // folder1 is containing folder (the one you want to put the new one in), ref is folder itself with name1
+                        let item = p.createFolder(name1,folder1,true);
+                        for(const sub of ref.items){
+                            let newName = getNewName ? getNewName(item,sub.name) : sub.name;
+                            if(sub instanceof FFolder) await loop(newName,item,sub);
+                            else if(sub instanceof FFile) await p.createFile(newName,sub.buf?.slice(),null,item,true);
+                        }
+                    }
+                    await loop(name,folder,f1);
+                    // item = p.createFolder(name,folder,true);
+                }
                 effected.push(item);
             }
             if(!item) continue;
-            f.p.hlItems.push(item);
+            p.hlItems.push(item);
             item._fi.classList.add("hl2");
         }
         if(close) close();
+
+        this.endSkipSave();
+        
         await saveProject();
         // await wait(500);
-        f.p.deselectHLItems();
+        p.deselectHLItems();
         for(const f1 of effected){
             if(f1) f1.p.flashAddHLItem(f1);
         }
@@ -1050,23 +1139,15 @@ class Project{
         // }
 
         // let text = await blob.text();
+
+        let f:FFile;
+
         let same = (folder ? folder.items : this.items).find(v=>v.name == name);
         if(same){
-            new ConfirmMenu(
-                "File already exists","There is already a file in this folder with the name: "+name+".\n\nDo you want to override it?",
-                () => {
-                    if(same instanceof FFile) {
-                        if(same.editor){
-                            same.editor.setValue(this.textDecoder.decode(f.buf));
-                        }
-                        same.buf = f.buf.slice();
-                        same.setSaved(false);
-                    }
-                },
-                () => { 
-                    console.log("File override canceled");
-                }
-            ).load();
+            if(same instanceof FFile){
+                await doOverrideFile(null,name,buf,same);
+            }
+            
             // if(confirm("There is already a file in this folder with the name: "+name+".\n\nDo you want to override it?\n(Press cancel to skip)")){
             //     if(same.editor){
             //         same.editor.setValue(text);
@@ -1074,9 +1155,8 @@ class Project{
             //     same.text = text;
             //     same.setSaved(false);
             // }
-            if(same instanceof FFolder){
+            else if(same instanceof FFolder){
                 alert("There is already a folder in this location with the name: "+name+", skipping...");
-                return;
             }
             return;
         }
@@ -1086,7 +1166,7 @@ class Project{
             console.warn("Failed creation prevented from hook");
             return;
         }
-        if(PAGE_ID == PAGEID.lesson){
+        if(false) if(PAGE_ID == PAGEID.lesson){
             let q = this.findFile(name);
             if(q){
                 q.open();
@@ -1094,7 +1174,7 @@ class Project{
                 return q;
             }
         }
-        let f = new FFile(this,name,buf,folder,lang);
+        f = new FFile(this,name,buf,folder,lang);
         if(isNew) f.beenUploaded = false;
         // f.isNew = true;
         this.files.push(f);
@@ -1104,14 +1184,14 @@ class Project{
         // if(PAGE_ID == PAGEID.editor){
             createFileListItem(f);
         // }
-        if(PAGE_ID == PAGEID.lesson) f.open();
+        // if(PAGE_ID == PAGEID.lesson) f.open();
         if(!isNew) f.setSaved(true);
         else{
             f.open(false);
         }
-        if(PAGE_ID == PAGEID.lesson){
-            f.setSaved(true);
-            f.setTemp(false);
+        if(false) if(isNew) if(PAGE_ID == PAGEID.lesson){
+            // f.setSaved(true);
+            // f.setTemp(false);
             if(this == lesson.p) if(lesson.hasLoaded){
                 // console.error("...ran saved");
                 saveLesson();
@@ -1119,9 +1199,10 @@ class Project{
         }
 
         if(isNew){
-            if(PAGE_ID == PAGEID.editor) saveProject();
+            // if(PAGE_ID == PAGEID.editor) saveProject();
+            saveProject();
         }
-        if(PAGE_ID == PAGEID.lesson ? !lesson.tut.files.includes(f) : true) if(f.editor) f.editor.focus();
+        // if(PAGE_ID == PAGEID.lesson ? !lesson.tut.files.includes(f) : true) if(f.editor) f.editor.focus();
         return f;
     }
     createFolder(name:string,folder?:FFolder,isNew=true){
@@ -1187,6 +1268,30 @@ class Project{
 
     get isTutor(){ //temp for now
         return this.disableCopy;
+    }
+
+    // 
+    async uploadFiles(){
+        let inp = document.createElement("input");
+        inp.type = "file";
+        inp.multiple = true;
+        let maxSize = 1e7;
+        inp.addEventListener("input",async (e:InputEvent)=>{
+            let files = (e.target as any).files as FileList;
+            for(const f of files){
+                if(f.size > maxSize){
+                    alert("The file: "+f.name+" was too large. Max file size is: "+Intl.NumberFormat().format(maxSize)+" B, but the file's size was: "+Intl.NumberFormat().format(f.size)+" B");
+                    continue;
+                }
+                await this.createFile(f.name,new Uint8Array(await f.arrayBuffer()),undefined,this.lastFolder,true);
+            }
+
+            await saveProject();
+        });
+        inp.click();
+    }
+    async downloadAsZip(){
+        
     }
 }
 /**Gets the url (for iframes) to a `"private"` project */
@@ -1282,15 +1387,15 @@ function applyMultiSelectFI(e:MouseEvent|any,f:FItem){
     // if(items.length) if(f.folder != _multiSelFolder) return true;
     if(items.length) if(f.folder != items[0].folder) return true;
     if(true) if(isMulti) if(items.length == 0){
-        let cur:FItem = f.p.curFile;
+        let cur:FItem = f.p.lastFolder ?? f.p.curFile;
         if(cur?.folder == f.folder){
-            if(cur instanceof FFile){
+            // if(cur instanceof FFile){
                 if(!items.includes(cur)){
                     items.push(cur);
                     cur._fi.classList.add("hl2");
                     if(f == cur) return true;
                 }
-            }
+            // }
         }
         else return true;
         // if(f instanceof FFolder) cur = f.p.lastFolder;
@@ -1343,7 +1448,7 @@ function applyMultiSelectFI(e:MouseEvent|any,f:FItem){
 //     fiList.insertBefore(div,fiList.children[i1]);
 // }
 function createFileListItem(f:FFile){
-    let fileList = (f.p.builtInFileList ? f.p.parent.querySelector(".file-list") as HTMLElement : document.querySelector(".file-list") as HTMLElement); // maybe should optimize this better at some point
+    let fileList = f.p.fileList;//(f.p.builtInFileList ? f.p.parent.querySelector(".file-list") as HTMLElement : document.querySelector(".file-list") as HTMLElement); // maybe should optimize this better at some point
     if(!fileList){
         console.log("ERR: couldn't find file list...");
         return;
@@ -1360,7 +1465,11 @@ function createFileListItem(f:FFile){
 
     let div = document.createElement("div");
     div.className = "file-item";
-    div.textContent = f.name;
+    div.innerHTML = `
+        <span>${f.name}</span>
+        <span class="ic"></span>
+    `;
+    div.classList.add("lang-"+getExt(f.name).replaceAll(" ","_"));
 
     let list = [...(f.folder?.items ?? f.p.items)];
     if(list.includes(f)) list.splice(list.indexOf(f),1);
@@ -1400,20 +1509,20 @@ function createFileListItem(f:FFile){
             let effected:FItem[] = [];
             if(f.p.hlItems.length){
                 for(const f1 of f.p.hlItems){
-                    await moveFile(f1,hover,true);
-                    effected.push(f1);
+                    let res = await moveFile(f1,hover,true);
+                    if(res) effected.push(f1);
                     // await wait(100);
                 }
             }
             else{
-                await moveFile(f,hover,true);
-                effected.push(f);
+                let res = await moveFile(f,hover,true);
+                if(res) effected.push(f);
             }
             // if(effected.length) f.p.deselectHLItems();
             for(const f1 of effected){
                 f1.p.flashAddHLItem(f1);
             }
-            await saveProject();
+            if(effected.length) await saveProject();
         });
         dragItem.down = f;
     });
@@ -1427,29 +1536,107 @@ function createFileListItem(f:FFile){
     });
 }
 
+function setupFileListDropdown(p:Project){
+    let refList = [
+        "new_file",
+        "new_folder",
+        "-",
+        "paste"
+    ];
+
+    let div = p.fileList;
+    
+    setupDropdown(div,()=>{
+        let paste = "Paste";
+
+        if(fclipboard.files.length){
+            paste += " ("+fclipboard.files.length+" items)";
+        }
+        
+        return [
+            "Create file",
+            "Create folder",
+            "<hr>",
+            paste
+        ];
+    },i=>{
+        let ref = refList[i];
+        
+        if(ref == "new_file"){
+            new CreateFileMenu({
+                rootFolder:true
+            }).load();
+        }
+        else if(ref == "new_folder"){
+            new CreateFolderMenu({
+                rootFolder:true
+            }).load();
+        }
+        else if(ref == "paste"){
+            p.pasteFItems(p,null,list=>{
+
+            },()=>{
+                closeAllSubMenus();
+            });
+        }
+    },{
+        onopen:(dd)=>{
+            div.classList.add("hl");
+            if(!fclipboard.files.length) dd.children[refList.indexOf("paste")].classList.add("disabled");
+        },
+        onclose:()=>{
+            div.classList.remove("hl");
+        },
+        getIcons:()=>[
+            "note_add",
+            "create_new_folder",
+            null,
+            "content_paste"
+        ]
+    });
+}
 function setupFItemDropdown(f:FItem,div:HTMLElement){
+    let refList = [
+        "new_file",
+        "new_folder",
+        "-",
+        "rename",
+        "delete",
+        "cut",
+        "copy",
+        "duplicate",
+        "paste"
+    ];
+
+    let p = f.p;
+    
     setupDropdown(div,()=>{
         let del = "Delete";
         let cpy = "Copy";
         let cut = "Cut";
+        let dup = "Duplicate";
         let paste = "Paste";
 
-        let p = f.p;
         if(p.hlItems.length){
             let str = " ("+p.hlItems.length+" items)";
             del += str;
             cpy += str;
             cut += str;
+            dup += str;
         }
         if(fclipboard.files.length){
             paste += " ("+fclipboard.files.length+" items)";
         }
 
         return [
+            "Create file",
+            "Create folder",
+            "<hr>",
             "Rename",
             del,
             cut,
             cpy,
+            dup,
             paste,
         ];
     },async (i)=>{
@@ -1457,37 +1644,57 @@ function setupFItemDropdown(f:FItem,div:HTMLElement){
             closeAllSubMenus();
         }
         close();
-        if(i == 0){ // rename
-            f.p.renameFItem(f,close);
+        let ref = refList[i];
+
+        if(ref == "new_file"){
+            new CreateFileMenu({
+                folder:(f instanceof FFolder ? f : f.folder)
+            }).load();
         }
-        else if(i == 1){ // delete
-            await f.p.deleteFItem(f);
+        else if(ref == "new_folder"){
+            new CreateFolderMenu({
+                folder:(f instanceof FFolder ? f : f.folder)
+            }).load();
         }
-        else if(i == 2){ // cut
-            f.p.cutFItems(f);
+        else if(ref == "rename"){ // rename
+            p.renameFItem(f,close);
         }
-        else if(i == 3){ // copy
-            f.p.copyFItems(f);
+        else if(ref == "delete"){ // delete
+            await p.deleteFItem(f);
         }
-        else if(i == 4){ // paste
-            await f.p.pasteFItems(f,()=>{
+        else if(ref == "cut"){ // cut
+            p.cutFItems(f);
+        }
+        else if(ref == "copy"){ // copy
+            p.copyFItems(f);
+        }
+        else if(ref == "duplicate"){
+            p.duplicateItems(f.folder,p.hlItems.length ? p.hlItems : [f]);
+        }
+        else if(ref == "paste"){ // paste
+            await p.pasteFItems(p,f,()=>{
                 // close();
             },close);
         }
     },{
         onopen:(dd)=>{
             div.classList.add("hl");
-            if(!fclipboard.files.length) dd.children[4].classList.add("disabled");
+            if(!fclipboard.files.length) dd.children[refList.indexOf("paste")].classList.add("disabled");
         },
         onclose:()=>{
             div.classList.remove("hl");
         },
         getIcons:()=>{
             return [
+                "note_add",
+                "create_new_folder",
+                null,
                 "edit",
                 "delete",
                 "content_cut",
                 "content_copy",
+                "dynamic_feed",
+                // "control_point_duplicate",
                 "content_paste"
             ];
         },
@@ -1497,23 +1704,44 @@ function setupFItemDropdown(f:FItem,div:HTMLElement){
 
 async function moveFile(f:FItem,toFolder:FFolder,noSave=false){
     let last = f;
+    if(f == toFolder) return;
     if(toFolder == last.folder) return;
     let items:FItem[] = [];
     let fiList:HTMLElement;
     if(!toFolder){
         items = f.p.items;
-        fiList = fileList;
+        fiList = f.p.fileList;
     }
     else{
         items = toFolder.items;
         fiList = toFolder._fiList;
     }
+
     let i1 = 0;
     let fromFolder = last.folder;
+
+    if(f instanceof FFile){
+        let same = (toFolder ? toFolder.items : f.p.items).find(v=>v.name == f.name && v instanceof FFile);
+        if(same){
+            let res = await doOverrideFile(f,f.name,f.buf,same as FFile);
+            // if(res){
+                await saveProject();
+            // }
+            return;
+        }
+    }
+    else if(f instanceof FFolder){
+        let same = (toFolder ? toFolder.items : f.p.items).find(v=>v.name == f.name && v instanceof FFolder);
+        if(same){
+            let res = await doOverrideFolder(f,same as FFolder);
+            // if(res != 0) return;
+            // if(!res) return;
+            return;
+        }
+    }
     
     let res = await new Promise<number>(resolve=>{
-        socket.emit("moveFiles",f.p.pid,[f.name],calcFolderPath(fromFolder),calcFolderPath(toFolder),(res:any)=>{
-            console.log("move res: ",res);
+        socket.emit("moveFiles",f.p.pid,[f.name],calcFolderPath(fromFolder),calcFolderPath(toFolder),getLID_ifLesson(),(res:any)=>{
             resolve(res);
         });
     });
@@ -1537,10 +1765,13 @@ async function moveFile(f:FItem,toFolder:FFolder,noSave=false){
 
     if(toFolder) if(toFolder._fi.classList.contains("close")) toFolder._fi.classList.remove("close");
     if(!noSave) saveProject();
+
+    return true;
 }
 
 function createFolderListItem(f:FFolder){
-    let fileList = (f.p.builtInFileList ? f.p.parent.querySelector(".file-list") as HTMLElement : pane_files.querySelector(".file-list") as HTMLElement); // maybe should optimize this better at some point
+    // let fileList = (f.p.builtInFileList ? f.p.parent.querySelector(".file-list") as HTMLElement : pane_files.querySelector(".file-list") as HTMLElement); // maybe should optimize this better at some point
+    let fileList = f.p.fileList;
     if(!fileList){
         console.log("ERR: couldn't find file list...");
         return;
@@ -1596,6 +1827,9 @@ function createFolderListItem(f:FFolder){
 
     setupFItemDropdown(f,f._fiLabel);
 
+    f._fiLabel.addEventListener("click",e=>{
+        if(!e.ctrlKey && !e.shiftKey) f.p.deselectHLItems();
+    });
     f._fiLabel.addEventListener("mousedown",e=>{
         if(!f.p.hlItems.includes(f) && f.p.hlItems.length && !e.ctrlKey && !e.shiftKey){
             f.p.deselectHLItems();
@@ -1612,53 +1846,75 @@ function createFolderListItem(f:FFolder){
         },async last=>{
             let hover = hoverFolderListItems[hoverFolderListItems.length-1];
             if(hover == last.folder) return;
-            let items:FItem[] = [];
-            let fiList:HTMLElement;
-            if(!hover){
-                items = f.p.items;
-                fiList = fileList;
+            let effected:FItem[] = [];
+            if(f.p.hlItems.length){
+                for(const f1 of f.p.hlItems){
+                    let res = await moveFile(f1,hover,true);
+                    if(res) effected.push(f1);
+                    // await wait(100);
+                }
             }
             else{
-                items = hover.items;
-                fiList = hover._fiList;
-                let hasFailed = false;
-                function check(folder:FFolder){
-                    if(folder == f){
-                        hasFailed = true;
-                        return;
-                    }
-                    if(folder.folder) check(folder.folder);
-                }
-                check(hover);
-                if(hasFailed) return;
+                let res = await moveFile(f,hover,true);
+                if(res) effected.push(f);
             }
-            let i1 = 0;
-            let fromFolder = last.folder;
+            // if(effected.length) f.p.deselectHLItems();
+            for(const f1 of effected){
+                f1.p.flashAddHLItem(f1);
+            }
+            if(effected.length) await saveProject();
             
-            let res = await new Promise<number>(resolve=>{
-                socket.emit("moveFiles",f.p.pid,[f.name],calcFolderPath(fromFolder),calcFolderPath(hover),(res:any)=>{
-                    console.log("res: ",res);
-                    resolve(res);
-                });
-            });
-            if(res != 0){
-                console.log("failed to move files/folders");
-                return;
-            }
+            // let hover = hoverFolderListItems[hoverFolderListItems.length-1];
+            // if(hover == last.folder) return;
+            // let items:FItem[] = [];
+            // let fiList:HTMLElement;
+            // if(!hover){
+            //     items = f.p.items;
+            //     fiList = fileList;
+            // }
+            // else{
+            //     items = hover.items;
+            //     fiList = hover._fiList;
+            //     let hasFailed = false;
+            //     function check(folder:FFolder){
+            //         if(folder == f){
+            //             hasFailed = true;
+            //             return;
+            //         }
+            //         if(folder.folder) check(folder.folder);
+            //     }
+            //     check(hover);
+            //     if(hasFailed) return;
+            // }
+            // let i1 = 0;
+            // let fromFolder = last.folder;
+            
+            // let effected:FItem[] = [];
+            // let res = await new Promise<number>(resolve=>{
+            //     socket.emit("moveFiles",f.p.pid,[f.name],calcFolderPath(fromFolder),calcFolderPath(hover),getLID_ifLesson(),(res:any)=>{
+            //         console.log("res: ",res);
+            //         effected
+            //         resolve(res);
+            //     });
+            // });
+            // if(res != 0){
+            //     console.log("failed to move files/folders");
+            //     return;
+            // }
 
-            let list = [...items];
-            if(list.includes(f)) list.splice(list.indexOf(f),1);
-            list.splice(0,0,f);
-            sortFiles(list);
-            i1 = list.indexOf(f);
-            fiList.insertBefore(last._fiLabel.parentElement,fiList.children[i1]);
-            last.folder = hover;
+            // let list = [...items];
+            // if(list.includes(f)) list.splice(list.indexOf(f),1);
+            // list.splice(0,0,f);
+            // sortFiles(list);
+            // i1 = list.indexOf(f);
+            // fiList.insertBefore(last._fiLabel.parentElement,fiList.children[i1]);
+            // last.folder = hover;
 
-            let fromItems = (fromFolder?.items ?? f.p.items);
-            let toItems = (hover?.items ?? f.p.items);
-            fromItems.splice(fromItems.indexOf(f),1);
-            toItems.push(f);
-            saveProject();
+            // let fromItems = (fromFolder?.items ?? f.p.items);
+            // let toItems = (hover?.items ?? f.p.items);
+            // fromItems.splice(fromItems.indexOf(f),1);
+            // toItems.push(f);
+            // saveProject();
         });
         dragItem.down = f;
     });
@@ -1723,8 +1979,84 @@ let nonTextFileFormats = [
         ext:"png"
     }
 ];
+let textFileFormats = [
+    {
+        ext:"txt"
+    },
+    {
+        ext:"html"
+    },
+    {
+        ext:"css"
+    },
+    {
+        ext:"js"
+    },
+    {
+        ext:"ts"
+    },
+    {
+        ext:"json"
+    },
+    {
+        ext:"md"
+    },
+    {
+        ext:"scss"
+    },
+    {
+        ext:"sass"
+    },
+    {
+        ext:"jsx"
+    },
+    {
+        ext:"tsx"
+    },
+
+    {
+        ext:"xhtml"
+    },
+    {
+        ext:"xml"
+    },
+    {
+        ext:"ini"
+    },
+    {
+        ext:"properties"
+    },
+
+    {
+        ext:"java"
+    },
+    {
+        ext:"cs"
+    },
+    {
+        ext:"c"
+    },
+    {
+        ext:"cpp"
+    },
+    {
+        ext:"h"
+    },
+    {
+        ext:"hpp"
+    },
+
+    {
+        ext:"rs"
+    },
+
+    {
+        ext:"py"
+    },
+];
 function isExtTextFile(ext:string){
-    return !nonTextFileFormats.some(v=>v.ext == ext);
+    // return !nonTextFileFormats.some(v=>v.ext == ext);
+    return textFileFormats.some(v=>v.ext == ext);
 }
 function getExt(name:string){
     return name.split(".").pop();
@@ -1789,8 +2121,10 @@ class FFile extends FItem{
     _saved = true;
     beenUploaded = true;
     setSaved(v:boolean,noChange=false){
+        let last = this._saved;
         this._saved = v;
         // if(this.isNew && v) this.isNew = false;
+        // if(!last) if(v){ // if it wasn't saved before and now it is saved
         if(v){
             // only want to save the text in the editor to buf if it is a text file (too many issues with unsupported characters in png cause them to become corrupted after this encode)
             if(this.isTextFile()) if(this.editor) this.buf = this.p.textEncoder.encode(this.editor.getValue());
@@ -1836,13 +2170,17 @@ class FFile extends FItem{
     }
 
     close(){
+        // reset
+        this.bypassUnsupportedFormat = false;
+        
+        // 
         if(this.p.openFiles.includes(this)){
             if(!this._saved){
                 // return; 
                 // if(!confirm("This file is unsaved, are you sure you want to close it?")) return
             }
             if(this._saved){
-                if(this.editor) if(this.isTextFile()) this.buf = this.p.textEncoder.encode(this.editor.getValue()); // probably don't need this but good to do just in case
+                // if(this.editor) if(this.isTextFile()) this.buf = this.p.textEncoder.encode(this.editor.getValue()); // probably don't need this but good to do just in case
             }
             this.p.d_files.removeChild(this.link);
             let ind = this.p.openFiles.indexOf(this);
@@ -1893,10 +2231,21 @@ class FFile extends FItem{
         return !this.p.canEdit||this.p.isTutor||!this.isTextFile();
     }
 
-    open(isTemp?:boolean){
-        if(isTemp == null){
-            isTemp = (PAGE_ID != PAGEID.lesson);
+    reopen(isTemp=true){
+        let bypass = this.bypassUnsupportedFormat;
+        if(this.link) this.close();
+        if(bypass) this.bypassUnsupportedFormat = true;
+        this.open(isTemp);
+    }
+
+    bypassUnsupportedFormat = false;
+    open(isTemp:boolean=true){
+        if(PAGE_ID == PAGEID.lesson){
+            if(this.p.isTutor) isTemp = false;
         }
+        // if(isTemp == null){
+        //     isTemp = (PAGE_ID != PAGEID.lesson);
+        // }
         if(!this.p.openFiles.includes(this)){
             for(const f of this.p.openFiles){
                 if(f.isTemp) if(f._saved) f.close();
@@ -1915,9 +2264,9 @@ class FFile extends FItem{
                     this.close();
                     return;
                 }
-                if(PAGE_ID == PAGEID.lesson){
-                    this.softDelete();
-                }
+                // if(PAGE_ID == PAGEID.lesson){
+                //     this.softDelete();
+                // }
                 if(!this._saved) new ConfirmMenu(
                         "Unsaved file","This file is unsaved, are you sure you want to close it?",
                         () => {
@@ -1937,7 +2286,8 @@ class FFile extends FItem{
             l_name.addEventListener("mousedown",e=>{
                 t.open();
             });
-            if(isTemp) this.setTemp(isTemp);
+            // if(isTemp) this.setTemp(isTemp);
+            this.setTemp(isTemp);
             link.addEventListener("mousedown",e=>{
                 if(e.button != 0) return;
                 // downOpenFile = this;
@@ -1964,12 +2314,13 @@ class FFile extends FItem{
             link.addEventListener("mouseleave",e=>{
                 hoverOpenFile = null;
             });
+            setupFItemDropdown(this,link); // so you can now right click items in the open items list to delete or rename :D
 
             let cont = document.createElement("div");
             cont.className = "js-cont cont";
             this.cont = cont;
 
-            if(this.isTextFile()){
+            if(this.isTextFile() || this.bypassUnsupportedFormat){
                 let editor = monaco.editor.create(cont, {
                     value: [this.p.textDecoder.decode(this.buf)].join("\n"),
                     language: this.lang,
@@ -2071,7 +2422,13 @@ class FFile extends FItem{
                 let ext = getExt(this.name);
 
                 switch(ext){
-                    case "png":{
+                    case "png":
+                    case "jpg":
+                    case "jpeg":
+                    case "bmp":
+                    case "gif":
+                    case "jfif":
+                    {
 
                         let blob = new Blob([this.buf]);
                         let url = URL.createObjectURL(blob);
@@ -2102,7 +2459,6 @@ class FFile extends FItem{
                             imgCont.querySelector(".view").appendChild(img);
                             cont.appendChild(imgCont);
 
-                            console.log(img.width,img.height);
                             if(img.width >= img.height/2) img.style.width = "75%";
                             else img.style.height = "75%";
                             
@@ -2114,10 +2470,59 @@ class FFile extends FItem{
                         img.src = url;
                         
                     } break;
+                    default:{
+                        // if you're here that means it's an unsupported format and we don't know how to open it
+                        
+                        let msgCont = document.createElement("div");
+                        msgCont.className = "editor-unsupported-file-cont";
+                        msgCont.innerHTML = `
+                            <div class="flx-v view">
+                                <div>
+                                    The file type <span>.${ext}</span> is unsupported at this time.
+                                </div>
+                                <div>
+                                    Opening unsupported files in the editor can potentially corrupt them, open at your own risk.
+                                </div>
+                                <br><br>
+                                <div class="flx-c" style="gap:15px;padding:15px;border-radius:5px;width:max-content;height:max-content;background-color:var(--bg)">
+                                    <button class="accent icon-btn b-open-as-text">
+                                        <div>download</div>
+                                        <div>Open As Text</div>
+                                    </button>
+                                    <button class="normal icon-btn b-download">
+                                        <div>download</div>
+                                        <div>Download</div>
+                                    </button>
+                                </div>
+                            </div>
+                        `;
+                        msgCont.style.display = "flex";
+                        msgCont.style.justifyContent = "center";
+                        msgCont.style.alignItems = "center";
+
+                        cont.appendChild(msgCont);
+
+                        // 
+
+                        let b_openAsText = msgCont.querySelector(".b-open-as-text") as HTMLButtonElement;
+                        let b_download = msgCont.querySelector(".b-download") as HTMLButtonElement;
+
+                        b_openAsText.addEventListener("click",e=>{
+                            this.bypassUnsupportedFormat = true;
+                            this.reopen();
+                        });
+                        b_download.addEventListener("click",e=>{
+                            this.download();
+                        });
+                    }
                 }
             }
         }
-        else this.setTemp(false); // <-- should this be moved onto to when opening files from the left menu? 
+        else{
+            this.setTemp(false); // <-- should this be moved onto to when opening files from the left menu? 
+
+            if(this.link) this.link.scrollIntoView({behavior:"smooth"});
+        }
         // deselect others
         for(const c of this.p.d_files.children){
             c.classList.remove("cur");
@@ -2141,7 +2546,11 @@ class FFile extends FItem{
         for(const c of allFI){
             c.classList.remove("sel");
         }
-        if(this._fi){
+
+        let openContaining = true; // whether or not to open the containing folder structure in the files pane when opening a file
+        if(PAGE_ID == PAGEID.lesson) if(!lesson.hasLoaded) openContaining = false;
+
+        if(openContaining) if(this._fi){
             this._fi.classList.add("sel");
             function check(folder:FFolder){
                 if(!folder) return;
@@ -2161,6 +2570,18 @@ class FFile extends FItem{
             //     this.p.lastFolder = null;
             // }
         }
+    }
+
+    download(){
+        let blob = new Blob([this.buf]);
+        let url = URL.createObjectURL(blob);
+        
+        let a = document.createElement("a");
+        a.href = url;
+        a.download = this.name;
+        a.click();
+
+        URL.revokeObjectURL(url);
     }
 }
 
@@ -2381,16 +2802,17 @@ function postSetupEditor(project:Project,isUser=true,ignoreFilesPane=false){
         resolveHook(listenHooks.clickAddFile,null);
         
         let name = "index.html";
-        new InputMenu(
-            "New File","Enter file name",
-            (data?:string)=>{
-                project.createFile(data,new Uint8Array(),null,project.lastFolder ?? project.curFile?.folder,true);
-            },
-            () => {
-                console.log("File Creation Canceled");
-            },
-            "Create File",
-        ).load();
+        // new InputMenu(
+        //     "New File","Enter file name",
+        //     (data?:string)=>{
+        //         project.createFile(data,new Uint8Array(),null,project.lastFolder ?? project.curFile?.folder,true);
+        //     },
+        //     () => {
+        //         console.log("File Creation Canceled");
+        //     },
+        //     "Create File",
+        // ).load();
+        new CreateFileMenu().load();
         if(!name) return; // technically this doesn't do anything
     });
 
@@ -2407,6 +2829,17 @@ function postSetupEditor(project:Project,isUser=true,ignoreFilesPane=false){
     if(project.meta) if(project.meta.cid != null) b_publish.classList.remove("hide");
 
     if(isUser) postSetupPreview(project);
+
+    // 
+
+    project.fileList = (project.builtInFileList ? project.parent.querySelector(".file-list") as HTMLElement : pane_files.querySelector(".file-list") as HTMLElement); // maybe should optimize this better at some point
+    setupFileListDropdown(project);
+    project.fileList.addEventListener("mousedown",e=>{
+        closeAllSubMenus();
+    });
+    project.fileList.addEventListener("click",e=>{
+        if(!e.ctrlKey && !e.shiftKey) project.deselectHLItems();
+    });
 }
 function setupFilesPane(div:Element){
     div.innerHTML = `
@@ -2418,6 +2851,9 @@ function setupFilesPane(div:Element){
                 </button>
                 <button class="icon-btn-single b-new-folder co-item" co-label="Create folder">
                     <div class="material-symbols-outlined">create_new_folder</div>
+                </button>
+                <button class="icon-btn-single dd-files-pane-options">
+                    <div class="material-symbols-outlined">more_vert</div>
                 </button>
             </div>
         </div>
@@ -2447,37 +2883,51 @@ function setupFilesPane(div:Element){
 
     const b_newFolder = div.querySelector(".b-new-folder") as HTMLButtonElement;
     const b_newFile = div.querySelector(".b-new-file") as HTMLButtonElement;
+    const dd_filesPaneOptions = div.querySelector(".dd-files-pane-options") as HTMLElement;
+
+    dd_filesPaneOptions.addEventListener("mousedown",e=>{
+        openDropdown(dd_filesPaneOptions,()=>[
+            "Upload File(s)",
+            "Download as Zip"
+        ],i=>{
+            if(i == 0){
+                project?.uploadFiles();
+            }
+            else if(i == 1){
+                project?.downloadAsZip();
+            }
+        },{
+            getIcons() {
+                return [
+                    "upload",
+                    "package_2"
+                ];
+            },
+            onopen(dd) {
+                dd.children[1].classList.add("disabled");
+            }
+        });
+    });
 
     b_newFolder.addEventListener("click",e=>{
         if(!project) return;
         if(!project.canEdit) return;
         // let name = prompt("Enter folder name:");
-        new InputMenu(
-            "New Folder","Enter folder name",
-            (v:string)=>{
-                if(!v) return;
-                project.createFolder(v,project.lastFolder ?? project.curFile?.folder);
-            },
-            () => {
-                console.log("Canceled new folder creation");
-            }
-        ).load();
+        // new InputMenu(
+        //     "New Folder","Enter folder name",
+        //     (v:string)=>{
+        //         if(!v) return;
+        //         project.createFolder(v,project.lastFolder ?? project.curFile?.folder);
+        //     },
+        //     () => {
+        //         console.log("Canceled new folder creation");
+        //     }
+        // ).load();
+        new CreateFolderMenu().load();
     });
 
     b_newFile.addEventListener("click",e=>{
-        if(!project) return;
-        if(!project.canEdit) return;
-        // let name = prompt("Enter file name:");
-        new InputMenu(
-            "New File","Enter file name",
-            (inputname:string)=>{
-                if(!inputname) return;
-                project.createFile(inputname,new Uint8Array(),null,project.lastFolder ?? project.curFile?.folder,true);
-            },
-            () => {
-                console.log("Canceled new file creation");
-            }
-        ).load();
+        new CreateFileMenu().load();
     });
 
     // INIT OPS BUTTONS
@@ -2518,11 +2968,14 @@ function setupFilesPane(div:Element){
         ops_paste.addEventListener("click",e=>{
             if(!project) return;
             let item = project.lastFolder??project.curFile;
-            project.pasteFItems(item,(effected)=>{
+            project.pasteFItems(project,item,(effected)=>{
                 // for(const c of effected) flashHL(item);
             });
         });
     }
+
+    // div.setAttribute("resize","r");
+    // setupResize(div as HTMLElement);
 }
 
 function createHTMLPreviewsDropdown(inp:HTMLInputElement){
@@ -2715,8 +3168,15 @@ async function refreshLesson(){
 
 let _isSaving = false;
 async function saveProject(isQuick=false){
-    if(PAGE_ID == PAGEID.lesson) return;
+    if(PAGE_ID == PAGEID.lesson){
+        await saveLesson(isQuick);
+        return;
+    }
+
     if(!project) return;
+
+    if(project._skipSave) return;
+    
     if(_isSaving) return;
     if(!project.canEdit) return;
     
@@ -2883,6 +3343,7 @@ document.addEventListener("keyup",e=>{
         }
         function check(){
             if(f.isReadOnly()) return;
+            if(!f.editor) return;
             let v = f.editor.getValue();
             if(f._lastSavedText != v){
                 f.setSaved(false);
@@ -3102,8 +3563,13 @@ async function openDropdown(btn:HTMLElement,getLabels:()=>string[],onclick:(i:nu
     };
     dd.className = "dropdown";
     for(let i = 0; i < labels.length; i++){
-        let d = document.createElement("div");
         let l = labels[i];
+        if(l == "<hr>"){
+            let hr = document.createElement("hr");
+            dd.appendChild(hr);
+            continue;
+        }
+        let d = document.createElement("div");
         let icon = icons[i];
         if(icon){
             let ic = document.createElement("div");
@@ -3163,11 +3629,16 @@ type DropdownOptions = {
     isRightClick?:boolean;
     useHold?:boolean;
 }
-function setupDropdown(btn:HTMLElement,getLabels:()=>string[],onclick:(i:number)=>void,ops?:DropdownOptions){
+function setupDropdown(btn:HTMLElement,getLabels:()=>string[],onclick:(i:number)=>void,ops:DropdownOptions={}){
     btn.addEventListener("contextmenu",async e=>{
         e.preventDefault();
+        e.stopImmediatePropagation();
+        e.stopPropagation();
+        
         ops.customPos = true;
         let dd = await openDropdown(btn,getLabels,onclick,ops);
+        if(!dd) return;
+
         dd.style.left = (e.clientX)+"px";
         dd.style.top = (e.clientY-60)+"px";
         if(e.clientY > innerHeight/2) dd.style.transform = "translate(0px,-100%)";
@@ -3715,12 +4186,12 @@ class ConfirmMenu extends Menu {
     }
 
     confirmChoice() {
-        this.onConfirm();
+        if(this.onConfirm) this.onConfirm();
         this.close();
     }
 
     cancelChoice() {
-        this.onCancel();
+        if(this.onCancel) this.onCancel();
         this.close();
     }
 }
@@ -3801,16 +4272,20 @@ class InputMenu extends Menu {
     
     // ran on click of "confirm" button, or on enter key press
     confirmChoice(data?:any) {
-        console.log("Choice confirmed. Input data: " + data);
-        let res = this.onConfirm(data);
-        if(res == 1) return; // return 1 in the onConfirm method of your menu so that it stays open and cancels the close
+        // console.log("Choice confirmed. Input data: " + data);
+        if(this.onConfirm){
+            let res = this.onConfirm(data);
+            if(res == 1) return; // return 1 in the onConfirm method of your menu so that it stays open and cancels the close
+        }
         this.close();
     }
     
     // ran on click of "cancel" button
     cancelChoice() {
-        let res = this.onCancel();
-        if(res == 1) return;
+        if(this.onCancel){
+            let res = this.onCancel();
+            if(res == 1) return;
+        }
         this.close();
     }
 }
@@ -4311,4 +4786,231 @@ function countStartingChars(str:string,char:string,start?:number,end?:number){
         else amt++;
     }
     return amt;
+}
+
+// 
+
+class CreateFileMenu extends InputMenu{
+    constructor(ops:{
+        nameTemplate?:string,
+        buf?:Uint8Array,
+        folder?:FFolder,
+        onConfirm?: (data?: string) => any,
+        onCancel?: () => void,
+
+        rootFolder?:boolean
+    }={}){
+        if(ops.buf == undefined) ops.buf = new Uint8Array();
+        if(!ops.rootFolder) if(ops.folder == undefined) ops.folder = project.lastFolder ?? project.curFile?.folder;
+        
+        super("New File","Enter file name",
+            (name?:string)=>{
+                if(testForError(validateFileName(name))) return 1; // todo (done :D) - validate name?
+
+                project.createFile(name,ops.buf,null,ops.folder,true);
+
+                // if(ops.onConfirm) ops.onConfirm(name);
+            },
+            ops.onCancel
+        );
+    }
+    
+    load(): this {
+        if(!project) return;
+        if(!project.canEdit) return;
+
+        super.load();
+        setTimeout(()=>{
+            this.inp.focus();
+        },50);
+
+        return this;
+    }
+}
+class CreateFolderMenu extends InputMenu{
+    constructor(ops:{
+        nameTemplate?:string,
+        folder?:FFolder,
+        onConfirm?:
+        (data?: string) => any,
+        onCancel?: () => void,
+
+        rootFolder?:boolean
+    }={}){
+        if(!ops.rootFolder) if(ops.folder == undefined) ops.folder = project.lastFolder ?? project.curFile?.folder;
+
+        super("New Folder","Enter folder name",
+            (name?:string)=>{
+                if(testForError(validateFolderName(name))) return 1; // todo (done :D) - validate name?
+
+                project.createFolder(name,ops.folder,true); // true was never here before, is it needed?
+                
+                if(ops.onConfirm) ops.onConfirm(name);
+            },
+            ops.onCancel
+        );
+    }
+    
+    load(): this {
+        if(!project) return;
+        if(!project.canEdit) return;
+
+        super.load();
+        setTimeout(()=>{
+            this.inp.focus();
+        },50);
+
+        return this;
+    }
+}
+class OverrideFFileMenu extends ConfirmMenu{
+    constructor(f1:FFile,name:string,buf:Uint8Array,f2:FFile,onDone:(v:boolean)=>void){
+        super("File already exists","There is already a file in this folder with the name: "+name+".<br><br>Do you want to override it?",
+        async () => {
+            if(!f2) return;
+            
+            if(f2 instanceof FFile) {
+                if(f2.editor){
+                    f2.editor.setValue(f2.p.textDecoder.decode(buf));
+                }
+                f2.buf = buf.slice();
+                f2.setSaved(false);
+
+                if(f2.link) f2.reopen(false);
+            }
+
+            // delete og file
+            if(f1) await f1.p.deleteFItem(f1,true);
+
+            if(onDone) onDone(true);
+        },
+        () => { 
+            console.log("File override canceled");
+            if(onDone) onDone(false);
+        })
+    }
+}
+class OverrideFFolderMenu extends ConfirmMenu{
+    constructor(f1:FFolder,f2:FFolder,onDone:(v:boolean)=>void){
+        super("Folder already exists","There is already a folder in this folder with the name: "+f1.name+".<br><br>Do you want to merge contents?",
+        async () => {
+            let list = [...f1.items];
+            for(const item of list){
+                await moveFile(item,f2,true);
+            }
+
+            // delete og folder that should be empty now
+            if(f1.items.length == 0) await f1.p.deleteFItem(f1,true);
+            else{
+                alert("Something went wrong and not all the files were transfered from the original folder.");
+            }
+
+            await saveProject();
+
+            if(onDone) onDone(true);
+        },
+        () => { 
+            console.log("File override canceled");
+            if(onDone) onDone(false);
+        })
+    }
+}
+
+let fsReservedNames = [
+    "CON", "PRN", "AUX", "NUL",
+    "COM1", "COM2", "COM3", "COM4", "COM5", "COM6", "COM7", "COM8", "COM9",
+    "LPT1", "LPT2", "LPT3", "LPT4", "LPT5", "LPT6", "LPT7", "LPT8", "LPT9"
+];
+let invalidFileNameChars = [
+    "/",
+    "\\",
+    "<",
+    ">",
+    ":",
+    '"',
+    "|",
+    "?",
+    "*"
+];
+
+function testForError(d?:any){
+    if(!d || d?.err){
+        if(d) alert("Error: "+d.err);
+        return true;
+    }
+    return false;
+}
+
+function isValidFSName(name:string){
+    name = name.trim();
+    if(name.length > 32) return {err:"Name is too long (max 32 characters)."};
+    
+    if(name.endsWith(".")) return {err:"Name cannot end with a period."};
+
+    let hasAlpha = false;
+    for(let i = 0; i < name.length; i++){
+        let code = name.charCodeAt(i);
+        if(code >= 65 && code <= 90) hasAlpha = true;
+        if(code >= 97 && code <= 122) hasAlpha = true;
+        if((code >= 0 && code <= 31) || (code >= 128)){
+            return {err:"Invalid characters in name."};
+        }
+
+        if(invalidFileNameChars.includes(name[i])) return {err:"Invalid characters in name, you can't use: [ "+invalidFileNameChars.join(", ")+" ]"};
+    }
+    if(!hasAlpha) return {err:"At least one alphanumeric character must be in the name. (a-z or A-Z)"};
+    
+    let _i = name.lastIndexOf(".");
+    let s = [name.substring(0,_i),name.substring(_i)];
+
+    if(fsReservedNames.includes(s[0])) return {err:"Invalid name, reserved keyword."};
+    
+    return {};
+}
+function validateFileName(name:string){
+    if(!name) return;
+    name = name.trim();
+
+    if(testForError(isValidFSName(name))) return;
+    if(!name.includes(".")){
+        return {err:"File names must include an extension such as .html, .css, .js."};
+    }
+
+    return {};
+}
+function validateFolderName(name:string){
+    if(!name) return;
+    name = name.trim();
+    
+    if(testForError(isValidFSName(name))) return;
+    if(name.includes(".")){
+        return {err:"Folder names cannot include an extension or the '.' character."};
+    }
+
+    return {};
+}
+
+// 
+
+async function doOverrideFile(f1:FFile,name:string,buf:Uint8Array,f2:FFile){
+    if(!f2) return 0;
+    
+    let res1 = await new Promise<boolean>(resolve=>{
+        new OverrideFFileMenu(f1,name,buf,f2,(v)=>{
+            resolve(v);
+        }).load();
+    });
+    return res1;
+}
+async function doOverrideFolder(f1:FFolder,f2:FFolder){
+    if(!f2) return 0;
+    
+    console.log(f1.name,f2?.name,f1,f2);
+
+    let res1 = await new Promise<boolean>(resolve=>{
+        new OverrideFFolderMenu(f1,f2,(v)=>{
+            resolve(v);
+        }).load();
+    });
+    return res1;
 }

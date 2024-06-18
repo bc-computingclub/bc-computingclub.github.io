@@ -36,6 +36,7 @@ async function loadProject(uid:string,pid:string){
     if(!pid) project.pid = "tmp_project";
     setupEditor(pane_code,EditorType.self);
     postSetupEditor(project);
+    setupResize(pane_files);
 
     d_curProject.textContent = project.title;
 

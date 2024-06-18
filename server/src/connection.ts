@@ -17,7 +17,8 @@ export const io = new Server(server,{
     cors:{
         // origin:"http://127.0.0.1:5500"
         origin:"*"
-    }
+    },
+    maxHttpBufferSize:1e7
 });
 
 export function sanitizeEmail(email:string){

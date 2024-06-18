@@ -1,4 +1,4 @@
-import { io, server, CredentialResData, User, users, getSession, sanitizeEmail, getProject, attemptToGetProject, getDefaultProjectMeta, getProjectFromHD, lessonMetas, LessonMeta, loadProject, LessonMode, writeLessonMeta, deleteLessonMeta, socks, ULFolder, ULItem, ULFile, getProject2, ProjectMeta, allProjects, Project, UserChallengeData, projectCache } from "./connection";
+import { io, server, CredentialResData, User, users, getSession, sanitizeEmail, getProject, attemptToGetProject, getDefaultProjectMeta, getProjectFromHD, lessonMetas, LessonMeta, loadProject, LessonMode, writeLessonMeta, deleteLessonMeta, socks, ULFolder, ULItem, ULFile, getProject2, ProjectMeta, allProjects, Project, UserChallengeData, projectCache, Socket } from "./connection";
 import { CSubmission, Challenge, ChallengeData, ChallengeGet, challenges, getDifficultyId } from "./s_challenges";
 import {LessonData, getLessonFolder, globalLessonFolders, ptreeMap, reloadLessons} from "./s_lesson";
 import fs, { copyFile } from "fs";
@@ -48,6 +48,58 @@ let usersOnline:string[] = [];
 //     await write("../data/users.json",JSON.stringify(allUsers),"utf8");
 // }
 // readAllUsers();
+
+
+// Project Functions
+
+async function restoreProjectFiles(socket:Socket,uid:string,pid:string,call:(data:any,data2?:any,canEdit?:boolean)=>void){
+    if(!valVar2(uid,"string",call)) return;
+        if(!valVar(pid,"string")){
+            call(null,1);
+            return;
+        }
+        if(!valVar(call,"function")){
+            call(null,2);
+            return;
+        }
+
+        let user = getSession(socket.id);
+        if(!user){
+            call(null,3);
+            return;
+        }
+
+        let p = await user.getProject(pid,uid);
+
+        if(!p){
+            call(null,4);
+            return;
+        }
+        if(typeof p == "number"){
+            call(null,p);
+            return;
+        }
+
+        if(!p.hasPermissionToView(user.meta.uid)){
+            call(null,-2); // you do not have permission to view this private project
+            return;
+        }
+
+        p.updateWhenLastSaved();
+        await p.save();
+
+        let serialized = p.serialize(user.uid);
+        let startPath = p.getPath();
+        
+        serialized.items = await p.getFileItems();
+
+        call(serialized,null,p.canEdit(user.meta.uid));
+
+        user.addToRecents(p.meta.pid);
+        await user.save();
+}
+
+// 
 
 io.on("connection",socket=>{
     socket.on("logout",async (call:(data:any)=>void)=>{
@@ -999,98 +1051,13 @@ io.on("connection",socket=>{
         }
         
 
-        // todo - cache file values so if they're the same then they don't need to be reuploaded, or do this on the client maybe to speed it up
+        // todo (done as of 6/16/24 I think) - cache file values so if they're the same then they don't need to be reuploaded, or do this on the client maybe to speed it up
 
         // console.log(":: done uploading");
         call(0);
     });
     socket.on("restoreProjectFiles",async (uid:string,pid:string,call:(data:any,data2?:any,canEdit?:boolean)=>void)=>{
-        if(!valVar2(uid,"string",call)) return;
-        if(!valVar(pid,"string")){
-            // console.log("Err: pid incorrect format");
-            call(null,1);
-            return;
-        }
-        if(!valVar(call,"function")){
-            // console.log("Err: call incorrect format");
-            call(null,2);
-            return;
-        }
-
-        let user = getSession(socket.id);
-        if(!user){
-            call(null,3);
-            return;
-        }
-
-        let p = await user.getProject(pid,uid);
-
-        // let p = await getProjectFromHD(uid,pid);
-        // let p = getProject2(user.email,pid);
-        if(!p){
-            call(null,4);
-            return;
-        }
-        if(typeof p == "number"){
-            call(null,p);
-            return;
-        }
-
-        if(!p.hasPermissionToView(user.meta.uid)){
-            call(null,-2); // you do not have permission to view this private project
-            return;
-        }
-
-        // if(!user.projects.includes(p)) user.projects.push(p);
-        // if(!user.meta.projects.includes(p.meta._id)) // NOT SURE IF THIS IS NEEDED? shouldn't be
-
-        // p.meta.wls = new Date().toISOString(); // resetting this makes it so time from closing the project to reopening it isn't included in the time spent on the project
-        p.updateWhenLastSaved();
-        await p.save();
-        // await user.saveToFile();
-
-        let serialized = p.serialize(user.uid);
-        let startPath = p.getPath();
-        
-        // async function search(folder:ULItem[],path:string){
-        //     let names = await readdir(path);
-        //     if(!names) return;
-        //     for(const name of names){
-        //         if(!name.includes(".")){
-        //             let subFolder = new ULFolder(name,[]);
-        //             folder.push(subFolder);
-        //             await search(subFolder.items,path+name+"/");
-        //         }
-        //         else{
-        //             let file = await read(path+name+"/","utf8",true);
-        //             folder.push(new ULFile(name,file,"","utf8"));
-        //         }
-        //     }
-        // }
-        // await search(serialized.items,startPath+"/");
-        serialized.items = await p.getFileItems();
-
-        // call(p.serializeGet(true),null,user.canEdit(p.meta));
-        call(serialized,null,p.canEdit(user.meta.uid));
-
-        user.addToRecents(p.meta.pid);
-        await user.save();
-
-        return;
-        
-        // let uid = user.sanitized_email;
-        // let path = "../project/"+uid+"/"+pid;
-        // if(!await access(path)){
-        //     // await mkdir(path);
-        //     call(null);
-        //     return;
-        // }
-        // let curFiles = await readdir(path);
-        // let files:ULFile[] = [];
-        // for(const f of curFiles){
-        //     files.push(new ULFile(f,await read(path+"/"+f,"utf8"),"","utf8"));
-        // }
-        // call(files);
+        restoreProjectFiles(socket,uid,pid,call);
     });
 
     // User get stuff
@@ -1811,11 +1778,13 @@ io.on("connection",socket=>{
         if(!p) f(null);
         else f(p.meta.pid);
     });
-    socket.on("moveFiles",async (pid:string,files:string[],fromPath:string,toPath:string,f:(data:any)=>void)=>{
-        if(!valVar2(pid,"string",f)) return;
+    socket.on("moveFiles",async (pid:string,files:string[],fromPath:string,toPath:string,lid:string,f:(data:any)=>void)=>{
+        if(!lid) if(!valVar2(pid,"string",f)) return;
         if(!valVar2(files,"object",f)) return;
         if(!valVar2(fromPath,"string",f)) return;
         if(!valVar2(toPath,"string",f)) return;
+        if(lid) if(!valVar2(lid,"string",f)) return;
+
         if(fromPath.includes(".") || toPath.includes(".")){
             f(3);
             return; // you trying to hack or something there?
@@ -1827,7 +1796,7 @@ io.on("connection",socket=>{
             return;
         }
         // let p = getProject2(user.uid,pid);
-        let p = await user.getProject(pid);
+        let p = await user.getProjectOrLesson(pid,lid);
         if(!p){
             f(1);
             return;
@@ -1863,10 +1832,24 @@ io.on("connection",socket=>{
         // console.log(fromPath,toPath,files);
         f(0);
     });
-    socket.on("renameFItem",async (pid:string,fromPath:string,file:string,newName:string,f:(data:any)=>void)=>{
-        if(!valVar2(pid,"string",f)) return;
-        if(!valVar2(file,"string",f)) return;
-        if(!valVar2(fromPath,"string",f)) return;
+    socket.on("renameFItem",async (pid:string,fromPath:string,file:string,newName:string,lid:string,f:(data:any)=>void)=>{
+        if(!lid) if(!valVar2(pid,"string",f)){
+            console.log("... invalid pid");
+            return;
+        }
+        if(!valVar2(file,"string",f)){
+            console.log("... invalid file",file,typeof file);
+            return;
+        }
+        if(!valVar2(fromPath,"string",f)){
+            console.log("... invalid fromPath");
+            return;
+        }
+        if(lid) if(!valVar2(lid,"string",f)){
+            console.log("... invalid lid");
+            return;
+        }
+
         if(fromPath.includes(".")){
             f(3);
             return; // you trying to hack or something there?
@@ -1878,7 +1861,7 @@ io.on("connection",socket=>{
             return;
         }
         // let p = getProject2(user.uid,pid);
-        let p = await user.getProject(pid);
+        let p = await user.getProjectOrLesson(pid,lid);
         if(!p){
             f(1);
             return;
@@ -1893,7 +1876,10 @@ io.on("connection",socket=>{
             // f(4); // couldn't find path
             // return;
         }
-        if(!items) return;
+        if(!items){
+            f(6); // couldn't find folder items
+            return;
+        }
 
         let item = items.find(v=>v.name == file);
         if(!item){
@@ -1906,10 +1892,12 @@ io.on("connection",socket=>{
         await rename(start+fromPath+file,start+fromPath+newName);
         f(0);
     });
-    socket.on("deleteFItem",async (pid:string,fromPath:string,file:string,f:(data:any)=>void)=>{
-        if(!valVar2(pid,"string",f)) return;
+    socket.on("deleteFItem",async (pid:string,fromPath:string,file:string,lid:string,f:(data:any)=>void)=>{
+        if(!lid) if(!valVar2(pid,"string",f)) return;
         if(!valVar2(file,"string",f)) return;
         if(!valVar2(fromPath,"string",f)) return;
+        if(lid) if(!valVar2(lid,"string",f)) return;
+
         if(fromPath.includes(".")){
             f(3);
             return; // you trying to hack or something there?
@@ -1921,7 +1909,7 @@ io.on("connection",socket=>{
             return;
         }
         // let p = getProject2(user.uid,pid);
-        let p = await user.getProject(pid);
+        let p = await user.getProjectOrLesson(pid,lid);
         if(!p){
             f(1);
             return;
@@ -2478,7 +2466,7 @@ async function deleteProject(user:User,pMeta:ProjectMeta,f:(res:number)=>void){
     f(res ? 0 : 3);
 }
 
-function parseFolderStr(p:ProjectInst,path:string,items:ULItem[]){
+function parseFolderStr(p:ProjectInst|LessonMetaInst,path:string,items:ULItem[]){
     if(!p) return;
     let s = path.split("/").filter(v=>v != null && v != "");
     if(!s.length) return null;

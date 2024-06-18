@@ -472,7 +472,7 @@ class AddFileTask extends Task{
             lesson.tut.curFile = existingFile;
         }
         if(!goesBack) this.file = await lesson.tut.createFile(this.name,new Uint8Array());
-        this.file.open();
+        this.file.open(); // is this redundant?
         if(!goesBack) await wait(500);
 
         let alreadyFoundFile = lesson.p.files.find(v=>v.name == this.name);
@@ -1287,7 +1287,7 @@ class AddGenericCodeTask extends Task{
         }
     }
     async start(){
-        super.start();
+        await super.start();
         
         await this.play();
 
@@ -1317,7 +1317,7 @@ class AddTutorSideText extends Task{
     text:string;
     comment:string;
     async start(){
-        super.start();
+        await super.start();
         
         let editor = lesson.tut.getCurEditor();
         lesson.tut.curFile.blockPosChange = false;
@@ -1397,7 +1397,7 @@ class MoveCursorTo extends Task{
     line:number;
     col:number;
     async start(){
-        super.start();
+        await super.start();
         
         let editor = lesson.tut.getCurEditor();
 
@@ -1437,7 +1437,7 @@ class DoRefreshTask extends Task{
     text:string;
     b:Bubble;
     async start(){
-        super.start();
+        await super.start();
         await wait(500);
 
         // this.addToHook(listenHooks.refresh); // since you may want to look at the preview for a while, this should require the "I'm Done" instead
@@ -1465,7 +1465,7 @@ class ClickButtonTask extends Task{
     dir:string;
     btn:HTMLButtonElement;
     async start(){
-        super.start();
+        await super.start();
 
         let t = this;
         let func = function(){
@@ -1487,7 +1487,7 @@ class PonderBoardTask extends Task{
     }
     bid:string;
     async start(): Promise<string | void> {
-        super.start();
+        await super.start();
 
         await wait(250);
         let r2 = tutMouse.getBoundingClientRect();
@@ -1504,7 +1504,7 @@ class PonderBoardTask extends Task{
         if(curTA?.tagName.toLowerCase() == "textarea") curTA.blur();
         
         b.initEvents();
-        b.init();
+        await b.init();
         b.show();
 
         await this.finish();
@@ -1529,7 +1529,7 @@ class BubbleTask extends Task{
     col:number;
     dir:string;
     async start(): Promise<string | void> {
-        super.start();
+        await super.start();
         
         if(this.line != null && this.col != null){
             let editor = lesson.tut.getCurEditor();
@@ -1569,7 +1569,7 @@ class InstructTask extends Task{
     }
     b:Bubble;
     async start(): Promise<string | void> {
-        super.start();
+        await super.start();
 
         await wait(250);
         let r2 = tutMouse.getBoundingClientRect();
@@ -1591,7 +1591,7 @@ class InfiniteTask extends Task{
         super("Infinite Task");
     }
     async start(): Promise<string | void> {
-        super.start();
+        await super.start();
         await new Promise(resolve=>{
             // to infinity
         });
@@ -1631,6 +1631,8 @@ class ChangePreviewURLTask extends Task{
         return false;
     }
     async start(): Promise<string | void> {
+        await super.start();
+        
         await wait(200);
 
         let _list = project.i_previewURL.value.split("/");
@@ -3034,8 +3036,10 @@ class BE_RemoveObj extends ObjRefBoardEvent{
 class BE_EndPonder extends BoardEvent{
     async run(b: Board): Promise<void> {
         this.start();
-        await b.waitForBubble("Close Ponder Board...",0,-b._rect.height/2+36,true);
-        await b.exit();
+        if(b){
+            if(b._rect) await b.waitForBubble("Close Ponder Board...",0,-b._rect.height/2+36,true);
+            await b.exit();
+        }
         await this.finish(true);
         lesson.currentSubTask._resFinish();
     }
@@ -3322,6 +3326,15 @@ class Lesson{
         }
         console.warn("*** Finished loading lesson");
         this.hasLoaded = true;
+
+        // load index.html page when resuming the lesson if it's there
+        let indexTut = lesson.tut.items.find(v=>v.name == "index.html") as FFile;
+        if(indexTut) indexTut.open();
+        else lesson.p.files[0]?.open();
+
+        let index = lesson.p.items.find(v=>v.name == "index.html") as FFile;
+        if(index) index.open();
+        else lesson.p.files[0]?.open();
     }
 
     progress = {
