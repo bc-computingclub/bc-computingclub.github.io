@@ -1,0 +1,21 @@
+{
+    "ver": "0",
+    "name": "A Basic Particle Sim",
+    "banner": {
+        "sections": [
+            {
+                "head": "What Will We Be Doing in This Lesson?",
+                "text": [
+                    "We'll look at how to setup a basic particle simulator.",
+                    "This will be the basis or core that we'll start out with for all other particle simulators."
+                ]
+            }
+        ]
+    },
+    "finalInstance": null,
+    "boards": [],
+    "x": 0,
+    "y": 0,
+    "req": [],
+    "type": 1
+}

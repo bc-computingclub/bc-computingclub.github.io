@@ -1182,24 +1182,25 @@ export class UserSessionItem{
     deleteTokens(){}
     getFirstToken(){return ""}
 
-    private sockIds:string[] = [];
-    getSocketIds(){
-        return this.sockIds;
-    }
-    addSocketId(sockId:string){
-        if(this.sockIds.includes(sockId)) return;
-        this.sockIds.push(sockId);
-        // socks.set(sockId,this.uid);
-    }
-    removeSocketId(sockId:string){
-        removeFromList(this.sockIds,sockId);
-    }
-    deleteSocketIds(){
-        let list = [...this.sockIds];
-        for(const id of list){
-            this.removeSocketId(id);
-        }
-    }
+    sockId:string = "";
+    // private sockIds:string[] = [];
+    // getSocketIds(){
+    //     return this.sockIds;
+    // }
+    // addSocketId(sockId:string){
+    //     if(this.sockIds.includes(sockId)) return;
+    //     this.sockIds.push(sockId);
+    //     // socks.set(sockId,this.uid);
+    // }
+    // removeSocketId(sockId:string){
+    //     removeFromList(this.sockIds,sockId);
+    // }
+    // deleteSocketIds(){
+    //     let list = [...this.sockIds];
+    //     for(const id of list){
+    //         this.removeSocketId(id);
+    //     }
+    // }
 
     // Stat Functions
     async getLessonStats(){

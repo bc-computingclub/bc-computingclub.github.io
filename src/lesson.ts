@@ -410,7 +410,7 @@ class SwitchFileTask extends Task{
     }
 }
 class AddFileTask extends Task{
-    constructor(name:string,isRequired:boolean,customText?:string){
+    constructor(name:string,isRequired=false,customText?:string){
         super("Add a file named: "+name);
         this.name = name;
         this.isRequired = isRequired;
@@ -539,18 +539,19 @@ const COL_SCALE = 7.7;
 const COL_OFF = 60;
 
 function startEdit(){
-    lesson.tut.curFile.blockPosChange = false;
+    if(lesson.tut.curFile) lesson.tut.curFile.blockPosChange = false;
     let editor = lesson.tut.getCurEditor();
     if(editor) editor.updateOptions({readOnly:false});
 }
 function endEdit(){
-    lesson.tut.curFile.blockPosChange = true;
+    if(lesson.tut.curFile) lesson.tut.curFile.blockPosChange = true;
     let editor = lesson.tut.getCurEditor();
     if(editor) editor.updateOptions({readOnly:true});
 }
 
 type Editor = monaco.editor.IStandaloneCodeEditor;
 async function startMouseMove(col:number,line:number,noShow=false){
+    return; // probably don't need this function anymore?    
     if(!noShow) await showTutMouse();
     // await moveTutMouseTo(58 + pos.column*7.7,115 + pos.lineNumber*16.5);
     await moveTutMouseTo(col,line);
@@ -607,7 +608,7 @@ function _moveCursorEnd(editor:Editor){
 async function moveEditorCursorBy(editor:Editor,cols:number,rows:number,noShow=false){
     let pos = editor.getPosition();
     if(noShow){
-        await moveTutMouseTo(cols,rows);
+        await moveTutMouseTo(cols,rows,true);
         startEdit();
         editor.setPosition(pos.with(pos.lineNumber+rows,pos.column+cols));
         endEdit();
@@ -673,11 +674,32 @@ class CP_LineBelow extends CodePart{
         startEdit();
         for(let i = 0; i < this.amt; i++){
             editor.trigger("keyboard","editor.action.insertLineAfter",null);
+            await wait(50);
         }
-        let newPos = editor.getPosition();
-        moveTutMouseTo(newPos.column,newPos.lineNumber);
+        // let newPos = editor.getPosition();
+        // moveTutMouseTo(newPos.column,newPos.lineNumber); // maybe we don't need this anymore?
         endEdit();
-        await wait(50);
+        // await wait(50);
+        await wait(350);
+    }
+}
+class CP_LineAbove extends CodePart{
+    constructor(amt:number){
+        super();
+        this.amt = amt;
+    }
+    amt:number;
+    async run(editor: monaco.editor.IStandaloneCodeEditor): Promise<void> {
+        startEdit();
+        for(let i = 0; i < this.amt; i++){
+            editor.trigger("keyboard","editor.action.insertLineBefore",null);
+            await wait(50);
+        }
+        // let newPos = editor.getPosition();
+        // moveTutMouseTo(newPos.column,newPos.lineNumber); // maybe we don't need this anymore?
+        endEdit();
+        // await wait(50);
+        await wait(350);
     }
 }
 class CP_Home extends CodePart{
@@ -711,10 +733,11 @@ class CP_BreakOut extends CodePart{
         let dir = this.y/amt;
         for(let i = 0; i < amt; i++){
             _moveCursorEnd(editor);
-            await moveEditorCursorBy(editor,0,dir);
+            await moveEditorCursorBy(editor,0,dir,true);
             await wait(50);
         }
         if(this.newLine) await typeText(editor,"\n");
+        await wait(350);
     }
 }
 class CP_MoveBy extends CodePart{
@@ -729,6 +752,7 @@ class CP_MoveBy extends CodePart{
     noShow:boolean;
     async run(editor: monaco.editor.IStandaloneCodeEditor): Promise<void> {
         await moveEditorCursorBy(editor,this.x,this.y,this.noShow);
+        await wait(350);
     }
 }
 class CP_MoveTo extends CodePart{
@@ -761,6 +785,8 @@ class CP_Text extends CodePart{
         lesson.tut.curFile.curCol = pos.column;
         
         await startMouseMove(pos.column,pos.lineNumber,true);
+
+        await wait(350);
         // moveTutMouseTo(58 + pos.column*7.7,115 + pos.lineNumber*16.5);
     }
 }
@@ -792,23 +818,51 @@ class CP_Comment extends CodePart{
         endEdit();
     }
 }
+
+type CP_HTML_Options = {
+    /**
+     * Attributes to add. Defined with string key/value pairs.
+     */
+    attr?:Record<string,string>,
+    noClosingTag?:boolean
+};
 class CP_HTML extends CodePart{
-    constructor(tag:string,endAtCenter:boolean,open:boolean,text?:string){
+    constructor(tag:string,endAtCenter:boolean,open:boolean,text?:string,ops:CP_HTML_Options={}){
         super();
         this.tag = tag;
         this.endAtCenter = endAtCenter;
         this.open = open;
         this.text = text;
+        this.ops = ops;
     }
     tag:string;
     endAtCenter:boolean;
     open:boolean;
     text:string;
+    ops:CP_HTML_Options;
     async run(editor: Editor): Promise<void> {
         // lesson.tut.curFile.blockPosChange = false;
 
         let text = this.text ?? "";
-        await typeText(editor,`<${this.tag}>${text}</${this.tag}>`);
+
+        let attr:string[] = [];
+        if(this.ops.attr){
+            let keys = Object.keys(this.ops.attr);
+            for(const key of keys){
+                let v = this.ops.attr[key];
+                attr.push(key+"="+`"${v}"`);
+            }
+        }
+
+        // await typeText(editor,`<${this.tag}>${text}</${this.tag}>`);
+        if(attr.length) await typeText(editor,`<${this.tag} ${attr.join(" ")}>`);
+        else await typeText(editor,`<${this.tag}>`);
+        if(text?.length){
+            await wait(150);
+            await typeText(editor,`${text}`);
+            await wait(100);
+        }
+        if(!this.ops.noClosingTag) await typeText(editor,`</${this.tag}>`);
         
         // for(const c of list){
         //     (c as HTMLElement).style.display = null;
@@ -820,7 +874,17 @@ class CP_HTML extends CodePart{
         await startMouseMove(pos.column,pos.lineNumber,true);
         // moveTutMouseTo(58 + pos.column*7.7,115 + pos.lineNumber*16.5);
 
-        if(this.endAtCenter) await moveEditorCursorBy(editor,-3-this.tag.length,0);
+        if(this.endAtCenter){
+            // await moveEditorCursorBy(editor,-3-this.tag.length,0); // NEW: maybe we should no show this? or maybe animate the movement there
+            await wait(150);
+            for(let i = 0; i < 3+this.tag.length; i++){
+                startNoDelay();
+                await moveEditorCursorBy(editor,-1,0,true);
+                endNoDelay();
+                await wait(getTypeSpeed(3+this.tag.length)*0.75);
+            }
+            await wait(300);
+        }
         if(this.open) await typeText(editor,"\n");
     }
 }
@@ -1024,24 +1088,41 @@ function forceEditorUpdate(editor:Editor){
     editor.setValue(editor.getValue());
     editor.setPosition(pos2);
 }
+class CP_StyleRule extends CodePart{
+    constructor(rule:string,value:string){
+        super();
+        this.rule = rule;
+        this.value = value;
+    }
+    rule:string;
+    value:string;
+    async run(editor: monaco.editor.IStandaloneCodeEditor): Promise<void> {
+        // TODO - might be good to add repositioning logic here for detecting the current styleset and putting this on the next line
+        
+        // might add setting at some point for whether there should be spaces added or not
+        await typeText(editor,this.rule+":"+this.value+";");
+        
+        await wait(350);
+    }
+}
 class CP_CSS extends CodePart{
-    constructor(selector:string,styles:Record<string,any>){
+    constructor(selector:string,styles:Record<string,string>){
         super();
         this.selector = selector;
         this.styles = styles;
     }
     selector:string;
-    styles:Record<string,any>;
+    styles:Record<string,string>;
     async run(editor: monaco.editor.IStandaloneCodeEditor): Promise<void> {
         // lesson.startEditting();
         let speed = 1;
 
         await typeText(editor,`${this.selector}{\n`,speed,true);
-        startEdit();
+        // startEdit();
         // editor.trigger("keyboard","editor.action.insertLineAfter",null);
         // let pos = editor.getPosition();
         // editor.setPosition(pos.with(pos.lineNumber-1,pos.column));
-        endEdit();
+        // endEdit();
 
         let i = 0;
         let ok = Object.keys(this.styles);
@@ -1401,14 +1482,18 @@ class MoveCursorTo extends Task{
         
         let editor = lesson.tut.getCurEditor();
 
-        await showTutMouse();
-        lesson.tut.curFile.blockPosChange = false;
-        editor.setPosition({lineNumber:this.line,column:this.col});
-        lesson.tut.curFile.blockPosChange = true;
-        await syncMousePos(editor);
-        await wait(150);
-        await hideTutMouse();
-        await wait(200);
+        let pos = editor.getPosition();
+
+        if(this.line != pos.lineNumber || this.col != pos.column){
+            await showTutMouse();
+            lesson.tut.curFile.blockPosChange = false;
+            editor.setPosition({lineNumber:this.line,column:this.col});
+            lesson.tut.curFile.blockPosChange = true;
+            await syncMousePos(editor);
+            await wait(150);
+            await hideTutMouse();
+            await wait(200);
+        }
         // await showTutMouse();
         // await moveTutMouseToXY(COL_OFF + this.col*COL_SCALE - editor.getScrollLeft(), LINE_OFF + this.line*LINE_SCALE);
         // await wait(150);
@@ -1755,7 +1840,7 @@ class LE_AddBubble extends LEvent{
     }
 }
 class LE_AddGBubble extends LEvent{
-    constructor(lines:string[],loc:BubbleLoc,tasks:Task[]){
+    constructor(lines:string[],loc=BubbleLoc.global,tasks:Task[]=[]){
         super();
         this.ogLines = lines;
         let text = lines.join("<br><br>").replaceAll("\n","<br><br>");
@@ -3980,7 +4065,7 @@ async function moveTutMouseTo(col:number,row:number,immidiate=false){
         editor.setPosition({lineNumber:row,column:col});
         syncMousePos(editor,true);
     }
-    await wait(350);
+    if(!immidiate) await wait(350);
     return;
     // 
     // let editor = lesson.tut.getCurEditor();

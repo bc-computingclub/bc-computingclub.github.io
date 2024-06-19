@@ -4,7 +4,7 @@ import {LessonData, getLessonFolder, globalLessonFolders, ptreeMap, reloadLesson
 import fs, { copyFile } from "fs";
 import { createInterface } from "readline";
 import crypto from "crypto";
-import { createGuidedProject, createLesson, write, read, readdir, access, mkdir, removeFolder, removeFile, rename, internalCPDir, internalCP, lessonCache } from "./s_util";
+import { createGuidedProject, createLesson, write, read, readdir, access, mkdir, removeFolder, removeFile, rename, internalCPDir, internalCP, lessonCache, registeredLessonFolders } from "./s_util";
 import { ChallengeInst, ChallengeModel, ChallengeSubmissionModel, FolderInst, FolderModel, LessonMetaInst, ProjectInst, ProjectModel, UserModel, UserSessionItem, findChallenge, removeFromList, removeFromListPred, uploadChallenges, uploadLessonProgs, uploadUsers, uploadUsersStage2, userSessions } from "./db";
 import mongoose, { QuerySelector } from "mongoose";
 
@@ -27,7 +27,7 @@ function valVar2(v:any,type:string,f:any){
     return (typeof v == type);
 }
 
-let usersOnline:string[] = [];
+// let usersOnline:string[] = [];
 // let allUsers:Record<string,string> = {};
 // function readAllUsers(){
 //     let str = fs.readFileSync("../data/users.json","utf8");
@@ -113,9 +113,16 @@ io.on("connection",socket=>{
 
         // await user.saveToFile();
 
-        users.delete(user.uid);
         socks.delete(socket.id);
-        user.removeSocketId(socket.id);
+        let udata = users.get(user.meta.uid);
+        if(udata){
+            removeFromListPred(udata.sessions,v=>v.sockId == socket.id);
+            removeFromList(udata.socks,socket.id);
+        }
+        
+        // if(user.getSocketIds().length <= 1) users.delete(user.uid);
+        // socks.delete(socket.id);
+        // user.removeSocketId(socket.id);
 
         userSessions.delete(socket.id);
         
@@ -132,8 +139,17 @@ io.on("connection",socket=>{
             // console.log("$ logged in: "+data.email);
 
             socks.set(socket.id,session.meta.email);
-            users.set(session.meta.uid,session);
-            session.addSocketId(socket.id);
+            let udata = users.get(session.meta.uid);
+            if(udata){
+                udata.socks.push(socket.id);
+                udata.sessions.push(session);
+            }
+            else users.set(session.meta.uid,{
+                sessions:[session],
+                socks:[socket.id]
+            });
+            session.sockId = socket.id;
+            // session.addSocketId(socket.id);
 
             if(!session.meta.rootFolder){
                 let root = new FolderModel({
@@ -328,7 +344,17 @@ io.on("connection",socket=>{
         let user = getSession(socket.id);
         if(!user) return;
         // user.removeSocketId(socket.id);
-        removeFromList(usersOnline,user.meta.email);
+
+        // removeFromList(usersOnline,user.meta.email);
+
+        socks.delete(socket.id);
+        let udata = users.get(user.meta.uid);
+        if(udata){
+            removeFromListPred(udata.sessions,v=>v.sockId == socket.id);
+            removeFromList(udata.socks,socket.id);
+        }
+        if(!udata?.socks.length) users.delete(user.meta.uid);
+        userSessions.delete(socket.id);
     });
     socket.on("getUserLastLoggedIn",(token:string)=>{
 
@@ -2599,12 +2625,12 @@ rl.on("line",async (line)=>{
         console.log(u);
         return;
     }
-    else if(s[0] == "email"){
-        let ar = [...users];
-        let u = ar.find(v=>v[1].email == s[1]);
-        console.log(u);
-        return;
-    }
+    // else if(s[0] == "email"){
+    //     let ar = [...users];
+    //     let u = ar.find(v=>v[1].email == s[1]);
+    //     console.log(u);
+    //     return;
+    // }
     else if(s[0] == "projects"){
         console.log(allProjects);
         return;
@@ -2674,6 +2700,10 @@ rl.on("line",async (line)=>{
         console.log(lessonMetas);
         return;
     }
+    else if(s[0] == "regLessons"){
+        console.log(registeredLessonFolders);
+        return;
+    }
     else if(s[0] == "rl"){
         await reloadLessons();
         console.log(":: done");
@@ -2734,7 +2764,7 @@ rl.on("line",async (line)=>{
         if(s[1] == "users"){
             let list:string[] = [];
             for(const [k,v] of socks){
-                let email = users.get(v)?.email;
+                let email = users.get(v)?.sessions.find(w=>w.sockId == v)?.email; // this isn't right but...
                 if(email){
                     if(!list.includes(email)) list.push(email);
                 }

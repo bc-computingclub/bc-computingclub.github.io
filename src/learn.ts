@@ -497,7 +497,7 @@ class LessonItem{
 let items:LessonItem[] = [];
 
 let moveScale = 10;
-async function loadProgressTree(){
+async function loadProgressTree(folder:string){
     let cx = pTree.offsetWidth/2;
     let cy = pTree.offsetHeight/2;
 
@@ -522,9 +522,9 @@ async function loadProgressTree(){
     // ] as ProgressData[];
 
     let progressTree = await new Promise<TreeLesson[]>(resolve=>{
-        socket.emit("getProgressTree","theBeginnings",(data:any)=>{
+        socket.emit("getProgressTree",folder,(data:any)=>{
             if(typeof data == "number" || data == null){
-                alert(`Error ${data} while trying to get progress tree`);
+                alert(`Error ${data} while trying to get progress tree: ${folder}`);
                 return;
             }
             resolve(parseProgTree(data));
@@ -980,7 +980,10 @@ async function initLearnPage(){
         alertNotLoggedIn();
         return;
     }
-    loadProgressTree();
+
+    let url = new URL(location.href);
+    let folder = url.searchParams.get("f") ?? "theBeginnings";
+    loadProgressTree(folder);
 }
 initLearnPage();
 

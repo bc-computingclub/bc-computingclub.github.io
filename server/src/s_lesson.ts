@@ -1,4 +1,4 @@
-import { LessonCacheItem, LessonType, PTreeFolder, PTreeLesson, PTreeLink, PTreeOps, lessonCache, read, readdir, registeredLessonFolders } from "./s_util";
+import { LessonCacheItem, LessonType, PTreeFolder, PTreeLesson, PTreeLink, PTreeOps, lessonCache, lstat, read, readdir, registeredLessonFolders } from "./s_util";
 
 export class TextSection{
     constructor(text:string[]){
@@ -105,8 +105,12 @@ export class LessonData{
 
 export let globalLessonFolders = new Map<string,PTreeFolder>();
 export function getLessonFolder(keys:string[]){
-    let folder = globalLessonFolders.get(keys[0]);
-    for(let i = 1; i < keys.length; i++){
+    // let folder = globalLessonFolders.get(keys[0]);
+    // if(!folder) folder = globalLessonFolders.get(keys.join("/"));
+    let path = keys.join("/");
+    if(path.includes("..")) return;
+    let folder = globalLessonFolders.get(path);
+    if(false) for(let i = 1; i < keys.length; i++){
         let key = keys[i];
         folder = folder?.folders[key];
     }
@@ -132,9 +136,15 @@ async function registerLessonFolder(name:string,firstLID:string,pathKeys:string[
     globalLessonFolders.set(name,folder);
     // let first1:PTreeLesson|null = null;
     for(const lid of lids){
+        // let stats = await lstat(path+lid);
+        // if(stats?.isDirectory()){
+        //     console.log("...continued: ",lid);
+        //     continue;
+        // }
+
         let metaStr = await read(path+lid+"/meta.json","utf8",true);
         if(!metaStr){
-            console.log("couldn't find lesson while loading: "+lid);
+            // console.log("couldn't find lesson while loading: "+lid);
             continue;
         }
         let meta = JSON.parse(metaStr);
@@ -165,6 +175,8 @@ async function registerLessonFolder(name:string,firstLID:string,pathKeys:string[
 }
 
 registerLessonFolder("theBeginnings","AqCOreapkT8uu8sC");
+registerLessonFolder("particleSims","");
+// registerLessonFolder("particleSims/sub","");
 
 /**
  * This should only be used for debugging and not on the public/production server without restarting the server.

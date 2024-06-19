@@ -929,3 +929,41 @@
 - added getProjectOrLesson() method on backend to ease use of actions that happen for both projects and lessons
 
 <!-- 27,223 lines as of this point (25,007 non-blank lines) -->
+
+### 6/18/24
+<!-- backend -->
+- added support for sub folders and choosing the folder to go to on the front end for lessons (url search param only right now)
+- added particleSims folder with one lesson that's in progress
+- fixed ability to have two tabs open with different things like one being a lesson and one an editor and they work fine independently of each other
+    - this required changing the users type to an object and storing sock.ids differently and changing how auth is handled a little bit when getting files from the server
+- removed usersOnline because it's not used anymore
+- added "regLessons" command to print out all the current registered lessons
+- added lstat function to detect if path is a folder or file
+- fixed when creating new lessons the meta data is formatted instead of being in one line
+
+<!-- frontend -->
+- fixed error appearing in console if openInNew button is clicked when there isn't a project open
+- added start/end NoDelay helper functions so you can specify parts of automated events during Lesson Tasks or CodeParts that you want to be instantaneous without the need to add noDelay parameters to everything
+- removed the "Sorry, you can't change the file extension of non-text files." for now since it's buggy and hopefully shouldn't be a problem now
+- added updateLang() method to FFile
+    - this fixed issue where if you create a file called main.s and then type code it doesn't know how to syntax highlight so it's white and then if you rename the file to main.js it now correctly applies the new syntax highlighting without having to reload the page
+    - moved lang to be getter instead of set in the constructor
+- fixed and cleaned up some spots in lesson where small null pointer errors could occur
+- removed/depricated startMouseMove(), it now doesn't do anything because it shouldn't be needed
+- fixed moveEditorCursorBy so that if it's noShow then it moves instantly without any delay
+- fixed CP_LineBelow so there's a noticable delay in between making new lines if there's multiple
+- fixed ending delay on a lot of CodeParts to be 350ms and removed random delays inside if they were supposed to be instantaneous
+- fixed moving cursor to spot so if it tries to move into a spot that it's already been then it skips and doesn't wait at all or wait to show the cursor
+    - this fixes a lot of extra waiting and weird show,hide,show stuff the mouse used to do
+- added CP_LineAbove class
+- fixed CP_Home to be instant
+- fixed a lot of CodeParts to be instant and just move the caret instead of having to show the cursor and move it (looks more realistic and is faster)
+- added CP_HTML_Options to CP_HTML
+    - you can specify multiple attributes to have typed out
+    - you can specify no closing tag
+- changed CP_HTML so if there's text in the middle then it pauses a bit so the user knows it's typing something in the middle
+- changed CP_HTML's endAtCenter so that it quickly moves the caret back instead of showing a mouse and clicking (much much better!)
+- added CP_StyleRule which lets you add a single style rule (this is for future proofing if we want to add an option to do extra spaces or no extra spaces)
+- added defaults to LE_AddGBubble so you don't have to type the loc if you don't want to
+
+<!-- 27,402 lines, 25,173 non-blank -->

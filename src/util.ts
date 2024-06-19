@@ -38,7 +38,18 @@ class Setting<T>{
 let settings = new Settings();
 
 let g_waitDelayScale = 1;
+let _noDelayI = 0;
+function isNoDelay(){
+    return _noDelayI > 0;
+}
+function startNoDelay(){
+    _noDelayI++;
+}
+function endNoDelay(){
+    _noDelayI--;
+}
 function wait(delay:number){
+    if(isNoDelay()) return;
     return new Promise<void>(resolve=>{
         if(g_waitDelayScale == 0){
             resolve();
@@ -834,7 +845,8 @@ class Project{
             (data:string) => {
                 newName = data;
 
-                if(f instanceof FFile) if(!isExtTextFile(getExt(data)) || !isExtTextFile(getExt(newName))) if(getExt(newName).toLowerCase() != getExt(f.name).toLowerCase()){
+                // is it safe to disable this now?
+                if(false) if(f instanceof FFile) if(!isExtTextFile(getExt(data)) || !isExtTextFile(getExt(newName))) if(getExt(newName).toLowerCase() != getExt(f.name).toLowerCase()){
                     alert("Sorry, you can't change the file extension of non-text files.");
                     return 1;
                 }
@@ -865,6 +877,8 @@ class Project{
                     if(f instanceof FFile){
                         if(f.link) f.link.children[0].textContent = newName;
                         if(f._fi) f._fi.children[0].textContent = newName;
+
+                        f.updateLang();
                     }
                     else if(f._fi) f._fi.children[0].children[2].textContent = newName;
 
@@ -2066,22 +2080,21 @@ let hoverOpenFile:FFile;
 class FFile extends FItem{
     constructor(p:Project,name:string,buf:Uint8Array,folder:FFolder,lang?:string){
         super(p,name,folder);
-        if(!lang){
-            let ext = name.split(".").pop();
-            let map = {
-                "html":"html",
-                "css":"css",
-                "js":"javascript",
-                "ts":"typescript",
-                "rs":"rust",
-                "md":"markdown",
-                "java":"java"
-            };
-            lang = map[ext] || "text";
-        }
+        // if(!lang){
+        //     let ext = name.split(".").pop();
+        //     let map = {
+        //         "html":"html",
+        //         "css":"css",
+        //         "js":"javascript",
+        //         "ts":"typescript",
+        //         "rs":"rust",
+        //         "md":"markdown",
+        //         "java":"java"
+        //     };
+        //     lang = map[ext] || "text";
+        // }
         this.buf = buf;
-        // this.text = text;
-        this.lang = lang;
+        // this.lang = lang;
     }
 
     isTextFile(){
@@ -2095,7 +2108,23 @@ class FFile extends FItem{
 
     buf:Uint8Array;
     // text:string;
-    lang:string;
+    get lang(){
+        let ext = this.name.split(".").pop();
+        let map = {
+            "html":"html",
+            "css":"css",
+            "js":"javascript",
+            "ts":"typescript",
+            "rs":"rust",
+            "md":"markdown",
+            "java":"java"
+        };
+        return map[ext] || "text";
+    }
+    updateLang(){
+        if(this.editor) monaco.editor.setModelLanguage(this.editor.getModel(),this.lang);
+    }
+
     path = "";
 
     link:HTMLElement;
@@ -2235,6 +2264,7 @@ class FFile extends FItem{
         let bypass = this.bypassUnsupportedFormat;
         if(this.link) this.close();
         if(bypass) this.bypassUnsupportedFormat = true;
+        if(this.editor) monaco.editor.setModelLanguage(this.editor.getModel(),this.lang);
         this.open(isTemp);
     }
 
@@ -2335,6 +2365,10 @@ class FFile extends FItem{
                     readOnly:this.isReadOnly()
                     // cursorSmoothCaretAnimation:"on"
                 });
+
+                // let editor = monaco.editor.createModel("",this.lang);
+                // editor.
+
                 // editor.onDidContentSizeChange(e=>{
                 //     if(!this._saved) return;
                 //     let v = editor.getValue();

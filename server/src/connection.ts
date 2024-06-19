@@ -523,7 +523,10 @@ export class LessonMeta{
     }
 }
 
-export const users = new Map<string,UserSessionItem>();
+export const users = new Map<string,{
+    sessions:UserSessionItem[],
+    socks:string[]
+}>();
 export const socks = new Map<string,string>();
 export const allProjects = new Map<string,Project>();
 const hasntFoundProject:string[] = [];
@@ -862,7 +865,7 @@ app.use("/project/:userId/:auth",(req,res,next)=>{
         res.send("User not found");
         return;
     }
-    if(!user.getSocketIds().includes(p.auth)){
+    if(!user.socks.includes(p.auth)){
         res.send("Auth incorrect (try closing this page and reopening it from the project page)");
         return;
     }
@@ -888,7 +891,7 @@ app.use("/lesson/:userId/:auth/",(req,res,next)=>{
         // return;
     // }
     // todo - add token system instead of using socketIds
-    if(!user.getSocketIds().includes(p.auth)){
+    if(!user.socks.includes(p.auth)){
         res.send("Auth incorrect (try closing this page and reopening it from the lesson page)");
         return;
     }

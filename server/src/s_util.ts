@@ -41,6 +41,16 @@ export function read(path:string,encoding?:BufferEncoding,nolog=false){
         });
     });
 }
+export function lstat(path:string){
+    return new Promise<fs.Stats|undefined>(resolve=>{
+        fs.lstat(path,(err,stats)=>{
+            if(err){
+                resolve(undefined);
+            }
+            else resolve(stats);
+        });
+    });
+}
 export function removeFile(path:string){
     return new Promise<boolean>(resolve=>{
         fs.rm(path,err=>{
@@ -243,7 +253,7 @@ export async function createLesson(name:string){
     let data = getStandardLessonMeta(name);
     let path = "../lessons/"+lid+"/";
     await mkdir(path);
-    await write(path+"meta.json",JSON.stringify(data),"utf8");
+    await write(path+"meta.json",JSON.stringify(data,undefined,4),"utf8");
     await write(path+"evts.js",`import * as a from "../../../src/lesson";
 return [
     new LE_AddGBubble([
