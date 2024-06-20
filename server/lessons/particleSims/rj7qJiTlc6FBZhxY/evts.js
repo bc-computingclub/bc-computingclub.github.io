@@ -1,9 +1,9 @@
 import * as a from "../../../../src/lesson";
 return [
-    new LE_AddGBubble([
-        "Hello!",
-        "Let's do this."
-    ],BubbleLoc.global),
+    // new LE_AddGBubble([
+    //     "Hello!",
+    //     "Let's do this."
+    // ],BubbleLoc.global),
     new LE_AddGBubble([
         "Let's start by setting up our index.html file."
         // "In this tutorial we'll look at how to setup a basic particle simulator which will be the basis or core that we'll start out with for all other particle simulators."
@@ -27,7 +27,7 @@ return [
         "Now that we have our page set up, we need something that will display our particles."
     ]),
     new LE_AddGBubble([
-        "We're going to use the b[HTML Canvas] here which is like a blank image we can draw other images, lines, and pixels onto.",
+        "We're going to use the h[HTML Canvas] here which is like a blank image we can draw other images, lines, and pixels onto.",
         "i[Let's add a canvas to our document.]"
     ],BubbleLoc.global,[
         new AddCode([
@@ -36,8 +36,8 @@ return [
                     id:"can"
                 }
             }),
-            new CP_Bubble("I like to give mine an id of \"can\" but you can use whatever you like.")
         ]),
+        new BubbleTask("I like to give mine an id of \"can\" but you can use whatever you like."),
         new DoRefreshTask("Now if you refresh you won't see anything different but our canvas is still there.\ni[Let's set up our CSS so we can see where the canvas is.]"),
 
         // init CSS
@@ -68,9 +68,11 @@ return [
         "Hmm, so the canvas is pretty small by default.",
         "i[Let's make it fill up the page.]"
     ],BubbleLoc.global,[
-        new AddCode([
+        new AddIgnoreCode([
             new CP_LineBelow(1),
-            new CP_EnsureIndent(1),
+            new CP_EnsureIndent(1)
+        ]),
+        new AddCode([
             new CP_StyleRule("width","100%")
         ])
     ]),
@@ -111,6 +113,7 @@ return [
             new CP_Text(`/**@type {HTMLCanvasElement}`), // rest is auto completed
         ],null),
         new AddCode([
+            new CP_Bubble("This is called a h[JSDoc Type Annotation] and it allows us to specify a specific type that we want a variable to be."),
             new CP_Bubble("Now let's see what type it is."),
             new CP_MoveTo(8,2),
             new CP_ShowHover()
@@ -140,13 +143,22 @@ return [
             
             new CP_MoveTo(1,2),
             new CP_LineBelow(1),
-            new CP_Text(`let ctx = can.getContext("2d");`),
+            new CP_Text(`let ctx = canvas.getContext("2d");`),
             new CP_LineBelow(2),
             new CP_Text(`ctx.fillRect(0,0,canvas.width/2,canvas.height/2)`),
         ],null),
 
-        new DoRefreshTask("Refresh"),
-        
+        new DoRefreshTask("You should see a black rectangle in the top left quadrant of our canvas (or white, if you've switch the preview to dark mode).")
+    ]),
+
+    new LE_AddGBubble([
+        "Alright now let's start writing the particle simulator.",
+        "i[Let's start out by creating a class for our b[Particle].]"
+    ],BubbleLoc.global,[
+        new MoveCursorTo(6,1),
+        new AddCode([
+            new CP_JS_Class("Particle")
+        ])
     ])
 ]
 

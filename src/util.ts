@@ -2571,6 +2571,7 @@ class FFile extends FItem{
         
         loadEditorTheme();
 
+        let lastCurFile = this.p.curFile;
         this.p.curFile = this;
         if(this.p.lastFolder){
             this.p.lastFolder._fiLabel.parentElement.classList.remove("sel");
@@ -2603,6 +2604,12 @@ class FFile extends FItem{
             //     }
             //     this.p.lastFolder = null;
             // }
+        }
+
+        // Claeb: this seems absurd but for some reason it fixes the strange bug that only occurs on firefox where if you have more than one file open it gets stuck in a mode where you can only type in the first editor, even if you click on the second one and start typing it'll actually type in the first editor what isn't even in the DOM
+        if(lastCurFile?.editor) if(this.editor){
+            lastCurFile.editor.focus();
+            this.editor.focus();
         }
     }
 

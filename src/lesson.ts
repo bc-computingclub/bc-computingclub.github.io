@@ -260,6 +260,8 @@ abstract class Task{
     cleanup(){}
     async play(){}
     async replay(editor1:monaco.editor.IStandaloneCodeEditor){
+        await hideTutMouse();
+
         // if(!this.canBeFinished && !this.isFinished) return;
         // if(lesson.currentSubTask) lesson.currentSubTask._resFinish("rp_"+this.supertask.tasks.indexOf(this));
         // else // I don't know how I can restart it if it's completely finished 
@@ -382,7 +384,8 @@ class SwitchFileTask extends Task{
         let tarBtn:Element;
         if(existingFile){
             text2 = (this.comment ?? "Let's go back to "+this.name);
-            let fileElm = lesson.tut.d_files.children[lesson.tut.files.indexOf(existingFile)];
+            // let fileElm = lesson.tut.d_files.children[lesson.tut.files.indexOf(existingFile)]; // not sure why this is all here when there's .link
+            let fileElm = existingFile.link;
             rect = fileElm.getBoundingClientRect();
             r2 = rect;
             tarBtn = fileElm;
@@ -397,7 +400,7 @@ class SwitchFileTask extends Task{
 
         await showTutMouse();
         await moveTutMouseToCustom(rect.x+rect.width/2,rect.y+rect.height/2);
-        await wait(300);
+        await wait(150); // used to be 300
         await fakeClickButton(tarBtn);
         if(existingFile){
             existingFile.open();
@@ -538,14 +541,14 @@ const COL_SCALE = 7.7;
 // const COL_SCALE = 10;
 const COL_OFF = 60;
 
-function startEdit(){
+function startEdit(editor?:monaco.editor.IStandaloneCodeEditor){
     if(lesson.tut.curFile) lesson.tut.curFile.blockPosChange = false;
-    let editor = lesson.tut.getCurEditor();
+    if(!editor) editor = lesson.tut.getCurEditor();
     if(editor) editor.updateOptions({readOnly:false});
 }
-function endEdit(){
+function endEdit(editor?:monaco.editor.IStandaloneCodeEditor){
     if(lesson.tut.curFile) lesson.tut.curFile.blockPosChange = true;
-    let editor = lesson.tut.getCurEditor();
+    if(!editor) editor = lesson.tut.getCurEditor();
     if(editor) editor.updateOptions({readOnly:true});
 }
 
@@ -557,6 +560,9 @@ async function startMouseMove(col:number,line:number,noShow=false){
     await moveTutMouseTo(col,line);
     if(!noShow) await hideTutMouse();
 }
+/**
+ * This calls startEnd() and endEdit() automatically so you don't have to wrap this function in them.
+ */
 async function typeText(editor:Editor,text:string,speedScale=1,moveMouseToEnd=false){
     forceEditorUpdate(editor); // <-- this will degrade tutor and load performance a bit but doesn't seem to be too noticable on my end
     let pos:monaco.IPosition;
@@ -656,6 +662,11 @@ async function moveEditorCursorTo(editor:Editor,col:number,row:number,noShow=fal
     
     await hideTutMouse();
 }
+
+let lessonSettings = {
+    extraSpaces:true
+};
+
 class CodePart{
     constructor(){
         
@@ -816,6 +827,8 @@ class CP_Comment extends CodePart{
         startEdit();
         editor.trigger("comment","editor.action.commentLine",null);
         endEdit();
+        
+        await wait(350);
     }
 }
 
@@ -888,6 +901,36 @@ class CP_HTML extends CodePart{
         if(this.open) await typeText(editor,"\n");
     }
 }
+
+type JS_Class_Options = {
+    extends?:string
+};
+class CP_JS_Class extends CodePart{
+    constructor(name:string,ops:JS_Class_Options={}){
+        super();
+        this.name = name;
+        this.ops = ops;
+    }
+    name:string;
+    ops:JS_Class_Options;
+    async run(editor: monaco.editor.IStandaloneCodeEditor): Promise<void> {
+        let actions = getEditActions(editor);
+        
+        await typeText(editor,`class ${this.name}`+(this.ops.extends?` extends ${this.ops.extends}`:""));
+        await actions.openSymbols("{}");
+
+
+    }
+}
+/**
+ * This will go down until it hits a place where it is free as the specified indent
+ */
+class CP_GoToFree extends CodePart{
+    constructor(){
+        super();
+    }
+}
+
 class CP_Bubble extends CodePart{
     constructor(text:string,dir="top"){
         super();
@@ -1034,27 +1077,247 @@ class CP_Wait extends CodePart{
         await wait(this.time);
     }
 }
+
+function getExtraSpace(){
+    if(lessonSettings.extraSpaces) return " ";
+    return "";
+}
+
+/**
+ * These actions can only be performed on non read-only editors so if used on a tutor, you must wrap you logic in startEdit(), endEdit().
+ */
 class TutEditorActions{
     constructor(editor:Editor){
         this.editor = editor;
+
+        // defaults
+        this.useStandardDelay();
     }
     editor:Editor;
+
+    // 
+
+    private delay = 0;
+    private lastDelay = 0;
+    async wait(){
+        if(!this.delay) return;
+        await wait(this.delay);
+    }
+    setDelay(amt:number){
+        this.lastDelay = this.delay;
+        this.delay = amt;
+    }
+    getDelay(){
+        return this.delay;
+    }
+    clearDelay(){
+        this.lastDelay = this.delay;
+        this.delay = 0;
+    }
+    revertDelay(){
+        let tmp = this.lastDelay;
+        this.lastDelay = this.delay;
+        this.delay = tmp;
+    }
+
+    useTypeDelay(len:number){
+        this.setDelay(getTypeSpeed(len));
+    }
+    useStandardDelay(){
+        this.setDelay(50);
+    }
+
+    _start(){
+        startEdit(this.editor);
+    }
+    _end(){
+        endEdit(this.editor);
+    }
+    
+    // 
+
+    /**
+     * Set is like "[]" or "{}"
+     */
+    async openSymbols(set:string,beforeOpenTime=250){ // untested
+        let t = g_waitDelayScale;
+
+        await typeText(this.editor,getExtraSpace()+set,0);
+        
+        this.clearDelay();
+        await this.moveByX(-1);
+        this.revertDelay();
+
+        this.setDelay(beforeOpenTime);
+        await this.wait();
+        this.revertDelay();
+
+        this._start();
+        // let ta = this.editor.getDomNode().querySelector("textarea");
+        // ta.dispatchEvent(new KeyboardEvent("keydown",{
+        //     key:"Enter",
+        //     bubbles:true,
+        //     cancelable:false,
+        //     view:window
+        // }));
+
+        // editor.trigger('', 'selectNextSuggestion'); // <-- pretty crazy
+        // editor.trigger('', 'acceptSelectedSuggestion')
+
+        this.editor.trigger("keyboard","type",{text:"\n"});
+
+        this._end();
+
+        g_waitDelayScale = t;
+    }
+
     getLine(line:number){
         return this.editor.getModel().getLineContent(line);
     }
-    indent(amt:number){
+    async indent(amt:number){
         for(let i = 0; i < Math.abs(amt); i++){
+            this._start();
             this.editor.trigger("indent",amt > 0 ? "editor.action.indentLines" : "editor.action.outdentLines",null);
+            this._end();
+            await this.wait();
         }
+    }
+    /**
+     * Also clears indent if you want that.
+     */
+    async clearLine(){
+        this.deleteLines();
+        await this.makeLineAbove();
     }
     getTabSize(){
         return this.editor.getModel().getOptions().tabSize;
     }
 
+    home(select=false){
+        this._start();
+        if(select) this.editor.trigger("keyboard","cursorHomeSelect",null); // untested
+        else this.editor.trigger("keyboard","cursorHome",null);
+        this._end();
+    }
+    end(select=false){
+        this._start();
+        if(select) this.editor.trigger("keyboard","cursorEndSelect",null); // untested
+        this.editor.trigger("keyboard","cursorEnd",null);
+        this._end();
+    }
+
+    async makeLineAbove(amt=1){
+        for(let i = 0; i < amt; i++){
+            this._start();
+            this.editor.trigger("keyboard","editor.action.insertLineBefore",null); // untested
+            this._end();
+            await this.wait();
+        }
+    }
+    async makeLineBelow(amt=1){
+        for(let i = 0; i < amt; i++){
+            this._start();
+            this.editor.trigger("keyboard","editor.action.insertLineAfter",null); // untested
+            this._end();
+            await this.wait();
+        }
+    }
+
+    async deleteText(amt=1,right=false,word=false){
+        for(let i = 0; i < amt; i++){
+            this._start();
+            if(right){
+                if(word) this.editor.trigger("keyboard","deleteWordRight",null); // untested
+                else this.editor.trigger("keyboard","deleteRight",null); // untested
+            }
+            else{
+                if(word) this.editor.trigger("keyboard","deleteWordLeft",null); // untested
+                else this.editor.trigger("keyboard","deleteLeft",null); // untested
+            }
+            this._end();
+            await this.wait();
+        }
+    }
+    async moveByX(amt:number,select=false,word=false){
+        let dirStr = "Left";
+        let selectStr = "";
+        let wordStr = "";
+
+        if(amt > 0) dirStr = "Right";
+        if(select) selectStr = "Select";
+        if(word) wordStr = "Word";
+
+        let action = "cursor"+wordStr+dirStr+selectStr;
+
+        for(let i = 0; i < Math.abs(amt); i++){
+            this._start();
+            this.editor.trigger("keyboard",action,null); // untested
+            this._end();
+            await this.wait();
+        }
+    }
+    async moveByY(amt:number,select=false){
+        let dirStr = "Up";
+        let selectStr = "";
+
+        if(amt > 0) dirStr = "Down";
+        if(select) selectStr = "Select";
+
+        let action = "cursor"+dirStr+selectStr;
+        
+        for(let i = 0; i < Math.abs(amt); i++){
+            this._start();
+            this.editor.trigger("keyboard",action,null); // untested
+            this._end();
+            await this.wait();
+        }
+    }
+
+    async goToNextFree(indent:number){ // untested
+        let pos = this.editor.getPosition();
+        let totalLines = this.editor.getModel().getLineCount();
+        let tabSize = this.getTabSize();
+
+        for(let i = pos.lineNumber; i <= totalLines; i++){
+            let line = this.getLine(i);
+            if(!line) continue;
+            
+            let spaceCount = 0;
+            for(let j = 0; j < line.length; j++){
+                let char = line[j];
+                if(char != " ") break;
+                spaceCount++;
+            }
+            if(spaceCount <= indent*tabSize){
+                return;
+            }
+
+            await this.moveByY(1);
+            await this.wait();
+        }
+
+        // reset the indent to be correct
+        await this.clearLine();
+        await this.indent(indent);
+    }
+
+    /**
+     * Ctrl+Shift+K
+     */
+    deleteLines(){
+        this._start();
+        this.editor.trigger("keyboard","editor.action.deleteLines",null); // untested
+        this._end();
+    }
+
     showDebugHover(){
+        this._start();
         this.editor.trigger("hover_info","editor.action.showHover",null);
+        this._end();
     }
     simulateMouseEnterAndLeave(){
+        this._start(); // not sure if this is necessary here
+        
         let editorDomNode = this.editor.getDomNode();
         
         let mouseEnterEvent = new MouseEvent("mouseenter",{
@@ -1075,6 +1338,8 @@ class TutEditorActions{
       
         // Dispatch the mouse leave event
         editorDomNode.dispatchEvent(mouseLeaveEvent);
+
+        this._end();
     }
 }
 function getEditActions(editor:Editor){
@@ -1100,7 +1365,7 @@ class CP_StyleRule extends CodePart{
         // TODO - might be good to add repositioning logic here for detecting the current styleset and putting this on the next line
         
         // might add setting at some point for whether there should be spaces added or not
-        await typeText(editor,this.rule+":"+this.value+";");
+        await typeText(editor,this.rule+":"+getExtraSpace()+this.value+";");
         
         await wait(350);
     }
@@ -1117,7 +1382,13 @@ class CP_CSS extends CodePart{
         // lesson.startEditting();
         let speed = 1;
 
-        await typeText(editor,`${this.selector}{\n`,speed,true);
+        let actions = getEditActions(editor);
+
+        // await typeText(editor,`${this.selector}{\n`,speed,true);
+        await typeText(editor,`${this.selector}`,speed);
+        await actions.openSymbols("{}");
+        await wait(350);
+
         // startEdit();
         // editor.trigger("keyboard","editor.action.insertLineAfter",null);
         // let pos = editor.getPosition();
@@ -1129,7 +1400,9 @@ class CP_CSS extends CodePart{
         // forceEditorUpdate(editor);
         for(const prop of ok){
             let val = this.styles[prop];
-            await typeText(editor,prop+":"+val+";"+(i != ok.length-1 ? "\n" : ""),speed);
+            await typeText(editor,prop+":"+getExtraSpace(),speed);
+            await wait(150);
+            await typeText(editor,val+";"+(i != ok.length-1 ? "\n" : ""),speed);
             i++;
         }
         await wait(50);
@@ -1183,18 +1456,29 @@ class AddCode extends Task{
                         // await moveTutMouseTo(60 + this.col*7.7, 110 + this.line*19);
                         // await wait(150);
                     // }
-                    let r2 = tutMouse.getBoundingClientRect();
+                    // let r2 = tutMouse.getBoundingClientRect();
+                    let curPos = editor.getPosition();
+                    let r3 = editor.getDomNode().getBoundingClientRect();
+                    let pos = editor.getScrolledVisiblePosition(curPos);
                     let preText = this.text ?? "Let's add some code here.";
                     if(!lesson._hasShownFollowAlong){
                         preText += "<br><br>i[Follow along! But feel free to make your own changes and experiment!]";
                         lesson._hasShownFollowAlong = true;
                     }
                     let b2 = addBubbleAt(BubbleLoc.xy,preText,this.dir,{
-                        x:r2.x+r2.width/2 + 17 + 12,
-                        y:r2.y+r2.height/2 - 32,
+                        // line:curPos.lineNumber,
+                        // col:curPos.column,
+                        x:r3.x+pos.left+30,
+                        y:r3.y+pos.top-20,
                         click:true,
                         inEditor:lesson.tut.getCurEditor()
                     });
+                    // let b2 = addBubbleAt(BubbleLoc.xy,preText,this.dir,{
+                    //     x:r2.x+r2.width/2 + 17 + 12,
+                    //     y:r2.y+r2.height/2 - 32,
+                    //     click:true,
+                    //     inEditor:lesson.tut.getCurEditor()
+                    // });
                     await b2.clickProm;
                     await wait(150);
                 }
@@ -3413,9 +3697,9 @@ class Lesson{
         this.hasLoaded = true;
 
         // load index.html page when resuming the lesson if it's there
-        let indexTut = lesson.tut.items.find(v=>v.name == "index.html") as FFile;
-        if(indexTut) indexTut.open();
-        else lesson.p.files[0]?.open();
+        // let indexTut = lesson.tut.items.find(v=>v.name == "index.html") as FFile;
+        // if(indexTut) indexTut.open();
+        // else lesson.p.files[0]?.open();
 
         let index = lesson.p.items.find(v=>v.name == "index.html") as FFile;
         if(index) index.open();
@@ -4048,10 +4332,12 @@ let tutMouse = document.createElement("div");
 tutMouse.className = "tut-mouse";
 document.body.appendChild(tutMouse);
 async function hideTutMouse(){
+    if(tutMouse.style.opacity == "0") return;
     tutMouse.style.opacity = "0";
     await wait(350);
 }
 async function showTutMouse(isQuick=false){
+    if(tutMouse.style.opacity == "1") return;
     tutMouse.style.opacity = "1";
     await wait(isQuick?75:350);
 }
@@ -4631,11 +4917,17 @@ function updateBubble(i:number){
     if(b.loc == BubbleLoc.code){
         x = b.col*7.7;
         y = b.line*19;
+        // let r = b.editor.getDomNode().getBoundingClientRect();
+        // let pos = b.editor.getScrolledVisiblePosition(b.file.editor.getPosition());
+        // console.log("POS:",pos,r);
 
         x -= b.file.scrollOffsetX;
         y -= b.file.scrollOffset;
         // y += 25;
         y += 88;
+
+        // x += pos.left+r.left;
+        // y += pos.top+r.top;
 
         let start = 64 + 22 - 7.7;
         x += start;

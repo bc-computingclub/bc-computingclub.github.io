@@ -733,6 +733,7 @@ body .nav-links > .active{
     margin:2px;
     margin-left:5px;
     overflow-y:scroll;
+    overflow-x:hidden;
     height:calc(100% - 88px);
     padding:2px;
     margin-right:0px;
@@ -773,6 +774,12 @@ body .nav-links > .active{
     -webkit-user-select:none;
     position:relative;
     /* transition:all 0.2s ease-out; */
+}
+.file-item > *:first-child{
+    white-space:nowrap;
+    max-width:calc(100% - 50px);
+    text-overflow:ellipsis;
+    overflow:hidden;
 }
 .file-item::before{
     content:"";
@@ -999,9 +1006,15 @@ body .nav-links > .active{
 .cont-js{
     padding-top:0px;
     padding-bottom:0px;
+
+    /* new */
+    overflow:visible !important;
 }
 .js-cont{
     height:calc(100% - 15px);
+
+    /* new */
+    padding-top:0px !important;
 }
 
 .monaco-editor{

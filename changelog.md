@@ -967,3 +967,32 @@
 - added defaults to LE_AddGBubble so you don't have to type the loc if you don't want to
 
 <!-- 27,402 lines, 25,173 non-blank -->
+
+### 6/19/24
+- more work on particleSim lesson
+- fixed editors so that hover menus and autocomplete (especially on the first line) aren't cut off and can appear outside the editor
+    - edges aren't perfectly round anymore at the moment
+- added overflow-ellipses stuff and no wrapping to file items in the files pane but the ellipses stuff doesn't work at the moment
+- mostly fixed the issue where you can only type in the first file open on firefox
+    - it works almost all the top but there are random cases where it still types in the wrong editor
+    
+<!-- lesson -->
+- added hideTutMouse() to replay() so the tutors mouse doesn't get stuck open after replaying
+- changed SwitchFileTask delay from 300ms to 150ms
+- changed StartEdit() and endEdit() so they have an optional editor param for more control
+- added lessonSettings object which has just "extraSpaces:boolean" as the only option right now
+- added standard 350ms delay after CP_Comment
+- added CP_JS_Class with JS_Class_Options { extends?:boolean }
+- added CP_GoToFree (no implementation yet but the editorAction should be done)
+- added getExtraSpace() helper function
+- added delay utility within EditorActions
+- added delays to various looping methods of EditorActions
+- added _start() and _end() helper methods in EditorActions
+- added openSymbols, clearLine, home, end, makeLineAbove, makeLineBelow, deleteText, moveByX, moveByY, goToNextFree, and deleteLines to EditorActions (most of these are untested but some are and work fine)
+- fixed CP_StyleRule, CP_CSS, and CP_JS_Class to use extra space setting and new EditorActions
+- fixed AddCode task having bubble in the incorrect position sometimes
+- fixed SwitchFileTask didn't move the mouse cursor to the right position after update with show files button
+- removed tutor auto selecting index.html
+- fixed hideTutMouse() and showTutMouse() so they don't delay/wait if it's already in that particular mode
+
+<!-- 27,714 lines, 25,442 non-blank -->
