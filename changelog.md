@@ -1016,7 +1016,31 @@
     - under name it has progress percentage, start, continue, restart button with more options button to clear progress
     - right now just shows a sample editor to the right, not sure if I want to make that an iframe sample instead or the key takeaways or what
 - fixed touch screen not able to pinch to zoom when menus are open
-- fixed PonderBoard wouldn't open after update to fix it when resuming
+- fixed PonderBoard wouldn't open after update to fix it when resuming (it would actually hang in the await and be stuck and you can't do anything in the lesson task chain)
 - added CP_DeleteLines (Ctrl+Shift+K)
 - added CP_EditorActions (not sure if I should keep this but it's more of a debug thing for now)
-- 
+- added CP_Suggestions (but it's kinda buggy like if the user hovers over the tutor's editor while it's working)
+- added standard 350ms wait to CP_Home
+- fixed openSymbols so if there is a blank spot before then it doesn't add a space
+- added _trigger helper function to EditorActions
+- added to EditorActions:
+    - showSuggestions, hideSuggestions, nextSug., prevSug., acceptSug., toggleSugDetails.
+- added addBubbleAtCursor() helper function for more accurate positioning of bubbles that are located in the code editor
+- fixed AddCode and PonderBoardTask to use the new addBubbleAtCursor()
+- adjusted basicHTMLStructure snip to be more natural
+- fixed tutor's files not all opening in some cases in lessons
+- added canUseFS() helper function
+- added FSSyncSystem to sync with the harddrive for use with your own IDE
+    - it's not super easy friendly yet, you click the button then select the folder, then wait and after a few seconds an alert pops up saying completed, now if you open that folder in vscode and save then it will sync and open the file in vscode, other than that it works pretty good actually and should be really efficient with only checking time stamps
+- fixed syncMousePos() so it only runs when on the lesson page (fixed occational null pointer errors in the console)
+- fixed some very small things
+- fixed built in file pane so if you click on the editor it'll close it
+- fixed creating ov_bubbles so it only happens on the lesson page which fixed a lot of issues and headaches with fsSync
+- fixed fileList search to be a little smarter and have another check to try to find it
+- added isMouseDown option to setupDropdown
+- fixed clearLessonProgress menu so the delete button is accented with the warn class
+- fixed z-index of menu button in the top left of the learn page
+- fixed the files list pane so when right clicking on files within a folder the dashed border isn't cut off sometimes
+- fixed clicking twice on a file link in the open files list on an image would cause the page to overflow and scroll down
+
+<!-- 28,470 lines, 26,128 non-blank -->
