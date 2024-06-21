@@ -144,7 +144,7 @@ class Menu{
         head.innerHTML = `
             <div class="menu-title">
                 <div class="material-symbols-outlined">${this.icon || ""}</div>
-                <div>${this.title}</div>
+                <div class="l-menu-title">${this.title}</div>
             </div>
             ${this.canClose() ? '<div class="material-symbols-outlined b-close">close</div>' : ""}
         `;
@@ -710,7 +710,11 @@ addScript("https://accounts.google.com/gsi/client",false,()=>{
 window.addEventListener("resize",e=>{
     onResize();
 });
-let onResize = function(isFirst?:boolean,who?:HTMLElement){};
+let onResize = function(isFirst?:boolean,who?:HTMLElement){
+    // if(project){
+    //     if(project.curFile) project.curFile.editor.layout();
+    // }
+};
 // let d_files:HTMLElement;
 let main:HTMLElement;
 // let codeCont:HTMLElement;
@@ -763,6 +767,10 @@ async function unstarProject(pid:string){
 function getLID_ifLesson(){
     if(PAGE_ID == PAGEID.lesson) return lesson.lid;
     return null;
+}
+
+function canUseFS(){
+    return window.showDirectoryPicker != null;
 }
 
 class Project{
@@ -831,6 +839,164 @@ class Project{
         if(this.needsSave) return false;
         if(this.openFiles.some(v=>!v._saved)) return false;
         return true;
+    }
+
+    // 
+
+    isFSSyncing = false;
+    fsSyncTick = 0;
+    fsHandle:FileSystemDirectoryHandle;
+    async startFSSync(){
+        if(!canUseFS()){
+            alert("Your browser doesn't support the FileSystem Access API which is required for this feature to work.\n\nCompatible browsers include up-to-date versions of Chrome, Microsoft Edge, and other Chromium based browsers.\n\nFirefox is not supported.");
+            return;
+        }
+        
+        if(this.isFSSyncing) return;
+        this.isFSSyncing = true;
+
+        let handle = await showDirectoryPicker({
+            mode:"readwrite",
+            startIn:"documents",
+            id:this.pid.replaceAll("-","")
+        });
+        let state = await handle.requestPermission({
+            mode:"readwrite"
+        });
+        if(state == "denied") return;
+        
+        this.fsHandle = handle;
+        // 
+
+        await this.fsWrite();
+        alert("connected");
+
+        await this.fsTick();
+    }
+    endFSSync(){
+        if(!this.isFSSyncing) return;
+        this.isFSSyncing = false;
+
+        if(!canUseFS()){
+            alert("Your browser doesn't support the FileSystem Access API which is required for this feature to work.\n\nCompatible browsers include up-to-date versions of Chrome, Microsoft Edge, and other Chromium based browsers.\n\nFirefox is not supported.");
+            return;
+        }
+
+        if(!this.fsHandle) return;
+
+        this.fsHandle = null;
+    }
+    async fsRead(){
+        if(!this.fsHandle) return;
+        let verbose = false;
+
+        // if(this.files.some(v=>!v._saved)){
+        //     alert("At least one file is unsaved");
+        //     return;
+        // }
+
+        if(verbose) console.log("------- READ");
+        let readDir = async (h:FileSystemDirectoryHandle,folder:FFolder)=>{
+            for await(const [name,data] of h.entries()){
+                if(data.kind == "directory"){
+                    if(verbose) console.log("FOUND DIR: ",data.name);
+                    let sub = await h.getDirectoryHandle(data.name);
+                    let subFolder = folder.items.find(v=>v.name == data.name) as FFolder;
+                    if(!subFolder){
+                        subFolder = this.createFolder(name,folder.name == "___CO_root" ? null : folder,true);
+                    }
+                    await readDir(sub,subFolder);
+                }
+                else{
+                    if(verbose) console.log("FOUND FILE:",data.name);
+                    let f = folder.items.find(v=>v.name == name) as FFile;
+                    if(!f){
+                        f = await this.createFile(name,new Uint8Array(),undefined,folder.name == "___CO_root" ? null : folder,true);
+                    }
+
+                    let lastModified = f._fsLastModified ?? new Date(f.p.meta.meta.wls).getTime();
+
+                    let file = await data.getFile();
+                    
+                    let dif = file.lastModified-lastModified;
+                    if(verbose) console.log("...dif2",dif,file.lastModified,lastModified);
+
+                    let wasChange = false;
+                    if(dif > 0){
+                        if(verbose) console.log("READ FILE:",data.name);
+                        
+                        if(verbose) console.warn("UPDATE FILE:",data.name);
+                        f.buf = new Uint8Array(await file.arrayBuffer());
+
+                        f._fsLastModified = file.lastModified;
+                        wasChange = true;
+                    }
+
+                    if(wasChange){
+                        f.reopen();
+                        f.setSaved(false);
+                    }
+                }
+            }
+        }
+        // let wasOpen = [...this.openFiles];
+        // for(const f of wasOpen){
+        //     f.close();
+        // }
+        let root = new FFolder(this,"___CO_root",null);
+        root.items = this.items;
+        await readDir(this.fsHandle,root);
+        this.items = root.items;
+
+        console.log(":: done (fs read)");
+    }
+    async fsWrite(){
+        if(!this.fsHandle) return;
+        let verbose = false;
+
+        if(verbose) console.log("------- WRITE");
+        let loopFolder = async (f:FFolder,h:FileSystemDirectoryHandle)=>{
+            for(const item of f.items){
+                if(item instanceof FFolder) await loopFolder(item,await h.getDirectoryHandle(item.name,{create:true}));
+                else if(item instanceof FFile){
+                    if(verbose) console.log("WRITE: ",item.name);
+                    let fileHandle = await h.getFileHandle(item.name,{create:true});
+
+                    let ff = await fileHandle.getFile();
+                    let dif = ff.lastModified-item._fsLastModified;
+                    if(dif == 0) continue;
+
+                    if(verbose) console.warn("SAVE: ",item.name);
+                    let stream = await fileHandle.createWritable();
+                    await stream.write(item.buf);
+                    await stream.close();
+
+                    let file = await fileHandle.getFile();
+                    if(verbose) console.log("...last mod",dif,new Date().getTime(),file.lastModified);
+                    item._fsLastModified = file.lastModified;
+                }
+            }
+        };
+        let root = new FFolder(this,"root",null);
+        root.items = this.items;
+        await loopFolder(root,this.fsHandle);
+
+        console.log(":: done (fs write)");
+    }
+
+    async fsTick(){
+        if(this.isFSSyncing){
+            this.fsSyncTick++;
+            if(this.fsSyncTick > 5){
+                this.fsSyncTick = 0;
+
+                // run
+                await this.fsRead();
+            }
+
+            await wait(300);
+            await this.fsTick();
+        }
     }
 
     // right click actions
@@ -1947,7 +2113,10 @@ function createFolderListItem(f:FFolder){
 }
 
 let _tutEditorOffsetTop = 125.075; // this is hardcoded just for speed sake but can be calculated with tut's editor.getDOMNode().getBoundingClientRect().top
-async function syncMousePos(editor:Editor,noShow=false){
+async function syncMousePos(editor:Editor,noShow=false,force=false){
+    if(PAGE_ID != PAGEID.lesson) return;
+    // if(!force) return; // ! - ENABLE THIS TO CANCEL SYNC - not sure what I really want to do yet
+    
     forceShowCursor();
     if(!editor) return;
     // tutMouse.style.transitionDuration = "0s";
@@ -2097,6 +2266,8 @@ class FFile extends FItem{
         // this.lang = lang;
     }
 
+    _fsLastModified:number;
+
     isTextFile(){
         return isExtTextFile(getExt(this.name));
     }
@@ -2109,7 +2280,7 @@ class FFile extends FItem{
     buf:Uint8Array;
     // text:string;
     get lang(){
-        let ext = this.name.split(".").pop();
+        let ext = getExt(this.name);
         let map = {
             "html":"html",
             "css":"css",
@@ -2151,6 +2322,9 @@ class FFile extends FItem{
     beenUploaded = true;
     setSaved(v:boolean,noChange=false){
         let last = this._saved;
+        if(!this._saved && v){
+            this._fsLastModified = new Date().getTime();
+        }
         this._saved = v;
         // if(this.isNew && v) this.isNew = false;
         // if(!last) if(v){ // if it wasn't saved before and now it is saved
@@ -2213,7 +2387,7 @@ class FFile extends FItem{
             }
             this.p.d_files.removeChild(this.link);
             let ind = this.p.openFiles.indexOf(this);
-            this.p.openFiles.splice(ind,1);
+            if(ind != -1) this.p.openFiles.splice(ind,1);
             if(this.cont.parentElement) this.cont.parentElement.removeChild(this.cont);
             this.cont = null;
             this.link = null;
@@ -2263,6 +2437,11 @@ class FFile extends FItem{
     reopen(isTemp=true){
         let bypass = this.bypassUnsupportedFormat;
         if(this.link) this.close();
+        // if(this._saved) if(this.link) this.close();
+        // else{
+        //     let ind = this.p.openFiles.indexOf(this);
+        //     if(ind != -1) this.p.openFiles.splice(ind,1);
+        // }
         if(bypass) this.bypassUnsupportedFormat = true;
         if(this.editor) monaco.editor.setModelLanguage(this.editor.getModel(),this.lang);
         this.open(isTemp);
@@ -2378,6 +2557,8 @@ class FFile extends FItem{
                 // });
                 if(this.p.readonly){
                     editor.onDidFocusEditorText(e=>{
+                        if(!this.p.fileList.parentElement.classList.contains("hide")) this.p.parent.querySelector<HTMLButtonElement>(".b-show-files")?.click();
+                        
                         if (document.activeElement instanceof HTMLElement) {
                             document.activeElement.blur();
     
@@ -2437,7 +2618,6 @@ class FFile extends FItem{
                 this.editor = editor;
                 this.p.curFile = this;
     
-                // @ts-ignore
                 if(PAGE_ID == PAGEID.lesson) editor.onDidScrollChange(function(){
                     t.scrollOffset = editor.getScrollTop();
                     t.scrollOffsetX = editor.getScrollLeft();
@@ -2445,11 +2625,13 @@ class FFile extends FItem{
                 });
     
                 // create ov_bubbles
-                let bubbles_ov = document.createElement("div");
-                bubbles_ov.className = "bubbles-overlay";
-                this.bubbles_ov = bubbles_ov;
-                cont.appendChild(bubbles_ov);
-                this.setSaved(true);
+                if(PAGE_ID == PAGEID.lesson){
+                    let bubbles_ov = document.createElement("div");
+                    bubbles_ov.className = "bubbles-overlay";
+                    this.bubbles_ov = bubbles_ov;
+                    cont.appendChild(bubbles_ov);
+                    this.setSaved(true);
+                }
             }
             else{
                 // load custom based on file ext
@@ -2551,6 +2733,7 @@ class FFile extends FItem{
                     }
                 }
             }
+            this.setSaved(this._saved); // update it
         }
         else{
             this.setTemp(false); // <-- should this be moved onto to when opening files from the left menu? 
@@ -2803,6 +2986,10 @@ function postSetupEditor(project:Project,isUser=true,ignoreFilesPane=false){
             pane_files = document.createElement("div");
             pane_files.className = "pane-files pane hide";
             parent.insertBefore(pane_files,parent.children[0]);
+
+            project.codeCont.addEventListener("click",e=>{
+                if(!project.fileList.parentElement.classList.contains("hide")) b_showFilesPane.click();
+            });
         }
         else{
             pane_files = document.querySelector(".pane-files") as HTMLElement;
@@ -2873,7 +3060,7 @@ function postSetupEditor(project:Project,isUser=true,ignoreFilesPane=false){
 
     // 
 
-    project.fileList = (project.builtInFileList ? project.parent.querySelector(".file-list") as HTMLElement : pane_files.querySelector(".file-list") as HTMLElement); // maybe should optimize this better at some point
+    project.fileList = (project.builtInFileList ? project.parent.querySelector(".file-list") as HTMLElement : pane_files ? pane_files.querySelector(".file-list") as HTMLElement : document.querySelector(".file-list") as HTMLElement); // maybe should optimize this better at some point
     setupFileListDropdown(project);
     project.fileList.addEventListener("mousedown",e=>{
         closeAllSubMenus();
@@ -2929,7 +3116,8 @@ function setupFilesPane(div:Element){
     dd_filesPaneOptions.addEventListener("mousedown",e=>{
         openDropdown(dd_filesPaneOptions,()=>[
             "Upload File(s)",
-            "Download as Zip"
+            "Download as Zip",
+            "Use your own IDE"
         ],i=>{
             if(i == 0){
                 project?.uploadFiles();
@@ -2937,15 +3125,21 @@ function setupFilesPane(div:Element){
             else if(i == 1){
                 project?.downloadAsZip();
             }
+            else if(i == 2){
+                project.startFSSync();
+            }
         },{
             getIcons() {
                 return [
                     "upload",
-                    "package_2"
+                    "package_2",
+                    // "folder_zip",
+                    "terminal"
                 ];
             },
             onopen(dd) {
                 dd.children[1].classList.add("disabled");
+                // if(!canUseFS()) dd.children[2].classList.add("disabled"); // probably better to let the user know instead of just graying it out
             }
         });
     });
@@ -3071,6 +3265,89 @@ function createHTMLPreviewsDropdown(inp:HTMLInputElement){
     // }
 }
 
+function setupPreview(pane:HTMLElement){
+    pane.innerHTML = `
+        <div class="d-preview-controls header flx" style="gap:20px">
+            <div>Preview</div>
+            <button class="b-refresh icon-btn">
+                <div class="icon-refresh material-symbols-outlined">sync</div>
+                <div class="label">Refresh</div>
+            </button>
+            <div class="preview-url-cont">
+                <input type="text" class="i-preview-url">
+            </div>
+            <div style="margin-left:auto;gap:10px" class="flx-h flx-al">
+                <div class="material-symbols-outlined b-invert-colors co-item" co-label="Invert contrast">invert_colors</div>
+                <div class="material-symbols-outlined b-open-in-new co-item" co-label="Open in new tab">open_in_new</div>
+            </div>
+        </div>
+        <iframe frameborder="0"></iframe>
+    `;
+
+    icon_refresh = document.querySelector(".icon-refresh") as HTMLElement;
+    iframe = document.querySelector("iframe") as HTMLIFrameElement;
+
+    b_refresh = pane.querySelector(".b-refresh") as HTMLButtonElement;
+
+    b_refresh.addEventListener("click",e=>{ 
+        if(PAGE_ID == PAGEID.editor) refreshProject();
+        else if(PAGE_ID == PAGEID.lesson) refreshLesson();
+    });
+    b_publish.addEventListener("click",e=>{
+        if(!project) return;
+        // if(!project.meta.submitted) submitChallenge(project.pid);
+        // else unsubmitChallenge(project.pid);
+        if(!project.meta.submitted) {
+            new ConfirmMenu(
+                "Submit Challenge", "Are you sure you want to submit your code?<br><br> You will have to un-submit it to make any changes in the future.<br><br><span class='note'>Submitted projects are publically viewable by anyone.</span>",
+                () => {
+                    submitChallenge(project.meta.cid,project.pid)
+                },
+                () => { 
+                    // console.log("Submission canceled");
+                }
+            ).load();
+        } else {
+            new ConfirmMenu(
+                "Remove submission","Are you sure you'd like to un-submit your challenge?<br><br> You'll have to re-submit in order for it to appear in the submissions page.",
+                () => {
+                    unsubmitChallenge(project.pid);
+                },
+                () => { 
+                    // console.log("Un-submission canceled");
+                }
+            ).load();
+        }
+    });
+
+    let b_openInNew = pane.querySelector(".b-open-in-new") as HTMLElement;
+    let b_invertColors = pane.querySelector(".b-invert-colors") as HTMLElement;
+
+    b_openInNew.addEventListener("click",e=>{
+        if(!project) return;
+        if(PAGE_ID == PAGEID.editor) open(project.getExternalURL(),"_blank");
+        else if(PAGE_ID == PAGEID.lesson) open(lesson.p.getExternalURL(),"_blank");
+    });
+    function updateIFrameContrast(){
+        // iframe.classList.toggle("invert");
+        // b_invertColors.classList.toggle("invert");
+        let v = settings.invertContrast.get();
+        if(v){
+            iframe.classList.add("invert");
+            b_invertColors.classList.add("invert");
+        }
+        else{
+            iframe.classList.remove("invert");
+            b_invertColors.classList.remove("invert");
+        }
+    }
+    b_invertColors.addEventListener("click",e=>{
+        let v = settings.invertContrast.v;
+        settings.invertContrast.set(!v);
+        updateIFrameContrast();
+    });
+    if(settings.invertContrast.get()) updateIFrameContrast();
+}
 function postSetupPreview(p:Project){
     if(PAGE_ID != PAGEID.editor && PAGE_ID != PAGEID.lesson) return;
     
@@ -3668,10 +3945,15 @@ type DropdownOptions = {
     customPos?:boolean;
     openToLeft?:boolean;
     isRightClick?:boolean;
+    isMouseDown?:boolean,
     useHold?:boolean;
 }
 function setupDropdown(btn:HTMLElement,getLabels:()=>string[],onclick:(i:number)=>void,ops:DropdownOptions={}){
-    btn.addEventListener("contextmenu",async e=>{
+    let evt = "contextmenu";
+    if(ops.isMouseDown) evt = "mousedown";
+    btn.addEventListener(evt,async (e:MouseEvent)=>{
+        if(ops.isMouseDown) if(e.button != (ops.isRightClick ? 2 : 0)) return;
+        
         e.preventDefault();
         e.stopImmediatePropagation();
         e.stopPropagation();
@@ -4210,8 +4492,10 @@ class ConfirmMenu extends Menu {
 
         let btn1 = document.createElement("button");
         btn1.textContent = this.confirmText?? "Confirm";
+        btn1.classList.add("b-confirm");
         let btn2 = document.createElement("button");
         btn2.textContent = this.cancelText?? "Cancel";
+        btn2.classList.add("b-cancel");
         temp.appendChild(btn1);
         temp.appendChild(btn2);
         btn1.addEventListener("click", () => { this.confirmChoice(); });
@@ -5054,4 +5338,22 @@ async function doOverrideFolder(f1:FFolder,f2:FFolder){
         }).load();
     });
     return res1;
+}
+
+// 
+function cloneLessonFilesIntoProject(l:Lesson,name?:string){
+    if(!name) name = l.info.name;
+
+    return new Promise<boolean>(resolve=>{
+        socket.emit("copyFilesIntoNewProject",name,lesson.getFilesAsFolder(),"Cloned from lesson: "+l.info.name+".",(data:any)=>{
+            console.log("res: ",data);
+            if(typeof data == "number" && data != 0){
+                alert(`Error ${data} while trying to copy files into new project`);
+                resolve(false);
+                return;
+            }
+            goToProject(data);
+            resolve(true);
+        });
+    })
 }

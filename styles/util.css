@@ -630,7 +630,7 @@ body .nav-links > .active{
     /* background-color:var(--bg-col); */
 }
 .file-link.cur{
-    background-color:var(--cta-btn-col);
+    background-color:var(--cta-btn-col) !important;
     color:white;
     /* border-bottom:solid 3px var(--cta-btn-col); */
     /* background-color:var(--darken); */
@@ -972,9 +972,12 @@ body .nav-links > .active{
     /* padding-left:7px; */
     padding-left:24px;
     position:relative;
-    overflow:hidden;
+    overflow:visible;
 
     padding-left:20px;
+}
+.folder-item.close .fi-list{
+    overflow:hidden;
 }
 .fi-list::before{
     transition:opacity 0.2s ease-out;

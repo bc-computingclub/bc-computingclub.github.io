@@ -231,6 +231,7 @@ abstract class Task{
                 resolve(v);
                 return 1;
             }
+            // resolve(null); // UMM should this be enabled?
         }});
         if(lesson.isResuming) if(this.supertask){
             if(lesson.resume.eventI == lesson.events.indexOf(this.supertask)) if(lesson.resume.taskI == this.supertask.tasks.indexOf(this)){
@@ -713,6 +714,52 @@ class CP_LineAbove extends CodePart{
         await wait(350);
     }
 }
+class CP_DeleteLines extends CodePart{
+    constructor(){
+        super();
+    }
+    async run(editor: monaco.editor.IStandaloneCodeEditor): Promise<void> {
+        let actions = getEditActions(editor);
+        actions.deleteLines();
+    }
+}
+class CP_EditorAction extends CodePart{
+    constructor(f:(actions:TutEditorActions)=>string,params:any[]){
+        super();
+        this.f = f;
+        this.params = params;
+    }
+    f:any;
+    params:any[];
+    async run(editor: monaco.editor.IStandaloneCodeEditor): Promise<void> {
+        if(this.f){
+            let actions = getEditActions(editor);
+            let actionName = this.f(actions);
+            // console.log("ACTION:",this.f,action);
+            // if(action) action();
+            actions[actionName](...this.params);
+            // let action = actions[actionName];
+            // if(action) action();
+        }
+    }
+}
+type SuggestionType = "show"|"next"|"prev"|"accept"|"hide";
+class CP_Suggestions extends CodePart{
+    constructor(type:SuggestionType="show"){
+        super();
+        this.type = type;
+    }
+    type:SuggestionType;
+    async run(editor: monaco.editor.IStandaloneCodeEditor): Promise<void> {
+        let actions = getEditActions(editor);
+
+        if(this.type == "show") actions.showSuggestions();
+        else if(this.type == "next") actions.nextSuggestion();
+        else if(this.type == "prev") actions.prevSuggestion();
+        else if(this.type == "accept") actions.acceptSuggestion();
+        else if(this.type == "hide") actions.hideSuggestions();
+    }
+}
 class CP_Home extends CodePart{
     constructor(){
         super();
@@ -950,6 +997,7 @@ class CP_Bubble extends CodePart{
         });
         await b.clickProm;
         closeBubble(b);
+        await wait(350);
     }
 }
 class CP_ShowHover extends CodePart{
@@ -1142,7 +1190,10 @@ class TutEditorActions{
     async openSymbols(set:string,beforeOpenTime=250){ // untested
         let t = g_waitDelayScale;
 
-        await typeText(this.editor,getExtraSpace()+set,0);
+        let pos = this.editor.getPosition();
+        let line = this.getLine(pos.lineNumber);
+
+        await typeText(this.editor,(line[pos.column-2] == " " ? "" : getExtraSpace())+set,0);
         
         this.clearDelay();
         await this.moveByX(-1);
@@ -1169,6 +1220,39 @@ class TutEditorActions{
         this._end();
 
         g_waitDelayScale = t;
+    }
+
+    _trigger(cmd:string,payload?:any){
+        this._start();
+        this.editor.trigger("keyboard",cmd,payload);
+        this._end();
+    }
+
+    showSuggestions(){
+        // editor.action.triggerSuggest
+        // toggleSuggestionDetails
+        // editor.action.inlineSuggest.commit // accept inline suggestion
+        // acceptSelectedSuggestion
+        // selectNextSuggestion
+        // selectPrevSuggestion
+        // editor.action.inlineSuggest.hide
+        
+        this._trigger("editor.action.triggerSuggest");
+    }
+    hideSuggestions(){
+        this._trigger("editor.action.inlineSuggest.hide");
+    }
+    nextSuggestion(){
+        this._trigger("selectNextSuggestion");
+    }
+    prevSuggestion(){
+        this._trigger("selectPrevSuggestion");
+    }
+    acceptSuggestion(){
+        this._trigger("acceptSelectedSuggestion");
+    }
+    toggleSuggestionDetails(){
+        this._trigger("toggleSuggestionDetails");
     }
 
     getLine(line:number){
@@ -1428,6 +1512,20 @@ class CP_CSS extends CodePart{
         // await lesson.endEditting();
     }
 }
+function addBubbleAtCursor(editor:monaco.editor.IStandaloneCodeEditor,preText:string,dir:string){
+    if(!editor) editor = lesson.tut.getCurEditor();
+    
+    let curPos = editor.getPosition();
+    let r3 = editor.getDomNode().getBoundingClientRect();
+    let pos = editor.getScrolledVisiblePosition(curPos);
+    let b2 = addBubbleAt(BubbleLoc.xy,preText,dir,{
+        x:r3.x+pos.left+30,
+        y:r3.y+pos.top-20,
+        click:true,
+        inEditor:lesson.tut.getCurEditor()
+    });
+    return b2;
+}
 class AddCode extends Task{
     constructor(parts:CodePart[],text="Let's add some code here.",dir?:string){
         super("Add Code Parts");
@@ -1457,22 +1555,12 @@ class AddCode extends Task{
                         // await wait(150);
                     // }
                     // let r2 = tutMouse.getBoundingClientRect();
-                    let curPos = editor.getPosition();
-                    let r3 = editor.getDomNode().getBoundingClientRect();
-                    let pos = editor.getScrolledVisiblePosition(curPos);
                     let preText = this.text ?? "Let's add some code here.";
                     if(!lesson._hasShownFollowAlong){
                         preText += "<br><br>i[Follow along! But feel free to make your own changes and experiment!]";
                         lesson._hasShownFollowAlong = true;
                     }
-                    let b2 = addBubbleAt(BubbleLoc.xy,preText,this.dir,{
-                        // line:curPos.lineNumber,
-                        // col:curPos.column,
-                        x:r3.x+pos.left+30,
-                        y:r3.y+pos.top-20,
-                        click:true,
-                        inEditor:lesson.tut.getCurEditor()
-                    });
+                    let b2 = addBubbleAtCursor(editor,preText,this.dir);
                     // let b2 = addBubbleAt(BubbleLoc.xy,preText,this.dir,{
                     //     x:r2.x+r2.width/2 + 17 + 12,
                     //     y:r2.y+r2.height/2 - 32,
@@ -1859,12 +1947,13 @@ class PonderBoardTask extends Task{
         await super.start();
 
         await wait(250);
-        let r2 = tutMouse.getBoundingClientRect();
-        let b2 = addBubbleAt(BubbleLoc.xy,this.title,"top",{
-            x:r2.x+r2.width/2 + 17,
-            y:r2.y+r2.height/2 - 22,
-            click:true
-        });
+        // let r2 = tutMouse.getBoundingClientRect();
+        // let b2 = addBubbleAt(BubbleLoc.xy,this.title,"top",{
+        //     x:r2.x+r2.width/2 + 17,
+        //     y:r2.y+r2.height/2 - 22,
+        //     click:true
+        // });
+        let b2 = addBubbleAtCursor(null,this.title,"top");
         await b2.clickProm;
 
         let b = lesson.boards.find(v=>v.bid == this.bid);
@@ -1873,9 +1962,14 @@ class PonderBoardTask extends Task{
         if(curTA?.tagName.toLowerCase() == "textarea") curTA.blur();
         
         b.initEvents();
-        await b.init();
+        let prom = b.init();
+        // await b.init();
         b.show();
 
+        await prom;
+
+        this.canBeFinished = true;
+        this._resFinish();
         await this.finish();
     }
     cleanup(): void {
@@ -2053,7 +2147,8 @@ const snips = {
         return new AddCode([
             new CP_HTML("html",true,true),
             new CP_HTML("head",true,true),
-            new CP_MoveBy(0,1),
+            new CP_MoveBy(0,1,true),
+            new CP_Wait(200),
             new CP_LineBelow(1),
             new CP_HTML("body",true,true)
         ],text,dir);
@@ -4335,6 +4430,7 @@ async function hideTutMouse(){
     if(tutMouse.style.opacity == "0") return;
     tutMouse.style.opacity = "0";
     await wait(350);
+    // await syncMousePos(lesson.tut.getCurEditor(),true,true); // ! - USE THIS IF DISABLING SYNC EVERYWHERE ELSE
 }
 async function showTutMouse(isQuick=false){
     if(tutMouse.style.opacity == "1") return;
@@ -4433,6 +4529,7 @@ class PromptLoginMenu extends Menu{
 async function initLessonPage(){
     setupEditor(pane_tutor_code,EditorType.tutor);
     setupEditor(pane_code,EditorType.self);
+    setupPreview(pane_preview);
 
     // setupFilesPane(pane_tutor_code.querySelector(".pane-files"));
     // setupFilesPane(pane_code.querySelector(".pane-files"));
@@ -5255,14 +5352,7 @@ class LessonCompleteMenu extends Menu{
             if(!name) return;
             
             // copy files into new project
-            socket.emit("copyFilesIntoNewProject",name,lesson.getFilesAsFolder(),"Cloned from lesson: "+l.info.name+".",(data:any)=>{
-                console.log("res: ",data);
-                if(typeof data == "number" && data != 0){
-                    alert(`Error ${data} while trying to copy files into new project`);
-                    return;
-                }
-                goToProject(data);
-            });
+            cloneLessonFilesIntoProject(lesson,name);
         });
         // b.e.appendChild(btnCont);
         // setupCallout(btnCont.children[0]);

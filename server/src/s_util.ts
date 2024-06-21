@@ -157,10 +157,15 @@ export class PTreeLesson{
     links:PTreeLink[];
     ops:PTLessonOps;
 
+    desc:string[] = [];
+    takeaways:string[] = [];
+
     parent:string|undefined; // lid
 
     loadExtraData(data:any){
         this.parent = data.parent;
+        this.desc = data.desc || [];
+        this.takeaways = data.takeaways || [];
     }
 }
 export type PTLessonOps = {

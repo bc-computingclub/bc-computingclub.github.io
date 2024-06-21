@@ -74,12 +74,12 @@ return [
         // new AddGenericCodeTask("<head></head>\x01\x01\x01\x01\x01\x01\x01\n\x04","html","This element will hold everything in our whole html page"),
         new AddCode([
             new CP_HTML("head",true,true)
-        ],"This will hold elements that hold information like the title of our site, it's icon, and external css files which let us style our page"),
+        ],"This will hold elements that hold information like the title of our site, it's icon, and external CSS files which let us style our page."),
         // new AddGenericCodeTask("<body></body>\x01\x01\x01\x01\x01\x01\x01\n","html","This will hold elements that hold information like the title of our site, it's icon, and external css files which let us style our page"),
         new AddIgnoreCode([new CP_MoveBy(0,1,true),new CP_LineBelow(1)]),
         new AddCode([
             new CP_HTML("body",true,true)
-        ],"The body is where all of your elements that actually make up the physical page go, as well as javascript files that we'll use to control these."),
+        ],"The body is where all of your elements that actually make up the physical page go, as well as JavaScript files that we'll use to control these."),
         new BubbleTask("If this seems like a lot of information don't worry, it is, but it's also critical to every html page and we'll be using it in every web tutorial from now on."),
 
         new AddFileTask("page3.html"),

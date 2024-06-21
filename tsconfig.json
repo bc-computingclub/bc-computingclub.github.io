@@ -12,7 +12,8 @@
         "rootDir": "src",
         "outDir": "out",
         "types": [
-            "./lib/monaco/monaco.d.ts"
+            "./lib/monaco/monaco.d.ts",
+            "@types/wicg-file-system-access"
         ]
     },
     "exclude": [

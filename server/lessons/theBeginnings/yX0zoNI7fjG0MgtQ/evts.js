@@ -15,10 +15,10 @@ return [
         snips.basicHTMLStructure(),
         new AddCode([
             new CP_HTML("p",false,true,"Text One"),
-            new CP_LineBelow(1),
+            // new CP_LineBelow(1),
             new CP_HTML("p",false,true,"Text Two"),
-            new CP_LineBelow(1),
-            new CP_HTML("p",false,true,"Text Three")
+            // new CP_LineBelow(1),
+            new CP_HTML("p",false,false,"Text Three")
         ],"Now let's add 3 paragraph elements to our page.")
     ]),
     

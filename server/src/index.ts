@@ -679,7 +679,7 @@ io.on("connection",socket=>{
                     meta.meta.unlocked = true;
                 }
             }
-            if(wasChange) if(meta) meta.meta.save();
+            if(wasChange) if(meta) meta.save();
             // if(wasChange) if(meta) await writeLessonMeta(user.uid,l.lid,meta);
         }
         
@@ -774,7 +774,7 @@ io.on("connection",socket=>{
             for(const v of initialFiles){
                 data.initialFiles.push({
                     name:v,
-                    data:await read(path+"initial_files/"+v,"utf8")
+                    data:await read(path+"initial_files/"+v)
                 });
             }
         }

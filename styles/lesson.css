@@ -44,6 +44,12 @@ body.hide-bubbles .tut-mouse{
     /* filter:hue-rotate(45deg); <-- the actual one */
     /* filter:hue-rotate(135deg); */
 }
+.pane-tutor-code .suggest-widget{
+    pointer-events:none !important;
+}
+/* .pane-tutor-code:has(.suggest-widget){
+    pointer-events:none !important;
+} */
 
 .bubble-overlay{
     position:relative;

@@ -1,6 +1,15 @@
 {
     "ver": "0",
     "name": "Simple Styling",
+    "desc": [
+        "In this lesson we will be setting up CSS in our page to style it."
+    ],
+    "takeaways": [
+        "How to add/link a CSS file",
+        "Introduce CSS Style Set structure",
+        "How to change the background color",
+        "Introduce HTML attributes"
+    ],
     "banner": {
         "sections": [
             {

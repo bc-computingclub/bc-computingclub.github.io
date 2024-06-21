@@ -43,7 +43,7 @@ return [
     ],BubbleLoc.global,[
         new SwitchFileTask("index.html"),
         new AddCode([
-            new CP_MoveBy(8+2,9),
+            new CP_MoveBy(8+2,7),
             new CP_Text(` id="cool-label"`)
         ],null),
         new SwitchFileTask("style.css"),
@@ -59,6 +59,10 @@ return [
         new BubbleTask("Hover over the selector \"p#cool-label\" to see the type of element we are modifying."),
         new ShowHoverTask(),
         new DoRefreshTask("If you refresh, only our 3rd paragraph element should have the lightblue background color."),
+
+        // need to say something like: we don't really need the "p" here, it just allows us to be more specific, if we take it away it means we're selecting "any type of element with the id cool-label" instead of "p elements with the id cool-label"
+
+        // 
         // 
         new BubbleTask("We'll look more into selectors in the next tutorials, but keep in mind that in a selector, b[spaces matter]."),
         new AddCode([

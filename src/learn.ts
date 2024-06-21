@@ -4,6 +4,24 @@ const panCont = document.querySelector(".pan-cont") as HTMLElement;
 let cont = document.querySelector(".cont") as HTMLElement;
 const ns = "http://www.w3.org/2000/svg";
 
+type LessonTypeData = {
+    label:string,
+    icon:string,
+    accent:string|null
+};
+let lessonTypeData = {
+    lesson:{
+        label:"Lesson",
+        icon:"school",
+        accent:null
+    },
+    project:{
+        label:"Guided Project",
+        icon:"deployed_code",
+        accent:"var(--practice-col)"
+    }
+} as Record<string,LessonTypeData>;
+
 enum LessonType{
     lesson,
     project
@@ -39,7 +57,20 @@ class TreeLesson{
     root:TreeLesson[];
     rootProg:ProgressData[];
 
+    desc:string[] = [];
+    takeaways:string[] = [];
+
     parent:string|undefined;
+
+    getIcon(){
+        return lessonTypeData[LessonType[this.type??0]].icon;
+    }
+    getAccent(){
+        return lessonTypeData[LessonType[this.type??0]].accent;
+    }
+    getTypeData(){
+        return lessonTypeData[LessonType[this.type??0]];
+    }
 
     loadFromData(data:any){
         let ok = Object.keys(data);
@@ -282,7 +313,7 @@ class LessonItem{
         }
 
         if(unlocked) e.innerHTML = `
-            <div>${this.l.name}</div>
+            <div><span class="l-lesson-name">${this.l.name}</span></div>
             <div class="btn-start ${this.data.s ? "percent" : "material-symbols-outlined"}">
                 ${this.data.s ? this.data.prog+"%" : !this.data.s ? "play_arrow" : "more_horiz"}
             </div>
@@ -400,15 +431,11 @@ class LessonItem{
         }
 
         if(b_start) b_start.addEventListener("click",e=>{
+            e.stopImmediatePropagation();
+            e.stopPropagation();
+
             if(!this.data.s){
-                socket.emit("startLesson",this.lid,0,(data:any)=>{
-                    if(data != 0){
-                        alert(`Error ${data} trying to start lesson`);
-                        return;
-                    }
-                    localStorage.setItem("cc-lastLID",this.lid);
-                    location.href = "/learn/lesson/index.html?lid="+this.lid;
-                });
+                startLesson(this.lid);
                 return;
             }
 
@@ -418,14 +445,18 @@ class LessonItem{
 
         if(this.d_actions){
             this.d_actions.children[0].addEventListener("click",e=>{
+                e.stopImmediatePropagation();
+                e.stopPropagation();
+
                 let mode = 0; // Lesson Mode [lesson, review]
-                socket.emit("startLesson",this.lid,mode,(data:any)=>{
-                    if(data != 0){
-                        alert(`Error ${data}: while trying to start lesson`);
-                        return;
-                    }
-                    location.href = "/learn/lesson/index.html?lid="+this.lid;
-                });
+                startLesson(this.lid,mode);
+                // socket.emit("startLesson",this.lid,mode,(data:any)=>{
+                //     if(data != 0){
+                //         alert(`Error ${data}: while trying to start lesson`);
+                //         return;
+                //     }
+                //     location.href = "/learn/lesson/index.html?lid="+this.lid;
+                // });
             });
             if(false) this.d_actions.children[1].addEventListener("click",e=>{
                 new ConfirmMenu("Reset Progress",`Are you sure you want<br> to reset lesson progress for "${this.l.name}" ?`,()=>{
@@ -440,23 +471,37 @@ class LessonItem{
                 },()=>{}).load();
             });
             this.d_actions.children[1].addEventListener("click",e=>{
-                new ConfirmMenu("Delete Progress",`Are you sure you want<br> to delete lesson progress for "${this.l.name}" ?`,()=>{
-                    socket.emit("deleteLessonProgress",this.lid,(data:any)=>{
-                        if(data == 0){
-                            this.deleteProgress();
-                        }
-                        else{
-                            alert("Err: while deleting lesson progress, error code: "+data);
-                        }
-                    });
-                },()=>{}).load();
+                e.stopImmediatePropagation();
+                e.stopPropagation();
+                
+                clearLessonProgress(this);
             });
         }
+
+        let l_name = e.querySelector(".l-lesson-name");
+        l_name.addEventListener("click",e=>{
+            new LessonMenu(this).load();
+        });
     }
     init(){
         let e = this.e;
         let list = this.l.next.concat(this.l.prev);
 
+        let open = false;
+        let par = e.parentElement;
+        if(false) e.addEventListener("click",ev=>{
+            open = !open;
+            par.classList.toggle("show-menu");
+            menuCont.classList.toggle("show");
+            
+            if(open){
+                menuCont.appendChild(e);
+            }
+            else{
+                par.appendChild(e);
+            }
+        });
+        
         // if(_loadLastLID == this.lid){
         //     panX = this.l.x; // idk the formula for this
         //     panY = this.l.y;
@@ -495,6 +540,202 @@ class LessonItem{
     }
 }
 let items:LessonItem[] = [];
+
+function startLesson(lid:string,mode=0){
+    socket.emit("startLesson",lid,mode,(data:any)=>{
+        if(data != 0){
+            alert(`Error ${data} trying to start lesson`);
+            return;
+        }
+        localStorage.setItem("cc-lastLID",lid);
+        location.href = "/learn/lesson/index.html?lid="+lid;
+    });
+}
+async function restartLesson(item:LessonItem){
+    let res = await clearLessonProgress(item);
+    if(res){
+        startLesson(item.lid);
+    }
+}
+function clearLessonProgress(item:LessonItem){
+    return new Promise<boolean>(resolve=>{
+        let m = new ConfirmMenu("Delete Progress",`Are you sure you want<br> to delete lesson progress for "${item.l.name}" ?`,()=>{
+            socket.emit("deleteLessonProgress",item.l.lid,(data:any)=>{
+                if(data == 0){
+                    item.deleteProgress();
+                    resolve(true);
+                }
+                else{
+                    alert("Err: while deleting lesson progress, error code: "+data);
+                    resolve(false);
+                }
+            });
+        },()=>{}).load();
+        m.body.querySelector(".b-confirm").classList.add("warn");
+    });
+}
+
+class LessonMenu extends Menu{
+    constructor(lesson:LessonItem){
+        let typeData = lesson.l.getTypeData();
+        // super(lesson.l.name,typeData.icon);
+        super("// "+typeData.label.toUpperCase()+(lesson.partNum? (` (Part ${lesson.partNum})`) :""),typeData.icon);
+
+        this.lesson = lesson;
+        this.typeData = typeData;
+    }
+    lesson:LessonItem;
+    typeData:LessonTypeData;
+    load(priority?: number, newLayer?: boolean): this {
+        super.load(priority,newLayer);
+        this.menu.classList.add("menu-lesson");
+
+        if(this.typeData.accent){
+            this.menu.style.setProperty("--accent",this.typeData.accent);
+            this.menu.style.setProperty("--cta-btn-col",this.typeData.accent);
+        }
+
+        // 
+        this.body.innerHTML = `
+            <div class="menu-block-cont" style="gap:30px;margin:10px;height:100%">
+                <div class="menu-block details-block">
+                    <div class="labeled-label">
+                        <div>Lesson Name</div>
+                        <div class="l-name">${this.lesson.l.name}</div>
+                    </div>
+                    <br><br>
+                    <div class="start-cont">
+                        <div class="l-prog">
+                            ${this.lesson.data.prog}% Complete
+                        </div>
+                        <button class="b-more-options hide">
+                            <div class="material-symbols-outlined">more_vert</div>
+                        </button>
+                        <button class="b-continue hide">Continue</button>
+                        <button class="b-start hide">Start</button>
+                    </div>
+                    <br><br>
+                    <div class="labeled-label">
+                        <div>Description</div>
+                        <div class="l-desc d-bubble">
+                            ${this.lesson.l.desc.map(v=>`<div>${v}</div>`).join("")}
+                            <!--<div>This is an example descripion for a lesson.<br><br>Probably a lot of useful information would go in here like what you will learn specifically in a list such as:</div>
+                            <ul>
+                                <li>Thing to learn 1</li>
+                                <li>Another thing</li>
+                                <li>You can code now</li>
+                            </ul>
+                            <div>And that's about it.</div>-->
+                        </div>
+                    </div>
+                    <br><br>
+                    <div class="labeled-label">
+                        <div>Key Takeaways</div>
+                        <div class="d-bubble">
+                            <ul>
+                                ${this.lesson.l.takeaways.map(v=>`<li>${v}</li>`).join("")}
+                                <!--<li>Thing to learn 1</li>
+                                <li>Another thing</li>
+                                <li>You can code now</li>-->
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                <div class="menu-block preview-block">
+                    <div class="labeled-label" style="height:100%;display:flex;flex-direction:column">
+                        <div>Preview</div>
+                        <div class="sample-editor" style="height:calc(100% - 75px)">
+                            
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        this.loadEditor();
+
+        // 
+        let b_start = this.body.querySelector(".b-start") as HTMLButtonElement;
+        let b_continue = this.body.querySelector(".b-continue") as HTMLButtonElement;
+        let b_moreOptions = this.body.querySelector(".b-more-options") as HTMLButtonElement;
+
+        let updateStartButtons = ()=>{
+            if(this.lesson.data.prog == 100){
+                b_continue.textContent = "Restart";
+            }
+            else{
+                b_continue.textContent = "Continue";
+            }
+            
+            if(this.lesson.data.s){
+                b_start.classList.add("hide");
+                b_continue.classList.remove("hide");
+                b_moreOptions.classList.remove("hide");
+            }
+            else{
+                b_start.classList.remove("hide");
+                b_continue.classList.add("hide");
+                b_moreOptions.classList.add("hide");
+            }
+        }
+        updateStartButtons();
+        
+        b_start.addEventListener("click",e=>{
+            startLesson(this.lesson.lid);
+        });
+        b_continue.addEventListener("click",async e=>{
+            if(this.lesson.data.prog == 100) restartLesson(this.lesson);
+            else startLesson(this.lesson.lid);
+        });
+
+        b_moreOptions.addEventListener("mousedown",e=>{
+            openDropdown(b_moreOptions,()=>[
+                "Delete Progress",
+                "Restart"
+            ],async (i)=>{
+                if(i == 0){
+                    let res = await clearLessonProgress(this.lesson);
+                    if(res){
+                        this.lesson.data.s = false;
+                        updateStartButtons();
+                    }
+                }
+                else if(i == 1){
+                    await restartLesson(this.lesson);
+                }
+            });
+        });
+        
+        return this;
+    }
+
+    async loadPreview(){
+        postSetupPreview(project);
+    }
+    async loadEditor(){
+        await loadMonaco();
+        
+        let p = new Project("Sample Project",this.body.querySelector(".sample-editor"),{
+            readonly:false
+        });
+        p.builtInFileList = true;
+        // p.fileList = this.body.querySelector(".pane-files");
+        
+        setupEditor(p.parent,EditorType.none);
+        postSetupEditor(p,true);
+
+        p.parent.querySelector(".b-add-file").remove();
+
+        await p.createFile("index.html",p.textEncoder.encode("This is bob."));
+
+        p.files[0]?.open(false);
+        p.files[0]?.editor?.layout();
+
+        // project = p;
+
+        await this.loadPreview();
+    }
+}
 
 let moveScale = 10;
 async function loadProgressTree(folder:string){
@@ -860,6 +1101,7 @@ window.addEventListener("pointerup",e=>{
 let startTouches:Touch[];
 let startTouchDist = 1;
 window.addEventListener("touchstart",e=>{
+    if(menusOpen.length) return;
     if(canPan) if(e.touches.length == 2){
         startTouches = [...e.touches];
         let dx = startTouches[1].clientX-startTouches[0].clientX;
@@ -869,6 +1111,7 @@ window.addEventListener("touchstart",e=>{
     }
 });
 window.addEventListener("touchmove",e=>{
+    if(menusOpen.length) return;
     e.preventDefault();
     if(e.touches.length == 1){
         let t = e.touches[0];

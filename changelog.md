@@ -996,3 +996,27 @@
 - fixed hideTutMouse() and showTutMouse() so they don't delay/wait if it's already in that particular mode
 
 <!-- 27,714 lines, 25,442 non-blank -->
+
+### 6/20/24
+- tweaked and added some to particleSim lesson
+- tweaked some of the other lessons
+
+<!-- backend -->
+- fixed "initial files" feature for the tutor when starting lessons didn't work after the transitions to buffer based files
+- added desc:string[] and takeaways:string[] to the lesson meta.json format
+
+<!-- frontend -->
+- moved preview HTML creation to a new function: setupPreview() and converted the editor, lesson, submissions, and learn page to be compatible
+- added lessonTypeData helper for ease of getting icons and colors for different lesson types in the learn page
+- added getIcon(), getAccent(), and getTypeData() helper methods to the TreeLesson class
+- added stopPropagations to some buttons on the learn page
+- moved startLesson, restartLesson, and clearLessonProgress code to their own functions
+- added LessonMenu which can be opened by clicking on the name of a lesson item in the learn page
+    - shows name, desc, takeaways, type of lesson, lesson part, correct icon, correct accent
+    - under name it has progress percentage, start, continue, restart button with more options button to clear progress
+    - right now just shows a sample editor to the right, not sure if I want to make that an iframe sample instead or the key takeaways or what
+- fixed touch screen not able to pinch to zoom when menus are open
+- fixed PonderBoard wouldn't open after update to fix it when resuming
+- added CP_DeleteLines (Ctrl+Shift+K)
+- added CP_EditorActions (not sure if I should keep this but it's more of a debug thing for now)
+- 

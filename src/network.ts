@@ -226,6 +226,8 @@ async function restoreLessonFiles(lesson:Lesson){
                 return;
             }
 
+            console.log("LESSON META:",data);
+
             async function loadBufs(items:ULItem[]){
                 for(let i = 0; i < items.length; i++){
                     let item = items[i];
@@ -299,6 +301,9 @@ async function restoreLessonFiles(lesson:Lesson){
 
     for(const f of lesson.p.files){
         f.open(false);
+    }
+    for(const f of lesson.tut.files){
+        f.open();
     }
 
     // let index = lesson.p.files.find(v=>v.name == "index.html") as FFile;
@@ -641,6 +646,7 @@ class NotYetMenu extends Menu{
                 }
             ]
         });
+        // you are not yet worthy... come back when you are stronger
 
         await SWait(500);
         this.close();

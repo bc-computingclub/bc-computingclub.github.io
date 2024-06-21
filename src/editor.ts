@@ -35,6 +35,7 @@ async function loadProject(uid:string,pid:string){
     project.meta.canEdit = canEdit;
     if(!pid) project.pid = "tmp_project";
     setupEditor(pane_code,EditorType.self);
+    setupPreview(pane_preview);
     postSetupEditor(project);
     setupResize(pane_files);
 
@@ -214,9 +215,6 @@ function initNewResizes(){
 }
 
 onResize();
-
-icon_refresh = document.querySelector(".icon-refresh") as HTMLElement;
-iframe = document.querySelector("iframe") as HTMLIFrameElement;
 
 if(false) b_refresh.addEventListener("click",e=>{
     if(!project.files[0]) return;

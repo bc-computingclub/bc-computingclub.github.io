@@ -74,7 +74,7 @@ return [
         ]),
         new AddCode([
             new CP_StyleRule("width","100%")
-        ])
+        ],null)
     ]),
     new LE_AddGBubble([
         "Alright let's get to the JavaScript good stuff."
@@ -101,6 +101,7 @@ return [
             new CP_Bubble("Hmm, before we finish this let's fix our types."),
             new CP_Bubble(`Did you notice?\nWhen typing b["canvas.width"] there wasn't any autocomplete?`),
             new CP_Bubble(`This is because the editor doesn't know that our variable b["canvas"] is actually an HTML Canvas Element.\ni[Let's check what type it is.]`),
+            new CP_Wait(350),
 
             new CP_MoveTo(8,1),
             new CP_ShowHover()
@@ -134,18 +135,19 @@ return [
     ]),
     new LE_AddGBubble([
         "In order to draw anything on the canvas we need to make a i[b[\"context\"]] which we usually abbriviate with h[\"ctx\"].",
-        "i[Let's comment out our alert and create a b[\"ctx\"] and draw a rectangle in the top left corner to make sure it works."
+        "i[Let's delete our alert and create a b[\"ctx\"] and draw a rectangle in the top left corner to make sure it works."
     ],BubbleLoc.global,[
         new AddCode([
             new CP_Wait(500),
-            new CP_Comment(), // comment out the alert
+            // new CP_Comment(), // comment out the alert
+            new CP_DeleteLines(),
             new CP_LineAbove(1),
-            
+
             new CP_MoveTo(1,2),
             new CP_LineBelow(1),
             new CP_Text(`let ctx = canvas.getContext("2d");`),
             new CP_LineBelow(2),
-            new CP_Text(`ctx.fillRect(0,0,canvas.width/2,canvas.height/2)`),
+            new CP_Text(`ctx.fillRect(0,0,canvas.width/2,canvas.height/2);`),
         ],null),
 
         new DoRefreshTask("You should see a black rectangle in the top left quadrant of our canvas (or white, if you've switch the preview to dark mode).")
@@ -157,7 +159,21 @@ return [
     ],BubbleLoc.global,[
         new MoveCursorTo(6,1),
         new AddCode([
-            new CP_JS_Class("Particle")
+            new CP_LineBelow(1),
+            new CP_JS_Class("Particle"),
+            new CP_EditorAction(actions=>actions.openSymbols.name,["{}"])
+
+            // new CP_EditorAction(actions=>actions.showSuggestions.name)
+            // new CP_Wait(500),
+            // new CP_Suggestions("show"),
+            // new CP_Wait(500),
+            // new CP_Suggestions("next"),
+            // new CP_Wait(500),
+            // new CP_Suggestions("next"),
+            // new CP_Wait(500),
+            // new CP_Suggestions("next"),
+            // new CP_Wait(1000),
+            // new CP_Suggestions("accept"),
         ])
     ])
 ]
