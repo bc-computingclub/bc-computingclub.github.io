@@ -3138,6 +3138,13 @@ function setupFilesPane(div:Element){
                 ];
             },
             onopen(dd) {
+                if(!project || project?.readonly){ // disable options when project is readonly
+                    dd.children[0].classList.add("disabled");
+                    dd.children[1].classList.add("disabled");
+                    dd.children[2].classList.add("disabled");
+                    return;
+                }
+
                 dd.children[1].classList.add("disabled");
                 // if(!canUseFS()) dd.children[2].classList.add("disabled"); // probably better to let the user know instead of just graying it out
             }

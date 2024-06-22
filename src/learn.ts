@@ -479,7 +479,7 @@ class LessonItem{
         }
 
         let l_name = e.querySelector(".l-lesson-name");
-        l_name.addEventListener("click",e=>{
+        l_name?.addEventListener("click",e=>{
             new LessonMenu(this).load();
         });
     }

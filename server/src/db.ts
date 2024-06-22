@@ -1,8 +1,8 @@
 import { MongoClient, ServerApiVersion } from "mongodb";
 import mongoose, { mongo } from "mongoose";
-import { LessonMeta, ProjectMeta, ULFile, ULFolder, ULItem, _findLessonMeta, _findProject, genPID, projectCache, users } from "./connection";
+import { LessonMeta, ProjectMeta, _findLessonMeta, _findProject, genPID, projectCache, users } from "./connection";
 import { challenges, getDifficultyId } from "./s_challenges";
-import { write, read, readdir, access, mkdir, removeFolder, isExtTextFile, getExt } from "./s_util";
+import { write, read, readdir, access, mkdir, removeFolder, ULFile, ULFolder, ULItem } from "./s_util";
 
 export enum ServerMode{
     dev,

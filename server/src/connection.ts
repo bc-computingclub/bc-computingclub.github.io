@@ -4,7 +4,7 @@ import {Server, Socket} from "socket.io";
 // import cors from "cors";
 
 import {LessonMetaInst, LessonProgressModel, ProjectInst, ProjectModel, UserSessionItem, postInitMongoDB, removeFromList, userSessions} from "./db";
-import { write, read, readdir, access, mkdir, removeFolder } from "./s_util";
+import { write, read, readdir, access, mkdir, removeFolder, ULItem, ULFile, ULFolder } from "./s_util";
 // initMongoDB();
 postInitMongoDB();
 
@@ -908,53 +908,3 @@ app.use("/lesson/:userId/:auth/",(req,res,next)=>{
 app.use("/",express.static("../../"));
 
 export {Socket};
-
-// UTIL
-export class ULItem{
-    constructor(name:string){
-        this.name = name;
-    }
-    name:string;
-    static from(d:any):ULItem{
-        function sanitize(data:any){
-            if(data.items){
-                return new ULFolder(data.name,data.items.map((v:any)=>sanitize(v)));
-            }
-            else{
-                let f = new ULFile(data.name,data.buf);
-                // f.blob = data.blob;
-                return f;
-            }
-        }
-        return sanitize(d);
-    }
-}
-export class ULFolder extends ULItem{
-    constructor(name:string,items:ULItem[]=[]){
-        super(name);
-        this.items = items;
-    }
-    items:ULItem[];
-}
-export class ULFile extends ULItem{
-    constructor(name:string,buf:Buffer){
-        super(name);
-        this.buf = buf;
-        // this.val = val;
-        // this.path = path;
-        this.type = name.split(".").pop();
-    }
-    static make2(name:string,buf:Buffer){
-        let f = new ULFile(name,buf);
-        // f.blob = blob;
-        f.type = name.split(".").pop();
-        
-        return f;
-    }
-    // val:string;
-    // path:string;
-
-    // blob:Blob|undefined;
-    buf:Buffer|undefined;
-    type:string|undefined;
-}

@@ -2,7 +2,13 @@
     "ver": "0",
     "name": "Simple Styling",
     "desc": [
-        "In this lesson we will be setting up CSS in our page to style it."
+        "We will be setting up CSS in our page to style it."
+    ],
+    "preview": [
+        {
+            "type": "code",
+            "ref": "preview"
+        }
     ],
     "takeaways": [
         "How to add/link a CSS file",

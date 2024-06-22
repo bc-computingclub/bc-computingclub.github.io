@@ -128,6 +128,56 @@ export function internalCPDir(fromPath:string,toPath:string){
     });
 }
 
+// UTIL
+export class ULItem{
+    constructor(name:string){
+        this.name = name;
+    }
+    name:string;
+    static from(d:any):ULItem{
+        function sanitize(data:any){
+            if(data.items){
+                return new ULFolder(data.name,data.items.map((v:any)=>sanitize(v)));
+            }
+            else{
+                let f = new ULFile(data.name,data.buf);
+                // f.blob = data.blob;
+                return f;
+            }
+        }
+        return sanitize(d);
+    }
+}
+export class ULFolder extends ULItem{
+    constructor(name:string,items:ULItem[]=[]){
+        super(name);
+        this.items = items;
+    }
+    items:ULItem[];
+}
+export class ULFile extends ULItem{
+    constructor(name:string,buf:Buffer){
+        super(name);
+        this.buf = buf;
+        // this.val = val;
+        // this.path = path;
+        this.type = name.split(".").pop();
+    }
+    static make2(name:string,buf:Buffer){
+        let f = new ULFile(name,buf);
+        // f.blob = blob;
+        f.type = name.split(".").pop();
+        
+        return f;
+    }
+    // val:string;
+    // path:string;
+
+    // blob:Blob|undefined;
+    buf:Buffer|undefined;
+    type:string|undefined;
+}
+
 export enum LessonType{
     lesson,
     project
@@ -162,11 +212,44 @@ export class PTreeLesson{
 
     parent:string|undefined; // lid
 
-    loadExtraData(data:any){
+    preview:{
+        type:"code",
+        ref?:string, // rel path to folder containing files for preview
+    }[] = [];
+    previewData:ULFolder|undefined;
+
+    async loadExtraData(data:any){
         this.parent = data.parent;
-        this.desc = data.desc || [];
-        this.takeaways = data.takeaways || [];
+        this.desc = data.desc ?? [];
+        this.takeaways = data.takeaways ?? [];
+        this.preview = data.preview ?? [];
+        for(const d of this.preview){
+            if(d.type == "code"){
+                // don't have a way of knowing what folder it's in at this time
+                // this.previewData = new ULFolder("root",await getFolderItems("../lessons/"+this.));
+            }
+        }
     }
+}
+async function getFolderItems(path:string){
+    let list:ULItem[] = [];
+    async function search(folder:ULItem[],path:string){
+        let names = await readdir(path);
+        if(!names) return;
+        for(const name of names){
+            if(!name.includes(".")){
+                let subFolder = new ULFolder(name,[]);
+                folder.push(subFolder);
+                await search(subFolder.items,path+name+"/");
+            }
+            else{
+                let buf = await read(path+name+"/") as Buffer;
+                folder.push(ULFile.make2(name,buf));
+            }
+        }
+    }
+    await search(list,path+"/");
+    return list;
 }
 export type PTLessonOps = {
     unlocked?:boolean;
