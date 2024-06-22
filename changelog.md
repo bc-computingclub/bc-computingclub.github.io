@@ -1044,3 +1044,11 @@
 - fixed clicking twice on a file link in the open files list on an image would cause the page to overflow and scroll down
 
 <!-- 28,470 lines, 26,128 non-blank -->
+
+### 6/21/24
+- started adding folder_meta.json for future use
+- started adding preview data to meta.json format for lessons
+- moved ULItem, file, and folder on server from connection.ts to s_util.ts
+- added getFolderItem() helper function in server side
+- fixed front end wouldn't load if there were locked lessons
+- fixed editor with files so if project isn't defined or project is readonly then the options to upload files or connect to your own IDE are grayed out
