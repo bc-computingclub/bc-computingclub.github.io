@@ -223,6 +223,11 @@ abstract class Task{
     }
     async start():Promise<string|void>{
         lesson.updateCurrentProgress();
+
+        await lesson.goToActiveFile(); // could add extra check here like if it's the add file task or switch file task it doesn't matter where we're starting from so this can be ignored
+        
+        // 
+
         // lesson.loadSubTask(this);
         console.warn(`:: Started Task #${lesson._subTaskNum++} :: #${lesson._taskCount++}`,this.title,);
         let t = this;
@@ -369,46 +374,17 @@ class SwitchFileTask extends Task{
     comment:string;
     async start(): Promise<string | void> {
         await super.start();
-        let alreadyDone = false;
-        if(lesson.p.curFile?.name == this.name) alreadyDone = true;
-        
-        let r2 = tutMouse.getBoundingClientRect();
-        let rect:DOMRect;
-        let existingFile = lesson.tut.files.find(v=>v.name == this.name);
-        if(!existingFile){
-            console.warn("Err: tutor tried to switch to file that didn't exist");
-            alert("A strange error has occured, please save and then refresh the page.");
+        if(lesson.tut.curFile?.name == this.name){
+            if(this.comment){
+                let b = addBubbleAtCursor(lesson.tut.curFile.editor,this.comment,"left");
+                await b.clickProm;
+            }
+            
             await this.finish();
             return;
         }
-        let text2 = "Let's go back";
-        let tarBtn:Element;
-        if(existingFile){
-            text2 = (this.comment ?? "Let's go back to "+this.name);
-            // let fileElm = lesson.tut.d_files.children[lesson.tut.files.indexOf(existingFile)]; // not sure why this is all here when there's .link
-            let fileElm = existingFile.link;
-            rect = fileElm.getBoundingClientRect();
-            r2 = rect;
-            tarBtn = fileElm;
-            // goesBack = true;
-        }
-        let b2 = addBubbleAt(BubbleLoc.xy,text2,"top",{
-            x:r2.x+r2.width/2 + 17,
-            y:r2.y+r2.height/2 - 22,
-            click:true
-        });
-        await b2.clickProm;
-
-        await showTutMouse();
-        await moveTutMouseToCustom(rect.x+rect.width/2,rect.y+rect.height/2);
-        await wait(150); // used to be 300
-        await fakeClickButton(tarBtn);
-        if(existingFile){
-            existingFile.open();
-            // lesson.tut.curFile = existingFile;
-        }
-
-        await hideTutMouse();
+        
+        await lesson.switchFile(this.name,this.comment,this);
 
         await this.finish();
     }
@@ -472,11 +448,15 @@ class AddFileTask extends Task{
         await wait(300);
         await fakeClickButton(tarBtn);
         if(existingFile){
+            lesson.startActiveFileUnlock();
             existingFile.open();
+            lesson.endActiveFileUnlock();
             lesson.tut.curFile = existingFile;
         }
         if(!goesBack) this.file = await lesson.tut.createFile(this.name,new Uint8Array());
+        lesson.startActiveFileUnlock();
         this.file.open(); // is this redundant?
+        lesson.endActiveFileUnlock();
         if(!goesBack) await wait(500);
 
         let alreadyFoundFile = lesson.p.files.find(v=>v.name == this.name);
@@ -543,13 +523,19 @@ const COL_SCALE = 7.7;
 const COL_OFF = 60;
 
 function startEdit(editor?:monaco.editor.IStandaloneCodeEditor){
-    if(lesson.tut.curFile) lesson.tut.curFile.blockPosChange = false;
-    if(!editor) editor = lesson.tut.getCurEditor();
+    lesson.goToActiveFileInstant();
+    let file = lesson.activeFile ?? lesson.tut.curFile;
+
+    if(file) file.blockPosChange = false;
+    if(!editor) editor = file.editor;
     if(editor) editor.updateOptions({readOnly:false});
 }
 function endEdit(editor?:monaco.editor.IStandaloneCodeEditor){
-    if(lesson.tut.curFile) lesson.tut.curFile.blockPosChange = true;
-    if(!editor) editor = lesson.tut.getCurEditor();
+    lesson.goToActiveFileInstant();
+    let file = lesson.activeFile ?? lesson.tut.curFile;
+    
+    if(file) file.blockPosChange = true;
+    if(!editor) editor = file.editor;
     if(editor) editor.updateOptions({readOnly:true});
 }
 
@@ -565,6 +551,10 @@ async function startMouseMove(col:number,line:number,noShow=false){
  * This calls startEnd() and endEdit() automatically so you don't have to wrap this function in them.
  */
 async function typeText(editor:Editor,text:string,speedScale=1,moveMouseToEnd=false){
+    lesson.startEditing();
+    
+    await lesson.goToActiveFile(); // might not be necessary anymore
+    
     forceEditorUpdate(editor); // <-- this will degrade tutor and load performance a bit but doesn't seem to be too noticable on my end
     let pos:monaco.IPosition;
     if(g_waitDelayScale == 0){
@@ -601,6 +591,8 @@ async function typeText(editor:Editor,text:string,speedScale=1,moveMouseToEnd=fa
         await wait(getTypeSpeed(text?.length ?? 5)*speedScale);
     }
     if(moveMouseToEnd) await startMouseMove(pos.column,pos.lineNumber,true);
+
+    lesson.endEditing();
 }
 function _moveCursorHome(editor:Editor){
     startEdit();
@@ -1053,6 +1045,61 @@ class CP_Delete extends CodePart{
         await wait(200);
     }
 }
+class CP_MoveByX extends CodePart{
+    constructor(amt:number,select?:boolean,word?:boolean){
+        super();
+        this.amt = amt;
+        this.select = select;
+        this.word = word;
+    }
+    amt:number;
+    select?:boolean;
+    word?:boolean;
+    async run(editor: Editor): Promise<void> {
+        let actions = getEditActions(editor);
+        await actions.moveByX(this.amt,this.select,this.word);
+        await wait(350);
+    }
+}
+class CP_MoveByY extends CodePart{
+    constructor(amt:number,select?:boolean){
+        super();
+        this.amt = amt;
+        this.select = select;
+    }
+    amt:number;
+    select?:boolean;
+    async run(editor: Editor): Promise<void> {
+        let actions = getEditActions(editor);
+        await actions.moveByY(this.amt,this.select);
+        await wait(350);
+    }
+}
+class CP_CancelSelection extends CodePart{
+    constructor(){
+        super();
+    }
+    async run(editor: Editor): Promise<void> {
+        let actions = getEditActions(editor);
+        actions.cancelSelection();
+        await wait(350);
+    }
+}
+class T_CancelSelection extends Task{
+    constructor(){
+        super("Cancel Selection");
+        this.requiresDoneConfirm = false;
+    }
+    async start(): Promise<string | void> {
+        await super.start();
+        let actions = getEditActions(lesson.activeFile.editor);
+        actions.cancelSelection();
+        
+        this.canBeFinished = true;
+        this._resFinish();
+        await this.finish();
+    }
+}
 class CP_Select extends CodePart{
     constructor(row1:number,col1:number,row2:number,col2:number,isInstant=false){
         super();
@@ -1180,6 +1227,10 @@ class TutEditorActions{
     }
     _end(){
         endEdit(this.editor);
+    }
+
+    cancelSelection(){
+        this._trigger("cancelSelection");
     }
     
     // 
@@ -1538,7 +1589,7 @@ class AddCode extends Task{
     dir:string;
     async start(): Promise<string | void> {
         await super.start();
-        let editor = lesson.tut.getCurEditor();
+        let editor = lesson.activeFile?.editor ?? lesson.tut.getCurEditor();
 
         for(let i = 0; i < this.parts.length; i++){
             if(i == 0){
@@ -3751,6 +3802,17 @@ class Lesson{
         });
         this.p.builtInFileList = true;
         this.tut.builtInFileList = true;
+
+        this.tut.onopen = (f,isTemp)=>{
+            if(this.isActiveFileUnlocked()){
+                this.activeFile = f;
+                // console.trace(">> set active file: ",f.name);
+            }
+            else{
+                if(this.isTutorEditing()) return false;
+            }
+            // else console.trace("...... WAS LOCKED WHEN CHANGING FILE:",f.name);
+        };
     }
     lid:string;
     events:LEvent[];
@@ -3779,6 +3841,97 @@ class Lesson{
 
     info:TreeLesson;
 
+    private _activeFileUnlock = 0;
+    activeFile:FFile;
+    isActiveFileUnlocked(){
+        return this._activeFileUnlock > 0;
+    }
+    startActiveFileUnlock(){
+        this._activeFileUnlock++;
+    }
+    endActiveFileUnlock(){
+        this._activeFileUnlock--;
+    }
+
+    private _editing = 0;
+    isTutorEditing(){
+        return this._editing > 0;
+    }
+    startEditing(){
+        this._editing++;
+    }
+    endEditing(){
+        this._editing--;
+    }
+
+    async goToActiveFile(){
+        if(!this.activeFile) return;
+        if(!this.tut.files.includes(this.activeFile)){
+            this.activeFile = null;
+            return;
+        }
+        if(this.tut.curFile == this.activeFile) return; // all good, no need to change!
+
+        // 
+        await this.switchFile(this.activeFile);
+    }
+    goToActiveFileInstant(){
+        if(!this.activeFile) return;
+        if(!this.tut.files.includes(this.activeFile)){
+            this.activeFile = null;
+            return;
+        }
+        if(this.tut.curFile == this.activeFile) return; // all good, no need to change!
+
+        // 
+        this.startActiveFileUnlock();
+        this.activeFile.open();
+        this.endActiveFileUnlock();
+    }
+    async switchFile(name:string|FFile,comment?:string,task?:Task){
+        let r2 = tutMouse.getBoundingClientRect();
+        let rect:DOMRect;
+        let existingFile = (name instanceof FFile ? name : lesson.tut.files.find(v=>v.name == name));
+        if(!existingFile){
+            console.warn("Err: tutor tried to switch to file that didn't exist");
+            alert("A strange error has occured, please save and then refresh the page.");
+            if(task) await task.finish();
+            return;
+        }
+        let text2 = "Let's go back";
+        let tarBtn:Element;
+        if(existingFile){
+            text2 = (comment ?? "Let's go back to "+existingFile.name);
+            // let fileElm = lesson.tut.d_files.children[lesson.tut.files.indexOf(existingFile)]; // not sure why this is all here when there's .link
+            let fileElm = existingFile.link;
+            rect = fileElm.getBoundingClientRect();
+            r2 = rect;
+            tarBtn = fileElm;
+            // goesBack = true;
+        }
+        let b2 = addBubbleAt(BubbleLoc.xy,text2,"top",{
+            x:r2.x+r2.width/2 + 17,
+            y:r2.y+r2.height/2 - 22,
+            click:true
+        });
+        await b2.clickProm;
+
+        await showTutMouse();
+        await moveTutMouseToCustom(rect.x+rect.width/2,rect.y+rect.height/2);
+        await wait(150); // used to be 300
+        await fakeClickButton(tarBtn);
+        if(existingFile){
+            lesson.startActiveFileUnlock();
+            existingFile.open();
+            lesson.endActiveFileUnlock();
+            // lesson.tut.curFile = existingFile;
+        }
+
+        await hideTutMouse();
+    }
+    
+    // 
+
     async endLoading(isFirst=true){
         if(isFirst){
             let time = performance.now()-this._loadStart;
@@ -3796,9 +3949,16 @@ class Lesson{
         // if(indexTut) indexTut.open();
         // else lesson.p.files[0]?.open();
 
-        let index = lesson.p.items.find(v=>v.name == "index.html") as FFile;
-        if(index) index.open();
-        else lesson.p.files[0]?.open();
+        // if(this.activeFile){
+        //     let index = lesson.p.items.find(v=>v.name == this.activeFile.name) as FFile; // THIS WOULD BE really hard to get right since the user can name their files whatever they want
+        //     if(index) index.open();
+        //     else lesson.p.files[0]?.open();
+        // }
+        // else{
+            let index = lesson.p.items.find(v=>v.name == "index.html") as FFile;
+            if(index) index.open();
+            else lesson.p.files[0]?.open();
+        // }
     }
 
     progress = {

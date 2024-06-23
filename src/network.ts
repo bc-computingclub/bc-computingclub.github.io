@@ -302,9 +302,11 @@ async function restoreLessonFiles(lesson:Lesson){
     for(const f of lesson.p.files){
         f.open(false);
     }
+    lesson.startActiveFileUnlock();
     for(const f of lesson.tut.files){
         f.open();
     }
+    lesson.endActiveFileUnlock();
 
     // let index = lesson.p.files.find(v=>v.name == "index.html") as FFile;
     // if(index) index.open();

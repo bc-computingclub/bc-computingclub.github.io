@@ -1073,6 +1073,12 @@ body .nav-links > .active{
     padding-left:5px;
     padding-right:5px;
 }
+.l-t::before{
+    content:"<";
+}
+.l-t::after{
+    content:">";
+}
 
 /*  */
 

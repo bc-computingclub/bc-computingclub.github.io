@@ -9,57 +9,28 @@ return [
             new CP_MoveBy(0,2,true),
             new CP_LineBelow(2)
         ]),
-        // new AddCode([
-        //     new CP_CSS("p",{
-        //         "font-size":"32px"
-        //     })
-        // ],"How about making the text twice as large? The default size of text is 16px (pixels) so let's change it to 32px."),
         new AddCode([
             new CP_CSS("p",{
-                "background-color":"yellow"
+                "font-size":"32px"
             })
-        ],"What if we put a background color on t[p] elements?"),
-        // ],"How about changing the background-color of the paragraph element itself, like a highlight?"),
-        new DoRefreshTask("Refresh to see how this changes our page."),
-    ]),
-    new LE_AddGBubble([
-        "Wait, it applied to all of them?"
-    ],BubbleLoc.global,[
-        new AddIgnoreCode([
-            // new CP_Select(5,4,5,1)
-            new CP_MoveTo(0,5),
-            // new CP_EditorAction(actions=>actions.moveByX.name,[3,true,false]) // SELECT is buggy right now because is the user clicks to deselect it it could affect the tutor, well only if the tutor types without deselecting
-            new CP_MoveByX(3,true,false)
-        ]),
-        new BubbleTask(`Note, this says that we want<br>h[ALL paragraph elements] on our page to have a background color of yellow.`,undefined,undefined,"left"),
-        new BubbleTask("CSS is applied to ALL elements in your page as long as they match the selector.\nIn our case, we'll selecting all t[p] elements, so all of them will be changed to have the styles we specified here."),
-        // new AddIgnoreCode([
-        //     new CP_CancelSelection()
-        // ]),
-        new T_CancelSelection(),
+        ],"How about making the text twice as large? The default size of text is 16px (pixels) so let's change it to 32px."),
 
-        new AddIgnoreCode([
-            new CP_MoveByY(1),
-            new CP_LineBelow(1)
-        ]),
-        new BubbleTask("Alright, let's look at some other styles."),
+        new DoRefreshTask("Refresh to see how this changes our page."),
+        new BubbleTask(`Note, this says that we want<br>h[ALL paragraph elements] on our page to have a font size of 32px.`,undefined,undefined,"left"),
+        new BubbleTask("CSS is applied to ALL elements in your page as long as they match the selector.\nIn our case, we'll selecting all i[] elements so all of them will be changed on our page."),
+
+        new AddCode([
+            new CP_LineBelow(1),
+            new CP_Text("color:tomato;")
+        ],"We can also change the text color."),
         new BubbleTask("i[I encourage you to refresh after each line added to see how it affects the page.]"),
         new AddCode([
-            new CP_StyleRule("font-size","32px"),
-        ],"We can change the font size of the text.\ni[16px (16 pixels) is the default size.]"),
+            new CP_LineBelow(1),
+            new CP_Text("background-color:yellow;")
+        ],"We can change the background-color of the paragraph element itself, like a highlight."),
         new AddCode([
             new CP_LineBelow(1),
-            new CP_StyleRule("color","tomato")
-        ],"We can also change the text color."),
-        // new AddCode([
-        //     new CP_LineBelow(1),
-        //     new CP_StyleRule("background-color:yellow;")
-        // ],"We can change the background-color of the paragraph element itself, like a highlight."),
-        new AddCode([
-            new CP_LineBelow(1),
-            new CP_StyleRule("font-style","italic"),
-            new CP_LineBelow(1),
-            new CP_StyleRule("font-weight","bold")
+            new CP_Text("font-style:italic;\nfont-weight:bold;")
         ],"We can also make our text italic and bold by using the font-style and font-weight properties."),
         new DoRefreshTask("If you haven't already, refresh to see all the changes we've made."),
         new AddCode([
@@ -81,7 +52,7 @@ return [
             new CP_Text(` id="cool-label"`)
         ],null),
         new SwitchFileTask("style.css"),
-        new MoveCursorTo(12,1),
+        new MoveCursorTo(11,1),
         new AddCode([
             new CP_LineBelow(2),
             new CP_Bubble(`Let's add a new styleset here to customize our "cool-label" element.`),
@@ -90,7 +61,7 @@ return [
             })
         ],null),
         new MoveCursorTo(13,5),
-        new BubbleTask("Hover over the selector \"p#cool-label\" to see what it's trying to match."),
+        new BubbleTask("Hover over the selector \"p#cool-label\" to see the type of element we are modifying."),
         new ShowHoverTask(),
         new DoRefreshTask("If you refresh, only our 3rd paragraph element should have the lightblue background color."),
 

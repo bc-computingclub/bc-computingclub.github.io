@@ -1,6 +1,20 @@
 {
     "ver": "0",
     "name": "ID & Class Attributes",
+    "desc": [
+        "We'll be looking at some more styling with CSS and introducing the ID and Class attributes."
+    ],
+    "preview": [
+        {
+            "type": "code1",
+            "ref": ""
+        }
+    ],
+    "takeaways": [
+        "Introduce various styles for text including: font-size, color, background-color, font-style, and font-weight",
+        "Learn how selectors select ALL elements that match the selector",
+        "Introduce id and class attributes"
+    ],
     "banner": {
         "sections": [
             {

@@ -999,6 +999,15 @@ class Project{
         }
     }
 
+    // 
+
+    /**
+     * Event listener for when files are added.
+     * 
+     * Return `false` to prevent opening.
+     */
+    onopen:(f:FFile,isTemp?:boolean)=>void|boolean;
+
     // right click actions
 
     renameFItem(f:FItem,close?:()=>void){
@@ -2452,6 +2461,12 @@ class FFile extends FItem{
         if(PAGE_ID == PAGEID.lesson){
             if(this.p.isTutor) isTemp = false;
         }
+
+        if(this.p.onopen){
+            let res = this.p.onopen(this,isTemp);
+            if(res === false) return;
+        }
+
         // if(isTemp == null){
         //     isTemp = (PAGE_ID != PAGEID.lesson);
         // }
@@ -4111,6 +4126,7 @@ function formatBubbleText(text:string,ops?:any){
     }
     text = text.replaceAll("\n","<br><br>");
     text = text.replaceAll("$$SB","[ ]");
+
     return text;
 }
 
@@ -5139,7 +5155,7 @@ class CreateFileMenu extends InputMenu{
         rootFolder?:boolean
     }={}){
         if(ops.buf == undefined) ops.buf = new Uint8Array();
-        if(!ops.rootFolder) if(ops.folder == undefined) ops.folder = project.lastFolder ?? project.curFile?.folder;
+        if(!ops.rootFolder) if(ops.folder == undefined) ops.folder = project?.lastFolder ?? project?.curFile?.folder;
         
         super("New File","Enter file name",
             (name?:string)=>{

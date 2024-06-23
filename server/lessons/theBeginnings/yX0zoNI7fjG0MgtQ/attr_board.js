@@ -42,7 +42,7 @@ return [
     new BE_SetOpacity(["attr1","attr2"],1),
     
     new BE_UnderlineObj(["attr"]).applyToObjs(o=>o.addTag("cir")),
-    new BE_GlobalBubble(`Let's look at these two parts. Notice, they are within the opening tag. (Meaning they are before the ">" at the end.\ni[These are called h[attributes] and they let us add extra information to an element.]`),
+    new BE_GlobalBubble(`Let's look at these two parts. Notice, they are i[within the opening tag]. (Meaning they are before the ">" at the end.\ni[These are called h[attributes] and they let us add extra information to an element.]`),
     new BE_RemoveObj(["cir"]),
     new BE_GlobalBubble(`Each attribute will have some name, such as "rel" and "href" in this case, and usually have values assigned to the attributes, "stylesheet" and "style.css" in our case.`),
 
@@ -86,14 +86,14 @@ return [
             t.obj.addTag("ex2");
         })
     ])).finalize(data.board),
-    new BE_GlobalBubble(`Here's another example of a submit button that has an id of "submit" and is disabled (it won't be clickable until enabled again).`),
+    new BE_GlobalBubble(`Here's an example of a submit button that has an id of "submit" and is disabled (it won't be clickable until enabled again).`),
     new BE_GlobalBubble(`Alright, let's look at what all these attributes do.`),
 
     // 
 
     new BE_Wait(300),
     new BE_SetOpacity(["attr2","tag","<>","ex2"],op),
-    new BE_GlobalBubble(`"rel" stands for h[relationship].\nThink about it like we're linking something to this file, what's going to be the relationship between them? What's the purpose of linking them?\nIn our case here, the relationship is "stylesheet" because it's a CSS (Cascading Style Sheets) file.`),
+    new BE_GlobalBubble(`"rel" stands for h[relationship].\nThink about it like we're linking something to this file. What's going to be the relationship between them? What's the purpose of linking them?\nIn our case here, the relationship is "stylesheet" because it's a CSS (Cascading Style Sheets) file.`),
 
     new BE_SetOpacity(["attr1"],op),
     new BE_SetOpacity(["attr2"],1),
@@ -111,5 +111,5 @@ return [
     
     // 
 
-    new BE_GlobalBubble(`Wrapping up, attributes are like bits of data or changes we can make and store on our elements.\ni[And keep in mind this structure for a link element because we'll use it every time we want to link a CSS file to an HTML page.]`)
+    new BE_GlobalBubble(`Wrapping up, attributes are like bits of data or changes we can make and store on our elements.\ni[And keep in mind this structure for a link element because we'll use it every time we want to link a CSS file to our page.]`)
 ];

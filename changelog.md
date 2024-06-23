@@ -1054,5 +1054,19 @@
 - fixed editor with files so if project isn't defined or project is readonly then the options to upload files or connect to your own IDE are grayed out
 
 ### 6/22/24
-- some rare bug when deleting files in lesson page and then trying to add a new one doesn't work (doesn't add to files or saves but does add to open files list)
-- 
+- Bug: some rare bug when deleting files in lesson page and then trying to add a new one doesn't work (doesn't add to files or saves but does add to open files list)
+- tweaked and fixed some things in various lessons
+- reworked a lot of the 4th lesson and worked some more on it
+- added front end being able to parse preview data and if it has previewData then it will load that into the "sample editor" (should have sub folder support but I never tested it)
+- changed preview label to sample
+- added activeFile, goToActiveFile and activeFileUnlocked system to lesson
+- fixed lesson so if the tutor is ever editing, then it will auto switch back to the file that it should be to make sure the edits always happen correctly
+- fixed SwitchFileTask so it better handles when already being on the file and moved the majority of the code out to a new method on lesson called switchFile
+- added start/end editing on lesson helpers
+- added CP_MoveByX and CP_MoveByY for use with the respective EditActions
+- added CP_CancelSelection and T_CancelSelection for the same reasons
+- added cancelSelection() EditAction
+- added onopen() utility for Projects so you can listen and validate whether or not you want certain files to be opened at a particular time
+- added t[] option to parsing bubble text for an easy way to added escaped markup (single tag only like `<div>`)
+- fixed CreateFileMenu would cause error on learn page because there's no ref to project
+- adjusted lesson menu's details-block to be wider from 500px to 700px

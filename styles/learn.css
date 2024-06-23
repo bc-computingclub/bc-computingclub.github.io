@@ -652,7 +652,8 @@ body.themestyle-light .path-cont{
     /* outline:solid 1px var(--bg); */
 }
 .menu-lesson .details-block{
-    width:500px;
+    /* width:500px; */
+    width:700px;
 }
 .menu-lesson .preview-block{
     width:100%;

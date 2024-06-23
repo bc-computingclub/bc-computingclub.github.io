@@ -59,6 +59,11 @@ class TreeLesson{
 
     desc:string[] = [];
     takeaways:string[] = [];
+    preview:{
+        type:string,
+        ref?:string
+    }[] = [];
+    previewData?:ULFolder;
 
     parent:string|undefined;
 
@@ -643,7 +648,7 @@ class LessonMenu extends Menu{
                 </div>
                 <div class="menu-block preview-block">
                     <div class="labeled-label" style="height:100%;display:flex;flex-direction:column">
-                        <div>Preview</div>
+                        <div>Sample</div>
                         <div class="sample-editor" style="height:calc(100% - 75px)">
                             
                         </div>
@@ -726,7 +731,25 @@ class LessonMenu extends Menu{
 
         p.parent.querySelector(".b-add-file").remove();
 
-        await p.createFile("index.html",p.textEncoder.encode("This is bob."));
+        // load files/folders
+        // await p.createFile("index.html",p.textEncoder.encode("This is bob."));
+
+        let data = this.lesson.l.previewData;
+        async function search(folder:ULFolder,fRef?:FFolder){
+            if(!folder) return;
+            for(const item of folder.items){
+                if("buf" in item){
+                    await p.createFile(item.name,item.buf as Uint8Array,null,fRef,false);
+                }
+                else{
+                    let newFolder = p.createFolder(item.name,fRef,false);
+                    await search(item as ULFolder,newFolder);
+                }
+            }
+        }
+        await search(data);
+
+        // 
 
         p.files[0]?.open(false);
         p.files[0]?.editor?.layout();
