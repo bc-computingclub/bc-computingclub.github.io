@@ -1052,3 +1052,7 @@
 - added getFolderItem() helper function in server side
 - fixed front end wouldn't load if there were locked lessons
 - fixed editor with files so if project isn't defined or project is readonly then the options to upload files or connect to your own IDE are grayed out
+
+### 6/22/24
+- some rare bug when deleting files in lesson page and then trying to add a new one doesn't work (doesn't add to files or saves but does add to open files list)
+- 

@@ -2545,6 +2545,12 @@ class FFile extends FItem{
                     // cursorSmoothCaretAnimation:"on"
                 });
 
+                editor.getDomNode().addEventListener("mouseleave",e=>{
+                    e.stopImmediatePropagation();
+                    e.stopPropagation();
+                    e.preventDefault();
+                });
+
                 // let editor = monaco.editor.createModel("",this.lang);
                 // editor.
 

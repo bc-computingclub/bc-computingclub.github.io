@@ -151,7 +151,7 @@ async function registerLessonFolder(name:string,firstLID:string,pathKeys:string[
         let l = new PTreeLesson(meta.name,lid,meta.x??Math.random()*100,meta.y??Math.random()*100,[],{
             type:meta.type??0
         });
-        l.loadExtraData(meta);
+        await l.loadExtraData(meta,folder,l,path+lid);
         folder.lessons.push(l);
 
         if(meta.req){

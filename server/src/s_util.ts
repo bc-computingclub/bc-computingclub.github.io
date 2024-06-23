@@ -218,18 +218,34 @@ export class PTreeLesson{
     }[] = [];
     previewData:ULFolder|undefined;
 
-    async loadExtraData(data:any){
+    /**
+     * Path does NOT end with `/`
+     */
+    async loadExtraData(data:any,folder:PTreeFolder,lesson:PTreeLesson,path:string){
         this.parent = data.parent;
         this.desc = data.desc ?? [];
         this.takeaways = data.takeaways ?? [];
         this.preview = data.preview ?? [];
         for(const d of this.preview){
             if(d.type == "code"){
+                if(d.ref){
+                    let fullPath = path+"/"+d.ref;
+                    if(isValidPath(d.ref)) this.previewData = makeTempFolder(await getFolderItems(fullPath));
+                }
+
                 // don't have a way of knowing what folder it's in at this time
                 // this.previewData = new ULFolder("root",await getFolderItems("../lessons/"+this.));
             }
         }
     }
+}
+function isValidPath(path:string){
+    if(path.includes("..")) return false;
+    if(path.startsWith("/")) return false;
+    return true;
+}
+function makeTempFolder(items:ULItem[]){
+    return new ULFolder("root",items);
 }
 async function getFolderItems(path:string){
     let list:ULItem[] = [];
