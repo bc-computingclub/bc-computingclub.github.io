@@ -1070,3 +1070,18 @@
 - added t[] option to parsing bubble text for an easy way to added escaped markup (single tag only like `<div>`)
 - fixed CreateFileMenu would cause error on learn page because there's no ref to project
 - adjusted lesson menu's details-block to be wider from 500px to 700px
+
+### 6/23/24
+- 4th lesson should finally be pretty much done, besides some tweaking and Paul needing to look over
+- added desc,preview,takeaways defaults to getStandardLessonMeta
+- added actions parameter to run method on CodeParts for ease of use
+- fixed default values for many CPs that have amounts to default to 1
+- fixed CP_DeleteLines to use delay
+- fixee CP_Home and CP_End to have select option
+- added waitS() for standard 350ms wait at the end of CodeParts and updated some to use it
+- depricated CP_MoveBy because CP_MoveByX and CP_MoveByY give more features
+- added CP_Delete2 which has right? and word? support
+- added CP_Copy, CP_Paste, CP_Cut, CP_CopyLinesDown, CP_CopyLinesUp
+- added getCurLine() in EditorActions
+- added copy, paste, cut, copyLinesDown, copyLinesUp, deleteLinesInstant to EditorActions
+- added getStandardDelay() and _clipboardText to Lesson for their respective features

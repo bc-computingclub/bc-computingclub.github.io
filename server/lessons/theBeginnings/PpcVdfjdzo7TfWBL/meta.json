@@ -13,7 +13,7 @@
     "takeaways": [
         "Introduce various styles for text including: font-size, color, background-color, font-style, and font-weight",
         "Learn how selectors select ALL elements that match the selector",
-        "Introduce id and class attributes"
+        "Introduce ID and Class attributes"
     ],
     "banner": {
         "sections": [

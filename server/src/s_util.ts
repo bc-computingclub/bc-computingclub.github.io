@@ -327,6 +327,9 @@ function getStandardLessonMeta(name:string){
     return {
         ver:"0",
         name,
+        desc:[],
+        preview:[],
+        takeaways:[],
         banner:{
             sections:[
                 {

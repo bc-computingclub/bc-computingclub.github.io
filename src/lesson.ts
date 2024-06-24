@@ -664,12 +664,15 @@ class CodePart{
     constructor(){
         
     }
-    async run(editor:Editor){
+    async run(editor:Editor,actions:TutEditorActions){
         
+    }
+    waitS(){
+        return wait(lesson.getStandardDelay());
     }
 }
 class CP_LineBelow extends CodePart{
-    constructor(amt:number){
+    constructor(amt=1){
         super();
         this.amt = amt;
     }
@@ -688,7 +691,7 @@ class CP_LineBelow extends CodePart{
     }
 }
 class CP_LineAbove extends CodePart{
-    constructor(amt:number){
+    constructor(amt=1){
         super();
         this.amt = amt;
     }
@@ -707,12 +710,14 @@ class CP_LineAbove extends CodePart{
     }
 }
 class CP_DeleteLines extends CodePart{
-    constructor(){
+    constructor(amt=1){
         super();
+        this.amt = amt;
     }
-    async run(editor: monaco.editor.IStandaloneCodeEditor): Promise<void> {
-        let actions = getEditActions(editor);
-        actions.deleteLines();
+    amt:number;
+    async run(editor: monaco.editor.IStandaloneCodeEditor, actions: TutEditorActions): Promise<void> {
+        await actions.deleteLines(this.amt);
+        await this.waitS();
     }
 }
 class CP_EditorAction extends CodePart{
@@ -753,20 +758,26 @@ class CP_Suggestions extends CodePart{
     }
 }
 class CP_Home extends CodePart{
-    constructor(){
+    constructor(select=false){
         super();
+        this.select = select;
     }
-    async run(editor: monaco.editor.IStandaloneCodeEditor): Promise<void> {
-        _moveCursorHome(editor);
+    select:boolean;
+    async run(editor: monaco.editor.IStandaloneCodeEditor, actions: TutEditorActions): Promise<void> {
+        // _moveCursorHome(editor);
+        actions.home(this.select);
         await wait(50);
     }
 }
 class CP_End extends CodePart{
-    constructor(){
+    constructor(select=false){
         super();
+        this.select = select;
     }
-    async run(editor: monaco.editor.IStandaloneCodeEditor): Promise<void> {
-        _moveCursorEnd(editor);
+    select:boolean;
+    async run(editor: monaco.editor.IStandaloneCodeEditor, actions: TutEditorActions): Promise<void> {
+        // _moveCursorEnd(editor);
+        actions.end(this.select);
         await wait(50);
     }
 }
@@ -790,6 +801,10 @@ class CP_BreakOut extends CodePart{
         await wait(350);
     }
 }
+/**
+ * This probably still works but is less feature complete than using CP_MoveByX or CP_MoveByY.
+ * @deprecated
+ */
 class CP_MoveBy extends CodePart{
     constructor(x:number,y:number,noShow=false){
         super();
@@ -817,6 +832,7 @@ class CP_MoveTo extends CodePart{
     noShow:boolean;
     async run(editor: monaco.editor.IStandaloneCodeEditor): Promise<void> {
         await moveEditorCursorTo(editor,this.col,this.row,this.noShow);
+        await this.waitS();
     }
 }
 class CP_Text extends CodePart{
@@ -1026,7 +1042,7 @@ class ShowHoverTask extends Task{
     }
 }
 class CP_Delete extends CodePart{
-    constructor(amt:number,toRight=false){
+    constructor(amt=1,toRight=false){
         super();
         this.amt = amt;
         this.toRight = toRight;
@@ -1043,6 +1059,21 @@ class CP_Delete extends CodePart{
             await wait(speed);
         }
         await wait(200);
+    }
+}
+class CP_Delete2 extends CodePart{
+    constructor(amt=1,right=false,word=false){
+        super();
+        this.amt = amt;
+        this.right = right;
+        this.word = word;
+    }
+    amt:number;
+    right:boolean;
+    word:boolean;
+    async run(editor: Editor, actions: TutEditorActions): Promise<void> {
+        await actions.deleteText(this.amt,this.right,this.word);
+        await this.waitS();
     }
 }
 class CP_MoveByX extends CodePart{
@@ -1170,6 +1201,55 @@ class CP_Wait extends CodePart{
     time:number;
     async run(editor: monaco.editor.IStandaloneCodeEditor): Promise<void> {
         await wait(this.time);
+    }
+}
+class CP_Copy extends CodePart{
+    constructor(){
+        super();
+    }
+    async run(editor: Editor, actions: TutEditorActions): Promise<void> {
+        actions.copy();
+        await this.waitS();
+    }
+}
+class CP_Paste extends CodePart{
+    constructor(){
+        super();
+    }
+    async run(editor: Editor, actions: TutEditorActions): Promise<void> {
+        actions.paste();
+        await this.waitS();
+    }
+}
+class CP_Cut extends CodePart{
+    constructor(){
+        super();
+    }
+    async run(editor: Editor, actions: TutEditorActions): Promise<void> {
+        actions.cut();
+        await this.waitS();
+    }
+}
+class CP_CopyLinesDown extends CodePart{
+    constructor(amt:number){
+        super();
+        this.amt = amt;
+    }
+    amt:number;
+    async run(editor: Editor, actions: TutEditorActions): Promise<void> {
+        actions.copyLinesDown(this.amt);
+        await this.waitS();
+    }
+}
+class CP_CopyLinesUp extends CodePart{
+    constructor(amt:number){
+        super();
+        this.amt = amt;
+    }
+    amt:number;
+    async run(editor: Editor, actions: TutEditorActions): Promise<void> {
+        actions.copyLinesUp(this.amt);
+        await this.waitS();
     }
 }
 
@@ -1309,6 +1389,10 @@ class TutEditorActions{
     getLine(line:number){
         return this.editor.getModel().getLineContent(line);
     }
+    getCurLine(){
+        let line = this.editor.getPosition().lineNumber;
+        return this.editor.getModel().getLineContent(line);
+    }
     async indent(amt:number){
         for(let i = 0; i < Math.abs(amt); i++){
             this._start();
@@ -1328,15 +1412,43 @@ class TutEditorActions{
         return this.editor.getModel().getOptions().tabSize;
     }
 
+    copy(){
+        // this._trigger("editor.action.clipboardCopyAction");
+        lesson._clipboardText = this.getCurLine();
+    }
+    paste(){
+        // this._trigger("editor.action.clipboardPasteAction");
+        this._start();
+        this.editor.trigger("keyboard","type",{text:lesson._clipboardText});
+        this._end();
+    }
+    cut(){
+        // this._trigger("editor.action.clipboardCutAction");
+        lesson._clipboardText = this.getCurLine();
+        this.deleteLinesInstant();
+    }
+    async copyLinesDown(amt=1){
+        for(let i = 0; i < amt; i++){
+            this._trigger("editor.action.copyLinesDownAction");
+            await this.wait();
+        }
+    }
+    async copyLinesUp(amt=1){
+        for(let i = 0; i < amt; i++){
+            this._trigger("editor.action.copyLinesUpAction");
+            await this.wait();
+        }
+    }
+
     home(select=false){
         this._start();
-        if(select) this.editor.trigger("keyboard","cursorHomeSelect",null); // untested
+        if(select) this.editor.trigger("keyboard","cursorHomeSelect",null);
         else this.editor.trigger("keyboard","cursorHome",null);
         this._end();
     }
     end(select=false){
         this._start();
-        if(select) this.editor.trigger("keyboard","cursorEndSelect",null); // untested
+        if(select) this.editor.trigger("keyboard","cursorEndSelect",null);
         this.editor.trigger("keyboard","cursorEnd",null);
         this._end();
     }
@@ -1439,10 +1551,14 @@ class TutEditorActions{
     /**
      * Ctrl+Shift+K
      */
-    deleteLines(){
-        this._start();
-        this.editor.trigger("keyboard","editor.action.deleteLines",null); // untested
-        this._end();
+    async deleteLines(amt=1){
+        for(let i = 0; i < amt; i++){
+            this._trigger("editor.action.deleteLines");
+            await this.wait();
+        }
+    }
+    deleteLinesInstant(){
+        this._trigger("editor.action.deleteLines");
     }
 
     showDebugHover(){
@@ -1626,7 +1742,7 @@ class AddCode extends Task{
             }
             
             let p = this.parts[i];
-            await p.run(editor);
+            await p.run(editor,getEditActions(editor));
         }
 
         return await this.finish();
@@ -2255,6 +2371,10 @@ abstract class LEvent{
         return e;
     }
 }
+/**
+ * Use LE_AddGBubble instead, this one isn't maintained anymore and is from the earliest versions of the project.
+ * @deprecated
+ */
 class LE_AddBubble extends LEvent{
     constructor(text:string,lineno:number,colno:number){
         super();
@@ -3840,6 +3960,16 @@ class Lesson{
     _loadStart = 0;
 
     info:TreeLesson;
+
+    _clipboardText = "";
+
+    standardDelay = 350;
+    /**
+     * The standard delay is what ends most CodeParts; the time it waits the the end before going into the next one.
+     */
+    getStandardDelay(){
+        return this.standardDelay;
+    }
 
     private _activeFileUnlock = 0;
     activeFile:FFile;
