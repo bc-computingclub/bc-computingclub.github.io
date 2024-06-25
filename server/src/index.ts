@@ -4,7 +4,7 @@ import {LessonData, getLessonFolder, globalLessonFolders, ptreeMap, reloadLesson
 import fs, { copyFile } from "fs";
 import { createInterface } from "readline";
 import crypto from "crypto";
-import { createGuidedProject, createLesson, write, read, readdir, access, mkdir, removeFolder, removeFile, rename, internalCPDir, internalCP, lessonCache, registeredLessonFolders, ULFolder, ULItem, ULFile } from "./s_util";
+import { createGuidedProject, createLesson, write, read, readdir, access, mkdir, removeFolder, removeFile, rename, internalCPDir, internalCP, lessonCache, registeredLessonFolders, ULFolder, ULItem, ULFile, createRushLesson } from "./s_util";
 import { ChallengeInst, ChallengeModel, ChallengeSubmissionModel, FolderInst, FolderModel, LessonMetaInst, ProjectInst, ProjectModel, UserModel, UserSessionItem, findChallenge, removeFromList, removeFromListPred, uploadChallenges, uploadLessonProgs, uploadUsers, uploadUsersStage2, userSessions } from "./db";
 import mongoose, { QuerySelector } from "mongoose";
 
@@ -2730,20 +2730,19 @@ rl.on("line",async (line)=>{
     // CREATE cmd
     else if(s[0] == "create"){
         let type = s[1];
+        if(!s[2]){
+            console.log("Invalid project name");
+            return;
+        }
         switch(type){
             case "lesson":
-                if(!s[2]){
-                    console.log("Invalid lesson name");
-                    return;
-                }
                 createLesson(s[2]);
                 break;
             case "guided_project":
-                if(!s[2]){
-                    console.log("Invalid project name");
-                    return;
-                }
                 createGuidedProject(s[2]);
+                break;
+            case "rush":
+                createRushLesson(s[2]);
                 break;
             default:
                 console.log("Unknown type to create: ",type);

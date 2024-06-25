@@ -452,8 +452,30 @@ body.themestyle-light .item-actions > div:hover{
 } */
 
 /* Lesson Types */
+
+.item-cont.labeled{
+    &{
+        .circle::after{
+            content:var(--content-override,"//");
+            font-size:14px;
+            opacity:0.5;
+            position:absolute;
+            /* bottom:0px; */
+            top:0px;
+            left:0px;
+            padding:8px;
+            /* color:whitesmoke; */
+            /* background-color:black; */
+            border-radius:3px;
+        }
+        .circle{
+            padding-top:34px;
+        }
+    }
+}
+
 .item-cont.type-guided-project{
-    --content-override:"//";
+    /* --content-override:"//"; */
     &{
         .circle{
             width:145px;
@@ -485,17 +507,99 @@ body.themestyle-light .item-actions > div:hover{
     /* padding-left:3px; */
     /* --stroke-col:var(--practice-col); */
 
-    --content-override:"// Guided Project";
+    /* --content-override:"// Guided Project"; */
     
     &{
         .circle{
             width:200px;
             height:145px;
         }
-        .circle::after{
+        /* .circle::after{
             content:"// Guided Project";
+        } */
+    }
+}
+.item-cont.type-rush-lesson .circle{
+    width:155px;
+    height:150px;
+}
+.item-cont.type-sign::before{
+    display:none !important;
+}
+.item-cont.type-sign{
+    &{
+        .circle{
+
+        }
+        .circle::before{
+            content:"";
         }
     }
+}
+.sign-cont{
+    position:relative;
+}
+.sign-stem{
+    position:absolute;
+    width:10px;
+    height:50px;
+    transform:translate(-50%,-100%);
+    top:0px;
+    left:0px;
+    
+    /* border:solid 1px rgb(91, 49, 18); */
+    background-color:rgb(91, 49, 18);
+    border-radius:3px;
+}
+.sign-face{
+    position:absolute;
+    width:70px;
+    height:50px;
+    top:-40px;
+    transform:translate(-50%,-100%);
+    top:-40px;
+    left:-5px;
+    /* top:-10px; */
+    /* left:-10px; */
+    
+    /* border:solid 1px rgb(91, 49, 18); */
+    /* background-color:saddlebrown; */
+    background-color:var(--bg);
+    border-radius:5px;
+    z-index:1;
+    box-shadow:var(--shadow);
+
+    font-family:monospace;
+    text-transform:uppercase;
+    font-size:16x;
+    font-weight:bold;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    user-select:none;
+    -webkit-user-select:none;
+}
+.sign-back{
+    position:absolute;
+    width:70px;
+    height:50px;
+    transform:translate(-50%,-100%);
+    top:-35px;
+    left:3px;
+
+    background-color:rgb(91, 49, 18);
+    border-radius:5px;
+    z-index:0;
+}
+body.themestyle-dark .sign-face{
+    background-color:rgb(91, 49, 18);
+}
+body.themestyle-dark .sign-back{
+    background-color:var(--stroke-col);
+}
+body.themestyle-dark .sign-stem{
+    /* background-color:rgb(91, 49, 18); */
+    background-color:var(--stroke-col);
 }
 
 .item-cont.type-warp-zone{
@@ -551,11 +655,11 @@ body.themestyle-light .item-actions > div:hover{
 }
 
 body.themestyle-dark .item-cont.type-guided-project .circle{
-    --c:var(--practice-col) !important;
+    /* --c:var(--practice-col) !important; */
     /* --c:var(--experiment-col) !important; */
 }
 body.themestyle-light .item-cont.type-guided-project{
-    --stroke-col:var(--practice-col) !important;
+    /* --stroke-col:var(--practice-col) !important; */
 }
 body.themestyle-dark .path-cont{
     --c:rgb(39, 39, 43);
@@ -574,17 +678,19 @@ body.themestyle-light .path-cont{
     font-size:24px;
     z-index:2;
     opacity:0.5;
+    --icon:"school";
 }
 .item-cont:hover .item-cont-icon{
     opacity:1;
 }
 .item-cont-icon::after{
-    content:"school";
+    /* content:"school"; */
+    content:var(--icon);
     font-family:"Material Symbols Outlined";
 }
-.type-guided-project .item-cont-icon::after{
+/* .type-guided-project .item-cont-icon::after{
     content:"deployed_code";
-}
+} */
 
 /*  */
 .main-cont{

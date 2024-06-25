@@ -137,6 +137,11 @@ body.theme-light{
     --experiment-col: #216779; 
     --practice-col:#503e6e; 
 
+    /* bright color scheme */
+    /* --learn-col:royalblue;
+    --experiment-col:lightseagreen;
+    --practice-col:mediumpurple; */
+
     /* Secondary colors for cards */
     --learn-col-alt: rgb(113, 125, 170); 
     --experiment-col-alt: rgb(98, 147, 160); 

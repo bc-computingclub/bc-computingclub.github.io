@@ -180,7 +180,8 @@ export class ULFile extends ULItem{
 
 export enum LessonType{
     lesson,
-    project
+    project,
+    rush
 }
 
 export class PTreeLink{
@@ -367,7 +368,7 @@ return [
         "Hello!"
     ])
 ]`,"utf8");
-    console.log(":: lesson created");
+    console.log(":: lesson created:",lid);
 }
 export async function createGuidedProject(name:string){
     function err(){
@@ -391,7 +392,32 @@ return [
         "Hello!"
     ])
 ]`,"utf8");
-    console.log("guided project created");
+    console.log(":: guided project created:",lid);
+}
+
+export async function createRushLesson(name:string){
+    function err(){
+        console.log("$ Something went wrong while trying to create the rush lesson");
+    }
+    let lid = await genLID();
+    if(!lid){
+        err();
+        return;
+    }
+    let data = {
+        ...getStandardLessonMeta(name),
+        type:LessonType.rush
+    };
+    let path = "../lessons/"+lid+"/";
+    await mkdir(path);
+    await write(path+"meta.json",JSON.stringify(data,undefined,4),"utf8");
+    await write(path+"evts.js",`import * as a from "../../../src/lesson";
+return [
+    new LE_AddGBubble([
+        "Hello!"
+    ])
+]`,"utf8");
+    console.log(":: rush lesson created: ",lid);
 }
 
 // 

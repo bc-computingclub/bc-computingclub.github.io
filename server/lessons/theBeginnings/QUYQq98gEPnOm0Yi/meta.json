@@ -1,0 +1,23 @@
+{
+    "ver": "0",
+    "name": "Rush! HTML Structure",
+    "desc": [],
+    "preview": [],
+    "takeaways": [],
+    "banner": {
+        "sections": [
+            {
+                "head": "What Will We Be Doing in This Lesson?",
+                "text": [
+                    "<Short summary of lesson here>"
+                ]
+            }
+        ]
+    },
+    "finalInstance": null,
+    "boards": [],
+    "x": -30,
+    "y": -30,
+    "req": [],
+    "type": 2
+}

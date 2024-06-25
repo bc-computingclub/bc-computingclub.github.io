@@ -7,24 +7,34 @@ const ns = "http://www.w3.org/2000/svg";
 type LessonTypeData = {
     label:string,
     icon:string,
-    accent:string|null
+    accent:string|null,
+    useLabel:boolean
 };
 let lessonTypeData = {
     lesson:{
         label:"Lesson",
         icon:"school",
-        accent:null
+        accent:null,
+        useLabel:false
     },
     project:{
         label:"Guided Project",
         icon:"deployed_code",
-        accent:"var(--practice-col)"
+        accent:"var(--experiment-col)",
+        useLabel:true
+    },
+    rush:{
+        label:"Rush Lesson",
+        icon:"bolt",
+        accent:"var(--practice-col)",
+        useLabel:true
     }
 } as Record<string,LessonTypeData>;
 
 enum LessonType{
     lesson,
-    project
+    project,
+    rush
 }
 class LessonTar{
     constructor(tar:string,bendOther=false){
@@ -288,10 +298,23 @@ class LessonItem{
             }
             
             // lesson type
+
+            let typeData = this.l.getTypeData();
+            if(typeData.useLabel) if(typeData.label){
+                e.parentElement.style.setProperty("--content-override",'"// '+typeData.label+'"');
+                e.parentElement.classList.add("labeled");
+            }
+            if(typeData.accent) e.parentElement.style.setProperty("--stroke-col",typeData.accent);
+            e.parentElement.querySelector<HTMLElement>(".item-cont-icon").style.setProperty("--icon",`"${typeData.icon}"`);
+            
+            let id = typeData.label.toLowerCase().replaceAll(" ","-");
+            e.parentElement.classList.add("type-"+id);
+            e.parentElement.classList.add("type-"+id+"-parent");
+            
             if(this.l.type == 1){
-                e.parentElement.classList.add("type-guided-project");
-                if(!this.l.parent) e.parentElement.classList.add("type-guided-project-parent");
-                else{
+                // e.parentElement.classList.add("type-guided-project");
+                // e.parentElement.classList.add("type-guided-project-parent");
+                if(this.l.parent){
                     let t = this;
                     let partNum = 1;
                     function search(l:TreeLesson){
@@ -708,6 +731,11 @@ class LessonMenu extends Menu{
                 else if(i == 1){
                     await restartLesson(this.lesson);
                 }
+            },{
+                getIcons:()=>[
+                    "delete",
+                    "replay"
+                ]
             });
         });
         
@@ -1060,6 +1088,7 @@ async function loadProgressTree(folder:string){
     },50);
 
     testWarpZone();
+    testSign();
 }
 
 function testWarpZone(){
@@ -1078,6 +1107,24 @@ function testWarpZone(){
     `; // 0.4 or 0.7 are good
 
     // console.log("added: ",itemCont);
+}
+function testSign(){
+    let itemCont = document.createElement("div");
+    itemCont.classList.add("item-cont","type-sign");
+    cont.children[0].appendChild(itemCont);
+
+    itemCont.style.left = "1200px";
+    itemCont.style.top = "150px";
+
+    itemCont.innerHTML = `
+        <div class="sign-cont">
+            <div class="sign-stem"></div>
+            <div class="sign-back"></div>
+            <div class="sign-face">
+                <div>[...]</div>
+            </div>
+        </div>
+    `; // 0.4 or 0.7 are good
 }
 
 // Back pan blocking
