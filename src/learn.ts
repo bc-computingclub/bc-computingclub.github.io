@@ -14,7 +14,7 @@ let lessonTypeData = {
     lesson:{
         label:"Lesson",
         icon:"school",
-        accent:null,
+        accent:"var(--learn-col)",
         useLabel:false
     },
     project:{
@@ -304,7 +304,10 @@ class LessonItem{
                 e.parentElement.style.setProperty("--content-override",'"// '+typeData.label+'"');
                 e.parentElement.classList.add("labeled");
             }
-            if(typeData.accent) e.parentElement.style.setProperty("--stroke-col",typeData.accent);
+            if(typeData.accent){
+                // e.parentElement.style.setProperty("--stroke-col",typeData.accent);
+                e.parentElement.style.setProperty("--co",typeData.accent);
+            }
             e.parentElement.querySelector<HTMLElement>(".item-cont-icon").style.setProperty("--icon",`"${typeData.icon}"`);
             
             let id = typeData.label.toLowerCase().replaceAll(" ","-");

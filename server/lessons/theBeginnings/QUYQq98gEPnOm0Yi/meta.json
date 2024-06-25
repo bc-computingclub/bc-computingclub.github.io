@@ -16,8 +16,12 @@
     },
     "finalInstance": null,
     "boards": [],
-    "x": -30,
-    "y": -30,
-    "req": [],
+    "x": 20,
+    "y": 25,
+    "req": [
+        {
+            "lid": "aw5HFgPdsxJPHMcg"
+        }
+    ],
     "type": 2
 }

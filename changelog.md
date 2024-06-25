@@ -1085,3 +1085,18 @@
 - added getCurLine() in EditorActions
 - added copy, paste, cut, copyLinesDown, copyLinesUp, deleteLinesInstant to EditorActions
 - added getStandardDelay() and _clipboardText to Lesson for their respective features
+- oh started writing a cool new song :D -> "Be My Reality"
+
+### 6/24/24
+- added Rush Lesson type
+- created meta files for the first Rush Lesson
+- added backend commands for creating Rush Lessons
+- added useLabel:boolean option to lessonTypeData for ones like the standard lesson that shouldn't use a label
+- changed Guided Projects to have an accent of the experiment color instead of the practice color
+- fixed loading lesson items so their icon, accent color, and label get created based on their typeData rather than being defined again in CSS
+    - this means I only have to define the data once in lessonTypeData instead of that and in the CSS
+- also made it auto add the class based on the label name
+- added icons to delete and restart in the LessonMenu
+- added testSign() for testing signs that will be eventually added as objects to the lesson scenes/folders that will display helpful info outside of lessons
+- fixed up how colors are changed and used with item-cont's and their .circle elements when switching between light and dark mode
+- added bright colors options to theme.css but they're kinda funny so it's just if you want to uncomment them to see what they look like

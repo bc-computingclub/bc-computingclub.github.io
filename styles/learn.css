@@ -66,10 +66,21 @@ body.themestyle-dark .main{
     border-radius:5px;
     /* width:140px; */
     /* height:140px; */
+
+    --main-col:var(--secondary-bg-col);
+    --back-col:var(--co);
 }
 .l-lesson-name:hover{
     text-decoration:underline;
     cursor:pointer;
+}
+body.themestyle-dark .circle{
+    /* background-color:var(--co); */
+    --main-col:var(--co);
+}
+body.themestyle-dark .item-cont::before{
+    /* background-color:var(--secondary-bg-col); */
+    --back-col:var(--secondary-bg-col);
 }
 .circle{
     position:relative;
@@ -77,10 +88,13 @@ body.themestyle-dark .main{
     /* height:130px; */
     width:140px;
     height:140px;
-    background-color:var(--c);
+
+    background-color:var(--main-col,var(--main-col));
+    /* background-color:var(--c); */
+    /* --c:var(--secondary-bg-col); */
+    
     /* border:solid 2px var(--darken0); */
     /* border-bottom:solid 5px var(--cta-btn-col); */
-    --c:var(--secondary-bg-col);
     /* background-color:var(--secondary-bg-col); */
     /* background-color:var(--cta-btn-col); */
     /* border-radius:50%; */
@@ -112,7 +126,8 @@ body.themestyle-dark .main{
     left:20px;
     width:100%;
     height:100%;
-    background-color:var(--stroke-col);
+    /* background-color:var(--stroke-col); */
+    background-color:var(--back-col);
     /* background-color:var(--tutor-col); */
     z-index:1;
     border-radius:inherit;
@@ -510,7 +525,7 @@ body.themestyle-light .item-actions > div:hover{
     /* --content-override:"// Guided Project"; */
     
     &{
-        .circle{
+        div.circle{
             width:200px;
             height:145px;
         }
@@ -519,7 +534,7 @@ body.themestyle-light .item-actions > div:hover{
         } */
     }
 }
-.item-cont.type-rush-lesson .circle{
+.item-cont.labeled .circle{
     width:155px;
     height:150px;
 }
@@ -553,8 +568,8 @@ body.themestyle-light .item-actions > div:hover{
 }
 .sign-face{
     position:absolute;
-    width:70px;
-    height:50px;
+    width:90px;
+    height:65px;
     top:-40px;
     transform:translate(-50%,-100%);
     top:-40px;
@@ -581,8 +596,8 @@ body.themestyle-light .item-actions > div:hover{
 }
 .sign-back{
     position:absolute;
-    width:70px;
-    height:50px;
+    width:90px;
+    height:65px;
     transform:translate(-50%,-100%);
     top:-35px;
     left:3px;
@@ -611,6 +626,7 @@ body.themestyle-dark .sign-stem{
     box-shadow:0px 0px 10px 30px black;
     border:none !important;
     outline:none !important;
+    background-color:black !important;
 }
 .type-warp-zone::before{
     content:none;
