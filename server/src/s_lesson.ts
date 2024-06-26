@@ -242,9 +242,7 @@ const progressTree = new PTreeFolder("root",[],{
 
 
 
-        new PTreeLesson("Simple Menu Bar","FI8EQAfpS5eh6jkY",100,50,[],{
-            type:LessonType.project
-        }),
+        new PTreeLesson("Simple Menu Bar","FI8EQAfpS5eh6jkY",100,50,[],undefined,LessonType.project),
     ])
 });
 

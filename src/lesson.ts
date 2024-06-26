@@ -670,6 +670,7 @@ class CodePart{
     waitS(){
         return wait(lesson.getStandardDelay());
     }
+    async rushCheck(tutFile:FFile,file:FFile){}
 }
 class CP_LineBelow extends CodePart{
     constructor(amt=1){
@@ -908,7 +909,7 @@ class CP_HTML extends CodePart{
     open:boolean;
     text:string;
     ops:CP_HTML_Options;
-    async run(editor: Editor): Promise<void> {
+    async run(editor: Editor, actions: TutEditorActions): Promise<void> {
         // lesson.tut.curFile.blockPosChange = false;
 
         let text = this.text ?? "";
@@ -923,6 +924,9 @@ class CP_HTML extends CodePart{
         }
 
         // await typeText(editor,`<${this.tag}>${text}</${this.tag}>`);
+
+        let startPos = editor.getPosition();
+
         if(attr.length) await typeText(editor,`<${this.tag} ${attr.join(" ")}>`);
         else await typeText(editor,`<${this.tag}>`);
         if(text?.length){
@@ -954,6 +958,87 @@ class CP_HTML extends CodePart{
             await wait(300);
         }
         if(this.open) await typeText(editor,"\n");
+
+        // RUSH MODE
+        if(lesson.activeFile?.marks){
+            console.log("ADD MARK:",startPos,this.tag);
+            lesson.activeFile.marks.addMark(new TokenMark(startPos.lineNumber,startPos.column,this.tag.length,this.tag),lesson.activeFile.editor);
+        }
+        else console.warn("wasn't active file with marks:",lesson.activeFile?.name);
+
+        // 
+        
+        // if(lesson.info.type == LessonType.rush){
+        //     let viewLines = editor.getDomNode().querySelector(".view-lines");
+        //     let row = editor.getPosition().lineNumber;
+        //     let curRow = viewLines.children[row] as HTMLElement;
+        //     curRow.style.backgroundColor = "red";
+        //     // this.tag = "_".repeat(this.tag.length);
+        // }
+    }
+    async rushCheck(tutFile: FFile, file: FFile): Promise<void> {
+        let tutActions = getEditActions(tutFile.editor);
+        let fileActions = getEditActions(file.editor);
+        
+        await tutActions.waitUntilMatching(row=>{
+            if(this.open && this.endAtCenter){
+                return [row-1,row,row+1];
+            }
+            if(this.open){
+                return [row-1,row];
+            }
+            return [row];
+        },fileActions);
+
+
+        // console.info("COMPARE LINES:",compareLines);
+
+        // let changedLines:Set<number> = new Set();
+        // fileActions.startInputListener(e=>{           
+        //     for(const change of e.changes){
+        //         changedLines.add(change.range.startLineNumber);
+        //         changedLines.add(change.range.endLineNumber);
+        //     }
+            
+        //     // 
+        //     let checks = [false];
+        //     if(!this.ops.noClosingTag) checks[1] = false;
+        //     if(this.open) checks[2] = false;
+
+        //     let openTagLine = -1;
+        //     let closeTagLine = -1;
+
+        //     let ar = [...changedLines];
+
+        //     for(let i = -1; i <= ar.length; i++){
+        //         let lineNum = ar[i];
+        //         if(i == -1) lineNum = ar[0]-1;
+        //         else if(i == ar.length) lineNum = ar[ar.length-1]+1;
+
+        //         let line = fileActions.getLine(lineNum);
+        //         if(line.includes(`<${this.tag}>`)){
+        //             checks[0] = true;
+        //             openTagLine = lineNum;
+        //         }
+        //         if(!this.ops.noClosingTag) if(line.includes(`</${this.tag}>`)){
+        //             checks[1] = true;
+        //             closeTagLine = lineNum;
+        //         }
+        //     }
+
+        //     if(this.open){
+        //         if(closeTagLine-openTagLine == 2) checks[2] = true;
+        //     }
+
+        //     console.log("CHANGES:",changedLines);
+        //     console.log("CHECKS:",checks);
+        //     if(!checks.includes(false)){
+        //         // finish
+        //         res();
+        //     }
+        // });
+
+        // await prom;
     }
 }
 
@@ -1272,6 +1357,85 @@ class TutEditorActions{
 
     // 
 
+    _listeners:monaco.IDisposable[] = [];
+    startInputListener(f:(e:monaco.editor.IModelContentChangedEvent)=>void){
+        let d = this.editor.onDidChangeModelContent(f);
+        this._listeners.push(d);
+    }
+    endListener(){
+        let f = this._listeners.pop();
+        f.dispose();
+    }
+    
+    // 
+
+    compareTo(compareLines:number[],actions:TutEditorActions){
+        for(const line of compareLines){
+            let _str1 = this.getLine(line);
+            let _str2 = actions.getLine(line);
+            
+            let str1 = _str1.replace(/(["'`])\s*\{/g,'$1{');
+            let str2 = _str2.replace(/(["'`])\s*\{/g,'$1{');
+            if(str1 != str2) return false;
+        }
+        return true;
+    }
+    compareTo_details(compareLines:number[],actions:TutEditorActions){
+        let res = true;
+        let details:{
+            line:number,
+            markedCols:number[]
+        }[] = [];
+        for(const line of compareLines){
+            let _str1 = this.getLine(line);
+            let _str2 = actions.getLine(line);
+            
+            let str1 = _str1.replace(/(["'`])\s*\{/g,'$1{');
+            let str2 = _str2.replace(/(["'`])\s*\{/g,'$1{');
+
+            let markedCols:number[] = [];
+            let len = Math.max(_str1.length,_str2.length);
+            for(let i = 0; i < len; i++){ // temp for now as it doesn't support the changes from the regex
+                if(_str1[i] != _str2[i]) markedCols.push(i);
+                
+                // let v1 = _str1[i];
+                // let ind = _str2.indexOf(v1,i);
+                // let v2 = _str2[ind];
+                // if(v1 != v2) markedCols.push(i);
+            }
+
+            if(str1 != str2){
+                res = false;
+                details.push({
+                    line,
+                    markedCols
+                });
+            }
+        }
+        return {
+            res,details
+        };
+    }
+    async waitUntilMatching(getCompareLines:(row:number)=>number[],other:TutEditorActions){
+        let compareLines = getCompareLines(this.editor.getPosition().lineNumber);
+        
+        let res:()=>void;
+        let prom = new Promise<void>(resolve=>res = resolve);
+
+        other.startInputListener(e=>{
+            let res1 = this.compareTo_details(compareLines,other);
+            if(res1.res){
+                res();
+                other.endListener();
+            }
+            // console.log("DETAILS:",res1.details);
+        });
+
+        await prom;
+    }
+    
+    // 
+
     private delay = 0;
     private lastDelay = 0;
     async wait(){
@@ -1387,6 +1551,12 @@ class TutEditorActions{
     }
 
     getLine(line:number){
+        if(!line) return "";
+        if(line < 0) return "";
+
+        let cnt = this.editor.getModel().getLineCount();
+        if(line > cnt) return "";
+        
         return this.editor.getModel().getLineContent(line);
     }
     getCurLine(){
@@ -1746,6 +1916,27 @@ class AddCode extends Task{
         }
 
         return await this.finish();
+    }
+}
+class AddRushCode extends Task{
+    constructor(parts:CodePart[]){
+        super("Add Rush Code Parts");
+        this.parts = parts;
+    }
+    parts:CodePart[];
+    async start(): Promise<string | void> {
+        await super.start();
+        let editor = lesson.activeFile.editor;
+        
+        for(let i = 0; i < this.parts.length; i++){
+            if(i == 0){
+                await startMouseMove(1,1,true);
+            }
+            let p = this.parts[i];
+            let actions = getEditActions(editor);
+            await p.run(editor,actions);
+            await p.rushCheck(lesson.activeFile,lesson.p.files.find(v=>v.name == lesson.activeFile.name)); // hmm
+        }
     }
 }
 class AddIgnoreCode extends AddCode{
@@ -3934,10 +4125,20 @@ class Lesson{
             // else console.trace("...... WAS LOCKED WHEN CHANGING FILE:",f.name);
         };
     }
+    postSetup(){        
+        // console.log("TYPE:",this.info.type);
+        // let div = document.createElement("div");
+        // if(this.info.type == LessonType.rush) this.back_tut = new Project("back_tut_"+this.info.name,div,{
+        //     readonly:true,
+        //     disableCopy:true
+        // });
+        // if(this.back_tut) this.back_tut.builtInFileList = true;
+    }
     lid:string;
     events:LEvent[];
     p:Project;
     tut:Project;
+    back_tut:Project;
 
     bannerSection:TextArea;
     finalInstance:FinalProjectInstance;

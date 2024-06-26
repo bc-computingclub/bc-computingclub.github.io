@@ -73,6 +73,12 @@ function DWait(delay:number){
     });
 }
 
+enum LessonType{
+    lesson,
+    project,
+    rush
+}
+
 // menus
 let menuCont = document.createElement("div");
 menuCont.className = "menu-cont";
@@ -803,6 +809,8 @@ class Project{
 
     builtInFileList = false;
     fileList:HTMLElement;
+
+    _back:Project; // back version of project (used for Rush Lessons)
 
     get canEdit(){
         if(PAGE_ID == PAGEID.lesson) return true;
@@ -2254,6 +2262,119 @@ function getExt(name:string){
     return name.split(".").pop();
 }
 
+class TokenMark{
+    constructor(line:number,col:number,len:number,text:string){
+        this.line = line;
+        this.col = col;
+        this.len = len;
+        this.text = text;
+    }
+    line:number;
+    col:number;
+    len:number;
+    text:string;
+}
+
+let __replaceChild = Element.prototype.replaceChild;
+Element.prototype.replaceChild = function<T extends Node>(newChild:Node,oldChild:T){
+    // @ts-ignore
+    newChild.oldChild = oldChild;
+
+    // if(newChild.textContent == "html") console.error("REPLACED",newChild,oldChild);
+
+    return __replaceChild.call(this,newChild,oldChild);
+    // return Node.prototype.replaceChild.call(this, newChild, oldChild);
+};
+
+class MarkSet{
+    constructor(){
+        // this.marks = new Map();
+        this.all = [];
+    }
+    // marks:Map<number,Map<number,TokenMark>>;
+    all:TokenMark[] = [];
+
+    addMark(mark:TokenMark,editor:monaco.editor.IStandaloneCodeEditor){
+        this.all.push(mark);
+        this.updateAll(editor);
+        
+        // FASTER MAP METHOD
+        // let map = this.marks.get(mark.line);
+        // if(!map){
+        //     this.marks.set(mark.line,new Map());
+        // }
+        // let ind = 0;
+        // map.set(mark.col,mark);
+    }
+    remove(startLine:number,startCol:number,endLine:number,endCol:number){
+        let list = [...this.all];
+        for(let i = 0; i < list.length; i++){
+            let mark = list[i];
+            if(mark.line < startLine || mark.line > endLine) continue;
+            if(mark.col+mark.len < startCol) continue;
+            if(mark.col > endCol) continue;
+
+            this.all.splice(this.all.indexOf(mark),1); // could optimize this but hopefully should be fine
+        }
+    }
+    add(line:number,col:number,endLine:number,endCol:number,colAmt:number,lineAmt:number){
+        // console.log("ADD:",line,col,endLine,endCol,colAmt,lineAmt);
+        for(const mark of this.all){
+            if(mark.line > line){
+                mark.line += lineAmt;
+                console.warn("INCREASED LINE CNT:",lineAmt);
+            }
+            if(mark.line == line) if(mark.col >= col){
+                mark.col += colAmt;
+                console.warn("INCREASE COL CNT:",colAmt);
+            }
+        }
+    }
+
+    updateAll(editor:monaco.editor.IStandaloneCodeEditor){
+        let lines = editor.getDomNode().querySelector(".view-lines");
+
+        if(false){
+
+        }
+        else if(true) for(const mark of this.all){
+            let line = lines.querySelector(`.view-line[style*="top:${mark.line*19-19}px"]`).children[0];
+            for(const span of line.children){
+                if(span.textContent == mark.text){
+                    span.classList.add("obf");
+                    console.log("SPAN:",span);
+                }
+            }
+        }
+        else for(const mark of this.all){
+            // let line = lines.children[mark.line-1].children[0];
+            let line = lines.querySelector(`.view-line[style*="top:${mark.line*19-19}px"]`).children[0];
+            let elm = line.children[0] as HTMLElement;
+            let inc = 0;
+            for(let i = 0; i < mark.col; i++){
+                console.log("ELM:",elm);
+                if(!elm) break;
+                inc++;
+                if(inc >= elm.textContent.length-1){
+                    elm = elm.nextElementSibling as HTMLElement;
+                    inc = 0;
+                }
+            }
+            if(elm){
+                console.log("ADD CLASS:",elm);
+                elm.classList.add("obf");
+            }
+        }
+
+        // FASTER MAP METHOD
+        // for(const [row,map] of this.marks){
+        //     for(const [col,mark] of map){
+                
+        //     }
+        // }
+    }
+}
+
 let hoverOpenFile:FFile;
 class FFile extends FItem{
     constructor(p:Project,name:string,buf:Uint8Array,folder:FFolder,lang?:string){
@@ -2273,9 +2394,13 @@ class FFile extends FItem{
         // }
         this.buf = buf;
         // this.lang = lang;
+
+        this.marks = new MarkSet();
     }
 
     _fsLastModified:number;
+
+    marks:MarkSet;
 
     isTextFile(){
         return isExtTextFile(getExt(this.name));
@@ -2384,6 +2509,14 @@ class FFile extends FItem{
     close(){
         // reset
         this.bypassUnsupportedFormat = false;
+
+        // dispose actions listeners
+        if(this.actions){
+            for(const l of this.actions._listeners){
+                l.dispose();
+            }
+            this.actions = null;
+        }
         
         // 
         if(this.p.openFiles.includes(this)){
@@ -2559,6 +2692,7 @@ class FFile extends FItem{
                     readOnly:this.isReadOnly()
                     // cursorSmoothCaretAnimation:"on"
                 });
+                if(PAGE_ID == PAGEID.lesson) this.actions = getEditActions(editor);
 
                 editor.getDomNode().addEventListener("mouseleave",e=>{
                     e.stopImmediatePropagation();
@@ -2815,7 +2949,46 @@ class FFile extends FItem{
             lastCurFile.editor.focus();
             this.editor.focus();
         }
+
+        // RUSH MODE
+        if(lesson?.info.type == LessonType.rush){
+            this.actions.startInputListener(e=>{
+                // console.log(e.changes[0]);
+                // console.log(e);
+                for(const change of e.changes){
+                    // change.
+                    let line = change.range.startLineNumber;
+                    let col = change.range.startColumn;
+                    // console.log("...",line,col,change.range.endLineNumber,change.range.endColumn);
+
+                    // console.log("CHANGE:",change);
+                    let r = change.range;
+                    if((r.startColumn == r.endColumn && r.startLineNumber == r.endLineNumber) || true){
+                        if(change.text.includes("\n")){
+                            this.marks.add(r.startLineNumber,r.startColumn,r.endLineNumber,r.endColumn,0,change.text.match(/\n/g).length);
+                        }
+                        else{
+                            this.marks.add(r.startLineNumber,r.startColumn,r.endLineNumber,r.endColumn,change.text.length,0);
+                        }
+                    }
+                    else{
+                        this.marks.remove(r.startLineNumber,r.startColumn,r.endLineNumber,r.endColumn);
+                        if(change.text.length){
+                            if(change.text.includes("\n")){
+                                this.marks.add(r.startLineNumber,r.startColumn,r.endLineNumber,r.endColumn,0,change.text.match(/\n/g).length);
+                            }
+                            else{
+                                this.marks.add(r.startLineNumber,r.startColumn,r.endLineNumber,r.endColumn,change.text.length,0);
+                            }
+                        }
+                    }
+                }
+                this.marks.updateAll(this.actions.editor);
+            });
+            // this.actions.editor.on
+        }
     }
+    actions:TutEditorActions;
 
     download(){
         let blob = new Blob([this.buf]);

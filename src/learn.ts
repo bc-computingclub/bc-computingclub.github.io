@@ -31,11 +31,6 @@ let lessonTypeData = {
     }
 } as Record<string,LessonTypeData>;
 
-enum LessonType{
-    lesson,
-    project,
-    rush
-}
 class LessonTar{
     constructor(tar:string,bendOther=false){
         this.id = tar;

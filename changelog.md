@@ -1100,3 +1100,18 @@
 - added testSign() for testing signs that will be eventually added as objects to the lesson scenes/folders that will display helpful info outside of lessons
 - fixed up how colors are changed and used with item-cont's and their .circle elements when switching between light and dark mode
 - added bright colors options to theme.css but they're kinda funny so it's just if you want to uncomment them to see what they look like
+
+### 6/25/24
+- wrote the "Rush! HTML Structure" lesson
+- changed how project type works kinda on the server side, well just cleaned it up to make it work correctly again
+- fixed issues with LessonType not being defined in util and causing null pointer issues
+- added async rushCheck() method to CodeParts
+- fixed up CP_HTML to use rushCheck and make tokenMarks but the marks are broken currently
+- added editor change listener support with diposing to EditActions
+- added compareTo(), compareTo_details(), and waitUntilMatching() methods to EditActions
+- fixed getLine() method on EditActions so it won't throw an error if the line number is out of bounds
+- added AddRushCode Task that will wait for rushCheck methods
+- added postSetup() method to lesson so that I could make a back_tut project but not sure if I'm going to use that, maybe
+- added TokenMark system but it's really glitchy and I need to find a different solution to the problem
+- added actions field to all files
+- Rush lessons work at this point now but the obfuscation part doesn't work really

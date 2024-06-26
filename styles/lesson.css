@@ -641,3 +641,27 @@ div.pane-files{
     /* background-color:var(--darken2); */
     /* backdrop-filter:blur(3px); */
 }
+
+/* RUSH MODE OBFUSCATION */
+.view-line span.obf{
+    /* display:inline-block; */
+    /* opacity:0.2; */
+    /* width:50px; */
+}
+
+/* .view-line[style*="top:19px"]{
+    background-color:red;
+} */
+
+/* EXPERIMENT FOR ???? obf tags */
+/* .pane-tutor-code .mtk8{
+    color:transparent;
+}
+.pane-tutor-code .mtk8::after{
+    content:"????";
+    position:absolute;
+    top:0px;
+    left:0px;
+    opacity:1;
+    color:initial;
+} */

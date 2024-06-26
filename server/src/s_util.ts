@@ -193,13 +193,14 @@ export class PTreeLink{
     flip:boolean;
 }
 export class PTreeLesson{
-    constructor(name:string,lid:string,x:number,y:number,links:PTreeLink[]=[],ops:PTLessonOps={}){
+    constructor(name:string,lid:string,x:number,y:number,links:PTreeLink[]=[],ops:PTLessonOps={},type:LessonType=0){
         this.name = name;
         this.lid = lid;
         this.x = x;
         this.y = y;
         this.links = links;
         this.ops = ops;
+        this.type = type;
     }
     name:string;
     lid:string;
@@ -207,6 +208,7 @@ export class PTreeLesson{
     y:number;
     links:PTreeLink[];
     ops:PTLessonOps;
+    type:LessonType = 0;
 
     desc:string[] = [];
     takeaways:string[] = [];
@@ -227,6 +229,7 @@ export class PTreeLesson{
         this.desc = data.desc ?? [];
         this.takeaways = data.takeaways ?? [];
         this.preview = data.preview ?? [];
+        this.type = data.type ?? 0;
         for(const d of this.preview){
             if(d.type == "code"){
                 if(d.ref){
@@ -234,7 +237,7 @@ export class PTreeLesson{
                     if(isValidPath(d.ref)) this.previewData = makeTempFolder(await getFolderItems(fullPath));
                 }
 
-                // don't have a way of knowing what folder it's in at this time
+                // don't have a way of knowing what folder it's in at this time --> do now though! and the solution is above
                 // this.previewData = new ULFolder("root",await getFolderItems("../lessons/"+this.));
             }
         }

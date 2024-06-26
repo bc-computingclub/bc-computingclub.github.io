@@ -308,6 +308,7 @@ async function restoreLessonFiles(lesson:Lesson){
     }
     lesson.endActiveFileUnlock();
 
+    lesson.postSetup();
     // let index = lesson.p.files.find(v=>v.name == "index.html") as FFile;
     // if(index) index.open();
     // else lesson.p.files[0]?.open();
