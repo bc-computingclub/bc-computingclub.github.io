@@ -1115,3 +1115,34 @@
 - added TokenMark system but it's really glitchy and I need to find a different solution to the problem
 - added actions field to all files
 - Rush lessons work at this point now but the obfuscation part doesn't work really
+
+### 6/26/24
+- fixed Rush HTML Structure lesson
+- added more strings to lesson loading tips
+- fixed typeText() function so it only does global changes if it's the main editor (enabled background editing but it still doesn't really work that well)
+- fixed moveEditorCursorBy so that it uses EditActions' moveByX and moveByY
+
+- added noRush, isRush(), and rushable() properties to CodeParts
+- fixed CP_LineBelow and CP_LineAbove to use EditActions
+- added type() method to EditActions that works independently of typeText()
+- fixed CP_HTML to use EditActions.type()
+- fixed CP_HTML so if in Rush mode and you're trying to open a tag that is invalid it doesn't open properly and it fixes it (could be buggy but seems to work alright now)
+- added _back file to FFile's that are owned by the tutor in Rush Lessons
+    - rush checks now happen on the _back file
+    - every time a Code Part starts that is rushable(), then it instantly opens the back file, types it correctly on the back, then closes it and goes back to the regular file and starts typing the regular Code Part run
+    - added settings option for this if you don't want the _back to go instantly you can watch it switch as a preview of what's to come with no obfuscation
+- finished and fixed obfuscation support for Rush Lessons and working now on all tag names on CP_HTML with yellow overlay
+    - made the unicode-overlay just a little smaller than default
+- added speed support to EditActions (this is different than delay, delay is the number of ms between actions, speed is a multiplier to the delay anywhere, even with custom delay used in EditActions)
+- added minSpeed, maxSpeed, and speedVelFunc for animating the speed after setting it
+- fixed AddRushCode so it only writes to the _back if the Code Part is rushable, otherwise do what usual Code Parts do
+- changed AddIgnoreCode to create the bubble at cursor location instead of cached curRow, curCol
+
+- added allWaits which store all the current wait promises that are still pending
+- added cancelWaits() function which will instantly resolve all pending wait promises
+
+- fixed deleting multiple files wouldn't always delete all of them from the open files list
+- added isTMPFile() system for files starting with "__tmp" like the _back files
+    - these files exist in the project but are ignored in the files pane and in the open files list
+- fixed dropdowns on open files item and files pane items and files pane back to not show up if the project is readonly
+- fixed tutor's open file item color to be purple again in lessons

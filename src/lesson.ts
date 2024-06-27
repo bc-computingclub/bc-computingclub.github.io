@@ -4,7 +4,12 @@ const lessonLoadCont = document.querySelector(".load-cont.lesson");
 const tip = document.querySelector(".tip");
 const tips = [
     "Did you know that Java and JavaScript are not the same programming languages?",
-    "Some elements like <br> and <img> don't have closing tags...because they don't display text!"
+    "Some elements like <br> and <img> don't have closing tags...because they don't display text!",
+    "Did you know the text editor we use in Code Otter is from VSCode?", // not sure if we can say VSCode here so maybe mention monaco instead but hmm, it's a cool fact though
+    "Who knows what secrets lie beyond, the only thing stopping you is...practice.",
+    "Code Otter's roots are in challenging each other and sharing implementions!",
+    "A huge new feature is coming? When?...Eventually, so get ready.", // "A huge new feature is coming? When?...Eventually.\nThe universe is opening, get ready.",
+    "Like Code Otter? Or hate it? Let us know haha..."
 ];
 tip.textContent = tips[Math.floor(Math.random()*tips.length)];
 
@@ -551,14 +556,15 @@ async function startMouseMove(col:number,line:number,noShow=false){
  * This calls startEnd() and endEdit() automatically so you don't have to wrap this function in them.
  */
 async function typeText(editor:Editor,text:string,speedScale=1,moveMouseToEnd=false){
-    lesson.startEditing();
+    let isMainEditor = lesson.tut.curFile.editor == editor;
+    if(isMainEditor) lesson.startEditing();
     
-    await lesson.goToActiveFile(); // might not be necessary anymore
+    if(isMainEditor) await lesson.goToActiveFile(); // might not be necessary anymore
     
-    forceEditorUpdate(editor); // <-- this will degrade tutor and load performance a bit but doesn't seem to be too noticable on my end
+    if(isMainEditor) forceEditorUpdate(editor); // <-- this will degrade tutor and load performance a bit but doesn't seem to be too noticable on my end
     let pos:monaco.IPosition;
     if(g_waitDelayScale == 0){
-        startEdit();
+        if(isMainEditor) startEdit();
         editor.updateOptions({readOnly:false});
         editor.trigger("keyboard","type",{
             text
@@ -567,32 +573,36 @@ async function typeText(editor:Editor,text:string,speedScale=1,moveMouseToEnd=fa
         editor.setValue(editor.getValue());
         editor.setPosition(pos);
         editor.updateOptions({readOnly:true});
-        lesson.tut.curFile.curRow = pos.lineNumber;
-        lesson.tut.curFile.curCol = pos.column;
+        if(isMainEditor){
+            lesson.tut.curFile.curRow = pos.lineNumber;
+            lesson.tut.curFile.curCol = pos.column;
+        }
         // moveTutMouseTo(pos.lineNumber,pos.column,true);
-        endEdit();
+        if(isMainEditor) endEdit();
     }
     else for(let i = 0; i < text.length; i++){
         let key = text.substring(i,i+1);
 
-        startEdit();
+        if(isMainEditor) startEdit();
         editor.updateOptions({readOnly:false});
         editor.trigger("keyboard","type",{
             text:key
         });
         editor.updateOptions({readOnly:true});
         pos = editor.getPosition();
-        lesson.tut.curFile.curRow = pos.lineNumber;
-        lesson.tut.curFile.curCol = pos.column;
+        if(isMainEditor){
+            lesson.tut.curFile.curRow = pos.lineNumber;
+            lesson.tut.curFile.curCol = pos.column;
+        }
         // await wait(Math.ceil(30+Math.random()*100));
         // await DWait(0);
         // moveTutMouseTo(pos.lineNumber,pos.column,true);
-        endEdit();
+        if(isMainEditor) endEdit();
         await wait(getTypeSpeed(text?.length ?? 5)*speedScale);
     }
-    if(moveMouseToEnd) await startMouseMove(pos.column,pos.lineNumber,true);
+    if(moveMouseToEnd) await startMouseMove(pos.column,pos.lineNumber,true); // depricate this?
 
-    lesson.endEditing();
+    if(isMainEditor) lesson.endEditing();
 }
 function _moveCursorHome(editor:Editor){
     startEdit();
@@ -614,21 +624,27 @@ async function moveEditorCursorBy(editor:Editor,cols:number,rows:number,noShow=f
         return;
     }
     
-    // let amt = Math.max(Math.abs(cols),Math.abs(rows));
-    // editor.setPosition(pos.with(pos.lineNumber+y,pos.column+x));
-    await showTutMouse(true);
-    // for(let i = 0; i < amt; i++){
-    //     editor.setPosition(pos.with(pos.lineNumber+rows,pos.column+cols));
-    //     await wait(getTypeSpeed(5));
-    // }
+    // // let amt = Math.max(Math.abs(cols),Math.abs(rows));
+    // // editor.setPosition(pos.with(pos.lineNumber+y,pos.column+x));
+    // await showTutMouse(true);
+    // // for(let i = 0; i < amt; i++){
+    // //     editor.setPosition(pos.with(pos.lineNumber+rows,pos.column+cols));
+    // //     await wait(getTypeSpeed(5));
+    // // }
     await wait(200);
-    await startMouseMove(pos.column+cols,pos.lineNumber+rows,true);
-    await wait(_mouseClickDelay);
+    
+    let actions = getEditActions(editor);
+    actions.setDelay(getTypeSpeed(5)); // I can do this without reverting bc its a temporary instance of editActions that will be destroyed after this scope
+    if(cols) await actions.moveByX(cols);
+    if(rows) await actions.moveByY(rows);
 
-    startEdit();
-    editor.setPosition(pos.with(pos.lineNumber+rows,pos.column+cols));
-    endEdit();
-    // await wait(getTypeSpeed(5));
+    // await startMouseMove(pos.column+cols,pos.lineNumber+rows,true);
+    // await wait(_mouseClickDelay);
+
+    // startEdit();
+    // editor.setPosition(pos.with(pos.lineNumber+rows,pos.column+cols));
+    // endEdit();
+    // // await wait(getTypeSpeed(5));
     await wait(_mouseClickDelay);
     
     await hideTutMouse();
@@ -664,6 +680,11 @@ class CodePart{
     constructor(){
         
     }
+    noRush = false;
+    isRush(){
+        if(this.noRush) return false;
+        return lesson.info.type == LessonType.rush;
+    }
     async run(editor:Editor,actions:TutEditorActions){
         
     }
@@ -671,6 +692,9 @@ class CodePart{
         return wait(lesson.getStandardDelay());
     }
     async rushCheck(tutFile:FFile,file:FFile){}
+    rushable(){
+        return false;
+    }
 }
 class CP_LineBelow extends CodePart{
     constructor(amt=1){
@@ -678,7 +702,11 @@ class CP_LineBelow extends CodePart{
         this.amt = amt;
     }
     amt:number;
-    async run(editor: monaco.editor.IStandaloneCodeEditor): Promise<void> {
+    async run(editor: monaco.editor.IStandaloneCodeEditor, actions: TutEditorActions): Promise<void> {
+        await actions.makeLineBelow(this.amt);
+        await wait(350);
+        return;
+        
         startEdit();
         for(let i = 0; i < this.amt; i++){
             editor.trigger("keyboard","editor.action.insertLineAfter",null);
@@ -697,7 +725,11 @@ class CP_LineAbove extends CodePart{
         this.amt = amt;
     }
     amt:number;
-    async run(editor: monaco.editor.IStandaloneCodeEditor): Promise<void> {
+    async run(editor: monaco.editor.IStandaloneCodeEditor, actions: TutEditorActions): Promise<void> {
+        await actions.makeLineAbove(this.amt);
+        await wait(350);
+        return;
+        
         startEdit();
         for(let i = 0; i < this.amt; i++){
             editor.trigger("keyboard","editor.action.insertLineBefore",null);
@@ -914,6 +946,10 @@ class CP_HTML extends CodePart{
 
         let text = this.text ?? "";
 
+        // 
+        if(this.isRush()) this.tag = "\u00a0".repeat(this.tag.length);
+        // 
+
         let attr:string[] = [];
         if(this.ops.attr){
             let keys = Object.keys(this.ops.attr);
@@ -924,27 +960,36 @@ class CP_HTML extends CodePart{
         }
 
         // await typeText(editor,`<${this.tag}>${text}</${this.tag}>`);
+        // let startPos = editor.getPosition().clone();
 
-        let startPos = editor.getPosition();
-
-        if(attr.length) await typeText(editor,`<${this.tag} ${attr.join(" ")}>`);
-        else await typeText(editor,`<${this.tag}>`);
+        if(attr.length){
+            // await typeText(editor,`<${this.tag} ${attr.join(" ")}>`);
+            await actions.type(`<${this.tag} ${attr.join(" ")}>`);
+        }
+        else{
+            // await typeText(editor,`<${this.tag}>`);
+            await actions.type(`<${this.tag}>`);
+        }
         if(text?.length){
             await wait(150);
-            await typeText(editor,`${text}`);
+            // await typeText(editor,`${text}`);
+            await actions.type(`${text}`);
             await wait(100);
         }
-        if(!this.ops.noClosingTag) await typeText(editor,`</${this.tag}>`);
-        
+        if(!this.ops.noClosingTag){
+            // await typeText(editor,`</${this.tag}>`);
+            await actions.type(`</${this.tag}>`);
+        }
+
         // for(const c of list){
         //     (c as HTMLElement).style.display = null;
         // }
-        let pos = editor.getPosition();
         // lesson.tut.curFile.curRow = pos.lineNumber; // deprecated?
         // lesson.tut.curFile.curCol = pos.column;
-        
-        await startMouseMove(pos.column,pos.lineNumber,true);
         // moveTutMouseTo(58 + pos.column*7.7,115 + pos.lineNumber*16.5);
+        
+        let pos = editor.getPosition();
+        await startMouseMove(pos.column,pos.lineNumber,true);
 
         if(this.endAtCenter){
             // await moveEditorCursorBy(editor,-3-this.tag.length,0); // NEW: maybe we should no show this? or maybe animate the movement there
@@ -957,14 +1002,29 @@ class CP_HTML extends CodePart{
             }
             await wait(300);
         }
-        if(this.open) await typeText(editor,"\n");
+        if(this.open){
+            // await typeText(editor,"\n");
+            await actions.type("\n");
+
+            // THIS IS EXPERIMENTAL AND MIGHT NOT WORK ALL THE TIME (therefore it's only enabled in rush mode)
+            //   - this will allow invalid html tag names to have proper opening when hitting enter
+            if(lesson.info.type == LessonType.rush){
+                let newPos = editor.getPosition();
+                let line = actions.getLine(newPos.lineNumber);
+                let char = line[newPos.column-1];
+                if(char != null && char != " "){
+                    await actions.makeLineAbove(1);
+                    await actions.indent(1);
+                }
+            }
+        }
 
         // RUSH MODE
-        if(lesson.activeFile?.marks){
-            console.log("ADD MARK:",startPos,this.tag);
-            lesson.activeFile.marks.addMark(new TokenMark(startPos.lineNumber,startPos.column,this.tag.length,this.tag),lesson.activeFile.editor);
-        }
-        else console.warn("wasn't active file with marks:",lesson.activeFile?.name);
+        // if(lesson.activeFile?.marks){
+        //     console.log("ADD MARK:",startPos,this.tag);
+        //     lesson.activeFile.marks.addMark(new TokenMark(startPos.lineNumber,startPos.column,this.tag.length,this.tag),lesson.activeFile.editor);
+        // }
+        // else console.warn("wasn't active file with marks:",lesson.activeFile?.name);
 
         // 
         
@@ -976,8 +1036,11 @@ class CP_HTML extends CodePart{
         //     // this.tag = "_".repeat(this.tag.length);
         // }
     }
+    rushable(): boolean {
+        return true;
+    }
     async rushCheck(tutFile: FFile, file: FFile): Promise<void> {
-        let tutActions = getEditActions(tutFile.editor);
+        let tutActions = tutFile._back.actions;
         let fileActions = getEditActions(file.editor);
         
         await tutActions.waitUntilMatching(row=>{
@@ -1162,7 +1225,7 @@ class CP_Delete2 extends CodePart{
     }
 }
 class CP_MoveByX extends CodePart{
-    constructor(amt:number,select?:boolean,word?:boolean){
+    constructor(amt=1,select?:boolean,word?:boolean){
         super();
         this.amt = amt;
         this.select = select;
@@ -1178,7 +1241,7 @@ class CP_MoveByX extends CodePart{
     }
 }
 class CP_MoveByY extends CodePart{
-    constructor(amt:number,select?:boolean){
+    constructor(amt=1,select?:boolean){
         super();
         this.amt = amt;
         this.select = select;
@@ -1416,17 +1479,17 @@ class TutEditorActions{
             res,details
         };
     }
-    async waitUntilMatching(getCompareLines:(row:number)=>number[],other:TutEditorActions){
+    async waitUntilMatching(getCompareLines:(row:number)=>number[],fileActions:TutEditorActions){
         let compareLines = getCompareLines(this.editor.getPosition().lineNumber);
         
         let res:()=>void;
         let prom = new Promise<void>(resolve=>res = resolve);
 
-        other.startInputListener(e=>{
-            let res1 = this.compareTo_details(compareLines,other);
+        fileActions.startInputListener(e=>{
+            let res1 = this.compareTo_details(compareLines,fileActions);
             if(res1.res){
                 res();
-                other.endListener();
+                fileActions.endListener();
             }
             // console.log("DETAILS:",res1.details);
         });
@@ -1438,9 +1501,11 @@ class TutEditorActions{
 
     private delay = 0;
     private lastDelay = 0;
+    _speed = 1;
+    
     async wait(){
         if(!this.delay) return;
-        await wait(this.delay);
+        await wait(this.delay*this.getSpeed());
     }
     setDelay(amt:number){
         this.lastDelay = this.delay;
@@ -1476,8 +1541,47 @@ class TutEditorActions{
     cancelSelection(){
         this._trigger("cancelSelection");
     }
+
+    minSpeed = 0;
+    maxSpeed = 9999;
+    setSpeed(k:number){
+        if(k < this.minSpeed) k = this.minSpeed;
+        else if(k > this.maxSpeed) k = this.maxSpeed;
+        this._speed = k;
+    }
+    resetSpeed(){
+        this._speed = 1;
+        this.speedVelFunc = null;
+        this.minSpeed = 0;
+        this.maxSpeed = 9999;
+    }
+    speedVelFunc:(v:number)=>number;
+    setSpeedVelFunc(f:(v:number)=>number){
+        // this.setSpeed(f(this.speed));
+        this.speedVelFunc = f;
+    }
+    getSpeed(){
+        if(this.speedVelFunc) this.setSpeed(this.speedVelFunc(this._speed));
+        return this._speed;
+    }
+    setMinSpeed(v:number){
+        this.minSpeed = v;
+    }
+    setMaxSpeed(v:number){
+        this.maxSpeed = v;
+    }
     
     // 
+
+    async type(text:string){
+        for(const c of text){
+            this._trigger("type",{
+                text:c
+            });
+            // await this.wait();
+            await wait(getTypeSpeed(text.length)*this.getSpeed());
+        }
+    }
 
     /**
      * Set is like "[]" or "{}"
@@ -1926,7 +2030,16 @@ class AddRushCode extends Task{
     parts:CodePart[];
     async start(): Promise<string | void> {
         await super.start();
-        let editor = lesson.activeFile.editor;
+
+        let f = lesson.activeFile;
+        let editor = f.editor;
+
+        // settings
+
+        /**Shows preview before going back to main file (doesn't skip delay for back editor) */
+        let showPreview = false;
+
+        // 
         
         for(let i = 0; i < this.parts.length; i++){
             if(i == 0){
@@ -1934,9 +2047,89 @@ class AddRushCode extends Task{
             }
             let p = this.parts[i];
             let actions = getEditActions(editor);
-            await p.run(editor,actions);
-            await p.rushCheck(lesson.activeFile,lesson.p.files.find(v=>v.name == lesson.activeFile.name)); // hmm
+            
+            if(p.rushable()){
+                p.noRush = true;
+                let focused = lesson.p.curFile?.editor?.hasTextFocus();
+
+                if(!showPreview) startNoDelay();
+                lesson.startActiveFileUnlock();
+                f._back.open(false);
+                lesson.endActiveFileUnlock();
+                await p.run(f._back.editor,f._back.actions);
+                let pos = f._back.editor.getPosition().clone();
+                if(!showPreview) endNoDelay();
+                
+                lesson.startActiveFileUnlock();
+                f.open(false);
+                lesson.endActiveFileUnlock();
+
+                if(focused) lesson.p.curFile.editor.focus(); // these are needed to make sure the user can keep typing in their own editor while the tutor types
+
+                p.noRush = false;
+
+                // the main front run
+                if(true){ // SLOWDOWN
+                    actions.setSpeed(15);
+                    actions.setSpeedVelFunc(v=>{
+                        v -= 0.5;
+                        v *= 0.95;
+                        return v;
+                    });
+                    actions.setMinSpeed(2);
+
+                    // actions.setSpeed(1); // normal speed
+                }
+                let runProm = p.run(editor,actions);
+
+                if(focused) lesson.p.curFile.editor.focus();
+
+                await p.rushCheck(f,lesson.p.files.find(v=>v.name == f.name)); // hmm
+
+                actions.resetSpeed();
+
+                cancelWaits();
+                startNoDelay();
+                await runProm;
+                endNoDelay();
+
+                // await wait(200); // EXTRA DELAY between CodeParts
+                
+                // cancelWaits();
+                // startNoDelay();
+                // // await DWait(1);
+                // endNoDelay();
+
+                // await wait(1000);
+
+                let scrollLeft = f.editor.getScrollLeft();
+                let scrollTop = f.editor.getScrollTop();
+                // let pos = f._back.editor.getPosition().clone();
+                f.editor.setValue(f._back.editor.getValue());
+                f.editor.setScrollLeft(scrollLeft,monaco.editor.ScrollType.Immediate);
+                f.editor.setScrollTop(scrollTop,monaco.editor.ScrollType.Immediate);
+                f.editor.setPosition(pos);
+            }
+            else{                
+                if(!showPreview) startNoDelay();
+                lesson.startActiveFileUnlock();
+                f._back.open(false);
+                lesson.endActiveFileUnlock();
+
+                await p.run(f._back.editor,f._back.actions);
+                if(!showPreview) endNoDelay();
+                
+                lesson.startActiveFileUnlock();
+                f.open(false);
+                lesson.endActiveFileUnlock();
+
+                lesson.p.curFile?.editor?.focus(); // this will refocus after the preview back one finishes, couldn't figure out a way to make it stay focused during that but it's ok
+                
+                await p.run(editor,actions);
+            }
         }
+
+        // return await this.finish();
     }
 }
 class AddIgnoreCode extends AddCode{
@@ -2093,7 +2286,8 @@ class AddGenericCodeTask extends Task{
         if(!lesson._hasShownMarkDoneReminder){
             lesson._hasShownMarkDoneReminder = true;
             let f = lesson.tut.curFile;
-            let b = addBubble(f,`Make sure you click "Mark Done" when you're finished copying the code!`,f.curRow,f.curCol,"top");
+            let pos = f.editor.getPosition();
+            let b = addBubble(f,`Make sure you click "Mark Done" when you're finished copying the code!`,pos.lineNumber,pos.column,"top");
             this._finishBubble = b;
         }
     }
@@ -4138,7 +4332,6 @@ class Lesson{
     events:LEvent[];
     p:Project;
     tut:Project;
-    back_tut:Project;
 
     bannerSection:TextArea;
     finalInstance:FinalProjectInstance;
@@ -4958,8 +5151,8 @@ async function moveTutMouseTo(col:number,row:number,immidiate=false){
     // 
     
     if(lesson.tut.curFile){
-        lesson.tut.curFile.curCol = col;
-        lesson.tut.curFile.curRow = row;
+        // lesson.tut.curFile.curCol = col;
+        // lesson.tut.curFile.curRow = row;
     }
     tutMouse.style.left = (COL_OFF+col*COL_SCALE)+"px";
     tutMouse.style.top = (LINE_OFF+row*LINE_SCALE)+"px";

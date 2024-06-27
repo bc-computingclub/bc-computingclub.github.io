@@ -48,17 +48,34 @@ function startNoDelay(){
 function endNoDelay(){
     _noDelayI--;
 }
+function cancelWaits(){
+    for(const p of allWaits){
+        p.res();
+    }
+    allWaits = [];
+}
+let allWaits:{prom:Promise<any>,res:()=>any}[] = [];
 function wait(delay:number){
     if(isNoDelay()) return;
-    return new Promise<void>(resolve=>{
+    let res:()=>any;
+    let prom = new Promise<void>(resolve=>{
+        res = resolve;
+
         if(g_waitDelayScale == 0){
             resolve();
             return;
         }
         setTimeout(()=>{
+            let ind = allWaits.findIndex(v=>v.prom == prom);
+            if(ind != -1) allWaits.splice(ind,1);
+            
             resolve();
         },delay*g_waitDelayScale);
     });
+    if(g_waitDelayScale != 0) allWaits.push({
+        prom,res
+    });
+    return prom;
 }
 // debugWait - independent of g_waitDelayScale
 function DWait(delay:number){
@@ -810,8 +827,6 @@ class Project{
     builtInFileList = false;
     fileList:HTMLElement;
 
-    _back:Project; // back version of project (used for Rush Lessons)
-
     get canEdit(){
         if(PAGE_ID == PAGEID.lesson) return true;
         return this.meta?.canEdit;
@@ -1125,6 +1140,10 @@ class Project{
                 let gInd = this.files.findIndex(v=>v == f1);
                 if(gInd != -1) this.files.splice(gInd,1);
                 f1._fi.remove();
+                if(f1 instanceof FFile){
+                    // f1.link?.remove();
+                    if(this.openFiles.includes(f1)) f1.close();
+                }
             }
             await wait(100);
         }
@@ -1645,6 +1664,8 @@ function applyMultiSelectFI(e:MouseEvent|any,f:FItem){
 //     fiList.insertBefore(div,fiList.children[i1]);
 // }
 function createFileListItem(f:FFile){
+    if(f.isTMPFile()) return;
+
     let fileList = f.p.fileList;//(f.p.builtInFileList ? f.p.parent.querySelector(".file-list") as HTMLElement : document.querySelector(".file-list") as HTMLElement); // maybe should optimize this better at some point
     if(!fileList){
         console.log("ERR: couldn't find file list...");
@@ -1734,6 +1755,8 @@ function createFileListItem(f:FFile){
 }
 
 function setupFileListDropdown(p:Project){
+    if(p.readonly) return;
+
     let refList = [
         "new_file",
         "new_folder",
@@ -1793,6 +1816,8 @@ function setupFileListDropdown(p:Project){
     });
 }
 function setupFItemDropdown(f:FItem,div:HTMLElement){
+    if(f.p.readonly) return;
+    
     let refList = [
         "new_file",
         "new_folder",
@@ -2279,6 +2304,8 @@ let __replaceChild = Element.prototype.replaceChild;
 Element.prototype.replaceChild = function<T extends Node>(newChild:Node,oldChild:T){
     // @ts-ignore
     newChild.oldChild = oldChild;
+    // @ts-ignore
+    oldChild.newChild = newChild;
 
     // if(newChild.textContent == "html") console.error("REPLACED",newChild,oldChild);
 
@@ -2401,6 +2428,8 @@ class FFile extends FItem{
     _fsLastModified:number;
 
     marks:MarkSet;
+    // _back:TutEditorActions; // back version of editor (used for Rush Lessons)
+    _back:FFile; // back version of editor (used for Rush Lessons)
 
     isTextFile(){
         return isExtTextFile(getExt(this.name));
@@ -2527,7 +2556,8 @@ class FFile extends FItem{
             if(this._saved){
                 // if(this.editor) if(this.isTextFile()) this.buf = this.p.textEncoder.encode(this.editor.getValue()); // probably don't need this but good to do just in case
             }
-            this.p.d_files.removeChild(this.link);
+            this.link?.remove();
+            // this.p.d_files.removeChild(this.link);
             let ind = this.p.openFiles.indexOf(this);
             if(ind != -1) this.p.openFiles.splice(ind,1);
             if(this.cont.parentElement) this.cont.parentElement.removeChild(this.cont);
@@ -2550,6 +2580,10 @@ class FFile extends FItem{
             if(this.editor){
                 this.editor.dispose();
                 this.editor = null;
+                if(this._back){
+                    this._back.editor?.dispose();
+                    this._back = null;
+                }
             }
             return 1;
         }
@@ -2570,6 +2604,10 @@ class FFile extends FItem{
             if(this.isTemp) this.link.classList.add("is-tmp");
             else this.link.classList.remove("is-tmp");
         }
+    }
+
+    isTMPFile(){
+        return this.name.startsWith("__tmp");
     }
 
     isReadOnly(){
@@ -2637,7 +2675,7 @@ class FFile extends FItem{
             });
             link.appendChild(b_close);
             link.className = "file-link";
-            this.p.d_files.insertBefore(link,this.p.d_files.children[this.p.d_files.children.length-2]);
+            if(!this.isTMPFile()) this.p.d_files.insertBefore(link,this.p.d_files.children[this.p.d_files.children.length-2]);
             this.p.openFiles.push(this);
             let t = this;
             l_name.addEventListener("mousedown",e=>{
@@ -2692,7 +2730,33 @@ class FFile extends FItem{
                     readOnly:this.isReadOnly()
                     // cursorSmoothCaretAnimation:"on"
                 });
-                if(PAGE_ID == PAGEID.lesson) this.actions = getEditActions(editor);
+                if(PAGE_ID == PAGEID.lesson){
+                    this.actions = getEditActions(editor);
+
+                    if(lesson.info.type == LessonType.rush && this.p.isTutor){
+                        // let div = document.createElement("div");
+                        // let back_editor = monaco.editor.create(div, {
+                        //     value: [this.p.textDecoder.decode(this.buf)].join("\n"),
+                        //     language: this.lang,
+                        //     theme:"vs-"+themes[curTheme].style,
+                        //     bracketPairColorization:{
+                        //         enabled:false
+                        //     },
+                        //     minimap:{
+                        //         enabled:false
+                        //     },
+                        //     contextmenu:!this.p.isTutor
+                        // });
+                        // back_editor
+                        if(!this.name.startsWith("__tmpFile")){
+                            // this._back = new FFile(this.p,"__tmp",this.buf,null);
+                            (async ()=>{
+                                this._back = await this.p.createFile("__tmpFile-"+this.name,this.buf.slice(),null,null,false);
+                            })();
+                        }
+                    }
+                }
+                
 
                 editor.getDomNode().addEventListener("mouseleave",e=>{
                     e.stopImmediatePropagation();

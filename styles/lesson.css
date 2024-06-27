@@ -648,6 +648,13 @@ div.pane-files{
     /* opacity:0.2; */
     /* width:50px; */
 }
+.pane-tutor-code .monaco-editor div.unicode-highlight{
+    /* border:solid 1px red; */
+    /* border:none; */
+    /* background-color:var(--practice-col); */
+    /* opacity:0.5; */
+    scale:0.9 0.8;
+}
 
 /* .view-line[style*="top:19px"]{
     background-color:red;

@@ -10,7 +10,7 @@ return [
         new AddRushCode([
             new CP_HTML("html",true,true),
             new CP_HTML("head",true,true),
-            new CP_HTML("title",true,false,"Home Page"),
+            new CP_HTML("title",false,false,"Home Page"),
             new CP_MoveByY(1),
             new CP_LineBelow(),
             new CP_HTML("body",true,true),
