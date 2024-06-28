@@ -3666,8 +3666,10 @@ async function refreshPreview(){
 }
 function postIFrameRefresh(){
     iframe.onload = function(){
-        if(_iframeKeydown) iframe.contentDocument.removeEventListener("keydown",_iframeKeydown);
-        iframe.contentDocument.addEventListener("keydown",_iframeKeydown);
+        if(iframe.contentDocument){
+            if(_iframeKeydown) iframe.contentDocument.removeEventListener("keydown",_iframeKeydown);
+            iframe.contentDocument.addEventListener("keydown",_iframeKeydown);
+        }
     };
 }
 

@@ -1150,4 +1150,19 @@
 <!-- 29,736 lines, 27,287 non-blank -->
 
 ### 6/27/24
-- 
+- moved guided project lesson
+- added sample preview to lesson #4
+- added description, sample, and takaways to rush lesson #1
+- fixed calc lines so it calcs the correct amount
+- changed it so when lessons hit 100% there is only a restart button, no resume
+- readded completed flag when a lesson has been finished once but now it displays as a check instead of the word completed
+    - this is good because I think it looks good to have a bunch of these checks on the screen which encourages people to have a sense of a lot of acomplishment they've built up
+- added new flag to always show if the current progress is 0 and there is no when started set, meaning it was never started
+- added isRestart flag to clearLessonProgress so it labels the menu correctly
+- fixed sample previews so all files are opened instead of just the first one
+- fixed some null pointer errors
+- added extra delay to tutor in rush mode so it doesn't lag the site when the user types faster than the tutor
+- fixed cases where p.readonly was used when file.isReadOnly() should have been used
+- fixed files not being added at the correct locations in the open files list in some cases
+- fixed locked lessons were broken visual from a previous update
+- fixed super old issue I saw in notion about how clicking and dragging on the menubar in the learn page would cause panning xD
