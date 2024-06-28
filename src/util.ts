@@ -1816,7 +1816,7 @@ function setupFileListDropdown(p:Project){
     });
 }
 function setupFItemDropdown(f:FItem,div:HTMLElement){
-    if(f.p.readonly) return;
+    if(f instanceof FFile) if(f.isReadOnly()) return;
     
     let refList = [
         "new_file",
@@ -2675,7 +2675,16 @@ class FFile extends FItem{
             });
             link.appendChild(b_close);
             link.className = "file-link";
-            if(!this.isTMPFile()) this.p.d_files.insertBefore(link,this.p.d_files.children[this.p.d_files.children.length-2]);
+            if(!this.isTMPFile()){
+                if(!this.isReadOnly() || this.p.isTutor){
+                    this.p.d_files.insertBefore(link,this.p.d_files.children[this.p.d_files.children.length-2]);
+                    // console.log(".....!!! full insert");
+                }
+                else{
+                    // console.log("...added:",this.name);
+                    this.p.d_files.appendChild(link);
+                }
+            }
             this.p.openFiles.push(this);
             let t = this;
             l_name.addEventListener("mousedown",e=>{
@@ -2693,13 +2702,13 @@ class FFile extends FItem{
                     let i1 = 0;
                     let i2 = 0;
                     let i = 0;
-                    for(const c of project.d_files.children){
+                    for(const c of this.p.d_files.children){
                         if(c == last.link) i1 = i;
                         else if(c == hoverOpenFile.link) i2 = i;
                         i++;
                     }
-                    if(i1 >= i2) project.d_files.insertBefore(last.link,hoverOpenFile.link);
-                    else project.d_files.insertBefore(last.link,hoverOpenFile.link.nextElementSibling);
+                    if(i1 >= i2) this.p.d_files.insertBefore(last.link,hoverOpenFile.link);
+                    else this.p.d_files.insertBefore(last.link,hoverOpenFile.link.nextElementSibling);
                 });
                 dragItem.down = this;
             });
@@ -2774,7 +2783,7 @@ class FFile extends FItem{
                 //     //monaco-mouse-cursor-text
                 //     // else this.setSaved(true,true);
                 // });
-                if(this.p.readonly){
+                if(this.p.isTutor){
                     editor.onDidFocusEditorText(e=>{
                         if(!this.p.fileList.parentElement.classList.contains("hide")) this.p.parent.querySelector<HTMLButtonElement>(".b-show-files")?.click();
                         
@@ -5081,7 +5090,7 @@ class SubmissionMenu extends Menu {
             
             let par = this.menu.querySelector(".submission-editor > .editor-cont") as HTMLElement;
             let tmpp = new Project("__tmp",par,{
-                readonly:false
+                readonly:true
             });
             setupEditor(tmpp.parent,EditorType.none,true);
             tmpp.init(true);

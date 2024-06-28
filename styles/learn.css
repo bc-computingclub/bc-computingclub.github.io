@@ -221,10 +221,12 @@ body.themestyle-light .btn-start.open{
     right:-150px;
 } */
 .circle.locked{
-    opacity:0.5;
+    /* opacity:0.5; */
+    opacity:0.7;
     filter:grayscale(1);
     width:130px;
     height:130px;
+    --co:var(--secondary-bg-col);
     /* filter:grayscale(1) brightness(0.8); */
     /* background-color:var(--col); */
     /* color:var(--secondary-bg-col); */
@@ -339,6 +341,7 @@ body.themestyle-light .btn-start.open{
     justify-content:center;
     align-items:center;
     padding:0px 10px;
+    white-space:nowrap;
 }
 .item-flag:first-child{
     border-bottom-left-radius:0px;

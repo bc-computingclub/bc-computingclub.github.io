@@ -2894,6 +2894,7 @@ rl.on("line",async (line)=>{
 
             await search(root+"server/","backend",[
                 root+"server/project",
+                root+"server/projects",
                 root+"server/out",
                 root+"server/_tmp_data",
                 root+"server/challenges_old",
@@ -2903,13 +2904,17 @@ rl.on("line",async (line)=>{
                 root+"server/queries",
                 root+"server/transfer",
                 root+"server/users_old",
+                root+"server/users",
             ],types);
             await search(root,"frontend",[
                 root+"server",
                 root+"js-challenges",
                 root+"out",
                 root+"lib",
-                root+"node_modules"
+                root+"node_modules",
+                root+"showker/out",
+                root+"src/socket.io.min.ts",
+                root+"practice/challenges.json"
             ],types);
 
             console.log("--------------------------------");

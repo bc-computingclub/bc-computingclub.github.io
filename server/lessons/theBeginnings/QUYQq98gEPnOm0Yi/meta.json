@@ -1,9 +1,19 @@
 {
     "ver": "0",
     "name": "Rush! HTML Structure",
-    "desc": [],
-    "preview": [],
-    "takeaways": [],
+    "desc": [
+        "This is a Rush Lesson. Keep rewriting the code until you can understand it without relying on the tutor!",
+        "This lesson focuses on practicing the Basic HTML Structure."
+    ],
+    "preview": [
+        {
+            "type":"code",
+            "ref":"sample"
+        }
+    ],
+    "takeaways": [
+        "Practice the Basic HTML Structure"
+    ],
     "banner": {
         "sections": [
             {

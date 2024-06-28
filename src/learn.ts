@@ -256,7 +256,8 @@ class LessonItem{
 
         let i = ["new","complete","inprogress"].indexOf(flag);
         let f = document.createElement("div");
-        f.textContent = ["NEW","COMPLETE","IN PROGRESS"][i];
+        // f.textContent = ["NEW","COMPLETE","IN PROGRESS"][i];
+        f.innerHTML = ["NEW","<span class='material-symbols-outlined'>check</span>","IN PROGRESS"][i];
         f.className = "item-flag flag-"+flag;
         
         cont.appendChild(f);
@@ -354,14 +355,16 @@ class LessonItem{
             `:""}-->
             <div class="flags"></div>
             <div class="item-actions">
-                <div>
+                ${
+                    this.data.prog != 100 ? `<div>
                     <div>play_arrow</div>
                     <div>Resume</div>
-                </div>
-                <!--<div>
+                </div>` : `
+                <div>
                     <div>replay</div>
                     <div>Restart</div>
-                </div>-->
+                </div>`
+                }
                 <div>
                     <div>delete</div>
                     <div>Clear</div>
@@ -378,6 +381,9 @@ class LessonItem{
         if(this.data.n) this.addFlag("new");
         if(this.data.s && this.data.prog != 100) this.addFlag("inprogress");
 
+        if(this.data.hf) this.addFlag("complete"); // not sure if we want complete flags since there may be a bunch of complete missions and it might get cluttered
+        if(this.data.prog == 0 && !this.data.ws) this.addFlag("new"); // this might be way too much extra stuff but might be good idk
+
         if(b_start) if(this.data.s){
             this.tmp = b_start.textContent;
             b_start.onmouseenter = ()=>{
@@ -393,7 +399,6 @@ class LessonItem{
                 b_start.classList.add("percent");
                 b_start.textContent = this.tmp;
             };
-            // if(this.data.prog == 100) this.addFlag("complete"); // not sure if we want complete flags since there may be a bunch of complete missions and it might get cluttered
         }
         else{
             this.tmp = b_start.textContent;
@@ -473,6 +478,11 @@ class LessonItem{
             this.d_actions.children[0].addEventListener("click",e=>{
                 e.stopImmediatePropagation();
                 e.stopPropagation();
+
+                if(this.data.prog == 100){
+                    restartLesson(this);
+                    return;
+                }
 
                 let mode = 0; // Lesson Mode [lesson, review]
                 startLesson(this.lid,mode);
@@ -578,14 +588,14 @@ function startLesson(lid:string,mode=0){
     });
 }
 async function restartLesson(item:LessonItem){
-    let res = await clearLessonProgress(item);
+    let res = await clearLessonProgress(item,true);
     if(res){
         startLesson(item.lid);
     }
 }
-function clearLessonProgress(item:LessonItem){
+function clearLessonProgress(item:LessonItem,isRestart=false){
     return new Promise<boolean>(resolve=>{
-        let m = new ConfirmMenu("Delete Progress",`Are you sure you want<br> to delete lesson progress for "${item.l.name}" ?`,()=>{
+        let m = new ConfirmMenu(`${isRestart?"Restart Lesson":"Delete Progress"}`,`Are you sure you want<br> to ${isRestart?"restart":"delete"} lesson progress for "${item.l.name}" ?`,()=>{
             socket.emit("deleteLessonProgress",item.l.lid,(data:any)=>{
                 if(data == 0){
                     item.deleteProgress();
@@ -644,7 +654,7 @@ class LessonMenu extends Menu{
                     <div class="labeled-label">
                         <div>Description</div>
                         <div class="l-desc d-bubble">
-                            ${this.lesson.l.desc.map(v=>`<div>${v}</div>`).join("")}
+                            ${this.lesson.l.desc.map(v=>`<div>${v}</div>`).join("<br>")}
                             <!--<div>This is an example descripion for a lesson.<br><br>Probably a lot of useful information would go in here like what you will learn specifically in a list such as:</div>
                             <ul>
                                 <li>Thing to learn 1</li>
@@ -777,8 +787,12 @@ class LessonMenu extends Menu{
 
         // 
 
-        p.files[0]?.open(false);
-        p.files[0]?.editor?.layout();
+        // p.files[0]?.open(false);
+        // p.files[0]?.editor?.layout();
+        for(const f of p.files){
+            f.open(false);
+        }
+        p.curFile?.editor.layout();
 
         // project = p;
 

@@ -1146,3 +1146,8 @@
     - these files exist in the project but are ignored in the files pane and in the open files list
 - fixed dropdowns on open files item and files pane items and files pane back to not show up if the project is readonly
 - fixed tutor's open file item color to be purple again in lessons
+
+<!-- 29,736 lines, 27,287 non-blank -->
+
+### 6/27/24
+- 

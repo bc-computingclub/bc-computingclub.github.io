@@ -8,7 +8,7 @@ const tips = [
     "Did you know the text editor we use in Code Otter is from VSCode?", // not sure if we can say VSCode here so maybe mention monaco instead but hmm, it's a cool fact though
     "Who knows what secrets lie beyond, the only thing stopping you is...practice.",
     "Code Otter's roots are in challenging each other and sharing implementions!",
-    "A huge new feature is coming? When?...Eventually, so get ready.", // "A huge new feature is coming? When?...Eventually.\nThe universe is opening, get ready.",
+    "A huge new feature is coming. When?...Eventually, so get ready.", // "A huge new feature is coming? When?...Eventually.\nThe universe is opening, get ready.",
     "Like Code Otter? Or hate it? Let us know haha..."
 ];
 tip.textContent = tips[Math.floor(Math.random()*tips.length)];
@@ -539,8 +539,10 @@ function endEdit(editor?:monaco.editor.IStandaloneCodeEditor){
     lesson.goToActiveFileInstant();
     let file = lesson.activeFile ?? lesson.tut.curFile;
     
-    if(file) file.blockPosChange = true;
-    if(!editor) editor = file.editor;
+    if(file){
+        file.blockPosChange = true;
+        if(!editor) editor = file.editor;
+    }
     if(editor) editor.updateOptions({readOnly:true});
 }
 
@@ -2070,21 +2072,24 @@ class AddRushCode extends Task{
 
                 // the main front run
                 if(true){ // SLOWDOWN
-                    actions.setSpeed(15);
-                    actions.setSpeedVelFunc(v=>{
-                        v -= 0.5;
-                        v *= 0.95;
-                        return v;
-                    });
-                    actions.setMinSpeed(2);
-
-                    // actions.setSpeed(1); // normal speed
+                    if(false){ // ! - enable this to make the tutor type slow and then speed up
+                        actions.setSpeed(15);
+                        actions.setSpeedVelFunc(v=>{
+                            v -= 0.5;
+                            v *= 0.95;
+                            return v;
+                        });
+                        actions.setMinSpeed(2);
+                    }
+                    else actions.setSpeed(1); // normal speed
                 }
                 let runProm = p.run(editor,actions);
 
                 if(focused) lesson.p.curFile.editor.focus();
 
                 await p.rushCheck(f,lesson.p.files.find(v=>v.name == f.name)); // hmm
+
+                await wait(100); // EXTRA DELAY
 
                 actions.resetSpeed();
 
@@ -2093,7 +2098,7 @@ class AddRushCode extends Task{
                 await runProm;
                 endNoDelay();
 
-                // await wait(200); // EXTRA DELAY between CodeParts
+                await wait(100); // EXTRA DELAY between CodeParts
                 
                 // cancelWaits();
                 // startNoDelay();
@@ -2129,7 +2134,7 @@ class AddRushCode extends Task{
             }
         }
 
-        // return await this.finish();
+        return await this.finish();
     }
 }
 class AddIgnoreCode extends AddCode{
