@@ -162,10 +162,16 @@ class TreeLesson{
 //         ]),
 //     ]
 // };
-function parseProgTree(data:any){
+type ProgressTreeMeta = {
+    objs:LOData[]
+};
+function parseProgTree(data:{
+    lessons:any[],
+    meta:ProgressTreeMeta
+}){
     console.log(data);
     let ar:TreeLesson[] = [];
-    for(const l of data){
+    for(const l of data.lessons){
         // console.log("LINK INFO:",l.name,l.links);
         // let t = new TreeLesson(l.name,l.lid,l.x,l.y,[]);
         let t = new TreeLesson();
@@ -175,7 +181,10 @@ function parseProgTree(data:any){
         ar.push(t);
     }
     // console.log(ar);
-    return ar;
+    return {
+        ar,
+        meta:data.meta
+    };
 }
 
 let openedLessonItems:LessonItem[] = [];
@@ -378,7 +387,7 @@ class LessonItem{
         this.b_start = b_start;
         this.d_actions = e.querySelector(".item-actions") as HTMLElement;
 
-        if(this.data.n) this.addFlag("new");
+        // if(this.data.n) this.addFlag("new");
         if(this.data.s && this.data.prog != 100) this.addFlag("inprogress");
 
         if(this.data.hf) this.addFlag("complete"); // not sure if we want complete flags since there may be a bunch of complete missions and it might get cluttered
@@ -622,6 +631,8 @@ class LessonMenu extends Menu{
     }
     lesson:LessonItem;
     typeData:LessonTypeData;
+    p:Project;
+
     load(priority?: number, newLayer?: boolean): this {
         super.load(priority,newLayer);
         this.menu.classList.add("menu-lesson");
@@ -760,6 +771,7 @@ class LessonMenu extends Menu{
             readonly:false
         });
         p.builtInFileList = true;
+        this.p = p;
         // p.fileList = this.body.querySelector(".pane-files");
         
         setupEditor(p.parent,EditorType.none);
@@ -798,6 +810,12 @@ class LessonMenu extends Menu{
 
         await this.loadPreview();
     }
+
+    onClose(): void {
+        if(this.p) for(const f of this.p.files){
+            if(f.editor) f.editor.dispose();
+        }
+    }
 }
 
 let moveScale = 10;
@@ -825,7 +843,10 @@ async function loadProgressTree(folder:string){
     //     }
     // ] as ProgressData[];
 
-    let progressTree = await new Promise<TreeLesson[]>(resolve=>{
+    let {ar:progressTree,meta} = await new Promise<{
+        ar:TreeLesson[],
+        meta:ProgressTreeMeta
+    }>(resolve=>{
         socket.emit("getProgressTree",folder,(data:any)=>{
             if(typeof data == "number" || data == null){
                 alert(`Error ${data} while trying to get progress tree: ${folder}`);
@@ -857,12 +878,80 @@ async function loadProgressTree(folder:string){
         l.root = progressTree;
         l.rootProg = progress;
     }
+    
+    // init relations
+    function check(l:TreeLesson,path:string[]){
+        // recurI++;
+        // if(recurI > maxRecur) return [0,0];
 
-    let lessonCont = document.createElement("div");
+        if(path.includes(l.lid)) return [0,0]; // prevents over recursion and infinite loops
+
+        path.push(l.lid);
+        let prev = l.prev[0];
+        if(prev){
+            // let item = items.find(v=>v.lid == l.lid);
+            // let prevItem = items.find(v=>v.lid == prev.id);
+            // let item = progressTree.find(v=>v.lid == l.lid);
+            let item = l;
+            let prevItem = progressTree.find(v=>v.lid == prev.id);
+            if(!item){
+                console.warn("$ couldn't find item: ",l.lid,prev.id);
+                return [0,0];
+            }
+            if(!prevItem){
+                console.warn("$ couldn't find prevItem: ",l.lid,prev.id);
+                return [0,0];
+            }
+            let [tx,ty] = check(prevItem,path);
+            // console.log("L: ",l.name,l.x,prevItem.l.x);
+
+            l._x = cx+(l.x+tx)*moveScale;
+            l._y = cy+(l.y+ty)*moveScale;
+            
+            // l._x += prevItem.l._x;
+            // l._y += prevItem.l._y;
+            // l._x = prevItem.l._x+l._x;
+            // l._y = prevItem.l._y+l._y;
+            // l.x = prevItem.l.x+l.x;
+            // l.y = prevItem.l.y+l.y;
+
+            ////////// item.update();
+            return [l.x+tx,l.y+ty];
+        }
+        return [l.x,l.y];
+    }
     for(const l of progressTree){
+        check(l,[]);
+    }
+
+    // finalize relations
+    for(const l of progressTree){
+        if(l._x == null){
+            let x = cx+l.x*moveScale;
+            let y = cy+l.y*moveScale;
+            l._x = x;
+            l._y = y;
+        }
+    }
+
+    // anim sort
+    // progressTree.sort((a,b)=>(a._x+a._y) - (b._x+b._y)); // top left to bottom right
+    // progressTree.sort((a,b)=>(a._x+a._y) ** (b._x+b._y)); // central out
+    progressTree.sort((a,b)=>(a._x|b._y) - (a._x*b._y));
+
+    // 
+    
+    // load lesson items
+    let lessonCont = document.createElement("div");
+    cont.appendChild(lessonCont);
+
+    for(const l of progressTree){
+        // await wait(100);
+        await wait(10);
+
         let pdata = progress.find(v=>v.lid == l.lid);
-        let x = cx+l.x*moveScale;
-        let y = cy+l.y*moveScale;
+        let x = l._x;
+        let y = l._y;
 
         let itemCont = document.createElement("div");
         itemCont.classList.add("item-cont");
@@ -870,8 +959,6 @@ async function loadProgressTree(folder:string){
         item.classList.add("circle");
         itemCont.style.left = x+"px";
         itemCont.style.top = y+"px";
-        l._x = x;
-        l._y = y;
 
         itemCont.addEventListener("mouseenter",e=>{
             canPan = false;
@@ -902,7 +989,8 @@ async function loadProgressTree(folder:string){
         },1000);
 
         let r = 50;
-        if(l.prev) setTimeout(()=>{
+        if(l.prev) 
+            // setTimeout(()=>{
             for(const tar of l.prev){
                 let next = progressTree.find(v=>v.lid == tar.id);
                 if(next){
@@ -1006,13 +1094,15 @@ async function loadProgressTree(folder:string){
             dxo < 0 && dyo > 0 ? `<path d="M ${x1},${y1} Q ${x1},${y2} ${x2},${y2}" stroke="var(--col)" fill="none" stroke-dasharray="${dashArray}" stroke-linecap="round" stroke-width="${strokeWidth}"/>`:
 
             dxo < 0 && dyo < 0 && horz ? `<path d="M ${x1},${y1} Q ${x1},${y2} ${x2},${y2}" stroke="var(--col)" fill="none" stroke-dasharray="${dashArray}" stroke-linecap="round" stroke-width="${strokeWidth}"/>`:
-            dxo < 0 && dyo < 0 ? `<path d="M ${x1},${y1} Q ${x2},${y1} ${x2},${y2}" stroke="var(--col)" fill="none" stroke-dasharray="${dashArray}" stroke-linecap="round" stroke-width="${strokeWidth}"/>`:""
+            /*dxo < 0 && dyo < 0 ?*/ `<path d="M ${x1},${y1} Q ${x2},${y1} ${x2},${y2}" stroke="var(--col)" fill="none" stroke-dasharray="${dashArray}" stroke-linecap="round" stroke-width="${strokeWidth}"/>`
         }
     </svg>
                     `;
                     let pathCont = document.createElement("div");
                     pathCont.className = "path-cont";
-                    cont.appendChild(pathCont);
+                    setTimeout(()=>{
+                        cont.appendChild(pathCont);
+                    },50);
                     tar.pathCont = pathCont;
                     ref.prevPathCont = pathCont;
                     
@@ -1054,53 +1144,28 @@ async function loadProgressTree(folder:string){
                 }
             }
             // ref.update(); // might be needed but takes extra processing power
-        },0);
+        // },0);
     }
     // let maxRecur = 50;
     // let recurI = 0;
-    function check(l:TreeLesson,path:string[]){
-        // recurI++;
-        // if(recurI > maxRecur) return [0,0];
-
-        if(path.includes(l.lid)) return [0,0]; // prevents over recursion and infinite loops
-
-        path.push(l.lid);
-        let prev = l.prev[0];
-        if(prev){
-            let item = items.find(v=>v.lid == l.lid);
-            let prevItem = items.find(v=>v.lid == prev.id);
-            if(!item) return [0,0];
-            if(!prevItem) return [0,0];
-            let [tx,ty] = check(prevItem.l,path);
-            // console.log("L: ",l.name,l.x,prevItem.l.x);
-
-            l._x = cx+(l.x+tx)*moveScale;
-            l._y = cy+(l.y+ty)*moveScale;
-            
-            // l._x += prevItem.l._x;
-            // l._y += prevItem.l._y;
-            // l._x = prevItem.l._x+l._x;
-            // l._y = prevItem.l._y+l._y;
-            // l.x = prevItem.l.x+l.x;
-            // l.y = prevItem.l.y+l.y;
-
-            item.update();
-            return [l.x+tx,l.y+ty];
-        }
-        return [0,0];
+    
+    if(meta){
+        setTimeout(()=>{
+            if(meta.objs) for(const objData of meta.objs){
+                loReg.add(objData);
+            }
+        },0);
     }
-    for(const l of progressTree){
-        check(l,[]);
-    }
-    cont.appendChild(lessonCont);
-    setTimeout(()=>{
+    
+    // cont.appendChild(lessonCont);
+    if(false) setTimeout(()=>{
         for(const ref of items){
             ref.init();
         }
     },50);
 
-    testWarpZone();
-    testSign();
+    // testWarpZone();
+    // testSign();
 }
 
 function testWarpZone(){
@@ -1120,13 +1185,14 @@ function testWarpZone(){
 
     // console.log("added: ",itemCont);
 }
-function testSign(){
+function testSign(x:number,y:number){
     let itemCont = document.createElement("div");
     itemCont.classList.add("item-cont","type-sign");
-    cont.children[0].appendChild(itemCont);
 
-    itemCont.style.left = "1200px";
-    itemCont.style.top = "150px";
+    // itemCont.style.left = "1200px";
+    // itemCont.style.top = "150px";
+    itemCont.style.left = x+"px";
+    itemCont.style.top = y+"px";
 
     itemCont.innerHTML = `
         <div class="sign-cont">
@@ -1137,7 +1203,193 @@ function testSign(){
             </div>
         </div>
     `; // 0.4 or 0.7 are good
+
+    return itemCont;
 }
+
+// Learn Objs (warp zones, signs, etc...)
+type LOData = { // more documentation explainations are in s_util.ts under type PTreeFolderObj
+    type:LOType,
+    id?:string,
+    rel?:string,
+    x:number,
+    y:number,
+    data?:any
+};
+enum LOType{
+    sign,
+    warp
+}
+class LOReg{
+    constructor(){
+        this.reg = new Map();
+        this.objCont = document.createElement("div");
+        cont.appendChild(this.objCont);
+    }
+    private reg:Map<LOType,LearnObj>;
+    objCont:Element;
+
+    register(ref:LearnObj){
+        let type = ref.getType();
+        if(this.reg.has(type)){
+            console.warn("$ learn object registry already has an entry with the type: ",LOType[type])
+            return;
+        }
+        this.reg.set(type,ref);
+    }
+
+    add(data:LOData){
+        let ref = this.reg.get(data.type);
+        if(!ref){
+            console.warn("Failed to find ref: ",data);
+            return;
+        }
+        let obj = ref.parse(data);
+        if(!ref){
+            console.warn("Failed to find LearnObj type in registry: ",data);
+            return;
+        }
+        let elm = obj.load();
+        if(!ref){
+            console.warn("Failed to load elm from LearnObj load: ",data);
+            return;
+        }
+
+        // 
+        this.objCont.appendChild(elm);
+    }
+}
+const loReg = new LOReg();
+
+abstract class LearnObj{
+    constructor(){}
+    x:number;
+    y:number;
+    id:string;
+    data:any;
+    
+    abstract getType(): LOType;
+    abstract parse(data:LOData): LearnObj;
+    abstract load(): Element;
+
+    static parseSuper(o:LearnObj,data:LOData){
+        o.id = data.id;
+        o.data = data.data;
+
+        if(data.rel){
+            let [relType,relId] = data.rel.split("@");
+            if(relType == "o"){
+                // uh not sure how to do this yet
+            }
+            else if(relType == "l"){
+                let item = items.find(v=>v.lid == relId);
+                if(!item){
+                    console.warn("$ err: not good! couldn't find relation object for learn obj:\n\n",relType,relId,data.type,data.id);
+                    return;
+                }
+                o.x = item.l._x + data.x*moveScale;
+                o.y = item.l._y + data.y*moveScale;
+            }
+        }
+        else{
+            o.x = data.x;
+            o.y = data.y;
+        }
+    }
+}
+class LO_Sign extends LearnObj{
+    constructor(){
+        super();
+    }
+    declare data:{
+        title:string,
+        desc:string[]
+    };
+
+    getType(): LOType {
+        return LOType.sign;
+    }
+    parse(data: LOData): LearnObj {
+        let o = new LO_Sign();
+        LearnObj.parseSuper(o,data);
+        
+        return o;
+    }
+    load(): Element {
+        let obj = testSign(this.x,this.y);
+
+        let signFace = obj.querySelector(".sign-face") as HTMLButtonElement;
+        signFace.addEventListener("click",e=>{
+            this.open();
+        });
+
+        return obj;
+    }
+
+    // custom
+    open(){
+        new SignMenu(this).load();
+    }
+}
+class SignMenu extends Menu{
+    constructor(obj:LO_Sign){
+        // super(obj.data.title,"assignment");
+        // super("Mailbox","markunread_mailbox");
+        // super("A Local Sign","history_edu");
+        super("A Sign","lightbulb");
+        this.obj = obj;
+    }
+    obj:LO_Sign;
+    load(priority?: number, newLayer?: boolean): this {
+        super.load(priority,newLayer);
+        this.menu.classList.add("menu-sign");
+        this.menu.style.setProperty("--accent","rgb(91, 49, 18)");
+
+        let cont = document.createElement("div");
+        cont.className = "sign-menu-list menu-block";
+        let bubble:Element;
+        const newBubble = ()=>{
+            bubble = document.createElement("p");
+            bubble.classList.add("d-bubble");
+            cont.appendChild(bubble);
+        };
+        newBubble();
+        
+        if(!this.obj.data){
+            let line = document.createElement("p");
+            line.textContent = "[ There doesn't seem to be any text on the sign. ]";
+            line.style.textAlign = "center";
+            bubble.appendChild(line);
+        }
+        else{
+            if(this.obj.data.title){ // title for sign is optional
+                let title = document.createElement("h3");
+                title.textContent = this.obj.data.title;
+                title.classList.add("sign-title");
+                cont.insertBefore(title,cont.children[0]);
+            }
+
+            for(const text of this.obj.data.desc){
+                if(text.startsWith("$")){
+                    let code = text.substring(1);
+                    if(code == "br"){ // new section
+                        newBubble();
+                    }
+                    continue;
+                }
+                let line = document.createElement("p");
+                line.textContent = text;
+                bubble.appendChild(line);
+            }
+        }
+
+        this.body.appendChild(cont);
+        return this;
+    }
+}
+
+// register learn objs
+loReg.register(new LO_Sign());
 
 // Back pan blocking
 let canPan = true;

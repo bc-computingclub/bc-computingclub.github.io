@@ -278,6 +278,23 @@ export type PTLessonOps = {
 export type PTreeOps = {
     initialUnlocks?:string[]
 };
+export type AllLearnObjTypes = {
+    // sign
+    title:string,
+    desc:string[]
+};
+export type PTreeFolderObj = { // probably don't actually need this server side, or at least right now, but I'll define it for now for documentation purposes
+    type:number, // type of object: warp zone, sign (as enum number)
+    id?:string, // id for relation purposes
+    rel?:string, // format: `type@id` examples: `o:id` (position relative to object with the id), `l:lid` (position relative to lesson item with lid)
+    x:number,
+    y:number,
+    data?:AllLearnObjTypes; // custom data for the particular type
+};
+export type PTreeFolderMeta = {
+    name:string,
+    objs:PTreeFolderObj[]
+};
 export class PTreeFolder{
     constructor(name:string,lessons:PTreeLesson[]=[],folders:Record<string,PTreeFolder>={},ops:PTreeOps={}){
         this.name = name;
@@ -293,6 +310,7 @@ export class PTreeFolder{
     lessons:PTreeLesson[];
     folders:Record<string,PTreeFolder>;
     ops:PTreeOps;
+    meta:PTreeFolderMeta|undefined;
 }
 
 export class LessonCacheItem{
@@ -330,10 +348,12 @@ async function genLID(){
 function getStandardLessonMeta(name:string){
     return {
         ver:"0",
+        author:"<blank>",
         name,
         desc:[],
         preview:[],
         takeaways:[],
+        dateCreated:new Date().toISOString(),
         banner:{
             sections:[
                 {

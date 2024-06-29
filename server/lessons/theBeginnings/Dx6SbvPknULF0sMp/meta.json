@@ -1,24 +1,28 @@
 {
     "ver": "0",
-    "name": "Simple Menu Bar",
-    "type": 1,
+    "name": "Margin & Padding",
+    "desc": [],
+    "preview": [],
+    "takeaways": [],
+    "date": "6/28/24",
     "banner": {
         "sections": [
             {
                 "head": "What Will We Be Doing in This Lesson?",
                 "text": [
-                    "A small project to practice using CSS and HTML in a practical way."
+                    "<Short summary of lesson here>"
                 ]
             }
         ]
     },
     "finalInstance": null,
     "boards": [],
-    "x":200,
-    "y":100,
-    "req1":[
+    "x": 65,
+    "y": 40,
+    "req": [
         {
-            "lid":"QUYQq98gEPnOm0Yi"
+            "lid": "PpcVdfjdzo7TfWBL",
+            "flip": false
         }
     ]
 }

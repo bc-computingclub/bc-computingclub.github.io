@@ -1166,3 +1166,40 @@
 - fixed files not being added at the correct locations in the open files list in some cases
 - fixed locked lessons were broken visual from a previous update
 - fixed super old issue I saw in notion about how clicking and dragging on the menubar in the learn page would cause panning xD
+
+### 6/28/24
+- added Margin & Padding, Text Styling, Button Styling, and Timer Widget lessons to the learn page
+- disconnected Menubar lesson from the rest of the lessons on the learn page (bc I might depricate it or remove it in the future bc it was more complex than I thought)
+- added two sign objects to the "theBeginnings" folder_meta
+
+- added support for folder_meta (where you define custom data like objects for a particular Folder/Folder Scene) on the backend
+- added LearnObjs types and some documentation on the backend
+- added author and dateCreated to be default fields included when creating a new lesson
+
+- removed some debug log messages from the front end
+- fixed up parseProgTree in learn.ts to have proper types on the data parameter
+- added folder_meta support to the front end
+- fixed when finishing a lesson two "new" flags would be applied
+- added project field to LessonMenu so when closing it properly diposes of the editors that were opened
+- fixed loading the lessons in the progress tree so they don't depend on a setTimeout to be loaded properly, everything loads in order
+    - even the recursive relative positioning setup loads correctly without delay
+    - added delay to added lesson items into the scene so they just pop in over time (less load on the computer during load time and looks cool)
+    - added sorting with bitwise functions to make interesting order of appearing
+    - fixed path (arrow path between lessons) isn't valid/defined errors
+- removed testWarpZone() and testSign() from load
+
+- ! added Learn Obj Registry system
+    - enum for types and staticly typed structure for unparsed data
+    - added Learn Obj which can have type, id (label like a css id), x,y location/offset, and a relation property
+        - the relation property can be either o or l with either an LO's id or lid (haven't implemented o yet) but this makes it so the x,y coords are relative to a particular lesson item or object instead of having to be absolutely defined in the scene
+        - because of the other fixes to loading the progress tree, these can be loaded immidiately without extra delay even though they rely on all the lesson item's new locations already being finalized
+    - added LO_Sign which simply adds the test sign at a particular location
+    - added SignMenu which displays text and desc for the sign from it's meta
+        - custom ops like writing "$br" for a line in the desc will make all the following lines be in a new block
+        - added popup animation to the first thing that is inside the sign list
+        - added cursor:pointer to sign cont
+
+- added ShowItemCont and ShowPathCont animations in learn.css
+    - they give it a cool effect when you load the page, I'm not sure if it's too much/too flashy but it does look cool
+
+<!-- 30,114 lines!!!!, 27,636 non-blank -->

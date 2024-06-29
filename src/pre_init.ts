@@ -58,7 +58,7 @@ function loadEditorTheme(tData?:any){
     if("monaco" in window && editorThemeNeedsReload){
         monaco.editor.setTheme("vs-"+tData.style);
         editorThemeNeedsReload = false;
-        console.log("set theme");
+        // console.log("set theme");
     }
     else editorThemeNeedsReload = true;
 }

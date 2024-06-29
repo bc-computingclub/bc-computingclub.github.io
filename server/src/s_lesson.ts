@@ -134,6 +134,16 @@ async function registerLessonFolder(name:string,firstLID:string,pathKeys:string[
     }
     let folder = new PTreeFolder(name,[],undefined,ops);
     globalLessonFolders.set(name,folder);
+
+    let folderMetaStr = await read(path+"folder_meta.json","utf8",true);
+    if(folderMetaStr){
+        let folderMeta = JSON.parse(folderMetaStr);
+        if(folderMeta){
+            folder.meta = folderMeta;
+        }
+        else console.log("$ err: something when wrong while parsing the folder's meta: ",name);
+    }
+
     // let first1:PTreeLesson|null = null;
     for(const lid of lids){
         // let stats = await lstat(path+lid);

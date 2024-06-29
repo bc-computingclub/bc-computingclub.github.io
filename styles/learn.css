@@ -69,7 +69,37 @@ body.themestyle-dark .main{
 
     --main-col:var(--secondary-bg-col);
     --back-col:var(--co);
+
+    /*  */
+    animation:ShowItemCont 0.5s ease-out;
 }
+.path-cont{
+    animation:ShowPathCont 0.5s ease-out;
+}
+@keyframes ShowItemCont{
+    0%{
+        /* border-radius:50%; */
+        opacity:0;
+        /* rotate:5deg; */
+        scale:0.97;
+    }
+    50%{
+        rotate:0deg;
+    }
+    100%{
+        opacity:1;
+        scale:1;
+    }
+}
+@keyframes ShowPathCont{
+    0%{
+        opacity:0;
+    }
+    100%{
+        opacity:1;
+    }
+}
+
 .l-lesson-name:hover{
     text-decoration:underline;
     cursor:pointer;
@@ -556,6 +586,7 @@ body.themestyle-light .item-actions > div:hover{
 }
 .sign-cont{
     position:relative;
+    z-index:1;
 }
 .sign-stem{
     position:absolute;
@@ -596,6 +627,8 @@ body.themestyle-light .item-actions > div:hover{
     align-items:center;
     user-select:none;
     -webkit-user-select:none;
+
+    cursor:pointer;
 }
 .sign-back{
     position:absolute;
@@ -618,6 +651,33 @@ body.themestyle-dark .sign-back{
 body.themestyle-dark .sign-stem{
     /* background-color:rgb(91, 49, 18); */
     background-color:var(--stroke-col);
+}
+.menu-sign{
+    width:500px;
+    height:max-content;
+}
+.sign-menu-list p:not(:last-child){
+    margin-bottom:1rem;
+}
+.sign-menu-list > :first-child{
+    animation:ShowSignTitle 0.2s cubic-bezier(0.975, 0.185, 0.32, 1.675);
+    animation-fill-mode:forwards;
+}
+.sign-title{
+    margin-bottom:2rem;
+    text-align:center;
+    font-style:italic;
+    
+}
+@keyframes ShowSignTitle {
+    0%{
+        margin-top:5px;
+        opacity:0.1;
+    }
+    100%{
+        margin-top:0px;
+        opacity:1;
+    }
 }
 
 .item-cont.type-warp-zone{

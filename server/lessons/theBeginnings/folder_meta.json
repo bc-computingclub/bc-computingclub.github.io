@@ -1,6 +1,28 @@
 {
     "name": "The Beginnings",
     "objs": [
-        
+        {
+            "type": 0,
+            "id": "id_class_sign",
+            "rel": "l@PpcVdfjdzo7TfWBL",
+            "x": 38,
+            "y": -3,
+            "data": {
+                "title": "Don't Worry",
+                "desc": [
+                    "There is more that is pretty cool!",
+                    "Just don't worry, keep going!",
+                    "$br",
+                    "This is another thing!"
+                ]
+            }
+        },
+        {
+            "type": 0,
+            "id": "first_rush_lesson_sign",
+            "rel": "l@QUYQq98gEPnOm0Yi",
+            "x": 23,
+            "y": 15
+        }
     ]
 }

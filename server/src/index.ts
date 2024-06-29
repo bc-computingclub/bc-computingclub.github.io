@@ -683,7 +683,10 @@ io.on("connection",socket=>{
             // if(wasChange) if(meta) await writeLessonMeta(user.uid,l.lid,meta);
         }
         
-        call(folder.lessons);
+        call({
+            lessons:folder.lessons,
+            meta:folder.meta
+        }); // TODO - might need to optimize this at some point so it gets data in chunks instead of all at once? hmm not sure
     });
     socket.on("getLearnData",async (lids:string[],call:(data:any)=>void)=>{
         if(!valVar(call,"function")) return;

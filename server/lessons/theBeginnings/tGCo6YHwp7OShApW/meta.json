@@ -1,0 +1,31 @@
+{
+    "ver": "0",
+    "name": "Timer Widget",
+    "desc": [],
+    "preview": [],
+    "takeaways": [],
+    "banner": {
+        "sections": [
+            {
+                "head": "What Will We Be Doing in This Lesson?",
+                "text": [
+                    "<Short summary of lesson here>"
+                ]
+            }
+        ]
+    },
+    "finalInstance": null,
+    "boards": [],
+    "x": 45,
+    "y": 30,
+    "req": [
+        {
+            "lid": "29hTLTZebmLta5gh",
+            "flip": true
+        },
+        {
+            "lid": "cZDWMo71NYhVpEUW"
+        }
+    ],
+    "type": 1
+}
