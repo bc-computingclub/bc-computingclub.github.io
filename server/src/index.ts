@@ -5,7 +5,7 @@ import fs, { copyFile } from "fs";
 import { createInterface } from "readline";
 import crypto from "crypto";
 import { createGuidedProject, createLesson, write, read, readdir, access, mkdir, removeFolder, removeFile, rename, internalCPDir, internalCP, lessonCache, registeredLessonFolders, ULFolder, ULItem, ULFile, createRushLesson } from "./s_util";
-import { ChallengeInst, ChallengeModel, ChallengeSubmissionModel, FolderInst, FolderModel, LessonMetaInst, ProjectInst, ProjectModel, UserModel, UserSessionItem, findChallenge, removeFromList, removeFromListPred, uploadChallenges, uploadLessonProgs, uploadUsers, uploadUsersStage2, userSessions } from "./db";
+import { ChallengeInst, ChallengeModel, ChallengeSubmissionModel, FolderInst, FolderModel, LessonMetaInst, LessonProgressModel, ProjectInst, ProjectModel, UserModel, UserSessionItem, findChallenge, removeFromList, removeFromListPred, uploadChallenges, uploadLessonProgs, uploadUsers, uploadUsersStage2, userSessions } from "./db";
 import mongoose, { QuerySelector } from "mongoose";
 
 function valVar(v:any,type:string){
@@ -2399,6 +2399,20 @@ io.on("connection",socket=>{
         if(!session) return;
 
         session.getLessonStats();
+    });
+    socket.on("debug_eraseLessonMeta",async (lid:string,call:(data:any)=>void)=>{
+        let session = getSession(socket.id);
+        if(!session){
+            call({err:-3});
+            return;
+        }
+
+        await LessonProgressModel.deleteOne({
+            uid:session.uid,
+            lid
+        });
+
+        call({});
     });
 });
 

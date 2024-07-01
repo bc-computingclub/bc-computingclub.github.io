@@ -897,6 +897,9 @@ div.menu-block .d-bubble{
 .menu-block li{
     margin:0.5rem 0px;
 }
+.menu-block .l-h{
+    color:var(--col);
+}
 .labeled-label{
     
 }

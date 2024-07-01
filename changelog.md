@@ -1203,3 +1203,14 @@
     - they give it a cool effect when you load the page, I'm not sure if it's too much/too flashy but it does look cool
 
 <!-- 30,114 lines!!!!, 27,636 non-blank -->
+
+### 6/29/24
+- tweaked and updated various lessons' evts files
+- added desc, previews, and takeaways to the rest of the finished lessons
+- added debug_eraseLessonMeta to the backend
+- fixed LessonMenu to use formatBubbleText in the desciption and key takeaways so you can use those features in the meta.json files
+- added Debug continue and Debug erase meta to dropdown in LessonMenu
+- changed CP_HTML's extra check where if it doesn't open properly then it does it manually
+    - it used to be glitchy but I guess with the other fixes it seems to be pretty stable now
+    - this also fixes random glitches when resuming the tab wouldn't be the right amount
+- fixed contrast of highlight that is used in menu-block elements

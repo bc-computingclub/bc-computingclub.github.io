@@ -665,7 +665,7 @@ class LessonMenu extends Menu{
                     <div class="labeled-label">
                         <div>Description</div>
                         <div class="l-desc d-bubble">
-                            ${this.lesson.l.desc.map(v=>`<div>${v}</div>`).join("<br>")}
+                            ${this.lesson.l.desc.map(v=>`<div>${formatBubbleText(v)}</div>`).join("<br>")}
                             <!--<div>This is an example descripion for a lesson.<br><br>Probably a lot of useful information would go in here like what you will learn specifically in a list such as:</div>
                             <ul>
                                 <li>Thing to learn 1</li>
@@ -680,7 +680,7 @@ class LessonMenu extends Menu{
                         <div>Key Takeaways</div>
                         <div class="d-bubble">
                             <ul>
-                                ${this.lesson.l.takeaways.map(v=>`<li>${v}</li>`).join("")}
+                                ${this.lesson.l.takeaways.map(v=>`<li>${formatBubbleText(v)}</li>`).join("")}
                                 <!--<li>Thing to learn 1</li>
                                 <li>Another thing</li>
                                 <li>You can code now</li>-->
@@ -738,7 +738,9 @@ class LessonMenu extends Menu{
         b_moreOptions.addEventListener("mousedown",e=>{
             openDropdown(b_moreOptions,()=>[
                 "Delete Progress",
-                "Restart"
+                "Restart",
+                "[Debug] Continue",
+                "[Debug] ERASE META"
             ],async (i)=>{
                 if(i == 0){
                     let res = await clearLessonProgress(this.lesson);
@@ -749,6 +751,16 @@ class LessonMenu extends Menu{
                 }
                 else if(i == 1){
                     await restartLesson(this.lesson);
+                }
+                else if(i == 2){
+                    startLesson(this.lesson.lid);
+                }
+                else if(i == 3){
+                    socket.emit("debug_eraseLessonMeta",this.lesson.lid,(res:any)=>{
+                        if(testForError(res)) return;
+                        this.close();
+                        // you need to refresh after this for it to take affect visually
+                    });
                 }
             },{
                 getIcons:()=>[

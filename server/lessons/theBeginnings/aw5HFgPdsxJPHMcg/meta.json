@@ -1,6 +1,21 @@
 {
     "ver": "0",
     "name": "Basic HTML Structure",
+    "desc": [
+        "We'll look into more things we can use HTML elements for and different ways to structure them."
+    ],
+    "preview": [
+        {
+            "type":"code",
+            "ref":"sample"
+        }
+    ],
+    "takeaways": [
+        "i[You can put elements inside of other elements]",
+        "Introduce the t[p], t[u], t[b], and t[div] elements",
+        "h[t[div]] elements are like containers that don't add extra styling",
+        "Learn what the i[basic HTML structure] is"
+    ],
     "banner": {
         "sections": [
             {

@@ -1,12 +1,29 @@
 {
     "ver": "0",
     "name": "The First Lesson",
+    "desc": [
+        "We'll be introducing the very basics of the HTML document and what it is.",
+        "We'll also look at how to use the t[h1], t[button], and t[br] elements."
+    ],
+    "preview": [
+        {
+            "type":"code",
+            "ref":"sample"
+        }
+    ],
+    "takeaways": [
+        "h[index.html] is the name for a homepage file",
+        "An HTML file let's us put content in a website",
+        "HTML is made up of pieces called h[elements]",
+        "What the t[h1], t[button], and t[br] elements are",
+        "What an opening and closing tag is"
+    ],
     "banner": {
         "sections": [
             {
                 "head": "What Will We Be Doing in This Lesson?",
                 "text": [
-                    "Looking at the basics of html by using &lt;h1&gt;, &lt;button&gt;, and &lt;br&gt; elements."
+                    "Looking at the basics of HTML by using &lt;h1&gt;, &lt;button&gt;, and &lt;br&gt; elements."
                 ]
             }
         ]

@@ -17,7 +17,7 @@ return [
         "i[Let's try adding a some text.]"
     ],BubbleLoc.global,[
         // new AddGenericCodeTask("<button>\x05\x05Click Me!\x05\x05</button>\x05\x01\x01\x05","html"),
-        new AddGenericCodeTask("<h1>Welcome</h1>"),
+        new AddGenericCodeTask("<h1>Hello World</h1>"),
         new DoRefreshTask("Refresh the preview to see how it looks.","Refresh the preview"),
         new BubbleTask(`b[&lt;h1&gt;] stands for "Header 1" and is the largest of the built in headers you can use. h2, h3, h4, and so on are often used for sub headers.`),
         

@@ -1010,7 +1010,8 @@ class CP_HTML extends CodePart{
 
             // THIS IS EXPERIMENTAL AND MIGHT NOT WORK ALL THE TIME (therefore it's only enabled in rush mode)
             //   - this will allow invalid html tag names to have proper opening when hitting enter
-            if(lesson.info.type == LessonType.rush){
+            //   - update! - I'm going to re-enable this for now because it fixes resuming problems where it's too fast to make the autocomplete work correctly
+            // if(lesson.info.type == LessonType.rush){
                 let newPos = editor.getPosition();
                 let line = actions.getLine(newPos.lineNumber);
                 let char = line[newPos.column-1];
@@ -1018,7 +1019,7 @@ class CP_HTML extends CodePart{
                     await actions.makeLineAbove(1);
                     await actions.indent(1);
                 }
-            }
+            // }
         }
 
         // RUSH MODE
