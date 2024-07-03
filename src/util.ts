@@ -93,7 +93,8 @@ function DWait(delay:number){
 enum LessonType{
     lesson,
     project,
-    rush
+    rush,
+    review
 }
 
 // menus
@@ -4354,6 +4355,7 @@ function whenEnter(elm:HTMLInputElement,f:(v:string)=>void,noBlur=false){
 }
 
 function formatBubbleText(text:string,ops?:any){
+    if(!text) return "";
     // text = escapeMarkup(text);
     // while(text.includes("[") && text[text.indexOf("[")-1] != "0"){
     while(text.includes("[")){

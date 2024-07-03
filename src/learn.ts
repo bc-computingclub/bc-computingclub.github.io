@@ -28,6 +28,13 @@ let lessonTypeData = {
         icon:"bolt",
         accent:"var(--practice-col)",
         useLabel:true
+    },
+    review:{
+        label:"Review",
+        // icon:"quiz",
+        icon:"checkbook",
+        accent:"var(--practice-col",
+        useLabel:true
     }
 } as Record<string,LessonTypeData>;
 
@@ -267,6 +274,7 @@ class LessonItem{
         let f = document.createElement("div");
         // f.textContent = ["NEW","COMPLETE","IN PROGRESS"][i];
         f.innerHTML = ["NEW","<span class='material-symbols-outlined'>check</span>","IN PROGRESS"][i];
+        // f.innerHTML = ["NEW","<span class='material-symbols-outlined'>star</span>","IN PROGRESS"][i];
         f.className = "item-flag flag-"+flag;
         
         cont.appendChild(f);
@@ -319,7 +327,7 @@ class LessonItem{
             e.parentElement.classList.add("type-"+id);
             e.parentElement.classList.add("type-"+id+"-parent");
             
-            if(this.l.type == 1){
+            if(this.l.type == LessonType.project){
                 // e.parentElement.classList.add("type-guided-project");
                 // e.parentElement.classList.add("type-guided-project-parent");
                 if(this.l.parent){
@@ -336,6 +344,13 @@ class LessonItem{
                     search(this.l);
                     this.setPartNum(partNum);
                 }
+            }
+            else if(this.l.type == LessonType.review){
+                let beam = document.createElement("div");
+                beam.className = "vert-beam";
+                // beam.style.left = this.l._x+"px";
+                // e.parentElement.parentElement.appendChild(beam);
+                e.parentElement.appendChild(beam);
             }
         }
 
@@ -390,7 +405,11 @@ class LessonItem{
         // if(this.data.n) this.addFlag("new");
         if(this.data.s && this.data.prog != 100) this.addFlag("inprogress");
 
-        if(this.data.hf) this.addFlag("complete"); // not sure if we want complete flags since there may be a bunch of complete missions and it might get cluttered
+        if(this.data.hf){
+            this.addFlag("complete"); // not sure if we want complete flags since there may be a bunch of complete missions and it might get cluttered
+            e.parentElement.classList.add("hf");
+        }
+        else e.parentElement.classList.remove("hf");
         if(this.data.prog == 0 && !this.data.ws) this.addFlag("new"); // this might be way too much extra stuff but might be good idk
 
         if(b_start) if(this.data.s){

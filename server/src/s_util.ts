@@ -181,7 +181,8 @@ export class ULFile extends ULItem{
 export enum LessonType{
     lesson,
     project,
-    rush
+    rush,
+    review
 }
 
 export class PTreeLink{
@@ -371,6 +372,14 @@ function getStandardLessonMeta(name:string){
         req:[]
     };
 }
+function getStandardLessonEvts(){
+    return `import * as a from "../../../src/lesson";
+return [
+    new LE_Bubble([
+        "Hello!"
+    ])
+]`;
+}
 
 export async function createLesson(name:string){
     function err(){
@@ -385,12 +394,7 @@ export async function createLesson(name:string){
     let path = "../lessons/"+lid+"/";
     await mkdir(path);
     await write(path+"meta.json",JSON.stringify(data,undefined,4),"utf8");
-    await write(path+"evts.js",`import * as a from "../../../src/lesson";
-return [
-    new LE_AddGBubble([
-        "Hello!"
-    ])
-]`,"utf8");
+    await write(path+"evts.js",getStandardLessonEvts(),"utf8");
     console.log(":: lesson created:",lid);
 }
 export async function createGuidedProject(name:string){
@@ -409,15 +413,9 @@ export async function createGuidedProject(name:string){
     let path = "../lessons/"+lid+"/";
     await mkdir(path);
     await write(path+"meta.json",JSON.stringify(data,undefined,4),"utf8");
-    await write(path+"evts.js",`import * as a from "../../../src/lesson";
-return [
-    new LE_AddGBubble([
-        "Hello!"
-    ])
-]`,"utf8");
+    await write(path+"evts.js",getStandardLessonEvts(),"utf8");
     console.log(":: guided project created:",lid);
 }
-
 export async function createRushLesson(name:string){
     function err(){
         console.log("$ Something went wrong while trying to create the rush lesson");
@@ -434,13 +432,27 @@ export async function createRushLesson(name:string){
     let path = "../lessons/"+lid+"/";
     await mkdir(path);
     await write(path+"meta.json",JSON.stringify(data,undefined,4),"utf8");
-    await write(path+"evts.js",`import * as a from "../../../src/lesson";
-return [
-    new LE_AddGBubble([
-        "Hello!"
-    ])
-]`,"utf8");
+    await write(path+"evts.js",getStandardLessonEvts(),"utf8");
     console.log(":: rush lesson created: ",lid);
+}
+export async function createReviewLesson(name:string){
+    function err(){
+        console.log("$ Something went wrong while trying to create the review lesson");
+    }
+    let lid = await genLID();
+    if(!lid){
+        err();
+        return;
+    }
+    let data = {
+        ...getStandardLessonMeta(name),
+        type:LessonType.review
+    };
+    let path = "../lessons/"+lid+"/";
+    await mkdir(path);
+    await write(path+"meta.json",JSON.stringify(data,undefined,4),"utf8");
+    await write(path+"evts.js",getStandardLessonEvts(),"utf8");
+    console.log(":: review lesson created: ",lid);
 }
 
 // 

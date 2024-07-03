@@ -1,10 +1,11 @@
 {
     "ver": "0",
-    "name": "Margin & Padding",
+    "author": "Claeb",
+    "name": "Review I",
     "desc": [],
     "preview": [],
     "takeaways": [],
-    "date": "6/28/24",
+    "dateCreated": "2024-07-02T04:36:00.693Z",
     "banner": {
         "sections": [
             {
@@ -17,11 +18,13 @@
     },
     "finalInstance": null,
     "boards": [],
-    "x": 65,
+    "x": 55,
     "y": 40,
     "req": [
         {
-            "lid": "aNUakSSrvphpjtLn"
+            "lid":"PpcVdfjdzo7TfWBL",
+            "flip":true
         }
-    ]
+    ],
+    "type": 3
 }

@@ -4,7 +4,7 @@ import {LessonData, getLessonFolder, globalLessonFolders, ptreeMap, reloadLesson
 import fs, { copyFile } from "fs";
 import { createInterface } from "readline";
 import crypto from "crypto";
-import { createGuidedProject, createLesson, write, read, readdir, access, mkdir, removeFolder, removeFile, rename, internalCPDir, internalCP, lessonCache, registeredLessonFolders, ULFolder, ULItem, ULFile, createRushLesson } from "./s_util";
+import { createGuidedProject, createLesson, write, read, readdir, access, mkdir, removeFolder, removeFile, rename, internalCPDir, internalCP, lessonCache, registeredLessonFolders, ULFolder, ULItem, ULFile, createRushLesson, createReviewLesson } from "./s_util";
 import { ChallengeInst, ChallengeModel, ChallengeSubmissionModel, FolderInst, FolderModel, LessonMetaInst, LessonProgressModel, ProjectInst, ProjectModel, UserModel, UserSessionItem, findChallenge, removeFromList, removeFromListPred, uploadChallenges, uploadLessonProgs, uploadUsers, uploadUsersStage2, userSessions } from "./db";
 import mongoose, { QuerySelector } from "mongoose";
 
@@ -2753,13 +2753,16 @@ rl.on("line",async (line)=>{
         }
         switch(type){
             case "lesson":
-                createLesson(s[2]);
+                await createLesson(s[2]);
                 break;
             case "guided_project":
-                createGuidedProject(s[2]);
+                await createGuidedProject(s[2]);
                 break;
             case "rush":
-                createRushLesson(s[2]);
+                await createRushLesson(s[2]);
+                break;
+            case "review":
+                await createReviewLesson(s[2]);
                 break;
             default:
                 console.log("Unknown type to create: ",type);

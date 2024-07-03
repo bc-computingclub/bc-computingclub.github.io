@@ -388,9 +388,41 @@ body.themestyle-light .btn-start.open{
     border-bottom-right-radius:var(--br);
     background-color:inherit;
 }
+
 .flag-complete{
     background-color:green;
+
+    /* background-color:rgb(122, 80, 163); */
+    /* background-color:var(--practice-col); */
+    /* color:rgb(33, 10, 57); */
 }
+.flag-complete span{
+    font-family:"Material Icons";
+}
+/* .item-cont.hf .flag-complete{
+    background-color:var(--col);
+    color:var(--secondary-bg-col);
+} */
+/* something just wasn't right about this, not sure how to do it */
+.item-cont:not(.locked).hf.depricated::after{
+    content:"";
+    position:absolute;
+    top:0px;
+    left:0px;
+    width:100%;
+    height:100%;
+    opacity:0.1;
+    /* background:linear-gradient(transparent,purple,transparent); */
+    /* --cc:var(--col); */
+    --cc:green;
+    /* background:linear-gradient(-45deg,transparent 35%,var(--cc) 56%,var(--cc) 65%,transparent 65%); */
+    background:linear-gradient(-45deg,transparent 35%,var(--cc) 56%,var(--cc) 65%,transparent 65%);
+    /* background:linear-gradient(-45deg,transparent 50%,var(--cc) 50%,var(--cc) 60%,transparent 60%,transparent 65%,var(--cc) 65%,var(--cc) 93%,transparent 93%); */
+    z-index:3;
+    border-radius:inherit;
+    pointer-events:none;
+}
+
 .flag-inprogress{
     background-color:rgb(158, 119, 18);
     /* background-color:rgb(83, 44, 150); */
@@ -934,3 +966,55 @@ div.pane-files{
     /* background-color:var(--darken2); */
     /* backdrop-filter:blur(3px); */
 }
+
+/*  */
+.vert-beam{
+    position:absolute;
+    top:50%;
+    left:50%;
+    width:50px;
+    height:500px;
+    background:radial-gradient(transparent 25%,var(--practice-col) 30%,transparent 60%);
+    transform:translate(-50%,-50%);
+    backdrop-filter:brightness(2);
+    opacity:0.5;
+
+    animation:VertBeamAnim 6s infinite;
+}
+@keyframes VertBeamAnim {
+    0%{
+        opacity:0.35;
+        transform:translate(-50%,-50%);
+        /* background:radial-gradient(transparent 25%,var(--practice-col) 30%,transparent 60%); */
+    }
+    25%{
+        opacity:0.35;
+        transform:translate(-50%,-50%);
+    }
+    50%{
+        opacity:0.5;
+        transform:translate(-50%,-50%) scale(1.1);
+        /* background:radial-gradient(transparent 25%,var(--practice-col) 60%,transparent 60%); */
+    }
+    75%{
+        opacity:0.35;
+        transform:translate(-50%,-50%);
+    }
+    100%{
+        opacity:0.35;
+        transform:translate(-50%,-50%);
+        /* background:radial-gradient(transparent 25%,var(--practice-col) 30%,transparent 60%); */
+    }
+}
+/* .vert-beam::before{
+    content:"";
+    position:absolute;
+    top:50%;
+    left:50%;
+    transform:translate(-50%,-50%);
+    width:300px;
+    height:300px;
+    background:radial-gradient(var(--practice-col),transparent 75%);
+    backdrop-filter:brightness(2);
+    opacity:0.5;
+} */

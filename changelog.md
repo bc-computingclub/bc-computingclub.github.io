@@ -1214,3 +1214,19 @@
     - it used to be glitchy but I guess with the other fixes it seems to be pretty stable now
     - this also fixes random glitches when resuming the tab wouldn't be the right amount
 - fixed contrast of highlight that is used in menu-block elements
+
+### 7/1/24
+- added "Review I" lesson
+- added review type for lessons
+- moved default lesson evts string to function getStandardLessonEvts()
+- added vertical beam detail to review lessons in the learn page
+- added hf class to item-cont divs that have been finished for styling in the future if we want
+- added instantFinish:boolean property to Task so when finishing it auto sets canBeFinished and calls _resFinish
+- added AccentType enum
+- added T_UserAccent task to switch the accent while a lesson is playing
+- fixed basicHTMLStructure snip to use MoveByY instead of MoveBy
+- fixed LE_AddGBubble so if no text was specified then the bubble won't open
+- added LE_Bubble and LE_Tasks which are more specific versions of LE_AddGBubble
+- fixed formatBubbleText if the string wasn't defined then an empty string is used
+- added item-cont gradient details for being finished but it's not enabled because it seemed like too much
+- fixed importance of cta-btn-col styling with pages so they can be overriden more easily

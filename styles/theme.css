@@ -98,14 +98,14 @@ body.themestyle-dark .b-invert-colors::before{
 body.learn-page{
     /* --learn-col:#3060dd; */
     /* --learn-col:#405599 !important; */
-    --cta-btn-col:var(--learn-col) !important;
+    --cta-btn-col:var(--learn-col);
 }
 body.practice-page{
-    --cta-btn-col:var(--practice-col) !important;
+    --cta-btn-col:var(--practice-col);
 }
 body.experiment-page{
     /* --experiment-col:#228882 !important; */
-    --cta-btn-col:var(--experiment-col) !important;
+    --cta-btn-col:var(--experiment-col);
     /* --cta-btn-col:var(--experiment-col) !important; */
 }
 
@@ -122,7 +122,7 @@ body.no-color .menu::after{
 }
 
 body.theme-light{
-    --cta-btn-col:#228882;
+    /* --cta-btn-col:#228882; */
 
     --bg-col: rgb(216, 216, 216);
     --secondary-bg-col:white;
@@ -172,7 +172,7 @@ body.theme-dark{
     --secondary-bg-col:#000;
     --border:#333;
     --bg-col:#050505;
-    --cta-btn-col:#245;
+    /* --cta-btn-col:#245; */
 
     --menu-btn-bg:var(--bg-col);
 

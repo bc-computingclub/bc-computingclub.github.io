@@ -188,6 +188,7 @@ abstract class Task{
     finalDelay = 0;
 
     requiresDoneConfirm = true;
+    instantFinish = false;
 
     state:LessonState;
 
@@ -253,6 +254,11 @@ abstract class Task{
         }
     }
     async finish():Promise<string|void>{
+        if(this.instantFinish){
+            this.canBeFinished = true;
+            this._resFinish();
+        }
+        
         this.canBeFinished = true;
         let res = null;
         if(this.requiresDoneConfirm) showLessonConfirm();
@@ -2700,12 +2706,40 @@ class ChangePreviewURLTask extends Task{
     }
 }
 
+enum AccentType{
+    learn,
+    practice,
+    experiment
+}
+class T_UseAccent extends Task{
+    constructor(accent:AccentType){
+        super("Use Accent");
+        this.accent = accent;
+        this.requiresDoneConfirm = false;
+        this.instantFinish = true;
+    }
+    accent:AccentType;
+    async start(): Promise<string | void> {
+        await super.start();
+
+        document.body.style.setProperty("--cta-btn-col",`var(--${AccentType[this.accent]}-col)`);
+
+        let activeNav = document.querySelector("a.nav-link.active");
+        if(activeNav) activeNav.classList.remove("active");
+        let nav = document.querySelector(`a.nav-link:nth-child(${this.accent+2})`);
+        if(nav) nav.classList.add("active");
+
+        await this.finish();
+    }
+}
+
 const snips = {
     basicHTMLStructure(text?:string,dir?:string){
         return new AddCode([
             new CP_HTML("html",true,true),
             new CP_HTML("head",true,true),
-            new CP_MoveBy(0,1,true),
+            // new CP_MoveBy(0,1,true),
+            new CP_MoveByY(1),
             new CP_Wait(200),
             new CP_LineBelow(1),
             new CP_HTML("body",true,true)
@@ -2792,6 +2826,7 @@ class LE_AddGBubble extends LEvent{
     ogLines:string[];
     text:string;
     loc:BubbleLoc;
+    b:Bubble;
 
     finish(): void {
         this._res();
@@ -2812,18 +2847,25 @@ class LE_AddGBubble extends LEvent{
         // let res:()=>void;
         let prom = new Promise<void>(resolve=>{this._res = resolve});
 
-        let b_confirm = document.createElement("button");
-        b_confirm.innerHTML = "<div>Next</div><div class='material-symbols-outlined'>mouse</div>";
-        b_confirm.classList.add("b-confirm");
-        
-        let b = addBubbleAt(this.loc,this.text);
-        b.e.appendChild(document.createElement("br"));
-        b.e.appendChild(document.createElement("br"));
-        b.e.appendChild(b_confirm);
-        b_confirm.addEventListener("click",e=>{
-            console.log("click");
+        if(this.text?.length){
+            let b_confirm = document.createElement("button");
+            b_confirm.innerHTML = "<div>Next</div><div class='material-symbols-outlined'>mouse</div>";
+            b_confirm.classList.add("b-confirm");
+            
+            let b = addBubbleAt(this.loc,this.text);
+            this.b = b;
+            b.e.appendChild(document.createElement("br"));
+            b.e.appendChild(document.createElement("br"));
+            b.e.appendChild(b_confirm);
+            b_confirm.addEventListener("click",e=>{
+                console.log("click");
+                this._res();
+            });
+        }
+        else{
             this._res();
-        });
+        }
+
         // TMP
         // b_confirm.click();
         // 
@@ -2839,7 +2881,7 @@ class LE_AddGBubble extends LEvent{
         }
         if(!noClick) await prom;
 
-        closeBubble(b);
+        if(this.b) closeBubble(this.b);
 
         this.startTask(this.tasks[0]);
 
@@ -2900,6 +2942,16 @@ class LE_AddGBubble extends LEvent{
     }
     getTaskText(): string {
         return this.ogLines[this.ogLines.length-1];
+    }
+}
+class LE_Bubble extends LE_AddGBubble{
+    constructor(lines:string[],tasks:Task[]){
+        super(lines,BubbleLoc.global,tasks);
+    }
+}
+class LE_Tasks extends LE_AddGBubble{
+    constructor(tasks:Task[]){
+        super([],BubbleLoc.global,tasks);
     }
 }
 class RunTasksLEvent extends LEvent{
