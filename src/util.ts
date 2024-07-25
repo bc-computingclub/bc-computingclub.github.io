@@ -5023,6 +5023,7 @@ function calcSubmissionLang(data:ProjectMeta){
     if(data.items) search(data.items);
     return lang.length ? lang.sort((a,b)=>a.localeCompare(b)).join(", ") : "None";
 }
+
 function calcSubmissionCharCount(data:ProjectMeta){
     let decoder = new TextDecoder();
     
@@ -5048,9 +5049,11 @@ function calcSubmissionCharCount(data:ProjectMeta){
     if(data.items) search(data.items);
     return amt.toLocaleString();
 }
+
 function getWhenSubmitted(data:ProjectMeta){
     return data.meta.ws ? new Date(data.meta.ws).toLocaleDateString() : "-.-";
 }
+
 function getTimeTaken(v:number){
     if(v == null) return "-.-";
     // time in seconds?

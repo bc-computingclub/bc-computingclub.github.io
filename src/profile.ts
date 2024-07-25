@@ -6,14 +6,23 @@ let lessonStatContainer = document.querySelector(".p-lesson-stats") as HTMLEleme
 let dateJoined = document.querySelector(".p-date-joined") as HTMLElement;
 let username = document.querySelector(".p-username") as HTMLElement;
 let viewSubmissionsButton = document.querySelector(".p-view-submissions") as HTMLButtonElement;
+let projectStatContainer = document.querySelector(".p-project-stats") as HTMLElement;
 
 let challengeStats:[];
 let lessonStats:[];
-let lessonsCompleted:number;
-let challengesCompleted:number;
-let avgHours:string;
-let totalHours:string;
-let avgChars:number;
+let projectStats:[];
+
+let challengesCompleted:number = 0;
+let challengesSubmitted:number = 0;
+let challengesInProgress:number = 0;
+
+let lessonsCompleted:number = 0;
+let totalLessonTime:number = 0;
+let averageLessonTime:number = 0;
+
+let totalProjects:number = 0;
+let totalProjectTime:number = 0;
+let averageProjectTime:number = 0;
 
 window.addEventListener("load", async () => {
     await genProfile();
@@ -27,29 +36,44 @@ async function genProfile() {
       return;
     }
 
+    // await getUserStats();
+
+    let removeArr = document.querySelectorAll(".remove-on-load") as NodeListOf<HTMLElement>;
+    removeArr.forEach((element) => {
+        element.remove();
+    })
+    viewSubmissionsButton.disabled = false;
+
     // Adding in join date, username, pfp.
     let date = new Date(g_user.data._joinDate);
     let formattedDate = date.toLocaleDateString();
     dateJoined.innerHTML = "<i>Joined " + formattedDate; + "</i>";
     username.textContent = g_user.data.name.length < 24 ? g_user.data.name : g_user.data.name.substring(0,24) + "...";
     let pfp = document.querySelector(".p-pfp") as HTMLImageElement;
-    pfp.src = `${g_user.data.picture}`;
+    if(g_user.data.picture) {
+        pfp.src = `${g_user.data.picture}`;
+        pfp.style.padding = "0px";
+    }
+
     // profileHeader.insertBefore(profilePicture, username);
 
     await showLoadingAnim([challengeStatContainer,lessonStatContainer],400);
 
-    await setStats();
-
     // All objects in this array will be loaded as stats. I've commented out the ones which are currently just placeholders.
     let challengeStats = [
         {title:"Challenges Completed: ",number:`${challengesCompleted}`,icon:""},
-        // {title:"Average time spent: ",number:`${avgHours}`,icon:""},
-        // {title:"Total time spent: ",number:`${totalHours}`,icon:""},
-        // {title:"Average Number of characters: ",number:`${avgChars}`,icon:""}
+        {title:"Challenges Submitted: ",number:`${challengesSubmitted}`,icon:""},
+        {title:"Challenges In Progress: ",number:`${challengesInProgress}`,icon:""},
     ];
     let lessonStats = [
-        // {title:"Lessons Completed",number:`${lessonsCompleted}`,icon:""},
-        {title:"More coming soon! ",number:"",icon:""}   // hehehehehe this could just be here indefinitely
+        {title:"Lessons Completed: ",number:`${lessonsCompleted}`,icon:""},
+        {title:"Time Spent on Lessons: ",number:`${totalLessonTime} minutes`,icon:""},
+        {title:"Average Lesson Time: ",number:`${averageLessonTime} minutes`,icon:""},
+    ];
+    let projectStats = [
+        {title:"Projects Completed: ",number:`${totalProjects}`,icon:""},
+        {title:"Time Spent on Projects: ",number:`${totalProjectTime} minutes`,icon:""},
+        {title:"Average Project Time: ",number:`${averageProjectTime} minutes`,icon:""},
     ];
 
     for(let stat of challengeStats) {
@@ -76,16 +100,34 @@ async function genProfile() {
         `;
         lessonStatContainer.appendChild(temp);
     }
-}
-
-async function setStats() {
-    challengesCompleted = (await getServerChallenges()).filter((challenge) => challenge.submitted).length;
-    lessonsCompleted = 1;
-    avgHours = "1.4h";
-    totalHours = "4.2h";
-    avgChars = 1342;
+    for(let stat of projectStats) {
+        let temp = document.createElement("div");
+        temp.classList.add("p-stat");
+        temp.innerHTML = `
+            <div class="p-stat-name">
+                <span class="material-symbols-outlined">${stat.icon}</span>
+                <span class="">${stat.title}</span>
+            </div>
+            <span class="p-stat-contents">${stat.number}</span>
+        `;
+        projectStatContainer.appendChild(temp);
+    }
 }
 
 viewSubmissionsButton.addEventListener("click", (e) => {
     location.href = '/practice/?filteroptions=completed';
 })
+
+async function getUserStats() {
+    let tempStats = await g_user.getStats();
+
+    challengesCompleted = tempStats.challengesCompleted;
+    challengesSubmitted = tempStats.challengesSubmitted;
+    challengesInProgress = tempStats.challengesInProgress;
+    lessonsCompleted = tempStats.lessonsCompleted;
+    totalLessonTime = tempStats.totalLessonTime;
+    averageLessonTime = tempStats.averageLessonTime;
+    totalProjects = tempStats.totalProjects;
+    totalProjectTime = tempStats.totalProjectTime;
+    averageProjectTime = tempStats.averageProjectTime;
+}

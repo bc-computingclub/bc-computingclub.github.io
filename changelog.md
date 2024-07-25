@@ -1230,3 +1230,12 @@
 - fixed formatBubbleText if the string wasn't defined then an empty string is used
 - added item-cont gradient details for being finished but it's not enabled because it seemed like too much
 - fixed importance of cta-btn-col styling with pages so they can be overriden more easily
+
+### 7/24/24 - Paul shows signs of life
+ - Improvements to profile page
+    - Add case for no profile picture found, and for no challenges/lessons completed.
+    - Add "projects" statistics section
+    - Implement stats (from @Claeb's functions) across the Challenge, Lesson, and Projects sections
+ - Start Figma mockup to redesign stats page
+    - I want to have some of the stats (eg challenges completed) be progress bars/progress circles as well as a number, so user can see they've completed 3 / 15 of the challenges, for example. 
+    - Made a cool little UI in figma where I could add space for 2-3 badges next to username (either achievements, or user-selected icons... not sure exactly what yet).

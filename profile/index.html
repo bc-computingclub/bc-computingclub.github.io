@@ -8,6 +8,7 @@
     <link rel="shortcut icon" href="/images/icon.svg" type="image/x-icon">
     <link rel="stylesheet" href="/styles/home.css">
     <link rel="stylesheet" href="/styles/profile.css">
+    <link rel="stylesheet" href="/styles/util.css">
 </head>
 
 <body class="no-color">
@@ -16,32 +17,34 @@
     <script>genHeader(3)</script>
     <div class="sub-menus"></div> <!--Necessary if this page uses the dropdown menu API caleb made-->
     
+    <!--Typescript clears & replaces innerHTML for these stats as long as user is logged in. I've added filler to certain places below-->
     <div class="p-cont-outer">
         <div class="p-cont-inner intro-up">
-            <div class="p-top">
+            <div class="p-first">
                 <div class="p-header-top">
-                    <img class="p-pfp">
+                    <img class="p-pfp" src="/images/default_pfp.svg" style="padding: 5px;">
                     <span class="p-username">Username</span>
                 </div>
                 <div class="p-header-bottom">
-                    <span class="p-date-joined">Date Joined</span>
+                    <i class="p-date-joined">Joined 1/1/1011</i>
                 </div>
             </div>
-            <div class="p-middle">
+            <div class="p-second">
                 <div class="p-section-title">
                     <div class="p-section-title-left">
                         <span class="material-symbols-outlined">Checkbook</span>
                         Challenge Stats
                     </div>
                     <div class="p-section-title-right">
-                        <button class="p-view-submissions">My Submissions</button>
+                        <button class="p-view-submissions" disabled>My Submissions</button>
                     </div>
                 </div>
                 <div class="p-challenge-stats">
                     <!--Typescript will add stats-->
+                    <i class="remove-on-load">Log in to view statistics for challenges you complete!</i>
                 </div>
             </div>
-            <div class="p-bottom">
+            <div class="p-third">
                 <div class="p-section-title">
                     <div>
                         <span class="material-symbols-outlined">Auto_stories</span>
@@ -50,6 +53,19 @@
                 </div>
                 <div class="p-lesson-stats">
                     <!--Typescript will add stats-->
+                    <i class="remove-on-load">Log in to view statistics for lessons you complete!</i> 
+                </div>
+            </div>
+            <div class="p-fourth">
+                <div class="p-section-title">
+                    <div>
+                        <span class="material-symbols-outlined">Experiment</span>
+                        Project Stats
+                    </div>
+                </div>
+                <div class="p-project-stats">
+                    <!--Typescript will add stats-->
+                    <i class="remove-on-load">Log in to view statistics for projects you work on!</i> 
                 </div>
             </div>
         </div>

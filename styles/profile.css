@@ -10,8 +10,8 @@
     background-color: var(--secondary-bg-col);
     display: grid;
     width: 35em;
-    grid-template-rows: auto auto auto;
-    border-radius: 3px;
+    grid-template-rows: auto auto auto auto;
+    border-radius: 5px;
     padding: 1em;
     gap: 1em;
     box-shadow: 0px 4px 4px 0px rgba(0, 0, 0, 0.25);
@@ -34,13 +34,16 @@
         &:nth-child(3) {
             background-color: var(--learn-col);
         }
+        &:nth-child(4) {
+            background-color: var(--experiment-col);
+        }
         &:not(:first-child) {
             color: var(--secondary-col);
         }
     }
 }
 
-.p-top {
+.p-first{
     display: flex;
     flex-direction: column;
     gap: 1em;
@@ -48,8 +51,15 @@
 
 .p-pfp {
     max-width: 46px;
+    height: 46px;
     aspect-ratio: 1/1;
     border-radius: 5px;
+    background-color: var(--darken0);
+}
+
+button:disabled {
+    cursor: not-allowed;
+    opacity: .7 !important;
 }
 
 .p-username {
@@ -74,12 +84,12 @@
     justify-content: space-between;
 }
 
-.p-middle, .p-bottom {
+.p-second, .p-third, .p-fourth {
     display: grid;
     gap: 1em;
 }
 
-.p-lesson-stats, .p-challenge-stats {
+.p-lesson-stats, .p-challenge-stats, .p-project-stats {
     display: flex;
     flex-direction: column;
     gap: 1em;
