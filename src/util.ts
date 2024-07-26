@@ -865,6 +865,29 @@ class Project{
         return true;
     }
 
+    wipe(){
+        let loop = (items:ULItem[])=>{
+            for(const item of items){
+                if(item instanceof FFolder){
+                    loop(item.items);
+                }
+                else if(item instanceof FFile){
+                    item.close();
+                }
+            }
+        };
+        loop(this.items);
+
+        this.hlItems = [];
+        this.files = [];
+        this.items = [];
+        this.curFile = null;
+        this.lastFolder = null;
+        this.openFiles = [];
+
+        this.fileList.textContent = ""; // hopefully clears 
+    }
+
     // 
 
     isFSSyncing = false;
@@ -3278,7 +3301,7 @@ function postSetupEditor(project:Project,isUser=true,ignoreFilesPane=false){
         });
     });
 
-    console.log("completed post setup");
+    // console.log("completed post setup");
 
     // project.createFile("test.html",`<p>Hello</p>`,"html");
     // project.files[0].open();

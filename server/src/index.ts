@@ -2721,6 +2721,20 @@ rl.on("line",async (line)=>{
         console.log(registeredLessonFolders);
         return;
     }
+    else if(s[0] == "search_lessons"){
+        let folder = globalLessonFolders.get(s[1]);
+        if(!folder){
+            console.log("Couldn't find.",s[1],s[2]);
+            return;
+        }
+        let l = folder.lessons.find(v=>v.name == s[2]);
+        if(!l){
+            console.log("Not found.");
+            return;
+        }
+        console.log(l);
+        return;
+    }
     else if(s[0] == "rl"){
         await reloadLessons();
         console.log(":: done");

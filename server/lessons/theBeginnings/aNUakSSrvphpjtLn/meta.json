@@ -26,5 +26,23 @@
             "flip":true
         }
     ],
-    "type": 3
+    "type": 3,
+
+    "sections": [
+        {
+            "id":"main",
+            "scenes":[
+                {
+                    "id":"main_0"
+                }
+            ]
+        }
+    ],
+    "order": [
+        {
+            "includes":["main"],
+            "sort_old":"random",
+            "sort":"asc"
+        }
+    ]
 }

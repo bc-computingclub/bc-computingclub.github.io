@@ -537,7 +537,7 @@ class NotYetMenu extends Menu{
                 let c = cur.choices.find(v=>v.text == k);
                 if(c){
                     terminal.textContent = "";
-                    cur.res(k);
+                    if(cur.res) cur.res(k);
                 }
             }
         };
@@ -549,6 +549,10 @@ class NotYetMenu extends Menu{
             // 
 
             cur = ops;
+
+            if(ops.choices){
+                ops.prom = new Promise<string>(resolve=>ops.res = resolve);
+            }
             
             if(ops.delay == null) ops.delay = 1500;
             if(ops.choices) text += ` (${ops.choices.map(v=>v.text).join("/")})`;
@@ -558,7 +562,6 @@ class NotYetMenu extends Menu{
             await SWait(ops.delay);
 
             if(ops.choices){
-                ops.prom = new Promise<string>(resolve=>ops.res = resolve);
                 return await ops.prom;
             }
         }
@@ -621,7 +624,7 @@ class NotYetMenu extends Menu{
         }
 
         // await typeText("Come back when you get stronger and show me your strength.");
-        await typeText("Come back when you get stronger, and show me just how strong you are.",{
+        await typeText("Come back when you get stronger, and show me just how strong you can get.",{
             choices:[
                 {
                     text:"Enter"
@@ -642,13 +645,13 @@ class NotYetMenu extends Menu{
                 }
             ]
         });
-        choice = await typeText("Some day I'll let you pass, but true reward comes from true dedication.",{
-            choices:[
-                {
-                    text:"Enter"
-                }
-            ]
-        });
+        // choice = await typeText("Some day I'll let you pass, but true reward comes from true dedication.",{
+        //     choices:[
+        //         {
+        //             text:"Enter"
+        //         }
+        //     ]
+        // });
         // you are not yet worthy... come back when you are stronger
 
         await SWait(500);

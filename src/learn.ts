@@ -47,6 +47,23 @@ class LessonTar{
     bendOther:boolean;
     pathCont:HTMLElement;
 }
+type ReviewSection = {
+    id:string,
+    scenes:ReviewScene[]
+};
+type ReviewScene = {
+    id:string,
+
+    // server data
+    initial_files?:ULFolder,
+    custom_evts?:string
+};
+type ReviewOrderSet = {
+    includes:string[],
+    sort:"asc"|"random",
+
+    // server data
+};
 class TreeLesson{
     // constructor(name:string,lid:string,x:number,y:number,next:LessonTar[]){
     constructor(){
@@ -78,6 +95,9 @@ class TreeLesson{
     previewData?:ULFolder;
 
     parent:string|undefined;
+
+    sections:ReviewSection[];
+    order:ReviewOrderSet[];
 
     getIcon(){
         return lessonTypeData[LessonType[this.type??0]].icon;

@@ -1231,6 +1231,9 @@
 - added item-cont gradient details for being finished but it's not enabled because it seemed like too much
 - fixed importance of cta-btn-col styling with pages so they can be overriden more easily
 
+### 7/3/24
+- I'll fill this out some other time, mostly just more work on the Review Lessons system and some bug fixes
+
 ### 7/24/24 - Paul shows signs of life
  - Improvements to profile page
     - Add case for no profile picture found, and for no challenges/lessons completed.

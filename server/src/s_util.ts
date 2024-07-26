@@ -193,6 +193,23 @@ export class PTreeLink{
     to:string;
     flip:boolean;
 }
+export type ReviewSection = {
+    id:string,
+    scenes:ReviewScene[]
+};
+export type ReviewScene = {
+    id:string,
+
+    // server data
+    initial_files?:ULFolder,
+    custom_evts?:string
+};
+export type ReviewOrderSet = {
+    includes:string[],
+    sort:"asc"|"random",
+
+    // server data
+};
 export class PTreeLesson{
     constructor(name:string,lid:string,x:number,y:number,links:PTreeLink[]=[],ops:PTLessonOps={},type:LessonType=0){
         this.name = name;
@@ -222,6 +239,10 @@ export class PTreeLesson{
     }[] = [];
     previewData:ULFolder|undefined;
 
+    // review lesson meta
+    sections:ReviewSection[] = [];
+    order:ReviewOrderSet[] = [];
+
     /**
      * Path does NOT end with `/`
      */
@@ -242,6 +263,30 @@ export class PTreeLesson{
                 // this.previewData = new ULFolder("root",await getFolderItems("../lessons/"+this.));
             }
         }
+
+        // review lesson metadata
+        // if(this.type == LessonType.review){
+        //     this.
+        // }
+        this.sections = data.sections;
+        this.order = data.order;
+        
+        // cache server data for review sections
+        if(this.sections) for(const section of this.sections){
+            let sectionPath = path+"/scenes/"+section.id;
+            if(section.scenes) for(const scene of section.scenes){
+                let scenePath = sectionPath+"/"+scene.id;
+                
+                scene.initial_files = makeTempFolder(await getFolderItems(scenePath+"/initial_files"));
+                let evtStr = await read(scenePath+"/evts.js","utf8") as string|undefined;
+                if(evtStr){
+                    let evtSplit = evtStr.split("\n");
+                    evtSplit.splice(0,1);
+                    evtStr = evtSplit.join("\n");
+                    scene.custom_evts = evtStr;
+                }
+            }
+        }
     }
 }
 function isValidPath(path:string){
@@ -249,10 +294,12 @@ function isValidPath(path:string){
     if(path.startsWith("/")) return false;
     return true;
 }
-function makeTempFolder(items:ULItem[]){
+function makeTempFolder(items?:ULItem[]){
+    if(!items) return undefined;
     return new ULFolder("root",items);
 }
 async function getFolderItems(path:string){
+    if(!await lstat(path)) return undefined;
     let list:ULItem[] = [];
     async function search(folder:ULItem[],path:string){
         let names = await readdir(path);
