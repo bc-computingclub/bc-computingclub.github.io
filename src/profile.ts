@@ -3,14 +3,34 @@ let profileHeader = document.querySelector(".p-header-top") as HTMLElement;
 let profileHeaderBot = document.querySelector(".p-header-bottom") as HTMLElement;
 let challengeStatContainer = document.querySelector(".p-challenge-stats") as HTMLElement;
 let lessonStatContainer = document.querySelector(".p-lesson-stats") as HTMLElement;
-let dateJoined = document.querySelector(".p-date-joined") as HTMLElement;
+let dateJoined = document.querySelector(".p-join-date") as HTMLElement;
 let username = document.querySelector(".p-username") as HTMLElement;
 let viewSubmissionsButton = document.querySelector(".p-view-submissions") as HTMLButtonElement;
 let projectStatContainer = document.querySelector(".p-project-stats") as HTMLElement;
 
-let challengeStats:[];
-let lessonStats:[];
-let projectStats:[];
+type Stat = {
+    title:string,
+    number:string|number,
+    icon:string
+}
+
+let challengeStats: Stat[] = [
+    {title:"Challenges Completed: ",number:"0",icon:""},
+    {title:"Challenges Submitted: ",number:"0",icon:""},
+    {title:"Challenges In Progress: ",number:"0",icon:""},
+];
+let lessonStats: Stat[] = [
+    {title:"Lessons Completed: ",number:"0",icon:""},
+    {title:"Time Spent on Lessons: ",number:"0 minutes",icon:""},
+    {title:"Average Lesson Time: ",number:"0 minutes",icon:""},
+];
+let projectStats: Stat[] = [
+    {title:"Projects Completed: ",number:"0",icon:""},
+    {title:"Time Spent on Projects: ",number:"0 minutes",icon:""},
+    {title:"Average Project Time: ",number:"0 minutes",icon:""},
+];
+
+// Below are all of the stats that will be displayed on the profile page.
 
 let challengesCompleted:number = 0;
 let challengesSubmitted:number = 0;
@@ -31,13 +51,14 @@ window.addEventListener("load", async () => {
 
 async function genProfile() {
     await loginProm; // Ensures user is logged in before challenges are fetched.
+
     if(!g_user){
       alertNotLoggedIn();
       return;
     }
 
-    // await getUserStats();
-
+    await getUserStats(); // Fetches and sets user stats.
+    
     let removeArr = document.querySelectorAll(".remove-on-load") as NodeListOf<HTMLElement>;
     removeArr.forEach((element) => {
         element.remove();
@@ -46,8 +67,9 @@ async function genProfile() {
 
     // Adding in join date, username, pfp.
     let date = new Date(g_user.data._joinDate);
-    let formattedDate = date.toLocaleDateString();
-    dateJoined.innerHTML = "<i>Joined " + formattedDate; + "</i>";
+    let options: Intl.DateTimeFormatOptions = { year: 'numeric', month: 'short' };
+    dateJoined.innerHTML = date.toLocaleDateString('en-US', options);
+
     username.textContent = g_user.data.name.length < 24 ? g_user.data.name : g_user.data.name.substring(0,24) + "...";
     let pfp = document.querySelector(".p-pfp") as HTMLImageElement;
     if(g_user.data.picture) {
@@ -55,26 +77,7 @@ async function genProfile() {
         pfp.style.padding = "0px";
     }
 
-    // profileHeader.insertBefore(profilePicture, username);
-
     await showLoadingAnim([challengeStatContainer,lessonStatContainer],400);
-
-    // All objects in this array will be loaded as stats. I've commented out the ones which are currently just placeholders.
-    let challengeStats = [
-        {title:"Challenges Completed: ",number:`${challengesCompleted}`,icon:""},
-        {title:"Challenges Submitted: ",number:`${challengesSubmitted}`,icon:""},
-        {title:"Challenges In Progress: ",number:`${challengesInProgress}`,icon:""},
-    ];
-    let lessonStats = [
-        {title:"Lessons Completed: ",number:`${lessonsCompleted}`,icon:""},
-        {title:"Time Spent on Lessons: ",number:`${totalLessonTime} minutes`,icon:""},
-        {title:"Average Lesson Time: ",number:`${averageLessonTime} minutes`,icon:""},
-    ];
-    let projectStats = [
-        {title:"Projects Completed: ",number:`${totalProjects}`,icon:""},
-        {title:"Time Spent on Projects: ",number:`${totalProjectTime} minutes`,icon:""},
-        {title:"Average Project Time: ",number:`${averageProjectTime} minutes`,icon:""},
-    ];
 
     for(let stat of challengeStats) {
         let temp = document.createElement("div");
