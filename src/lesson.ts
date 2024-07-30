@@ -235,7 +235,7 @@ abstract class Task{
         // 
 
         // lesson.loadSubTask(this);
-        // console.warn(`:: Started Task #${lesson._subTaskNum++} :: #${lesson._taskCount++}`,this.title,);
+        console.warn(`:: Started Task #${lesson._subTaskNum++} :: #${lesson._taskCount++}`,this.title,);
         let t = this;
         this._prom = new Promise<string|void>(resolve=>{this._resFinish = function(v){
             if(t.canBeFinished){
