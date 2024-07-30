@@ -119,7 +119,7 @@
     position: absolute;
     border-radius: 5px;
     background-color: var(--secondary-bg-col);
-    bottom: 80px;
+    bottom: 27%; /* again, may need to be changed using media queries based on screen size. not 100% sure, but i'd double check. */
     left: 10px;
     z-index: 999;
 }
