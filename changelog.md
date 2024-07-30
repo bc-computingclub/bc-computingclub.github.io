@@ -1251,3 +1251,7 @@
  - Work on updating the profile based on Figma mockups
  - Add banner, pfp styling, add 'badge' icons (future achievement showcase? for now, just join date)
  - Little bit of organization for stats in profile.ts, my first take on that was a disaster - paul
+
+ ### 7/30/24
+ - Continue working on profile. Added everything in challenge except for the visual status of the progress circle depending on user data, and set up styling for a user that's not logged in yet.
+ - With Caleb's help, I'm finally able to test stuff with a local server again

@@ -1,6 +1,3 @@
-let profileContainer = document.querySelector(".p-top") as HTMLElement;
-let profileHeader = document.querySelector(".p-header-top") as HTMLElement;
-let profileHeaderBot = document.querySelector(".p-header-bottom") as HTMLElement;
 let challengeStatContainer = document.querySelector(".p-challenge-stats") as HTMLElement;
 let lessonStatContainer = document.querySelector(".p-lesson-stats") as HTMLElement;
 let dateJoined = document.querySelector(".p-join-date") as HTMLElement;
@@ -15,17 +12,17 @@ type Stat = {
 }
 
 let challengeStats: Stat[] = [
-    {title:"Challenges Completed: ",number:"0",icon:""},
+    {title:"Completed ",number:"0",icon:"select_check_box"},
     {title:"Challenges Submitted: ",number:"0",icon:""},
     {title:"Challenges In Progress: ",number:"0",icon:""},
 ];
 let lessonStats: Stat[] = [
-    {title:"Lessons Completed: ",number:"0",icon:""},
+    {title:"Lessons Completed ",number:"0",icon:""},
     {title:"Time Spent on Lessons: ",number:"0 minutes",icon:""},
     {title:"Average Lesson Time: ",number:"0 minutes",icon:""},
 ];
 let projectStats: Stat[] = [
-    {title:"Projects Completed: ",number:"0",icon:""},
+    {title:"Projects Completed ",number:"0",icon:""},
     {title:"Time Spent on Projects: ",number:"0 minutes",icon:""},
     {title:"Average Project Time: ",number:"0 minutes",icon:""},
 ];
@@ -63,7 +60,12 @@ async function genProfile() {
     removeArr.forEach((element) => {
         element.remove();
     })
-    viewSubmissionsButton.disabled = false;
+    if(viewSubmissionsButton) viewSubmissionsButton.disabled = false;
+
+    let showOnLoginArr = document.querySelectorAll(".nologin") as NodeListOf<HTMLElement>;
+    showOnLoginArr.forEach((element) => {
+        element.classList.remove("nologin");
+    })
 
     // Adding in join date, username, pfp.
     let date = new Date(g_user.data._joinDate);
@@ -77,47 +79,51 @@ async function genProfile() {
         pfp.style.padding = "0px";
     }
 
-    await showLoadingAnim([challengeStatContainer,lessonStatContainer],400);
+    await showLoadingAnim([challengeStatContainer,lessonStatContainer,projectStatContainer],400); 
 
-    for(let stat of challengeStats) {
-        let temp = document.createElement("div");
-        temp.classList.add("p-stat");
-        temp.innerHTML = `
+    // Setting the individual stats.
+    
+    challengeStatContainer.className = "p-challenge-stats";
+    challengeStatContainer.innerHTML = `
+        <div class="p-stat circle-stat">        
             <div class="p-stat-name">
-                <span class="material-symbols-outlined">${stat.icon}</span>
-                <span class="">${stat.title}</span>
+                <span class="material-symbols-outlined">
+                    <span class="material-symbols-outlined">${challengeStats[0].icon}</span>
+                </span>
+                <span class="">${challengeStats[0].title}</span>
             </div>
-            <span class="p-stat-contents">${stat.number}</span>
-        `;
-        challengeStatContainer.appendChild(temp);
-    }
-    for(let stat of lessonStats) {
-        let temp = document.createElement("div");
-        temp.classList.add("p-stat");
-        temp.innerHTML = `
-            <div class="p-stat-name">
-                <span class="material-symbols-outlined">${stat.icon}</span>
-                <span class="">${stat.title}</span>
+            <span class="p-stat-contents circle">${challengesCompleted}/${totalChallenges}</span>
+        </div>
+        <div class="p-stat-cont-nested">
+            <div class="p-stat split-stat">
+                <div class="flx">
+                    <div class="p-stat-name">
+                        <span class="material-symbols-outlined">${challengeStats[1].icon}</span>
+                        <span class="">${challengeStats[1].title}</span>
+                    </div>
+                    <span class="p-stat-contents">${challengesSubmitted}</span>
+                </div>
+                <div class="flx end">
+                    <button class="p-view-submissions">View All</button>
+                </div>
             </div>
-            <span class="p-stat-contents">${stat.number}</span>
-        `;
-        lessonStatContainer.appendChild(temp);
-    }
-    for(let stat of projectStats) {
-        let temp = document.createElement("div");
-        temp.classList.add("p-stat");
-        temp.innerHTML = `
-            <div class="p-stat-name">
-                <span class="material-symbols-outlined">${stat.icon}</span>
-                <span class="">${stat.title}</span>
+            <div class="p-stat split-stat">
+                <div class="flx">
+                    <div class="p-stat-name">
+                        <span class="material-symbols-outlined">${challengeStats[2].icon}</span>
+                        <span class="">${challengeStats[2].title}</span>
+                    </div>
+                    <span class="p-stat-contents">${challengesInProgress}</span>
+                </div>
+                <div class="flx end">
+                    <button class="p-view-inprogress">View All</button>
+                </div>
             </div>
-            <span class="p-stat-contents">${stat.number}</span>
-        `;
-        projectStatContainer.appendChild(temp);
-    }
+        </div>
+    `;
 }
 
-viewSubmissionsButton.addEventListener("click", (e) => {
+viewSubmissionsButton?.addEventListener("click", (e) => {
     location.href = '/practice/?filteroptions=completed';
 })
 

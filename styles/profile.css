@@ -1,3 +1,7 @@
+body {
+    overflow-y: scroll;
+}
+
 .p-cont-outer {
     width: 100dvw;
     display: flex;
@@ -9,7 +13,7 @@
     margin-top: 1em;
     background-color: var(--secondary-bg-col);
     display: grid;
-    width: 35em;
+    width: 40em;
     grid-template-rows: repeat(4, auto);
     border-radius: 5px;
     padding: 1em;
@@ -33,10 +37,10 @@
             }
         }
         &:nth-child(2) {
-            background-color: var(--practice-col);
+            background-color: var(--learn-col);
         }
         &:nth-child(3) {
-            background-color: var(--learn-col);
+            background-color: var(--practice-col);
         }
         &:nth-child(4) {
             background-color: var(--experiment-col);
@@ -45,6 +49,35 @@
             color: var(--secondary-col);
         }
     }
+}
+
+.public-toggle {
+    text-transform: uppercase;
+    font: inherit;
+    font-size: 14px;
+    display: flex;
+    background-color: var(--secondary-bg-col);
+    align-items: center;
+    justify-content: center;
+    gap: .5em;
+    border-radius: 5px;
+    font-weight: 650;
+
+    &.nologin {
+        visibility: hidden;
+    }
+}
+
+.l-public-toggle {
+    color: var(--learn-col);
+}
+
+.p-public-toggle {
+    color: var(--experiment-col);
+}
+
+.c-public-toggle {
+    color: var(--practice-col);
 }
 
 .p-header-top {
@@ -88,17 +121,23 @@
     gap: .5em;
     align-items: center;
     padding: .5em;
-    border-radius: 5px;
+    border-radius: 8px;
+    
+    box-shadow: 0px 4px 4px 0px rgba(0, 0, 0, 0.15);
+    -webkit-box-shadow: 0px 4px 4px 0px rgba(0, 0, 0, 0.15);
+    -moz-box-shadow: 0px 4px 4px 0px rgba(0, 0, 0, 0.15);
 
-    & >* { /* individual badges */
+    .badge { /* individual badges */
         background-color: var(--experiment-col);
-        height: 100%;
-        width: 55px;
-        height: 55px;
-        border-radius: 2px;
-        display: flex;
-        align-items: center;
         color: var(--secondary-col);
+
+        display: grid;
+        place-items: center;
+        text-align: center;
+
+        width: 65px;
+        height: 60px;
+        border-radius: 5px;
         padding: .5em;
         user-select: none;
     }
@@ -113,24 +152,28 @@
 }
 
 .p-pfp {
-    max-width: 66px;
-    height: 66px;
+    max-width: 75px;
+    height: 75px;
     aspect-ratio: 1/1;
     position: absolute;
     border-radius: 5px;
     background-color: var(--secondary-bg-col);
-    bottom: 27%; /* again, may need to be changed using media queries based on screen size. not 100% sure, but i'd double check. */
+    bottom: 28%; /* again, may need to be changed using media queries based on screen size. not 100% sure, but i'd double check. */
     left: 10px;
-    z-index: 999;
+    z-index: 9;
+
+    box-shadow: 0px 4px 4px 0px rgba(0, 0, 0, 0.15);
+    -webkit-box-shadow: 0px 4px 4px 0px rgba(0, 0, 0, 0.15);
+    -moz-box-shadow: 0px 4px 4px 0px rgba(0, 0, 0, 0.15);
 }
 
-button:disabled {
+.p-view-submissions:disabled {
     cursor: not-allowed;
     opacity: .7 !important;
 }
 
 .p-username {
-    font-size: 46px;
+    font-size: 42px;
 }
 
 .p-section-title {
@@ -141,22 +184,112 @@ button:disabled {
 }
 
 .p-stat {
+    display: grid;
+    padding: 1em;
+    background-color: var(--secondary-bg-col);
+    border-radius: 5px;
+    
+    box-shadow: 0px 4px 4px 0px rgba(0, 0, 0, 0.15);
+    -webkit-box-shadow: 0px 4px 4px 0px rgba(0, 0, 0, 0.15);
+    -moz-box-shadow: 0px 4px 4px 0px rgba(0, 0, 0, 0.15);
+
+    &.split-stat{
+        gap: .5em;
+        grid-template-rows: 1fr 1fr;
+    }
+
+    &.circle-stat {
+        grid-template-rows: auto 1fr;
+        gap: .5em;
+    }
+}
+
+.circle {
+    border: 10px solid;
+    border-radius: 50%;
+    justify-self: center;
+    align-self: center;
+    height: 120px;
+    width: 120px;
     display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 24px;
+}
+
+.flx {
+    display: flex;
+    gap: 1em;
     justify-content: space-between;
+
+    &.end {
+        justify-content: flex-end;
+    }
+}
+
+.p-stat-cont-nested {
+    display: grid;
+    gap: 1em;
+    grid-template-rows: 1fr 1fr;
+}
+
+.p-stat-name {
+    display: flex;
+    gap: .5em;
 }
 
 .p-second, .p-third, .p-fourth {
     display: grid;
     gap: 1em;
+    width: 100%;
+}
+
+.p-second {
+    .circle {
+        border-color: var(--learn-col);
+    }
+}
+
+.p-third {
+    .circle {
+        border-color: var(--practice-col);
+    }
+}
+
+.p-fourth {
+    .circle {
+        border-color: var(--experiment-col);
+    }
 }
 
 .p-lesson-stats, .p-challenge-stats, .p-project-stats {
-    display: flex;
-    flex-direction: column;
+    display: grid;
     gap: 1em;
-    padding-left: 1em;
+    width: 100%;
+    &.nologin {
+        grid-template-columns: 1fr;
+        >* {
+            padding: .5em 1em;
+        }
+    }
 }
 
-.p-view-challenges {
+.p-lesson-stats {
+    color: var(--learn-col);
+    grid-template-columns: auto;
+}
+
+.p-challenge-stats {
+    color: var(--practice-col);
+    grid-template-columns: 1fr 2fr;
+}
+
+.p-project-stats {
+    color: var(--experiment-col);
+    grid-template-columns: auto;
+}
+
+.p-view-submissions, .p-view-inprogress {
     cursor: pointer;
+    background-color: var(--practice-col);
 }

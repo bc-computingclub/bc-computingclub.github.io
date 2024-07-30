@@ -16,5 +16,8 @@
     "mongodb": "^6.8.0",
     "mongoose": "^8.4.1",
     "typescript": "^5.5.2"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0"
   }
 }

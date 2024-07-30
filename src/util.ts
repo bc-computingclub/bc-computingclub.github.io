@@ -5662,3 +5662,5 @@ function cloneLessonFilesIntoProject(l:Lesson,name?:string){
         });
     })
 }
+
+let totalChallenges = 12; // random number
