@@ -1966,15 +1966,25 @@ class CP_CSS extends CodePart{
 function addBubbleAtCursor(editor:monaco.editor.IStandaloneCodeEditor,preText:string,dir:string){
     if(!editor) editor = lesson.tut.getCurEditor();
     
-    let curPos = editor.getPosition();
-    let r3 = editor.getDomNode().getBoundingClientRect();
-    let pos = editor.getScrolledVisiblePosition(curPos);
+    // let curPos = editor.getPosition();
+    // let r3 = editor.getDomNode().getBoundingClientRect();
+    // let pos = editor.getScrolledVisiblePosition(curPos);
+    // let b2 = addBubbleAt(BubbleLoc.xy,preText,dir,{
+    //     x:r3.x+pos.left+30,
+    //     y:r3.y+pos.top-20,
+    //     click:true,
+    //     inEditor:lesson.tut.getCurEditor()
+    // });
+
+    let ref = getTutCursor();
+    let r2 = ref.getBoundingClientRect();
     let b2 = addBubbleAt(BubbleLoc.xy,preText,dir,{
-        x:r3.x+pos.left+30,
-        y:r3.y+pos.top-20,
+        x:r2.x+r2.width/2 + 17 + tutMouse.getBoundingClientRect().width/2,
+        y:r2.y+r2.height/2 - 22 - LINE_SCALE/2+2,
         click:true,
         inEditor:lesson.tut.getCurEditor()
     });
+
     return b2;
 }
 class AddCode extends Task{
@@ -2573,20 +2583,31 @@ class BubbleTask extends Task{
         // let ref = tutMouse;
         // let ref = getTutCursor();
         // let r2 = ref.getBoundingClientRect();
-        let _tmp = lesson.tut.curFile?.editor?.getScrolledVisiblePosition(lesson.tut.curFile?.editor?.getPosition());
-        let r2 = (lesson.tut.curFile ? {
-            x:_tmp.left,
-            y:_tmp.top,
-            width:1,
-            height:_tmp.height
-        } : tutMouse.getBoundingClientRect());
-        // if(lesson.isResuming) await DWait(100);
+
+
+        // let _tmp = lesson.tut.curFile?.editor?.getScrolledVisiblePosition(lesson.tut.curFile?.editor?.getPosition());
+        // let r2 = (lesson.tut.curFile ? {
+        //     x:_tmp.left,
+        //     y:_tmp.top,
+        //     width:1,
+        //     height:_tmp.height
+        // } : tutMouse.getBoundingClientRect());
+        // this.b = addBubbleAt(BubbleLoc.xy,this.title,this.dir,{
+        //     x:r2.x+r2.width/2 + 17 + tutMouse.getBoundingClientRect().width/2,
+        //     y:r2.y+r2.height/2 - 22 - LINE_SCALE/2+2,
+        //     click:true,
+        //     inEditor:lesson.tut.getCurEditor()
+        // });
+
+        let ref = getTutCursor();
+        let r2 = ref.getBoundingClientRect();
         this.b = addBubbleAt(BubbleLoc.xy,this.title,this.dir,{
             x:r2.x+r2.width/2 + 17 + tutMouse.getBoundingClientRect().width/2,
             y:r2.y+r2.height/2 - 22 - LINE_SCALE/2+2,
             click:true,
             inEditor:lesson.tut.getCurEditor()
         });
+
         await this.b.clickProm;
 
         let prom = this.finish();
@@ -2607,10 +2628,17 @@ class InstructTask extends Task{
         await super.start();
 
         await wait(250);
-        let r2 = tutMouse.getBoundingClientRect();
+        // let r2 = tutMouse.getBoundingClientRect();
+        // this.b = addBubbleAt(BubbleLoc.xy,this.title,"top",{
+        //     x:r2.x+r2.width/2 + 17,
+        //     y:r2.y+r2.height/2 - 22
+        // });
+        let ref = getTutCursor();
+        let r2 = ref.getBoundingClientRect();
         this.b = addBubbleAt(BubbleLoc.xy,this.title,"top",{
-            x:r2.x+r2.width/2 + 17,
-            y:r2.y+r2.height/2 - 22
+            x:r2.x+r2.width/2 + 17 + tutMouse.getBoundingClientRect().width/2,
+            y:r2.y+r2.height/2 - 22 - LINE_SCALE/2+2,
+            // inEditor:lesson.tut.getCurEditor()
         });
         this.b.e.classList.add("type-instruct");
 

@@ -1255,3 +1255,10 @@
  ### 7/30/24
  - Continue working on profile. Added everything in challenge except for the visual status of the progress circle depending on user data, and set up styling for a user that's not logged in yet.
  - With Caleb's help, I'm finally able to test stuff with a local server again
+
+### 7/30/24 - Claeb
+- fixed the "go back a step" button during lessons
+- updated lesson 1 to use modern events/tasks/code parts
+- updated various places that add bubbles to the lesson to use the new 3rd iteration position calc which should work very well
+- these changes (at least in the first lesson) make all the bubbles line up correctly and accurately, even when holding skip through the entire lesson
+- fixed the review lesson vertical beam decoration so it doesn't have that weird translucent white box around it

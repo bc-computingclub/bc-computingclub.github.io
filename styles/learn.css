@@ -976,7 +976,8 @@ div.pane-files{
     height:500px;
     background:radial-gradient(transparent 25%,var(--practice-col) 30%,transparent 60%);
     transform:translate(-50%,-50%);
-    backdrop-filter:brightness(2);
+    /* vvv - this is disabled bc it started to cause a light white box for some reason */
+    /* backdrop-filter:brightness(2); */
     opacity:0.5;
 
     animation:VertBeamAnim 6s infinite;

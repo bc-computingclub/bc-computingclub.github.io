@@ -17,26 +17,52 @@ return [
         "i[Let's try adding a some text.]"
     ],BubbleLoc.global,[
         // new AddGenericCodeTask("<button>\x05\x05Click Me!\x05\x05</button>\x05\x01\x01\x05","html"),
-        new AddGenericCodeTask("<h1>Hello World</h1>"),
+        // new AddGenericCodeTask("<h1>Hello World</h1>"),
+        new AddCode([
+            new CP_HTML("h1",false,false,"Hello World")
+        ]),
         new DoRefreshTask("Refresh the preview to see how it looks.","Refresh the preview"),
         new BubbleTask(`b[&lt;h1&gt;] stands for "Header 1" and is the largest of the built in headers you can use. h2, h3, h4, and so on are often used for sub headers.`),
         
-        new AddTutorSideText("\n\n"),
-        new AddGenericCodeTask("<button>Click Me!</button>","html","Let's add a button here."),
+        // new AddTutorSideText("\n\n"),
+        new AddIgnoreCode([
+            new CP_LineBelow(2)
+        ]),
+        // new AddGenericCodeTask("<button>Click Me!</button>","html","Let's add a button here."),
+        new AddCode([
+            new CP_HTML("button",false,false,"Click Me!")
+        ],"Let's add a button here."),
         new DoRefreshTask("Refresh the preview to see how the button looks.","Refresh the preview"),
 
         new PonderBoardTask("board0","Alright, let's look a little closer at all this."),
 
         new BubbleTask("Adding more buttons is as easy as adding them on another line."),
-        new AddTutorSideText("\n",""),
-        new AddGenericCodeTask("<button>Or Click Me!</button>","html",null,false),
+        // new AddTutorSideText("\n",""),
+        new AddIgnoreCode([
+            new CP_LineBelow()
+        ]),
+        // new AddGenericCodeTask("<button>Or Click Me!</button>","html",null,false),
+        new AddCode([
+            new CP_HTML("button",false,false,"Or Click Me!")
+        ]),
 
-        new AddTutorSideText("\n\n",""),
+        // new AddTutorSideText("\n\n",""),
+        new AddIgnoreCode([
+            new CP_LineBelow(2)
+        ]),
         new InstructTask(`i[Try to add 2 more buttons to the page.]\nOne with the text "Button Three" and the other with the text "Button Four".`),
-        new AddGenericCodeTask(`<button>Button Three</button>\n<button>Button Four</button>`,"html",null,false),
+        // new AddGenericCodeTask(`<button>Button Three</button>\n<button>Button Four</button>`,"html",null,false),
+        new AddCode([
+            new CP_HTML("button",false,false,"Button Three"),
+            new CP_LineBelow(),
+            new CP_HTML("button",false,false,"Button Four"),
+        ],null),
         
         new MoveCursorTo(3,27),
-        new AddGenericCodeTask("<button>In the middle</button>","html","It doesn't matter how you layout elements in your HTML file, they just get read in order.",true,null,null,"left"),
+        // new AddGenericCodeTask("<button>In the middle</button>","html","It doesn't matter how you layout elements in your HTML file, they just get read in order.",true,null,null,"left"),
+        new AddCode([
+            new CP_HTML("button",false,false,"In the middle")
+        ],"It doesn't matter how you layout elements in your HTML file, they just get read in order.")
 
 //         new AddTutorSideText("\n\n","Add some space"),
 //         new AddGenericCodeTask(`<button>Click</button>
@@ -53,17 +79,42 @@ return [
         "As we can see, no matter how we write the HTML code, our buttons will always be placed side-by-side.",
         "i[Let's make them stack vertically.]"
     ],BubbleLoc.global,[
-        new MoveCursorTo(3,27),
-        new BubbleTask("First let's tidy up our code a bit."),
-        new AddTutorSideText("\n"),
-        new MoveCursorTo(6,27),
-        new AddTutorSideText("\x06"),
-        new MoveCursorTo(3,27),
-        new AddGenericCodeTask("\n<br>","html","To do this we'll use the &lt;br&gt; element which stands for i[break], as in line break and can be used to force elements to go onto a new line.\nb[Note: the &lt;br&gt; element doesn't have a closing tag because it doesn't display any text.]"),
+        new AddCode([
+            new CP_MoveTo(27,3),
+            new CP_Text("\n"),
+            // new CP_MoveTo(27,6),
+            new CP_MoveByY(2),
+            new CP_Wait(200),
+            new CP_Delete2(1,false),
+            new CP_MoveTo(27,3),
+            new CP_Bubble("To do this we'll use the &lt;br&gt; element which stands for i[break], as in line break and can be used to force elements to go onto a new line.\nb[Note: the &lt;br&gt; element doesn't have a closing tag because it doesn't display any text.]"),
+            new CP_LineBelow(),
+            new CP_HTML("br",false,false,"",{noClosingTag:true})
+        ],"First let's tidy up our code a bit."),
+        // new MoveCursorTo(3,27),
+        // new BubbleTask("First let's tidy up our code a bit."),
+        // new AddTutorSideText("\n"),
+        // new MoveCursorTo(6,27),
+        // new AddTutorSideText("\x06"),
+        // new MoveCursorTo(3,27),
+        // new AddGenericCodeTask("\n<br>","html","To do this we'll use the &lt;br&gt; element which stands for i[break], as in line break and can be used to force elements to go onto a new line.\nb[Note: the &lt;br&gt; element doesn't have a closing tag because it doesn't display any text.]"),
         new DoRefreshTask("Check out what this does to the layout."),
 
-        new MoveCursorTo(5,31),
-        new AddGenericCodeTask("\n<br>\x04\x08\n<br>\x04\x08\n<br>","html","Now let's add it to the rest so that each button is on its own line by putting a break between each one."),
+        // new MoveCursorTo(5,31),
+        // new AddGenericCodeTask("\n<br>\x04\x08\n<br>\x04\x08\n<br>","html","Now let's add it to the rest so that each button is on its own line by putting a break between each one."),
+
+        new AddCode([
+            new CP_MoveByY(1),
+            new CP_LineBelow(),
+            new CP_HTML("br",false,false,"",{noClosingTag:true}),
+            new CP_MoveByY(1),
+            new CP_LineBelow(),
+            new CP_HTML("br",false,false,"",{noClosingTag:true}),
+            new CP_MoveByY(1),
+            new CP_LineBelow(),
+            new CP_HTML("br",false,false,"",{noClosingTag:true})
+        ],"Now let's add it to the rest so that each button is on its own line by putting a break between each one."),
+
         new DoRefreshTask("All the buttons should now be stacked vertically."),
     ]),
     new LE_AddGBubble([
