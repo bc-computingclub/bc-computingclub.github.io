@@ -121,6 +121,45 @@ async function genProfile() {
             </div>
         </div>
     `;
+
+    lessonStatContainer.className = "p-lesson-stats";
+    challengeStatContainer.innerHTML = `
+        <div class="p-stat circle-stat">        
+            <div class="p-stat-name">
+                <span class="material-symbols-outlined">
+                    <span class="material-symbols-outlined">${lessonStats[0].icon}</span>
+                </span>
+                <span class="">${lessonStats[0].title}</span>
+            </div>
+            <span class="p-stat-contents circle">${challengesCompleted}/${totalChallenges}</span>
+        </div>
+        <div class="p-stat-cont-nested">
+            <div class="p-stat split-stat">
+                <div class="flx">
+                    <div class="p-stat-name">
+                        <span class="material-symbols-outlined">${lessonStats[1].icon}</span>
+                        <span class="">${lessonStats[1].title}</span>
+                    </div>
+                    <span class="p-stat-contents">${challengesSubmitted}</span>
+                </div>
+                <div class="flx end">
+                    <button class="p-view-submissions">View All</button>
+                </div>
+            </div>
+            <div class="p-stat split-stat">
+                <div class="flx">
+                    <div class="p-stat-name">
+                        <span class="material-symbols-outlined">${lessonStats[2].icon}</span>
+                        <span class="">${lessonStats[2].title}</span>
+                    </div>
+                    <span class="p-stat-contents">${lessonsCompleted}</span>
+                </div>
+                <div class="flx end">
+                    <button class="p-view-inprogress">View All</button>
+                </div>
+            </div>
+        </div>
+    `;
 }
 
 viewSubmissionsButton?.addEventListener("click", (e) => {
