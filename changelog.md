@@ -1262,3 +1262,7 @@
 - updated various places that add bubbles to the lesson to use the new 3rd iteration position calc which should work very well
 - these changes (at least in the first lesson) make all the bubbles line up correctly and accurately, even when holding skip through the entire lesson
 - fixed the review lesson vertical beam decoration so it doesn't have that weird translucent white box around it
+
+### 7/31/24 - Claeb
+- I'll fill this in later
+- (this update is possibly in a broken state I haven't tested, rewritting how some of the lesson loading works to support 1 depth lessons in lessons for reviews)

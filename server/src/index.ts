@@ -4,7 +4,7 @@ import {LessonData, getLessonFolder, globalLessonFolders, ptreeMap, reloadLesson
 import fs, { copyFile } from "fs";
 import { createInterface } from "readline";
 import crypto from "crypto";
-import { createGuidedProject, createLesson, write, read, readdir, access, mkdir, removeFolder, removeFile, rename, internalCPDir, internalCP, lessonCache, registeredLessonFolders, ULFolder, ULItem, ULFile, createRushLesson, createReviewLesson } from "./s_util";
+import { createGuidedProject, createLesson, write, read, readdir, access, mkdir, removeFolder, removeFile, rename, internalCPDir, internalCP, lessonCache, registeredLessonFolders, ULFolder, ULItem, ULFile, createRushLesson, createReviewLesson, PTreeLesson } from "./s_util";
 import { ChallengeInst, ChallengeModel, ChallengeSubmissionModel, FolderInst, FolderModel, LessonMetaInst, LessonProgressModel, ProjectInst, ProjectModel, UserModel, UserSessionItem, findChallenge, removeFromList, removeFromListPred, uploadChallenges, uploadLessonProgs, uploadUsers, uploadUsersStage2, userSessions } from "./db";
 import mongoose, { QuerySelector } from "mongoose";
 
@@ -15,12 +15,12 @@ function valVar(v:any,type:string){
 function valVar2(v:any,type:string,f:any){
     if(type == "path"){
         let res = (typeof v == "string" && !v.includes("."));
-        if(!res) f();
+        if(!res) f(-100);
         return res;
     }
     if(typeof f != "function") return false;
     if(v == null){
-        f();
+        f(-101);
         return false;
     }
     if(type == "array") return Array.isArray(v);
@@ -737,53 +737,89 @@ io.on("connection",socket=>{
 
         // let path = "../lessons/"+paths.join("/")+(paths.length?"/":"")+lid+"/";
         // let path = "../lessons/"+lid+"/";
-        let path = lessonCache.get(lid)?.fullPath;
-        let str = await read(path+"meta.json");
-        if(!str){
-            f(1);
-            return;
-        }
-        let data;
-        try{
-            data = JSON.parse(str);
-        }
-        catch(e){}
-        if(!data){
-            console.log("$ invalid/corrupted lesson data");
-            f(2);
-            return;
-        }
-        // let lessonData = new LessonData(data); // this is a lot of work but probably good to eventually use for data integrity stuff
-        
-        data.lid = lid;
-        data.events = await read(path+"evts.js","utf8");
-        // data.boardData = data.boards.map(async (v:any)=>await read(path+v+".js","utf8"));
-        data.boardData = [];
-        for(const board of data.boards){
-            data.boardData.push(await read(path+board+".js","utf8"));
+
+        // 
+
+        async function parseLessonData(path:string|undefined,isSub=false){ // path must end with "/"
+            if(!user) return;
+            if(!path) return;
+            // let path = lessonCache.get(lid)?.fullPath;
+            let str = await read(path+"meta.json");
+            if(!str){
+                if(isSub){
+                    str = `
+{
+    "finalInstance": null,
+    "boards": []
+}
+                    `;
+                }
+                else{
+                    f(1);
+                    return;
+                }
+            }
+            let data;
+            try{
+                data = JSON.parse(str);
+            }
+            catch(e){}
+            if(!data){
+                console.log("$ invalid/corrupted lesson data");
+                f(2);
+                return;
+            }
+            // let lessonData = new LessonData(data); // this is a lot of work but probably good to eventually use for data integrity stuff
+            
+            data.lid = lid;
+            data.events = await read(path+"evts.js","utf8");
+            // data.boardData = data.boards.map(async (v:any)=>await read(path+v+".js","utf8"));
+            data.boardData = [];
+            for(const board of data.boards){
+                data.boardData.push(await read(path+board+".js","utf8"));
+            }
+
+            // Initial files (for tutor)
+            // if(!await access("../users/"+user.uid+"/lesson/"+lid)){
+            //     data.isStart = true;
+            // }
+            if(!await user.hasStartedLesson(lid)){
+                data.isStart = true;
+            }
+            if(!await access("../lesson/"+user.uid+"/"+lid)) if(data.continueFrom) await copyContinueFromFiles(user.uid,data.continueFrom,lid);
+            let initialFiles = await readdir(path+"initial_files");
+            if(initialFiles){
+                data.initialFiles = [];
+                for(const v of initialFiles){
+                    data.initialFiles.push({
+                        name:v,
+                        data:await read(path+"initial_files/"+v)
+                    });
+                }
+            }
+
+            return data;
         }
 
-        // Initial files (for tutor)
-        // if(!await access("../users/"+user.uid+"/lesson/"+lid)){
-        //     data.isStart = true;
-        // }
-        if(!await user.hasStartedLesson(lid)){
-            data.isStart = true;
-        }
-        if(!await access("../lesson/"+user.uid+"/"+lid)) if(data.continueFrom) await copyContinueFromFiles(user.uid,data.continueFrom,lid);
-        let initialFiles = await readdir(path+"initial_files");
-        if(initialFiles){
-            data.initialFiles = [];
-            for(const v of initialFiles){
-                data.initialFiles.push({
-                    name:v,
-                    data:await read(path+"initial_files/"+v)
-                });
+        // 
+
+
+        let path = lessonCache.get(lid)?.fullPath;
+        let data = await parseLessonData(path);
+        if(!data) f(4);
+
+        // get section data
+        if(data.sections != undefined){
+            for(const sec of data.sections){
+                for(const scene of sec.scenes){
+                    scene._data = await parseLessonData(path+"scenes/"+sec.id+"/"+scene.id+"/",true);
+                }
             }
         }
         
         f(data);
     });
+
     socket.on("uploadLessonFiles",async (lessonId:string,listData:any[],progress:LessonMeta,call:(data:any)=>void)=>{        
         if(!valVar2(lessonId,"string",call)) return;
         if(!valVar2(listData,"array",call)) return;
@@ -871,6 +907,8 @@ io.on("connection",socket=>{
         lessonMeta.meta.eventI = progress.eventI;
         lessonMeta.meta.taskI = progress.taskI;
         lessonMeta.meta.progress = progress.prog;
+        if(progress.section) lessonMeta.meta.section = progress.section;
+        if(progress.scene) lessonMeta.meta.scene = progress.scene;
         lessonMeta.updateWhenLastSaved();
 
         // save
@@ -892,19 +930,34 @@ io.on("connection",socket=>{
         // console.log(":: done uploading");
         call(0);
     });
-    socket.on("restoreLessonFiles",async (lessonId:string,call:(data:any)=>void)=>{
-        if(!valVar(lessonId,"string")) return;
+    socket.on("restoreLessonFiles",async (arg:{
+        lid:string,
+        section?:string,
+        scene?:string
+    },call:(data:any)=>void)=>{
         if(!valVar(call,"function")) return;
+        if(!valVar2(arg,"object",call)) return;
+        if(!valVar2(arg.lid,"string",call)) return;
 
         let user = getSession(socket.id);
         if(!user) return;
 
         // let meta = await getLessonMeta(user.uid,lessonId);
-        let lessonMeta = await user.getLessonMeta(lessonId);
+        let lessonMeta = await user.getLessonMeta(arg.lid);
         if(!lessonMeta){
             call(1);
             return;
         }
+
+        let cacheItem = lessonCache.get(lessonMeta.meta.lid);
+        if(!cacheItem){
+            call(2);
+            return;    
+        }
+        // if(lessonCache.get(lessonMeta.meta.lid)?.lesson.sections != undefined){
+        //     call(undefined);
+        //     return;
+        // }
 
         await lessonMeta.createPath();
 
@@ -938,7 +991,24 @@ io.on("connection",socket=>{
         //     files.push(new ULFile(f,await read(filePath+"/"+f,"utf8"),"","utf8"));
         // }
 
-        let files = await lessonMeta.getFileItems();
+
+        let files:ULItem[] = [];
+
+        if(cacheItem.lesson.sections != undefined){
+            let loc = lessonMeta.getPath();
+            if(!await removeFolder(loc)){
+                call(3);
+                return;
+            }
+            if(!await mkdir(loc)){
+                call(4);
+                return;
+            }
+            // create files for the user (not done yet, it's going to be like initial_files, or oh wait, maybe dyn generated? wait I can do that through evts, still need support for this though even though it's a lot of work now but it'll be worth it later probably, but technically everything can be created just through evts.js)
+        }
+        // else{
+            files = await lessonMeta.getFileItems();
+        // }
 
         // let tutFiles:ULFile[] = [];
         // if(tutCurFiles) for(const f of tutCurFiles){
@@ -955,7 +1025,31 @@ io.on("connection",socket=>{
         await lessonMeta.meta.save();
         
 
-        let info = ptreeMap.get(lessonId);
+        let info = ptreeMap.get(arg.lid);
+        if(!info){
+            call(5);
+            return;
+        }
+        
+        if(arg.section){
+            let sec = info.sections.find(v=>v.id == arg.section);
+            if(!sec){
+                call(6);
+                return;
+            }
+            let scene = sec.scenes.find(v=>v.id == arg.scene);
+            if(!scene){
+                call(7);
+                return;
+            }
+            info = scene._data;
+        }
+        if(!info){
+            call(5.1);
+            return;
+        }
+
+        console.log("finished restoring...",arg,info);
 
         call({
             files,

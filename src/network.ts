@@ -203,7 +203,9 @@ function uploadLessonFiles(lesson:Lesson){ // for refresh
     let prog = {
         eventI:lesson.progress.eventI,
         taskI:lesson.progress.taskI,
-        prog:lesson.progress.prog
+        prog:lesson.progress.prog,
+        section:lesson.progress.section,
+        scene:lesson.progress.scene
         // tutFiles:[]
     };
     // for(const f of lesson.tut.files){
@@ -219,7 +221,11 @@ function uploadLessonFiles(lesson:Lesson){ // for refresh
 }
 async function restoreLessonFiles(lesson:Lesson){
     let data = await new Promise<any>(resolve=>{
-        socket.emit("restoreLessonFiles",lesson.lid,async (data:any)=>{
+        socket.emit("restoreLessonFiles",{
+            lid:lesson.lid,
+            section:lesson.progress.section,
+            scene:lesson.progress.scene
+        },async (data:any)=>{
             if(!data){
                 console.log("ERR while restoring files");
                 resolve(null);
@@ -242,21 +248,27 @@ async function restoreLessonFiles(lesson:Lesson){
                     }
                 }
             }
-            await loadBufs(data.files);
+            await loadBufs(data.files ?? []);
 
             resolve(data);
         });
     });
-    if(!data){
-        alert("Err: while trying to restore lesson files");
+    if(!data || typeof data == "number"){
+        alert("Err: while trying to restore lesson files. Error code: "+data);
         return;
     }
+    if(!data.files){
+        data.files = [];
+        console.warn("...default for files[]");
+    }
+    console.log("now files:",data.files,!data.files,data);
     // for(const f of data.files){
     //     await lesson.p.createFile(f.name,f.buf,undefined,f.val); // TODO - make this work with the blob system
     // }
 
     // NEW SYSTEM
     async function run(l:any[],cur:FFolder){
+        console.log("...L:",l);
         sortFiles(l);
         let list = [];
         for(const f of l){
@@ -283,7 +295,12 @@ async function restoreLessonFiles(lesson:Lesson){
     // console.log("LESSON META",data);
     lesson.progress.eventI = data.meta.eventI;
     lesson.progress.taskI = data.meta.taskI;
+    if(data.meta.section) lesson.progress.section = data.meta.section;
+    if(data.meta.scene) lesson.progress.scene = data.meta.scene;
+
+    console.log(":::META",data.meta);
     
+    // console.warn("PREVIOUS INFO:",lesson.info);
     lesson.info = data.info;
     // return data;
 

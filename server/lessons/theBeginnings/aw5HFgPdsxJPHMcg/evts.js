@@ -6,13 +6,42 @@ return [
         new AddFileTask("index.html"),
         new BubbleTask("Let's start by looking at some various text elements."),
 
-        new AddGenericCodeTask("<h1>Heading</h1>","html","Headings just act as larger text within your page."),
-        new AddTutorSideText("\n\n"),
-        new AddGenericCodeTask("<p>This is a paragraph</p>","html","Paragraph elements are for standard text."),
-        new AddTutorSideText("\n\n"),
-        new AddGenericCodeTask("<u>This is underlined</u>","html","You can use the &lt;u&gt; element to create underlined text."),
-        new AddTutorSideText("\n\n"),
-        new AddGenericCodeTask("<b>This is bolded</b>","html","You can use the &lt;b&gt; element to create bolded text."),
+        new AddCode([
+            new CP_HTML("h1",false,false,"Heading"),
+            // new CP_Wait(500),
+            // new CP_Bubble("Headings just act as larger text within your page."),
+        ],"Headings just act as larger text within your page."),
+        new AddIgnoreCode([
+            new CP_LineBelow(2)
+        ]),
+
+        new AddCode([
+            new CP_HTML("p",false,false,"This is a paragraph"),
+        ],"Paragraph elements are for standard text."),
+        new AddIgnoreCode([
+            new CP_LineBelow(2)
+        ]),
+
+        new AddCode([
+            new CP_HTML("u",false,false,"This is a underlined"),
+        ],"You can use the t[u] element to create underlined text."),
+        new AddIgnoreCode([
+            new CP_LineBelow(2)
+        ]),
+
+        new AddCode([
+            new CP_HTML("b",false,false,"This is a bolded"),
+        ],"You can use the t[b] element to create bolded text."),
+        
+        // 
+        // new AddGenericCodeTask("<h1>Heading</h1>","html","Headings just act as larger text within your page."),
+        // new AddTutorSideText("\n\n"),
+        // new AddGenericCodeTask("<p>This is a paragraph</p>","html","Paragraph elements are for standard text."),
+        // new AddTutorSideText("\n\n"),
+        // new AddGenericCodeTask("<u>This is underlined</u>","html","You can use the &lt;u&gt; element to create underlined text."),
+        // new AddTutorSideText("\n\n"),
+        // new AddGenericCodeTask("<b>This is bolded</b>","html","You can use the &lt;b&gt; element to create bolded text."),
+
         new DoRefreshTask("Refresh to see how they all look.")
         // new ChangePreviewURLTask("Change the URL to our new page"),
         // new InfiniteTask()
@@ -27,11 +56,14 @@ return [
         new AddCode([
             new CP_Text("<u>"),
             new CP_MoveByX(16),
-            new CP_Text("</u>")
+            new CP_Text("</u>"),
         ]),
         new BubbleTask("This applies the underline style to our header because everything within the &lt;u&gt; element will become underlined."),
+                new AddIgnoreCode([
+            new CP_LineBelow(2)
+        ]),
 
-        new AddTutorSideText("\n\n"),
+        // new AddTutorSideText("\n\n"),
         // new AddGenericCodeTask("<u></u>\x01\x01\x01\x01\n<h3>Sub Heading</h3>\n<p>some text</p>","html","You can also put multiple elements within elements."),
         new AddCode([
             new CP_HTML("u",true,true),
@@ -97,8 +129,19 @@ return [
         new ChangePreviewURLTask("Change the preview to display our page3.html file","page3.html"),
         new MoveCursorTo(1,1),
         new InstructTask("Test yourself to see how much you can remember of the basic structure of an HTML page, and if you remember it all, try to add a Header 1 and a button to the page as well.\n(feel free to look back at page2.html but I encourage you to challenge yourself)"),
+
+        new AddCode([
+            new CP_HTML("html",true,true),
+            new CP_HTML("head",true,true),
+            new CP_HTML("title",false,false,"Page 3"),
+            new CP_MoveByY(1),
+            new CP_LineBelow(),
+            new CP_HTML("body",true,true),
+            new CP_HTML("h1",false,true,"Welcome!"),
+            new CP_HTML("button",false,false,"Start")
+        ],null),
         // new AddGenericCodeTask("<html></html>\x01\x01\x01\x01\x01\x01\x01\n<head></head>\x01\x01\x01\x01\x01\x01\x01\n","html",null,false),
-        new AddGenericCodeTask("<html></html>\x01\x01\x01\x01\x01\x01\x01\n<head></head>\x01\x01\x01\x01\x01\x01\x01\n\x04\x08\n<body></body>\x01\x01\x01\x01\x01\x01\x01\n<h1>Welcome!</h1>\n<button>Start</button>","html",null,false)
+        // new AddGenericCodeTask("<html></html>\x01\x01\x01\x01\x01\x01\x01\n<head></head>\x01\x01\x01\x01\x01\x01\x01\n\x04\x08\n<body></body>\x01\x01\x01\x01\x01\x01\x01\n<h1>Welcome!</h1>\n<button>Start</button>","html",null,false)
         // new AddGenericCodeTask("<html>\n\t<head>\n</head>\n<body>\n<h1>Welcome!</h1>\n<button>Start</button></body></html>","html",null,false)
         // new AddCode([
         //     new CP_HTML("html",true,true),

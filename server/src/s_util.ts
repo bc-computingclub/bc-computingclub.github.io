@@ -179,6 +179,7 @@ export class ULFile extends ULItem{
 }
 
 export enum LessonType{
+    none = -1,
     lesson,
     project,
     rush,
@@ -202,7 +203,8 @@ export type ReviewScene = {
 
     // server data
     initial_files?:ULFolder,
-    custom_evts?:string
+    custom_evts?:string,
+    _data?:PTreeLesson;
 };
 export type ReviewOrderSet = {
     includes:string[],
@@ -246,7 +248,7 @@ export class PTreeLesson{
     /**
      * Path does NOT end with `/`
      */
-    async loadExtraData(data:any,folder:PTreeFolder,lesson:PTreeLesson,path:string){
+    async loadExtraData(data:any,folder:PTreeFolder|undefined,lesson:PTreeLesson|undefined,path:string){
         this.parent = data.parent;
         this.desc = data.desc ?? [];
         this.takeaways = data.takeaways ?? [];
@@ -285,6 +287,14 @@ export class PTreeLesson{
                     evtStr = evtSplit.join("\n");
                     scene.custom_evts = evtStr;
                 }
+
+                // 
+                scene._data = new PTreeLesson("sub^"+section.id+"^"+scene.id,this.lid,0,0,[],{type:LessonType.none,unlocked:true},LessonType.none);
+                let meta = {
+                    "finalInstance": null,
+                    "boards": []
+                };
+                await scene._data.loadExtraData(meta,undefined,undefined,sectionPath);
             }
         }
     }

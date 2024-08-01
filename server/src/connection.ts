@@ -478,6 +478,8 @@ export class LessonMeta{
     }
     eventI:number;
     taskI:number;
+    section:string|undefined;
+    scene:string|undefined;
     prog:number;
     mode:number;
     wu:string = ""; // when unlocked

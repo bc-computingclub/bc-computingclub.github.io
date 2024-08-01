@@ -464,6 +464,8 @@ type MLesson = {
     
     eventI:number,
     taskI:number,
+    section:string|undefined;
+    scene:string|undefined;
     progress:number,
     mode:number,
 
@@ -493,6 +495,14 @@ const LessonProgressSchema = new Schema({
     taskI:{
         type:Number,
         default:-1
+    },
+    section:{
+        type:String,
+        default:undefined,
+    },
+    scene:{
+        type:String,
+        default:undefined
     },
     progress:{
         type:Number,
@@ -1874,6 +1884,7 @@ export async function uploadLessonProgs(){
                 lid,uid,
                 eventI:meta.eventI,
                 taskI:meta.taskI,
+                // no concept of scene or section in the old version
                 progress:meta.prog,
                 mode:meta.mode,
                 dateUnlocked:meta.wu != "" && meta.wu ? new Date(meta.wu) : null,

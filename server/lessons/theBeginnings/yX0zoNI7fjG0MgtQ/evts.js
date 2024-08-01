@@ -47,7 +47,7 @@ return [
         new AddCode([
             new CP_Text('<link rel="stylesheet" href="style.css">')
         ],"We can link our CSS file to our page by adding a line in the h[head] of our page."),
-        new BubbleTask("Notice, there is no closing tag for the &lt;link&gt; element."),
+        new BubbleTask("Notice, there is no closing tag for the t[link] element."),
         new DoRefreshTask("Refresh the preview to see our new background color applied."),
         new PonderBoardTask("attr_board","So what does this even mean?"),
         

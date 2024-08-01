@@ -2600,7 +2600,7 @@ class BubbleTask extends Task{
         // });
 
         let ref = getTutCursor();
-        let r2 = ref.getBoundingClientRect();
+        let r2 = ref?.getBoundingClientRect() ?? tutMouse.getBoundingClientRect();
         this.b = addBubbleAt(BubbleLoc.xy,this.title,this.dir,{
             x:r2.x+r2.width/2 + 17 + tutMouse.getBoundingClientRect().width/2,
             y:r2.y+r2.height/2 - 22 - LINE_SCALE/2+2,
@@ -4698,7 +4698,9 @@ class Lesson{
     progress = {
         eventI:0,
         taskI:-1,
-        prog:0
+        prog:0,
+        section:undefined as string,
+        scene:undefined as string
     };
     isResuming = false;
     resume = {
@@ -4787,10 +4789,10 @@ class Lesson{
         // this.isQuitting = false;
     }
 
-    static parse(data:any,parent:HTMLElement,tutParent:HTMLElement){
+    static parse(data:any,parent:HTMLElement,tutParent:HTMLElement){        
         let a = new Lesson(data.lid,data.name,parent,tutParent);
 
-        a.bannerSection = new TextArea(data.banner.sections.map((v:any)=>new TextSection(v.head,v.text)));
+        if(data.banner) a.bannerSection = new TextArea(data.banner.sections.map((v:any)=>new TextSection(v.head,v.text)));
         a.finalInstance = new FinalProjectInstance([]);
 
         data.events = data.events.substring(data.events.indexOf("\n")+1);
@@ -5178,9 +5180,18 @@ class Lesson{
         }
     }
 
+    hasSections(){
+        return this.info.sections.length != 0;
+    }
+
     isComplete = false;
     loadEvent(e:LEvent){
         if(!e){
+            if(this.hasSections()){
+                // TEMP FOR NOW
+                return;
+            }
+
             // lesson complete!
             socket.emit("finishLesson",this.lid,(err:number)=>{
                 if(err != 0) alert(`Error ${err} while trying to finish lesson`);
@@ -5464,7 +5475,35 @@ async function initLessonPage(){
         });
     });
 
+    if(lessonData.sections != undefined){
+        console.warn(">> FOUND SECTIONS. parsing...");
+        console.log(lessonData);
+        let id = lessonData.order[0].includes[0];
+        console.log("ID: "+id);
+
+        let sec = lessonData.sections.find(v=>v.id == id);
+        console.log("SEC: ",sec);
+
+        let scene = sec.scenes[0];
+        console.log("SCENE: ",scene);
+        if(!scene || !scene._data){
+            console.error("Couldn't load scene for an unknown reason.");
+            return;
+        }
+
+        await loadLessonPage(scene._data,sec.id,scene.id);
+    }
+    else await loadLessonPage(lessonData);
+}
+async function loadLessonPage(lessonData:TreeLesson,section?:string,scene?:string){
     lesson = Lesson.parse(lessonData,pane_code,pane_tutor_code);
+    // lesson.info = lessonData;
+
+    // if(section){
+    //     lesson.progress.section = section; // TEMP FOR NOW ?
+    //     lesson.progress.scene = scene;
+    // }
+    
     if(false){
         lesson = new Lesson("0001","Lesson 01",pane_code,pane_tutor_code);
         lesson.bannerSection = new TextArea([
@@ -5876,6 +5915,10 @@ class TextSection{
     lines:string[];
 }
 function addBannerBubble(lesson:Lesson){
+    if(!lesson.bannerSection){
+        lesson.start();
+        return;
+    }
     let textarea = lesson.bannerSection;
     let text = "";
     for(const s of textarea.sects){
