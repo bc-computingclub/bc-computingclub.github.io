@@ -1266,3 +1266,14 @@
 ### 7/31/24 - Claeb
 - I'll fill this in later
 - (this update is possibly in a broken state I haven't tested, rewritting how some of the lesson loading works to support 1 depth lessons in lessons for reviews)
+
+### 8/1/24 - Claeb
+- existing lessons should be stable
+- review lesson core very close to complete enough
+    - resumability
+    - going to next scene/sub lesson
+    - deloading and reloading sub lessons
+    - crude progress label (to the precision of the current scene you're on)
+    - reviews are finishable
+    - they're pretty stable just need stuff like verification content/features, UI, and the rest of the 3 buttons for replay and replay later
+- (still need to fill this out at some point)

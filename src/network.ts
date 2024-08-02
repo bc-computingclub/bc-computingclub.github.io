@@ -204,8 +204,7 @@ function uploadLessonFiles(lesson:Lesson){ // for refresh
         eventI:lesson.progress.eventI,
         taskI:lesson.progress.taskI,
         prog:lesson.progress.prog,
-        section:lesson.progress.section,
-        scene:lesson.progress.scene
+        sceneI:lesson.progress.sceneI
         // tutFiles:[]
     };
     // for(const f of lesson.tut.files){
@@ -220,64 +219,25 @@ function uploadLessonFiles(lesson:Lesson){ // for refresh
     });
 }
 async function restoreLessonFiles(lesson:Lesson){
-    let data = await new Promise<any>(resolve=>{
-        socket.emit("restoreLessonFiles",{
-            lid:lesson.lid,
-            section:lesson.progress.section,
-            scene:lesson.progress.scene
-        },async (data:any)=>{
-            if(!data){
-                console.log("ERR while restoring files");
-                resolve(null);
-                return;
-            }
-
-            console.log("LESSON META:",data);
-
-            async function loadBufs(items:ULItem[]){
-                for(let i = 0; i < items.length; i++){
-                    let item = items[i];
-                    if("items" in item){ // folder
-                        await loadBufs(item.items as ULItem[]);
-                    }
-                    else{ // file
-                        let it1 = item as any;
-                        it1.buf = new Uint8Array(it1.buf);
-                        let it = new ULFile(it1.name,it1.buf);
-                        items[i] = it;
-                    }
-                }
-            }
-            await loadBufs(data.files ?? []);
-
-            resolve(data);
-        });
-    });
-    if(!data || typeof data == "number"){
-        alert("Err: while trying to restore lesson files. Error code: "+data);
-        return;
-    }
-    if(!data.files){
-        data.files = [];
-        console.warn("...default for files[]");
-    }
-    console.log("now files:",data.files,!data.files,data);
+    let data = lesson._restoreData;
     // for(const f of data.files){
     //     await lesson.p.createFile(f.name,f.buf,undefined,f.val); // TODO - make this work with the blob system
     // }
 
+    // let p = project; // used to be this
+    let p = lesson.p;
+
     // NEW SYSTEM
     async function run(l:any[],cur:FFolder){
-        console.log("...L:",l);
         sortFiles(l);
         let list = [];
         for(const f of l){
             if(f.items == null){
-                let ff = await project.createFile(f.name,f.buf,null,cur);
+                let ff = await p.createFile(f.name,f.buf,null,cur);
                 list.push(ff);
             }
             else if(f.items != null){
-                let ff = project.createFolder(f.name,cur,false);
+                let ff = p.createFolder(f.name,cur,false);
                 list.push(ff);
                 ff.items = await run(f.items,ff);
             }
@@ -289,20 +249,16 @@ async function restoreLessonFiles(lesson:Lesson){
     // if(data.tutFiles) for(const f of data.tutFiles){
     //     lesson.tut.createFile(f.name,f.val);
     // }
-    if(data.files.length) lesson.p.hasSavedOnce = true;
-    project.files.forEach(v=>v.setSaved(true));
-    
-    // console.log("LESSON META",data);
+    if(data.files.length) p.hasSavedOnce = true;
+    p.files.forEach(v=>v.setSaved(true));
+
     lesson.progress.eventI = data.meta.eventI;
     lesson.progress.taskI = data.meta.taskI;
-    if(data.meta.section) lesson.progress.section = data.meta.section;
-    if(data.meta.scene) lesson.progress.scene = data.meta.scene;
+    if(data.meta.sceneI) lesson.progress.sceneI = data.meta.sceneI;
+    if(data.meta.final_order) lesson.progress.final_order = data.meta.final_order;
 
     console.log(":::META",data.meta);
-    
-    // console.warn("PREVIOUS INFO:",lesson.info);
     lesson.info = data.info;
-    // return data;
 
     // select the first file to be consistent (usually this will be the index.html)
     await wait(0);
@@ -320,6 +276,7 @@ async function restoreLessonFiles(lesson:Lesson){
         f.open(false);
     }
     lesson.startActiveFileUnlock();
+    console.log(">>> opening tut files:",lesson.tut.files);
     for(const f of lesson.tut.files){
         f.open();
     }

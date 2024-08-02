@@ -104,11 +104,11 @@ b_goBackStep.addEventListener("click",e=>{
         // t.replay(lesson.tut.getCurEditor()); // ^^^
     }
 });
-async function hideLessonConfirm(){
-    await wait(50);
+async function hideLessonConfirm(noWait=false){
+    if(!noWait) await wait(50);
     d_lesson_confirm.style.opacity = "0";
     d_lesson_confirm.style.pointerEvents = "none";
-    await wait(1500);
+    if(!noWait) await wait(1500);
 }
 async function showLessonConfirm(){
     let preTask = lesson.currentEvent;
@@ -246,7 +246,7 @@ abstract class Task{
         }});
         if(lesson.isResuming) if(this.supertask){
             if(lesson.resume.eventI == lesson.events.indexOf(this.supertask)) if(lesson.resume.taskI == this.supertask.tasks.indexOf(this)){
-                lesson.finishResume();
+                await lesson.finishResume(); // should there be an await here? I'm adding it now but there didn't use to be one
                 return;
             }
             this.canBeFinished = true;
@@ -2000,6 +2000,21 @@ class AddCode extends Task{
     async start(): Promise<string | void> {
         await super.start();
         let editor = lesson.activeFile?.editor ?? lesson.tut.getCurEditor();
+        if(!editor){
+            let b = addBubbleAt(BubbleLoc.global,"A critical issue happened and I've lost track of where I have to write code, try to refresh the page.",undefined,{
+                click:true
+            });
+            await b.clickProm;
+            return;
+            // let b = addBubbleAt(BubbleLoc.global,"I need to write some code but the file isn't available, I'll try to create a new one for the time being.",undefined,{
+            //     click:true
+            // });
+            // await b.clickProm;
+
+            // let f = await lesson.tut.createFile("tmp.txt",new Uint8Array(),undefined,undefined,true);
+            // f.open(false);
+            // editor = f.curEditor;
+        }
 
         for(let i = 0; i < this.parts.length; i++){
             if(i == 0){
@@ -2915,7 +2930,7 @@ abstract class LEvent{
         await wait(300);
         let eI = lesson.events.indexOf(this);
         let e = lesson.events[eI+1];
-        console.log("---REAL END",e);
+        // console.log("---REAL END",e);
         // console.info("*****ENDED EVENT: ",eI,from,lesson.isQuitting,lesson.isResuming);
         lesson.loadEvent(e);
         if(e) e.run();
@@ -2926,11 +2941,11 @@ abstract class LEvent{
         lesson.loadSubTask(t);
         await wait(300);
         if(t == null){
-            console.log("----END");
+            // console.log("----END");
             this.endEvent(t);
             return;
         }
-        console.log("----START");
+        // console.log("----START");
         lesson.progress.taskI = this.tasks.indexOf(t);
         t.start();
     }
@@ -4564,6 +4579,7 @@ class Lesson{
     _loadStart = 0;
 
     info:TreeLesson;
+    _restoreData:any;
 
     _clipboardText = "";
 
@@ -4663,6 +4679,50 @@ class Lesson{
 
         await hideTutMouse();
     }
+
+    // 
+
+    // !!! idea - meta data represents data about the document (when explaining document structure)
+    async goToNextScene(){
+        if(!this.info.sections.length) return; // return because this lesson doesn't have any sections/scenes
+
+        this.progress.sceneI++;
+
+        if(this.progress.sceneI >= this.progress.final_order.length){
+            console.log("> finished review");
+            new LessonCompleteMenu().load();
+            return;
+        }
+
+        let res = await new Promise<boolean>(resolve=>{
+            socket.emit("goToNextScene",{lid:this.lid},(data:any)=>{
+                if(data != 0){
+                    alert("Error occured while trying to go to the next problem: error code: "+data+"\n\nPlease refresh the page.");
+                    resolve(false);
+                    return;
+                }
+                resolve(true);
+            });
+        });
+        if(!res) return;
+
+        this.progress.eventI = -1;
+        this.progress.taskI = -1;
+        // this.progress.prog = 0;
+        await saveLesson(true);
+
+        await initLessonPage();
+        await wait(500);
+    }
+    sceneContinue(){
+
+    }
+    sceneReplay(){
+
+    }
+    sceneReplayLater(){
+        
+    }
     
     // 
 
@@ -4699,8 +4759,8 @@ class Lesson{
         eventI:0,
         taskI:-1,
         prog:0,
-        section:undefined as string,
-        scene:undefined as string
+        sceneI:0,
+        final_order:[] as string[]
     };
     isResuming = false;
     resume = {
@@ -4817,13 +4877,14 @@ class Lesson{
         a.totalParts = _i;
 
         // load initial tutor files
-        requestAnimationFrame(async ()=>{
-            if(data.initialFiles){
-                for(const file of data.initialFiles){
-                    a.tut.createFile(file.name,file.data);
-                }
-            }
-        });
+        // requestAnimationFrame(async ()=>{
+            // console.log("---->>>>> found initial files:",data.initialFiles);
+            // if(data.initialFiles){
+            //     for(const file of data.initialFiles){
+            //         a.tut.createFile(file.name,file.data); // this didn't used to have an await, added now
+            //     }
+            // }
+        // });
 
         // a.events = data.events.map((v:any)=>LEvent.parse(v));
 
@@ -4855,10 +4916,15 @@ class Lesson{
         }
         state.tutItems = calcItems(this.tut.items);
         // tmp for now, no folder support yet in lesson
-        state.curFile = state.tutItems.find(v=>v.name == this.tut.curFile.name);
-        let curEditor = this.tut.getCurEditor();
-        if(curEditor){
-            state.pos = curEditor.getPosition().clone();
+        if(this.tut.curFile){
+            state.curFile = state.tutItems.find(v=>v.name == this.tut.curFile.name);
+            let curEditor = this.tut.getCurEditor();
+            if(curEditor){
+                state.pos = curEditor.getPosition().clone();
+            }
+        }
+        else{
+            console.warn("Warn: tut curFile not found");
         }
 
         return state;
@@ -4957,7 +5023,10 @@ class Lesson{
         // }
         let taskI = (this.currentSubTask?._i ?? this.currentEvent?._i ?? 0) + 1;
         let r = taskI/this.totalParts;
-        this.progress.prog = parseFloat((r*100).toFixed(1));
+        
+        if(this.hasSections()) this.progress.prog = parseFloat((this.progress.sceneI/this.progress.final_order.length*100).toFixed(1));
+        else this.progress.prog = parseFloat((r*100).toFixed(1));
+        
         l_progress.textContent = this.progress.prog+"%";
     }
     _getTotal(){
@@ -5181,6 +5250,7 @@ class Lesson{
     }
 
     hasSections(){
+        if(!this.info.sections) return false;
         return this.info.sections.length != 0;
     }
 
@@ -5188,7 +5258,7 @@ class Lesson{
     loadEvent(e:LEvent){
         if(!e){
             if(this.hasSections()){
-                // TEMP FOR NOW
+                this.goToNextScene();
                 return;
             }
 
@@ -5431,7 +5501,37 @@ class PromptLoginMenu extends Menu{
         return this;
     }
 }
+async function deloadLesson(){
+    if(!lesson){
+        console.log("$ no lesson to deload");
+        return;
+    }
+    console.log("$ deloading lesson...");
+    await lesson.quit();
+    // d_curProject
+
+    await hideLessonConfirm(true);
+
+    pane_tutor_code.textContent = "";
+    pane_code.textContent = "";
+    pane_preview.textContent = "";
+    
+    d_task.textContent = "";
+    d_subTasks.textContent = "";
+
+    // may need a little more deloading later like properly disposing of project files?
+    lesson = null;
+
+    // 
+    lastPreviewURL = null;
+}
 async function initLessonPage(){
+    if(lesson ? !lesson.hasLoaded || lesson.isResuming : false){
+        console.warn("Warn: can't init lesson page when there is a lesson currently resuming.");
+        return;
+    }
+    await deloadLesson();
+
     setupEditor(pane_tutor_code,EditorType.tutor);
     setupEditor(pane_code,EditorType.self);
     setupPreview(pane_preview);
@@ -5441,7 +5541,7 @@ async function initLessonPage(){
     
     // 
     
-    if(!await waitForUser()) return;
+    if(loginProm) if(!await waitForUser()) return;
     
     if(!bypassLogin) if(g_user == null){ // not logged in
         // alert("You are not logged in, please log in");
@@ -5455,7 +5555,7 @@ async function initLessonPage(){
         console.log("No lid found so no lesson to load");
         return;
     }
-    let lessonData = await new Promise<any>(resolve=>{
+    let lessonData:TreeLesson = await new Promise<any>(resolve=>{
         socket.emit("getLesson",lid,(data:any)=>{
             if(typeof data == "number"){
                 alert("Err: while trying to load lesson data, error code: "+data);
@@ -5465,6 +5565,48 @@ async function initLessonPage(){
         });
     });
     if(!lessonData) return;
+
+    // (FROM restoreLessonFiles)
+    let data = await new Promise<any>(resolve=>{
+        socket.emit("restoreLessonFiles",{
+            lid
+        },async (data:any)=>{
+            if(!data){
+                console.log("ERR while restoring files");
+                resolve(null);
+                return;
+            }
+
+            console.log("LESSON META:",data);
+
+            async function loadBufs(items:ULItem[]){
+                for(let i = 0; i < items.length; i++){
+                    let item = items[i];
+                    if("items" in item){ // folder
+                        await loadBufs(item.items as ULItem[]);
+                    }
+                    else{ // file
+                        let it1 = item as any;
+                        it1.buf = new Uint8Array(it1.buf);
+                        let it = new ULFile(it1.name,it1.buf);
+                        items[i] = it;
+                    }
+                }
+            }
+            await loadBufs(data.files ?? []);
+
+            resolve(data);
+        });
+    });
+    if(!data || typeof data == "number"){
+        alert("Err: while trying to restore lesson files. Error code: "+data);
+        return;
+    }
+    if(!data.files){
+        data.files = [];
+        console.warn("...default for files[]");
+    }
+    // #end for restoreLessonFiles snip
 
     // @ts-ignore
     require.config({paths:{vs:"/lib/monaco/min/vs"}});
@@ -5478,25 +5620,40 @@ async function initLessonPage(){
     if(lessonData.sections != undefined){
         console.warn(">> FOUND SECTIONS. parsing...");
         console.log(lessonData);
-        let id = lessonData.order[0].includes[0];
-        console.log("ID: "+id);
-
-        let sec = lessonData.sections.find(v=>v.id == id);
-        console.log("SEC: ",sec);
-
-        let scene = sec.scenes[0];
-        console.log("SCENE: ",scene);
-        if(!scene || !scene._data){
-            console.error("Couldn't load scene for an unknown reason.");
+        // let id = lessonData.order[0].includes[0];
+        // console.log("ID: "+id);
+        let meta = data.meta as ProgressData;
+        let packedI = meta.sceneI;
+        let packedId = meta.final_order[packedI];
+        if(!packedId){
+            console.error("Couldn't find lesson scene to load.","Packed ID: "+packedId,"Packed I: "+packedI);
             return;
         }
+        console.log("packed id: ",packedId,packedI);
 
-        await loadLessonPage(scene._data,sec.id,scene.id);
+        let [curSection,curScene] = packedId.split("^");
+
+        let sec = lessonData.sections.find((v:any)=>v.id == curSection);
+        if(!sec){
+            console.error("Couldn't find section: ",curSection);
+            return;
+        }
+        // console.log("SEC: ",sec);
+
+        let scene = sec.scenes.find(v=>v.id == curScene);
+        if(!scene || !scene._data){
+            console.error("Couldn't find scene to load: ",curSection,curScene);
+            return;
+        }
+        // console.log("SCENE: ",scene);
+
+        await loadLessonPage(scene._data,data);
     }
-    else await loadLessonPage(lessonData);
+    else await loadLessonPage(lessonData,data);
 }
-async function loadLessonPage(lessonData:TreeLesson,section?:string,scene?:string){
+async function loadLessonPage(lessonData:TreeLesson,_restoreData:any){
     lesson = Lesson.parse(lessonData,pane_code,pane_tutor_code);
+    lesson._restoreData = _restoreData;
     // lesson.info = lessonData;
 
     // if(section){
@@ -5589,6 +5746,13 @@ async function loadLessonPage(lessonData:TreeLesson,section?:string,scene?:strin
 
     lesson.init();
     project = lesson.p;
+
+    console.log(">> found initial files:",lessonData.initialFiles);
+    if(lessonData.initialFiles){
+        for(const file of lessonData.initialFiles){
+            lesson.tut.createFile(file.name,file.data); // this didn't used to have an await, added now
+        }
+    }
 
     onResize(true);
 }
@@ -6131,7 +6295,7 @@ document.addEventListener("keyup",e=>{
 });
 
 setTimeout(()=>{
-    iframe.addEventListener("keydown",e=>{
+    iframe?.addEventListener("keydown",e=>{
         e.preventDefault();
     });
 },3000);

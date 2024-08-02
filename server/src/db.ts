@@ -464,8 +464,8 @@ type MLesson = {
     
     eventI:number,
     taskI:number,
-    section:string|undefined;
-    scene:string|undefined;
+    sceneI:number,
+    final_order:string[],
     progress:number,
     mode:number,
 
@@ -496,13 +496,13 @@ const LessonProgressSchema = new Schema({
         type:Number,
         default:-1
     },
-    section:{
-        type:String,
-        default:undefined,
+    sceneI:{
+        type:Number,
+        default:0,
     },
-    scene:{
-        type:String,
-        default:undefined
+    final_order:{
+        type:[String],
+        default:[]
     },
     progress:{
         type:Number,
@@ -564,7 +564,9 @@ export class LessonMetaInst{
             hf:this.meta.hasFinished,
             _hp:0,
             wls:this.meta.dateLastSaved?.toISOString(),
-            time:this.meta.time
+            time:this.meta.time,
+            sceneI:this.meta.sceneI,
+            final_order:this.meta.final_order
         };
     }
 
@@ -1894,7 +1896,9 @@ export async function uploadLessonProgs(){
                 dateStarted:meta.ws != "" && meta.ws ? new Date(meta.ws) : null,
                 hasFinished:meta.hf,
                 dateLastSaved:meta.wls != "" && meta.wls ? new Date(meta.wls) : null,
-                time:meta.time
+                time:meta.time,
+                sceneI:meta.sceneI,
+                final_order:meta.final_order
             });
             await lessonMeta.save();
 

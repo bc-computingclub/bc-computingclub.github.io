@@ -382,6 +382,8 @@ io.on("connection",socket=>{
         lessonMeta.meta.eventI = -1;
         lessonMeta.meta.taskI = -1;
         lessonMeta.meta.progress = 0;
+        lessonMeta.meta.sceneI = 0;
+        lessonMeta.meta.final_order = [];
 
         // save
         await lessonMeta.save();
@@ -744,7 +746,7 @@ io.on("connection",socket=>{
             if(!user) return;
             if(!path) return;
             // let path = lessonCache.get(lid)?.fullPath;
-            let str = await read(path+"meta.json");
+            let str = await read(path+"meta.json",undefined,true);
             if(!str){
                 if(isSub){
                     str = `
@@ -759,7 +761,7 @@ io.on("connection",socket=>{
                     return;
                 }
             }
-            let data;
+            let data:any;
             try{
                 data = JSON.parse(str);
             }
@@ -907,8 +909,8 @@ io.on("connection",socket=>{
         lessonMeta.meta.eventI = progress.eventI;
         lessonMeta.meta.taskI = progress.taskI;
         lessonMeta.meta.progress = progress.prog;
-        if(progress.section) lessonMeta.meta.section = progress.section;
-        if(progress.scene) lessonMeta.meta.scene = progress.scene;
+        if(progress.sceneI) lessonMeta.meta.sceneI = progress.sceneI;
+        if(progress.final_order) lessonMeta.meta.final_order = progress.final_order; // this maybe needs to be here?
         lessonMeta.updateWhenLastSaved();
 
         // save
@@ -930,17 +932,49 @@ io.on("connection",socket=>{
         // console.log(":: done uploading");
         call(0);
     });
+    socket.on("goToNextScene",async (arg:{lid:string},call:(data?:any)=>void)=>{
+        if(!valVar2(arg,"object",call)) return;
+        if(!valVar2(arg.lid,"string",call)) return;
+
+        let user = getSession(socket.id);
+        if(!user){
+            call(-3);
+            return;
+        }
+
+        // let meta = await getLessonMeta(user.uid,lessonId);
+        let lessonMeta = await user.getLessonMeta(arg.lid);
+        if(!lessonMeta){
+            call(1);
+            return;
+        }
+
+        // let cacheItem = lessonCache.get(lessonMeta.meta.lid);
+        // if(!cacheItem){
+        //     call(2);
+        //     return;    
+        // }
+
+        let loc = lessonMeta.getPath();
+        if(!await removeFolder(loc)){ // this clears all the users files to get ready for the next scene
+            call(3);
+            return;
+        }
+
+        call(0);
+    });
     socket.on("restoreLessonFiles",async (arg:{
-        lid:string,
-        section?:string,
-        scene?:string
+        lid:string
     },call:(data:any)=>void)=>{
         if(!valVar(call,"function")) return;
         if(!valVar2(arg,"object",call)) return;
         if(!valVar2(arg.lid,"string",call)) return;
 
         let user = getSession(socket.id);
-        if(!user) return;
+        if(!user){
+            call(-3);
+            return;
+        }
 
         // let meta = await getLessonMeta(user.uid,lessonId);
         let lessonMeta = await user.getLessonMeta(arg.lid);
@@ -996,10 +1030,10 @@ io.on("connection",socket=>{
 
         if(cacheItem.lesson.sections != undefined){
             let loc = lessonMeta.getPath();
-            if(!await removeFolder(loc)){
-                call(3);
-                return;
-            }
+            // if(!await removeFolder(loc)){ // this clears all the users files everytime
+            //     call(3);
+            //     return;
+            // }
             if(!await mkdir(loc)){
                 call(4);
                 return;
@@ -1026,30 +1060,72 @@ io.on("connection",socket=>{
         
 
         let info = ptreeMap.get(arg.lid);
+        // let subInfo
         if(!info){
             call(5);
             return;
         }
         
-        if(arg.section){
-            let sec = info.sections.find(v=>v.id == arg.section);
-            if(!sec){
-                call(6);
-                return;
+        if(info.sections != undefined){
+            let needsSave = false;
+
+            // reset sceneI if it went out of range somehow
+            if(lessonMeta.meta.final_order) if(lessonMeta.meta.sceneI >= lessonMeta.meta.final_order?.length ?? 0){
+                lessonMeta.meta.sceneI = 0;
+                needsSave = true;
             }
-            let scene = sec.scenes.find(v=>v.id == arg.scene);
-            if(!scene){
-                call(7);
-                return;
-            }
-            info = scene._data;
+
+            // if no final order, then generate it
+            if(!lessonMeta.meta.final_order || lessonMeta.meta.final_order?.length == 0){
+                let final_order:string[] = []; // not a set because it should be fine to have duplicates, probably, and someone may want this I guess
+                for(const order of info.order){
+                    for(const secId of order.includes){
+                        let sec = info.sections.find(v=>v.id == secId);
+                        if(!sec) continue; // failed to find section
+
+                        let list = sec.scenes.map(v=>secId+"^"+v.id);
+                        if(order.sort == "random") list.sort((a,b)=>(Math.random()-0.5));
+                        final_order.push(...list);
+                    }
+                }
+                lessonMeta.meta.final_order = final_order;
+                lessonMeta.meta.sceneI = 0;
+                needsSave = true;
+            } 
+
+            if(needsSave) await lessonMeta.save();
+            // 
+
+            // VVV - THIS IS NOW ALL COMMENTED OUT BC IT'S NOW TAKEN CARE OF ON THE CLIENT SIDE
+
+            // vvv - this is called packed because final_order is composed of strings that look like: sectionId^sceneId
+            // let curScenePacked = lessonMeta.meta.final_order[lessonMeta.meta.sceneI];
+            // if(!curScenePacked){
+            //     curScenePacked = lessonMeta.meta.final_order[0];
+            //     lessonMeta.meta.sceneI = 0;
+            //     await lessonMeta.save();
+            // }
+
+            // let [curSection,curScene] = curScenePacked.split("^");
+
+            // let sec = info.sections.find(v=>v.id == curSection);
+            // if(!sec){
+            //     call(6);
+            //     return;
+            // }
+            // let scene = sec.scenes.find(v=>v.id == curScene);
+            // if(!scene){
+            //     call(7);
+            //     return;
+            // }
+            // info = scene._data;
         }
         if(!info){
             call(5.1);
             return;
         }
 
-        console.log("finished restoring...",arg,info);
+        // console.log("finished restoring...",arg,info);
 
         call({
             files,

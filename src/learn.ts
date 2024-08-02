@@ -56,7 +56,8 @@ type ReviewScene = {
 
     // server data
     initial_files?:ULFolder,
-    custom_evts?:string
+    custom_evts?:string,
+    _data?:TreeLesson
 };
 type ReviewOrderSet = {
     includes:string[],
@@ -98,6 +99,8 @@ class TreeLesson{
 
     sections:ReviewSection[];
     order:ReviewOrderSet[];
+
+    initialFiles?:any[];
 
     getIcon(){
         return lessonTypeData[LessonType[this.type??0]].icon;
@@ -242,10 +245,12 @@ type ProgressData = {
     ws:string;
     hf:boolean;
     wls:string;
+    sceneI:number;
+    final_order?:string[];
 }
 class LessonItem{
     constructor(ldata:TreeLesson,e:HTMLElement,data?:ProgressData){
-        if(data == null) data = {lid:ldata.lid,eventI:-1,taskI:-1,prog:0,mode:0,wu:"",s:false,n:false,u:false,times:0,ws:"",hf:false,wls:""};
+        if(data == null) data = {lid:ldata.lid,eventI:-1,taskI:-1,prog:0,mode:0,wu:"",s:false,n:false,u:false,times:0,ws:"",hf:false,wls:"",sceneI:0};
         this.lid = ldata.lid;
         this.l = ldata;
         this.e = e;
@@ -611,6 +616,8 @@ class LessonItem{
         this.data.taskI = -1;
         this.data.prog = 0;
         this.data.s = false;
+        this.data.sceneI = 0;
+        this.data.final_order = [];
         this.update();
     }
     resetProgress(){
@@ -619,6 +626,8 @@ class LessonItem{
         this.data.taskI = -1;
         this.data.prog = 0;
         this.data.s = true;
+        this.data.sceneI = 0;
+        this.data.final_order = [];
         this.update();
         console.log(this);
     }

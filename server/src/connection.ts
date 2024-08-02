@@ -478,8 +478,8 @@ export class LessonMeta{
     }
     eventI:number;
     taskI:number;
-    section:string|undefined;
-    scene:string|undefined;
+    sceneI:number = 0;
+    final_order:string[] = [];
     prog:number;
     mode:number;
     wu:string = ""; // when unlocked
@@ -521,6 +521,8 @@ export class LessonMeta{
         m._hp = data._hp ?? 0;
         m.wls = data.wls ?? "";
         m.time = data.time ?? 0;
+        m.sceneI = data.sceneI ?? 0;
+        m.final_order = data.final_order ?? undefined;
         return m;
     }
 }
@@ -567,6 +569,8 @@ export async function deleteLessonMeta(meta:LessonMetaInst){
     meta.meta.progress = 0;
     meta.meta.mode = 0;
     meta.meta.started = false;
+    meta.meta.sceneI = 0;
+    meta.meta.final_order = [];
     // await writeLessonMeta(uid,lid,meta);
     await meta.save();
 }
