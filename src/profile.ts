@@ -47,37 +47,37 @@ window.addEventListener("load", async () => {
 })
 
 async function genProfile() {
-    // await loginProm; // Ensures user is logged in before challenges are fetched.
+    await loginProm; // Ensures user is logged in before challenges are fetched.
 
-    // if(!g_user){
-    //   alertNotLoggedIn();
-    //   return;
-    // }
+    if(!g_user){
+      alertNotLoggedIn();
+      return;
+    }
 
-    // await getUserStats(); // Fetches and sets user stats.
+    await getUserStats(); // Fetches and sets user stats.
     
-    // let removeArr = document.querySelectorAll(".remove-on-load") as NodeListOf<HTMLElement>;
-    // removeArr.forEach((element) => {
-    //     element.remove();
-    // })
-    // if(viewSubmissionsButton) viewSubmissionsButton.disabled = false;
+    let removeArr = document.querySelectorAll(".remove-on-load") as NodeListOf<HTMLElement>;
+    removeArr.forEach((element) => {
+        element.remove();
+    })
+    if(viewSubmissionsButton) viewSubmissionsButton.disabled = false;
 
-    // let showOnLoginArr = document.querySelectorAll(".nologin") as NodeListOf<HTMLElement>;
-    // showOnLoginArr.forEach((element) => {
-    //     element.classList.remove("nologin");
-    // })
+    let showOnLoginArr = document.querySelectorAll(".nologin") as NodeListOf<HTMLElement>;
+    showOnLoginArr.forEach((element) => {
+        element.classList.remove("nologin");
+    })
 
-    // // Adding in join date, username, pfp.
-    // let date = new Date(g_user.data._joinDate);
-    // let options: Intl.DateTimeFormatOptions = { year: 'numeric', month: 'short' };
-    // dateJoined.innerHTML = date.toLocaleDateString('en-US', options);
+    // Adding in join date, username, pfp.
+    let date = new Date(g_user.data._joinDate);
+    let options: Intl.DateTimeFormatOptions = { year: 'numeric', month: 'short' };
+    dateJoined.innerHTML = date.toLocaleDateString('en-US', options);
 
-    // username.textContent = g_user.data.name.length < 24 ? g_user.data.name : g_user.data.name.substring(0,24) + "...";
-    // let pfp = document.querySelector(".p-pfp") as HTMLImageElement;
-    // if(g_user.data.picture) {
-    //     pfp.src = `${g_user.data.picture}`;
-    //     pfp.style.padding = "0px";
-    // }
+    username.textContent = g_user.data.name.length < 24 ? g_user.data.name : g_user.data.name.substring(0,24) + "...";
+    let pfp = document.querySelector(".p-pfp") as HTMLImageElement;
+    if(g_user.data.picture) {
+        pfp.src = `${g_user.data.picture}`;
+        pfp.style.padding = "0px";
+    }
 
     await showLoadingAnim([challengeStatContainer,lessonStatContainer,projectStatContainer],400); 
 
