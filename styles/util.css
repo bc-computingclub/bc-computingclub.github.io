@@ -537,6 +537,11 @@ body .nav-links > .active{
     justify-content:center;
     align-items:center;
 }
+.flx-e{
+    display: flex;
+    justify-content: flex-end;
+    align-content:center;
+}
 
 /* Universal Pane Styles */
 .pane{

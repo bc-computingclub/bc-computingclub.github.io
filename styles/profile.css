@@ -199,31 +199,47 @@ body {
     }
 
     &.circle-stat {
-        grid-template-rows: auto 1fr;
+        grid-template-rows: auto auto;
         gap: .5em;
     }
 }
 
 .circle {
-    border: 10px solid;
+    width: 140px;
+    height: 140px;
     border-radius: 50%;
+    background: conic-gradient(black 0% 0%, transparent 0% 100%);
+    position: relative;
     justify-self: center;
     align-self: center;
-    height: 120px;
-    width: 120px;
     display: flex;
     justify-content: center;
     align-items: center;
     font-size: 24px;
-}
+    z-index: 3;
 
-.flx {
-    display: flex;
-    gap: 1em;
-    justify-content: space-between;
+    &::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        border-radius: 50%;
+        background-color: var(--darken0);
+        z-index: -3;
+    }
 
-    &.end {
-        justify-content: flex-end;
+    &::after {
+        content: '';
+        position: absolute;
+        top: 10%;
+        left: 10%;
+        width: 80%;
+        height: 80%;
+        border-radius: 50%;
+        background-color: var(--secondary-bg-col);
+        z-index: -2;
     }
 }
 
@@ -276,20 +292,34 @@ body {
 
 .p-lesson-stats {
     color: var(--learn-col);
-    grid-template-columns: auto;
+    grid-template-columns: 1.2fr 2fr;
 }
 
 .p-challenge-stats {
     color: var(--practice-col);
-    grid-template-columns: 1fr 2fr;
+    grid-template-columns: 1.2fr 2fr;
 }
 
 .p-project-stats {
     color: var(--experiment-col);
-    grid-template-columns: auto;
+    grid-template-columns: auto auto auto;
+}
+
+.p-proj-stat{
+    background-color: var(--secondary-bg-col);
+    color: var(--experiment-col);
+    border-radius: 5px;
+    padding: 1em;
+    display: grid;
+    gap: 1em;
 }
 
 .p-view-submissions, .p-view-inprogress {
     cursor: pointer;
     background-color: var(--practice-col);
+}
+
+.p-view-projects {
+    cursor: pointer;
+    background-color: var(--experiment-col);
 }

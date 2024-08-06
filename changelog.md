@@ -1243,16 +1243,16 @@
     - I want to have some of the stats (eg challenges completed) be progress bars/progress circles as well as a number, so user can see they've completed 3 / 15 of the challenges, for example. 
     - Made a cool little UI in figma where I could add space for 2-3 badges next to username (either achievements, or user-selected icons... not sure exactly what yet).
 
- ### 7/26/24 
+ ### 7/26/24 - Paul
  - Continued tweaks to profile page styling, to make it more visually appealing. 
  - Lots of progress on Figma on the redesign for stats. Eg: a 'public' toggle on each statistic panel (lessons, challenges, projects) so that users can choose whether or not these stats are public. User could make challenge stats public, but not lesson stats, for example.
 
- ### 7/29/24
+ ### 7/29/24 - Paul
  - Work on updating the profile based on Figma mockups
  - Add banner, pfp styling, add 'badge' icons (future achievement showcase? for now, just join date)
  - Little bit of organization for stats in profile.ts, my first take on that was a disaster - paul
 
- ### 7/30/24
+ ### 7/30/24 - Paul
  - Continue working on profile. Added everything in challenge except for the visual status of the progress circle depending on user data, and set up styling for a user that's not logged in yet.
  - With Caleb's help, I'm finally able to test stuff with a local server again
 
@@ -1277,3 +1277,12 @@
     - reviews are finishable
     - they're pretty stable just need stuff like verification content/features, UI, and the rest of the 3 buttons for replay and replay later
 - (still need to fill this out at some point)
+
+ ### 8/5/24 - Paul
+ - Created a Figma mockup for flashcard system, based on idea Caleb had while we talked about review system. No change to code.
+
+ ### 8/6/24 - Paul
+ - Improved Figma mockup, streamlined colors and made UI more consistent to match rest of our webapp.
+  - NOTE: Far from final/complete. Criticism is very much welcome.
+ - Added progress circles to profile/stats page, for lessons completed out of total lessons, and challenges completed out of total challenges.
+ - Finished basic setup of stats. Normally, other than the "public" toggle making one of the three sets of statistics public/private, stats are now operational and look almost exactly like they do in the Figma document.

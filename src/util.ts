@@ -5663,4 +5663,5 @@ function cloneLessonFilesIntoProject(l:Lesson,name?:string){
     })
 }
 
-let totalChallenges = 12; // random number
+let totalChallenges = 18; // random number
+let totalLessons = 14; // random number
