@@ -1286,3 +1286,4 @@
   - NOTE: Far from final/complete. Criticism is very much welcome.
  - Added progress circles to profile/stats page, for lessons completed out of total lessons, and challenges completed out of total challenges.
  - Finished basic setup of stats. Normally, other than the "public" toggle making one of the three sets of statistics public/private, stats are now operational and look almost exactly like they do in the Figma document.
+  - Fix bug where color & grid-template-column weren't being applied as intended when user wasn't logged in

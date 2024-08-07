@@ -63,7 +63,7 @@ body {
     border-radius: 5px;
     font-weight: 650;
 
-    &.nologin {
+    &.vishidden {
         visibility: hidden;
     }
 }
@@ -78,6 +78,10 @@ body {
 
 .c-public-toggle {
     color: var(--practice-col);
+}
+
+.remove-on-load {
+    color: var(--secondary-col);
 }
 
 .p-header-top {
@@ -282,10 +286,10 @@ body {
     display: grid;
     gap: 1em;
     width: 100%;
-    &.nologin {
+    &.vishidden {
         grid-template-columns: 1fr;
-        >* {
-            padding: .5em 1em;
+        > * {
+            padding-inline-start: 1em;
         }
     }
 }

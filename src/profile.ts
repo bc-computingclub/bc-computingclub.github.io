@@ -14,7 +14,7 @@ type Stat = {
 let challengeStats: Stat[] = [
     {title:"Completed ",number:"0",icon:"select_check_box"},
     {title:"Submitted: ",number:"0",icon:""},
-    {title:"Challenges In Progress: ",number:"0",icon:""},
+    {title:"In Progress: ",number:"0",icon:""},
 ];
 let lessonStats: Stat[] = [
     {title:"Completed ",number:"0",icon:"select_check_box"},
@@ -22,7 +22,7 @@ let lessonStats: Stat[] = [
     {title:"Average Time Spent: ",number:"0 minutes",icon:""},
 ];
 let projectStats: Stat[] = [
-    {title:"Total Projects: ",number:"0",icon:""},
+    {title:"Projects: ",number:"0",icon:""},
     {title:"Time Spent: ",number:"0 minutes",icon:""},
     {title:"Average Time: ",number:"0 minutes",icon:""},
 ];
@@ -60,11 +60,10 @@ async function genProfile() {
     removeArr.forEach((element) => {
         element.remove();
     })
-    if(viewSubmissionsButton) viewSubmissionsButton.disabled = false;
 
-    let showOnLoginArr = document.querySelectorAll(".nologin") as NodeListOf<HTMLElement>;
+    let showOnLoginArr = document.querySelectorAll(".vishidden") as NodeListOf<HTMLElement>;
     showOnLoginArr.forEach((element) => {
-        element.classList.remove("nologin");
+        element.classList.remove("vishidden");
     })
 
     // Adding in join date, username, pfp.
@@ -148,9 +147,6 @@ async function genProfile() {
                     </div>
                     <span class="p-stat-contents">${challengesInProgress}</span>
                 </div>
-                <div class="flx-e">
-                    <button class="p-view-inprogress">View</button>
-                </div>
             </div>
         </div>
     `;
@@ -192,6 +188,13 @@ async function genProfile() {
     if (lessonStatCircle) {
         lessonStatCircle.style.background = `conic-gradient(var(--learn-col) 0% ${completedLessonPercent}%, transparent ${completedLessonPercent}% 100%)`;
     }
+
+    let viewSubmissionsButton = document.querySelector(".p-view-submissions") as HTMLButtonElement;
+    let viewInProgressButton = document.querySelector(".p-view-inprogress") as HTMLButtonElement;
+
+    viewSubmissionsButton?.addEventListener("click", (e) => {
+        window.location.href = '/practice/?filteroptions=completed';
+    });
 
     let completedChallPercent = (challengesCompleted / totalChallenges) * 100;
     let challengeStatCircle = challengeStatContainer.querySelector(".circle") as HTMLElement;
