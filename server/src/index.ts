@@ -1,11 +1,11 @@
 import { io, server, CredentialResData, User, users, getSession, sanitizeEmail, getProject, attemptToGetProject, getDefaultProjectMeta, getProjectFromHD, lessonMetas, LessonMeta, loadProject, LessonMode, writeLessonMeta, deleteLessonMeta, socks, getProject2, ProjectMeta, allProjects, Project, UserChallengeData, projectCache, Socket } from "./connection";
-import { CSubmission, Challenge, ChallengeData, ChallengeGet, challenges, getDifficultyId } from "./s_challenges";
+import { CSubmission, Challenge, ChallengeData, ChallengeGet, challenges, getDifficultyId, initChallenges2, totalChallenges } from "./s_challenges";
 import {LessonData, getLessonFolder, globalLessonFolders, ptreeMap, reloadLessons} from "./s_lesson";
 import fs, { copyFile } from "fs";
 import { createInterface } from "readline";
 import crypto from "crypto";
 import { createGuidedProject, createLesson, write, read, readdir, access, mkdir, removeFolder, removeFile, rename, internalCPDir, internalCP, lessonCache, registeredLessonFolders, ULFolder, ULItem, ULFile, createRushLesson, createReviewLesson, PTreeLesson } from "./s_util";
-import { ChallengeInst, ChallengeModel, ChallengeSubmissionModel, FolderInst, FolderModel, LessonMetaInst, LessonProgressModel, ProjectInst, ProjectModel, UserModel, UserSessionItem, findChallenge, removeFromList, removeFromListPred, uploadChallenges, uploadLessonProgs, uploadUsers, uploadUsersStage2, userSessions } from "./db";
+import { ChallengeInst, ChallengeModel, ChallengeSubmissionModel, FolderInst, FolderModel, LessonMetaInst, LessonProgressModel, ProjectInst, ProjectModel, UserModel, UserSessionItem, challengeCache, findChallenge, removeFromList, removeFromListPred, uploadChallenges, uploadLessonProgs, uploadUsers, uploadUsersStage2, userSessions } from "./db";
 import mongoose, { QuerySelector } from "mongoose";
 
 function valVar(v:any,type:string){
@@ -2428,11 +2428,17 @@ io.on("connection",socket=>{
 
             // totalProjects:session.meta.projects.length,
             totalProjects:session.meta.projectCount,
-            ...await session.getProjectStats()
+            ...await session.getProjectStats(),
+
+            totalLessons:lessonCache.size,
+            totalChallenges:totalChallenges,
+
+            settings:session.getSettings()
         };
 
         call(stats);
     });
+    // socket.on("setUserStatVisibility",async ());
 
     socket.on("createFolder",async (name:string,fid:string|undefined,call:(data:any)=>void)=>{
         if(!valVar2(name,"string",call)) return;
@@ -2772,8 +2778,10 @@ type SubmissionsFilterType = {
     mine:boolean;
 };
 
-server.listen(3000,()=>{
+server.listen(3000,async ()=>{
     console.log("listening on *:3000");
+
+    initChallenges2();
 });
 
 let rl = createInterface(process.stdin,process.stdout);

@@ -63,20 +63,22 @@ body {
     border-radius: 5px;
     font-weight: 650;
 
+    padding: 8px 16px;
+
     &.vishidden {
         visibility: hidden;
     }
 }
 
-.l-public-toggle {
+.lesson-public-toggle {
     color: var(--learn-col);
 }
 
-.p-public-toggle {
+.project-public-toggle {
     color: var(--experiment-col);
 }
 
-.c-public-toggle {
+.challenge-public-toggle {
     color: var(--practice-col);
 }
 

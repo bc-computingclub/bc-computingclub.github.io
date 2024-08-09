@@ -517,6 +517,11 @@ loginProm = new Promise<void>(resolve=>{
     _loginRes = resolve;
 });
 
+interface UserSettings{
+    lessonStatsPublic:boolean;
+    challengeStatsPublic:boolean;
+    projectStatsPublic:boolean;
+}
 type UserStats = {
     joinDate:string,
     
@@ -530,7 +535,12 @@ type UserStats = {
     
     totalProjects:number,
     totalProjectTime:number,
-    averageProjectTime:number
+    averageProjectTime:number,
+
+    totalLessons:number,
+    totalChallenges:number,
+
+    settings:UserSettings,
 };
 class GlobalUser{
     constructor(data:CredentialResData){
@@ -5662,6 +5672,3 @@ function cloneLessonFilesIntoProject(l:Lesson,name?:string){
         });
     })
 }
-
-let totalChallenges = 18; // random number
-let totalLessons = 14; // random number

@@ -1287,3 +1287,13 @@
  - Added progress circles to profile/stats page, for lessons completed out of total lessons, and challenges completed out of total challenges.
  - Finished basic setup of stats. Normally, other than the "public" toggle making one of the three sets of statistics public/private, stats are now operational and look almost exactly like they do in the Figma document.
   - Fix bug where color & grid-template-column weren't being applied as intended when user wasn't logged in
+
+### 8/8/24 - Claeb
+- cleaned up some profile.ts stuff (just bc I had a need for it to be more organized sorry)
+- changed some class/id names in profile.html to work more automated with the .ts
+- added settings with lesson, challenge, and project public/private stat visibility options to the user stats object on the server
+- made these buttons work in profile.html
+- added httpReq function to front end for future use with http req instead of sockets
+- added PATCH /user/stat_visibility endpoint to server for setting visibility of these stats
+- added totalLessons and totalChallenges to the user stats object
+    - totalChallenges is calculated a little lazy right now, may need to be optimized in the future but it's cached so speed after server restart isn't an issue

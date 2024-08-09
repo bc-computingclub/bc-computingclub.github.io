@@ -1,5 +1,5 @@
 import { MongoClient, ServerApiVersion } from "mongodb";
-import mongoose, { mongo } from "mongoose";
+import mongoose, { mongo, ObjectId } from "mongoose";
 import { LessonMeta, ProjectMeta, _findLessonMeta, _findProject, genPID, projectCache, users } from "./connection";
 import { challenges, getDifficultyId } from "./s_challenges";
 import { write, read, readdir, access, mkdir, removeFolder, ULFile, ULFolder, ULItem } from "./s_util";
@@ -282,6 +282,7 @@ export class FolderInst{
 // });
 
 type MUser = {
+    _id:ObjectId;
     uid:string,
     name:string,
     email:string,
@@ -308,11 +309,19 @@ type MUser = {
     challengesCompleted:number,
     projectCount:number,
 
+    settings:UserSettings;
+
     // 
     rootFolder:mongoose.Types.ObjectId,
 
     save:()=>Promise<void>
 };
+interface UserSettings{
+    lessonStatsPublic:boolean;
+    challengeStatsPublic:boolean;
+    projectStatsPublic:boolean;
+}
+// type UserStatID = "lesson" | "challenge" | "project";
 const UserSchema = new Schema({
     // _id: ObjectId,
     uid:{
@@ -356,6 +365,18 @@ const UserSchema = new Schema({
     projectCount:{
         type:Number,
         default:0
+    },
+    settings:{
+        type:{
+            lessonStatsPublic:Boolean,
+            challengeStatsPublic:Boolean,
+            projectStatsPublic:Boolean
+        },
+        default:{
+            lessonStatsPublic:false,
+            challengeStatsPublic:false,
+            projectStatsPublic:false
+        }
     },
 
     rootFolder:{
@@ -1271,6 +1292,15 @@ export class UserSessionItem{
             totalProjectTime:number,
             averageProjectTime:number
         };
+    }
+
+    getSettings(){
+        let s = this.meta.settings ?? {};
+        return {
+            lessonStatsPublic:s.lessonStatsPublic ?? false,
+            challengeStatsPublic:s.challengeStatsPublic ?? false,
+            projectStatsPublic:s.projectStatsPublic ?? false,
+        } as UserSettings;
     }
 
     // 

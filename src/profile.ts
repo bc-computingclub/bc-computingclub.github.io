@@ -28,18 +28,7 @@ let projectStats: Stat[] = [
 ];
 
 // Below are all of the stats that will be displayed on the profile page. Randomly filled in for now
-
-let challengesCompleted:number = 2;
-let challengesSubmitted:number = 3;
-let challengesInProgress:number = 1;
-
-let lessonsCompleted:number = 3;
-let totalLessonTime:number = 12;
-let averageLessonTime:number = 4;
-
-let totalProjects:number = 4;
-let totalProjectTime:number = 23;
-let averageProjectTime:number = 4;
+// Claeb: sorry I took them away haha and moved it all to a stats object for better organization and ease of future proofing
 
 window.addEventListener("load", async () => {
     await genProfile();
@@ -50,11 +39,11 @@ async function genProfile() {
     await loginProm; // Ensures user is logged in before challenges are fetched.
 
     if(!g_user){
-      alertNotLoggedIn();
-      return;
+        alertNotLoggedIn();
+        return;
     }
 
-    await getUserStats(); // Fetches and sets user stats.
+    let stats = await getUserStats(); // Fetches and sets user stats.
     
     let removeArr = document.querySelectorAll(".remove-on-load") as NodeListOf<HTMLElement>;
     removeArr.forEach((element) => {
@@ -91,7 +80,7 @@ async function genProfile() {
                 </span>
                 <span class="">${lessonStats[0].title}</span>
             </div>
-            <span class="p-stat-contents circle">${lessonsCompleted}/${totalLessons}</span>
+            <span class="p-stat-contents circle">${stats.lessonsCompleted}/${stats.totalLessons}</span>
         </div>
         <div class="p-stat-cont-nested">
             <div class="p-stat split-stat">
@@ -100,7 +89,7 @@ async function genProfile() {
                         <span class="material-symbols-outlined">${lessonStats[1].icon}</span>
                         <span class="">${lessonStats[1].title}</span>
                     </div>
-                    <span class="p-stat-contents">${totalLessonTime} hours</span>
+                    <span class="p-stat-contents">${stats.totalLessonTime} hours</span>
                 </div>
             </div>
             <div class="p-stat split-stat">
@@ -109,11 +98,12 @@ async function genProfile() {
                         <span class="material-symbols-outlined">${lessonStats[2].icon}</span>
                         <span class="">${lessonStats[2].title}</span>
                     </div>
-                    <span class="p-stat-contents">${averageLessonTime} hours</span>
+                    <span class="p-stat-contents">${stats.averageLessonTime} hours</span>
                 </div>
             </div>
         </div>
     `;
+    setupStatVisibilityCheckbox("lesson",stats);
 
     challengeStatContainer.className = "p-challenge-stats";
     challengeStatContainer.innerHTML = `
@@ -124,7 +114,7 @@ async function genProfile() {
                 </span>
                 <span class="">${challengeStats[0].title}</span>
             </div>
-            <span class="p-stat-contents circle">${challengesCompleted}/${totalChallenges}</span>
+            <span class="p-stat-contents circle">${stats.challengesCompleted}/${stats.totalChallenges}</span>
         </div>
         <div class="p-stat-cont-nested">
             <div class="p-stat split-stat">
@@ -133,7 +123,7 @@ async function genProfile() {
                         <span class="material-symbols-outlined">${challengeStats[1].icon}</span>
                         <span class="">${challengeStats[1].title}</span>
                     </div>
-                    <span class="p-stat-contents">${challengesSubmitted}</span>
+                    <span class="p-stat-contents">${stats.challengesSubmitted}</span>
                 </div>
                 <div class="flx-e">
                     <button class="p-view-submissions">View</button>
@@ -145,11 +135,12 @@ async function genProfile() {
                         <span class="material-symbols-outlined">${challengeStats[2].icon}</span>
                         <span class="">${challengeStats[2].title}</span>
                     </div>
-                    <span class="p-stat-contents">${challengesInProgress}</span>
+                    <span class="p-stat-contents">${stats.challengesInProgress}</span>
                 </div>
             </div>
         </div>
     `;
+    setupStatVisibilityCheckbox("challenge",stats);
 
     projectStatContainer.className = "p-project-stats";
     projectStatContainer.innerHTML = `
@@ -160,7 +151,7 @@ async function genProfile() {
                 </span>
                 <span class="">${projectStats[0].title}</span>
             </div>
-            <span class="flx-e">${totalProjects}</span>
+            <span class="flx-e">${stats.totalProjects}</span>
         </div>
         <div class="flx p-proj-stat">
             <div>
@@ -169,7 +160,7 @@ async function genProfile() {
                 </span>
                 <span class="">${projectStats[1].title}</span>
             </div>
-            <span class="flx-e">${totalProjectTime} hours</span>
+            <span class="flx-e">${stats.totalProjectTime} hours</span>
         </div>
         <div class="flx p-proj-stat">
             <div>
@@ -178,11 +169,12 @@ async function genProfile() {
                 </span>
                 <span class="">${projectStats[2].title}</span>
             </div>
-            <span class="flx-e">${averageProjectTime} hours</span>
+            <span class="flx-e">${stats.averageProjectTime} hours</span>
         </div>
     `;
+    setupStatVisibilityCheckbox("project",stats);
 
-    let completedLessonPercent = (lessonsCompleted / totalLessons) * 100;
+    let completedLessonPercent = (stats.lessonsCompleted / stats.totalLessons) * 100;
     let lessonStatCircle = lessonStatContainer.querySelector(".circle") as HTMLElement;
 
     if (lessonStatCircle) {
@@ -196,12 +188,46 @@ async function genProfile() {
         window.location.href = '/practice/?filteroptions=completed';
     });
 
-    let completedChallPercent = (challengesCompleted / totalChallenges) * 100;
+    let completedChallPercent = (stats.challengesCompleted / stats.totalChallenges) * 100;
     let challengeStatCircle = challengeStatContainer.querySelector(".circle") as HTMLElement;
 
     if (challengeStatCircle) {
         challengeStatCircle.style.background = `conic-gradient(var(--practice-col) 0% ${completedChallPercent}%, transparent ${completedChallPercent}% 100%)`;
     }
+}
+
+function setupStatVisibilityCheckbox(id:"lesson"|"challenge"|"project",stats:UserStats){
+    let cb_vis = document.querySelector<HTMLInputElement>(`#cb-${id}-visibility`);
+    let b_vis = document.querySelector<HTMLButtonElement>(`.${id}-public-toggle`);
+    if(!cb_vis || !b_vis){
+        console.warn("Failed to find checkboxes/buttons for visibility");
+        return;
+    }
+    
+    cb_vis.checked = stats.settings[id+"StatsPublic"] ?? false;
+        
+    // 
+    let _hadResponse = true;
+    b_vis.addEventListener("click",async e=>{
+        if(!_hadResponse) return;
+        _hadResponse = false;
+
+        let initial = cb_vis.checked;
+        cb_vis.checked = !cb_vis.checked;
+        
+        let res = await httpReq<{value:boolean}>("PATCH","/user/stat_visibility",{
+            id,value:cb_vis.checked
+        },{isJSON:true});
+        if(!res){
+            // failed, set it back to initial
+            cb_vis.checked = initial;
+            return;
+        }
+    
+        cb_vis.checked = res.value;
+
+        _hadResponse = true;
+    });
 }
 
 viewSubmissionsButton?.addEventListener("click", (e) => {
@@ -210,14 +236,7 @@ viewSubmissionsButton?.addEventListener("click", (e) => {
 
 async function getUserStats() {
     let tempStats = await g_user.getStats();
+    console.log("STATS:",tempStats);
 
-    challengesCompleted = tempStats.challengesCompleted;
-    challengesSubmitted = tempStats.challengesSubmitted;
-    challengesInProgress = tempStats.challengesInProgress;
-    lessonsCompleted = tempStats.lessonsCompleted;
-    totalLessonTime = tempStats.totalLessonTime;
-    averageLessonTime = tempStats.averageLessonTime;
-    totalProjects = tempStats.totalProjects;
-    totalProjectTime = tempStats.totalProjectTime;
-    averageProjectTime = tempStats.averageProjectTime;
+    return tempStats;
 }

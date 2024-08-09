@@ -3,7 +3,7 @@ import express, { NextFunction, Request, Response } from "express";
 import {Server, Socket} from "socket.io";
 // import cors from "cors";
 
-import {LessonMetaInst, LessonProgressModel, ProjectInst, ProjectModel, UserSessionItem, postInitMongoDB, removeFromList, userSessions} from "./db";
+import {LessonMetaInst, LessonProgressModel, ProjectInst, ProjectModel, UserModel, UserSessionItem, postInitMongoDB, removeFromList, userSessions} from "./db";
 import { write, read, readdir, access, mkdir, removeFolder, ULItem, ULFile, ULFolder } from "./s_util";
 // initMongoDB();
 postInitMongoDB();
@@ -914,3 +914,53 @@ app.use("/lesson/:userId/:auth/",(req,res,next)=>{
 app.use("/",express.static("../../"));
 
 export {Socket};
+
+// 
+
+app.use(express.json());
+app.patch("/user/stat_visibility",async (req,res)=>{
+    let sid = req.headers["socket-id"];
+    if(!sid){
+        res.sendStatus(400);
+        return;
+    }
+    if(typeof sid == "object") sid = sid[0];
+    
+    let body = req.body as {
+        id:string;
+        value:boolean;
+    };
+    if(!body){
+        res.sendStatus(400);
+        return;
+    }
+    if(!body.id || body.id?.includes(".") || body.value == undefined){
+        res.sendStatus(400);
+        return;
+    }
+
+    let user = getSession(sid);
+    if(!user){
+        res.sendStatus(404);
+        return;
+    }
+
+    let id = "settings."+body.id+"StatsPublic";
+
+    let res1 = await UserModel.updateOne({
+        _id:user.meta._id
+    },{
+        "$set":{
+            [id]:body.value
+        }
+    });
+    if(!res1.acknowledged){
+        res.sendStatus(500);
+    }
+    else{
+        res.send({
+            value:body.value
+        });
+    }
+});
+// curl -X PATCH http://localhost:3000/api/resource/1 -H "Content-Type: application/json" -d '{"key": "new value"}'

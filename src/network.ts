@@ -632,3 +632,41 @@ class NotYetMenu extends Menu{
         this.close();
     }
 }
+
+/**
+ * 
+ * @param method 
+ * @param endpoint Must start with a slash. Example: "/user/stat_visibility"
+ * @param body object or string
+ * @param ops 
+ * @returns 
+ */
+async function httpReq<T extends any>(method:"GET"|"POST"|"PATCH"|"DELETE",endpoint:string,body?:any,ops?:{
+    isJSON:boolean
+}){
+    let prom:Promise<T>;
+
+    let url = serverURL+endpoint;
+
+    let xhr = new XMLHttpRequest();
+    xhr.open(method,url,true);
+    xhr.setRequestHeader("Content-Type","application/json");
+    xhr.setRequestHeader("Socket-Id",socket.id);
+
+    prom = new Promise<T>(resolve=>{
+        xhr.onreadystatechange = ()=>{
+            if(xhr.readyState != 4) return; // 4 means not done yet
+            if(xhr.status == 200){
+                resolve(ops?.isJSON ? JSON.parse(xhr.responseText) : xhr.responseText);
+            }
+            else{
+                resolve(undefined);
+            }
+        };
+    });
+
+    let data = JSON.stringify(body);
+    xhr.send(data);
+
+    return prom;
+}

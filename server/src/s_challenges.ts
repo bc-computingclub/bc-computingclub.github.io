@@ -1,4 +1,5 @@
 import { User } from "./connection";
+import { ChallengeModel } from "./db";
 import { read, readdir, write } from "./s_util";
 
 export class CSubmission{
@@ -149,7 +150,7 @@ export class ChallengeData{
     }
 }
 
-export const challenges = new Map<string,Challenge>();
+export const challenges = new Map<string,Challenge>(); // depricated?
 
 async function initChallenges(){
     let names = await readdir("../challenges");
@@ -169,7 +170,14 @@ async function initChallenges(){
         challenges.set(cid,Challenge.from(cid,data));
     }
 }
-initChallenges();
+// initChallenges(); // DEPRICATED
+
+export let totalChallenges = 0;
+export async function initChallenges2(){
+    // console.log("LOOK FOR TOTAL CHALLENGES");
+    totalChallenges = await ChallengeModel.countDocuments();
+    console.log("Total Challenges: ",totalChallenges);
+}
 
 // !!! - shouldn't need this because it should be handled enough by uploadUsers()
 // export async function uploadChallengeSubmissions(){
