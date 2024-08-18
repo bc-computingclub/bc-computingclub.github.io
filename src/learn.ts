@@ -101,6 +101,7 @@ class TreeLesson{
     order:ReviewOrderSet[];
 
     initialFiles?:any[];
+    userFiles?:{name:string,data:Uint8Array}[];
 
     getIcon(){
         return lessonTypeData[LessonType[this.type??0]].icon;

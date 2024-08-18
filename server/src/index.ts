@@ -800,6 +800,43 @@ io.on("connection",socket=>{
                 }
             }
 
+            let userLessonPath = "../lesson/"+user.uid+"/"+lid;
+            if(isSub){
+                // let res = await removeFolder(userLessonPath);
+                // let res2 = await mkdir(userLessonPath);
+                // console.log("> Reset sub lessons files: ",res,res2,path);
+            }
+            if(await access(path+"user_files")){
+                let userFiles = await readdir(path+"user_files");
+                if(userFiles){
+                    if(!await access(userLessonPath)) await mkdir(userLessonPath);
+                    let existingUserFiles = await readdir(userLessonPath);
+                    if(existingUserFiles?.length == 0){
+                        data.userFiles = [];
+                        for(const v of userFiles){
+                            data.userFiles.push({
+                                name:v,
+                                data:await read(path+"user_files/"+v)
+                            });
+                        }
+                    }
+                    
+                    // console.log("-- found user_files folder in this lesson: path: "+path);
+                    // let existingUserFiles = await readdir(userLessonPath);
+                    // console.log("FILES: ",existingUserFiles?.length,userFiles.length);
+                    // if(existingUserFiles) if(existingUserFiles.length == 0){
+                    //     for(const file of userFiles){
+                    //         await internalCPDir(path+"user_files/"+file,userLessonPath+file);
+                    //     }
+                    // }
+                }
+                else{
+                    console.log("Err occured while trying to get user files");
+                    f(3);
+                    return;
+                }
+            }
+
             return data;
         }
 

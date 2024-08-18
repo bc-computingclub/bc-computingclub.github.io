@@ -1297,3 +1297,6 @@
 - added PATCH /user/stat_visibility endpoint to server for setting visibility of these stats
 - added totalLessons and totalChallenges to the user stats object
     - totalChallenges is calculated a little lazy right now, may need to be optimized in the future but it's cached so speed after server restart isn't an issue
+
+### 8/17/24 - Claeb
+- mostly just support for loading custom user files in review lessons (probably works in regular lessons too but it's untested)

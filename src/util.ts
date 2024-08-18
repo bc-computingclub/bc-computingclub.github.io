@@ -2776,7 +2776,7 @@ class FFile extends FItem{
                 if(PAGE_ID == PAGEID.lesson){
                     this.actions = getEditActions(editor);
 
-                    if(lesson.info.type == LessonType.rush && this.p.isTutor){
+                    if(lesson.info?.type == LessonType.rush && this.p.isTutor){
                         // let div = document.createElement("div");
                         // let back_editor = monaco.editor.create(div, {
                         //     value: [this.p.textDecoder.decode(this.buf)].join("\n"),
@@ -3058,7 +3058,7 @@ class FFile extends FItem{
         }
 
         // RUSH MODE
-        if(lesson?.info.type == LessonType.rush){
+        if(lesson?.info?.type == LessonType.rush){
             this.actions.startInputListener(e=>{
                 // console.log(e.changes[0]);
                 // console.log(e);
@@ -5657,6 +5657,7 @@ async function doOverrideFolder(f1:FFolder,f2:FFolder){
 
 // 
 function cloneLessonFilesIntoProject(l:Lesson,name?:string){
+    if(!l.info) return;
     if(!name) name = l.info.name;
 
     return new Promise<boolean>(resolve=>{

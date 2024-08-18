@@ -213,6 +213,7 @@ function uploadLessonFiles(lesson:Lesson){ // for refresh
     return new Promise<void>(resolve=>{
         console.log(".......uploading");
         socket.emit("uploadLessonFiles",lesson.lid,list,prog,(err:any)=>{
+            if(err == null) alert("Unknown error while uploading files");
             if(err) alert("ERR while uploading files: "+err);
             resolve();
         });

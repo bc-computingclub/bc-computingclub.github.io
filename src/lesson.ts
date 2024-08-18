@@ -692,7 +692,7 @@ class CodePart{
     isRush(){
         if(this.noRush) return false;
         // return lesson.info.type == LessonType.rush;
-        return lesson.currentSubTask instanceof AddRushCode || lesson.info.type == LessonType.rush;
+        return lesson.currentSubTask instanceof AddRushCode || lesson.info?.type == LessonType.rush;
     }
     async run(editor:Editor,actions:TutEditorActions){
         
@@ -2870,7 +2870,7 @@ class T_StartReview extends Task{
         let l = this.l;
 
         // init
-        for(const set of l.info.order){
+        if(l.info) for(const set of l.info.order){
             let q = new ReviewQueue(this);
             this.queues.push(q);
             let sections = set.includes.map(v=>l.info.sections.find(w=>w.id == v)).filter(v=>v != null);
@@ -4684,7 +4684,7 @@ class Lesson{
 
     // !!! idea - meta data represents data about the document (when explaining document structure)
     async goToNextScene(){
-        if(!this.info.sections.length) return; // return because this lesson doesn't have any sections/scenes
+        if(!this.info?.sections.length) return; // return because this lesson doesn't have any sections/scenes
 
         this.progress.sceneI++;
 
@@ -5250,8 +5250,8 @@ class Lesson{
     }
 
     hasSections(){
-        if(!this.info.sections) return false;
-        return this.info.sections.length != 0;
+        if(!this.info?.sections) return false;
+        return this.info?.sections.length != 0;
     }
 
     isComplete = false;
@@ -5750,7 +5750,13 @@ async function loadLessonPage(lessonData:TreeLesson,_restoreData:any){
     console.log(">> found initial files:",lessonData.initialFiles);
     if(lessonData.initialFiles){
         for(const file of lessonData.initialFiles){
-            lesson.tut.createFile(file.name,file.data); // this didn't used to have an await, added now
+            lesson.tut.createFile(file.name,file.data); // this didn't used to have an await, added now // removed it again at some point bc the await is only needed if there is a name conflict for the menu
+        }
+    }
+    console.log(">> user files: ",lessonData.userFiles);
+    if(lessonData.userFiles){
+        for(const file of lessonData.userFiles){
+            lesson.p.createFile(file.name,file.data,undefined,undefined,true);
         }
     }
 
