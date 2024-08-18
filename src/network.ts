@@ -287,6 +287,13 @@ async function restoreLessonFiles(lesson:Lesson){
     // let index = lesson.p.files.find(v=>v.name == "index.html") as FFile;
     // if(index) index.open();
     // else lesson.p.files[0]?.open();
+
+    if(lesson.info.type == LessonType.review){
+        setPageAccent(AccentType.practice);
+        let tutEditor = lesson.tut.getCurEditor();
+        console.log("tuteditor:",tutEditor);
+        if(tutEditor) tutEditor.updateOptions({wordWrap:"on"});
+    }
 }
 // 
 // function old_uploadProjectFiles(project:Project){ // for refresh

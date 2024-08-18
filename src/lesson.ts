@@ -17,6 +17,8 @@ const d_currentTasks = document.querySelector(".d-current-tasks");
 const d_task = document.querySelector(".d-task");
 const d_subTasks = document.querySelector(".d-sub-tasks");
 const b_imDone = d_lesson_confirm.querySelector(".b-im-done") as HTMLButtonElement;
+const lessonConfirmText = d_lesson_confirm.querySelector(".lesson-confirm-text") as HTMLButtonElement;
+const lessonConfirmSubmit = d_lesson_confirm.querySelector(".lesson-confirm-submit") as HTMLButtonElement;
 const b_replay = d_lesson_confirm.querySelector(".b-replay");
 const b_goBackStep = d_lesson_confirm.querySelector(".b-go-back-step");
 setupCallout(b_replay,"Replay Step");
@@ -32,8 +34,20 @@ function getTypeSpeed(textLen:number){
     return Math.ceil((30+Math.random()*100)*speedScale);
 }
 
-b_imDone.addEventListener("click",e=>{
+b_imDone.addEventListener("click",async e=>{
     if(lesson.currentSubTask){
+        if(lesson.currentSubTask instanceof ValidateCode){
+            let res = await lesson.currentSubTask.checkValidation();
+            let b:Bubble|undefined;
+            if(!res) b = addBubbleAt(BubbleLoc.global,"Sorry! That's not correct.",undefined,{
+                click:true
+            });
+            else b = addBubbleAt(BubbleLoc.global,"Correct!",undefined,{
+                click:true
+            });
+            if(b) await b.clickProm;
+            if(!res) return;
+        }
         lesson.currentSubTask._resFinish();
         b_imDone.disabled = true;
     }
@@ -110,9 +124,34 @@ async function hideLessonConfirm(noWait=false){
     d_lesson_confirm.style.pointerEvents = "none";
     if(!noWait) await wait(1500);
 }
+function updateLessonConfirmDetails(ops:{
+    text?:string;
+    submit?:string;
+}){
+    if(ops.text) lessonConfirmText.textContent = ops.text;
+    if(ops.submit) lessonConfirmSubmit.textContent = ops.submit;
+}
 async function showLessonConfirm(){
     let preTask = lesson.currentEvent;
     let preSubTask = lesson.currentSubTask;
+    let hasGoBack = true;
+    let hasReplay = true;
+
+    if(preSubTask instanceof ValidateCode){
+        hasGoBack = false;
+        hasReplay = false;
+        updateLessonConfirmDetails({
+            text:`Press "Submit" to let the Tutor know when you're finished.`,
+            submit:"Submit"
+        });
+    }
+    else{
+        updateLessonConfirmDetails({
+            text:`Press "I'm Done" to let the Tutor know when you're done with this step.`,
+            submit:"I'm Done"
+        });
+    }
+    
     // await wait(2000);
     await wait(1000);
     if(lesson.currentEvent != preTask || lesson.currentSubTask != preSubTask){
@@ -121,8 +160,16 @@ async function showLessonConfirm(){
     }
     d_lesson_confirm.style.opacity = "1";
     d_lesson_confirm.style.pointerEvents = null;
-    if(lesson._subTaskNum > 1) b_goBackStep.classList.remove("hide");
-    else b_goBackStep.classList.add("hide");
+    if(hasGoBack){
+        if(lesson._subTaskNum > 1) b_goBackStep.classList.remove("hide");
+        else b_goBackStep.classList.add("hide");
+    }
+    else{
+        b_goBackStep.classList.add("hide");
+    }
+
+    b_replay.classList.toggle("hide",!hasReplay);
+
     await wait(500);
 }
 
@@ -1987,6 +2034,69 @@ function addBubbleAtCursor(editor:monaco.editor.IStandaloneCodeEditor,preText:st
 
     return b2;
 }
+class ValidatePart{
+    async validate(dom:Document){
+        return true;
+    }
+}
+// abstract class VP_Elm extends ValidatePart{
+//     constructor(){
+//         super();
+//     }
+//     abstract getElm(dom: Document):Element|undefined;
+//     validate(dom: Document): Promise<boolean> {
+        
+//     }
+// }
+interface VP_Ops{
+    text?:string;
+}
+class VP_Select extends ValidatePart{
+    constructor(selector:string,ops?:VP_Ops){
+        super();
+        this.selector = selector;
+        this.ops = ops ?? {};
+    }
+    selector:string;
+    ops:VP_Ops;
+    getElm(dom: Document): Element | undefined {
+        return dom.querySelector(this.selector);
+    }
+    async validate(dom: Document): Promise<boolean> {
+        if(!super.validate(dom)) return false;
+        let elm = this.getElm(dom);
+        if(!elm) return false;
+        let o = this.ops;
+
+        if(o.text != undefined) if(elm.textContent != o.text) return false;
+
+        return true;
+    }
+}
+class ValidateCode extends Task{
+    constructor(parts:ValidatePart[]){
+        super("Validate Code");
+        this.parts = parts;
+    }
+    async start(): Promise<string | void> {
+        await super.start();
+
+        return await this.finish();
+    }
+    async checkValidation(){
+        await refreshLesson();
+        let dom = iframe.contentDocument;
+        
+        for(const part of this.parts){
+            let check = await part.validate(dom);
+            if(!check) return false;
+        }
+        // this.canBeFinished = true;
+        // this._resFinish();
+        return true;
+    }
+    parts:ValidatePart[];
+}
 class AddCode extends Task{
     constructor(parts:CodePart[],text="Let's add some code here.",dir?:string){
         super("Add Code Parts");
@@ -2782,6 +2892,15 @@ class T_UseAccent extends Task{
 
         await this.finish();
     }
+}
+
+function setPageAccent(accent:AccentType){
+    document.body.style.setProperty("--cta-btn-col",`var(--${AccentType[accent]}-col)`);
+
+    let activeNav = document.querySelector("a.nav-link.active");
+    if(activeNav) activeNav.classList.remove("active");
+    let nav = document.querySelector(`a.nav-link:nth-child(${accent+2})`);
+    if(nav) nav.classList.add("active");
 }
 
 class ReviewQueue{
@@ -4855,6 +4974,11 @@ class Lesson{
         if(data.banner) a.bannerSection = new TextArea(data.banner.sections.map((v:any)=>new TextSection(v.head,v.text)));
         a.finalInstance = new FinalProjectInstance([]);
 
+        if(!data.events){
+            alert("There was a problem loading this lesson");
+            return;
+        }
+
         data.events = data.events.substring(data.events.indexOf("\n")+1);
         data.boardData = data.boardData.map((v:any)=>v.substring(v.indexOf("\n")+1));
         
@@ -5566,6 +5690,8 @@ async function initLessonPage(){
     });
     if(!lessonData) return;
 
+    // the point at which lessonData has been gotten
+
     // (FROM restoreLessonFiles)
     let data = await new Promise<any>(resolve=>{
         socket.emit("restoreLessonFiles",{
@@ -5653,6 +5779,7 @@ async function initLessonPage(){
 }
 async function loadLessonPage(lessonData:TreeLesson,_restoreData:any){
     lesson = Lesson.parse(lessonData,pane_code,pane_tutor_code);
+    if(!lesson) return;
     lesson._restoreData = _restoreData;
     // lesson.info = lessonData;
 

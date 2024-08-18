@@ -682,10 +682,10 @@ function genHeader(i:number,isCompact=true,id:string){
         </div>
         `:""}
         <div class="d-lesson-confirm none">
-            <div>Press "I'm Done" to let the Tutor know when you're done with this step.</div>
+            <div class="lesson-confirm-text">Press "I'm Done" to let the Tutor know when you're done with this step.</div>
             <button class="b-im-done icon-btn">
                 <div class="material-symbols-outlined">done</div>
-                <div>I'm Done</div>
+                <div class="lesson-confirm-submit">I'm Done</div>
             </button>
             <button class="b-replay"><div class="material-symbols-outlined">replay</div></button>
             <button class="b-go-back-step hide"><div class="material-symbols-outlined">keyboard_double_arrow_left</div></button>
@@ -3699,12 +3699,25 @@ async function refreshPreview(){
     else await refreshProject();
 }
 function postIFrameRefresh(){
-    iframe.onload = function(){
-        if(iframe.contentDocument){
-            if(_iframeKeydown) iframe.contentDocument.removeEventListener("keydown",_iframeKeydown);
-            iframe.contentDocument.addEventListener("keydown",_iframeKeydown);
-        }
-    };
+    // return new Promise<void>(resolve=>{
+        // if(iframe.src == ""){
+        //     resolve();
+        //     return;
+        // }
+        console.warn("LOADING IFRAME");
+        iframe.onload = function(){
+            console.warn(">> LOADED");
+            if(iframe.contentDocument){
+                if(_iframeKeydown) iframe.contentDocument.removeEventListener("keydown",_iframeKeydown);
+                iframe.contentDocument.addEventListener("keydown",_iframeKeydown);
+            }
+            // resolve();
+        };
+        iframe.onerror = function(){
+            console.warn(">> FAILED");
+            // resolve();
+        };
+    // });
 }
 
 // PAGE ID
@@ -3786,7 +3799,19 @@ async function refreshLesson(){
     }
     // iframe.contentWindow.location.replace(serverURL+"/lesson/"+g_user.uid+"/"+socket.id+"/"+g_user.uid+"/"+lesson.lid);
     postIFrameRefresh();
+    let loadRes:()=>void;
+    let loadProm = new Promise<void>(resolve=>{
+        loadRes = resolve;
+    });
+    iframe.onload = ()=>{
+        loadRes();
+    }
+    iframe.onerror = ()=>{
+        loadRes();
+    };
     iframe.contentWindow.location.replace(project.getURL());
+
+    await loadProm;
 
     icon_refresh.style.rotate = _icRef_state ? "360deg" : "0deg";
     _icRef_state = !_icRef_state;

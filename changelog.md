@@ -1300,3 +1300,10 @@
 
 ### 8/17/24 - Claeb
 - mostly just support for loading custom user files in review lessons (probably works in regular lessons too but it's untested)
+
+### 8/18/24 - Claeb
+- started working on first question
+- added ValidationPart class system
+- added VP for CSS selectors to test if it exists and with certain text (or not)
+- doesn't move onto the next task under the validation check is complete
+- added custom text for the lesson confirm menu for validation checks
