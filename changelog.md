@@ -1307,3 +1307,4 @@
 - added VP for CSS selectors to test if it exists and with certain text (or not)
 - doesn't move onto the next task under the validation check is complete
 - added custom text for the lesson confirm menu for validation checks
+- Code Otterer

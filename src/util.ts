@@ -3123,17 +3123,25 @@ function cursorLoop(){
         clearTimeout(_cursorTO);
         _cursorTO = null;
     }
-    
-    let delay = 500;
 
+    let delay = 500;
     let list = document.querySelectorAll(".custom-cursor");
-    for(const c of list){
-        c.classList.toggle("hide");
+    if(lesson?.currentSubTask instanceof ValidateCode){
+        for(const c of list){
+            c.classList.add("hide");
+        }
+    }
+    else{
+        for(const c of list){
+            c.classList.toggle("hide");
+        }
     }
     
     _cursorTO = setTimeout(cursorLoop,delay);
 }
-cursorLoop();
+setTimeout(()=>{
+    cursorLoop();
+},500);
 
 // From Jaredcheeda, https://stackoverflow.com/questions/7381974/which-characters-need-to-be-escaped-in-html
 function escapeMarkup (dangerousInput) {
@@ -3981,6 +3989,17 @@ document.addEventListener("keydown",e=>{
             if(closeThis) closeThis.confirmChoice();
         }
         return;
+    }
+
+    if(PAGE_ID == PAGEID.lesson){
+        e.preventDefault();
+        if(e.altKey && !e.shiftKey && !e.ctrlKey && !e.metaKey && k == "enter"){
+            if(menusOpen.length == 0){
+                if(_lessonConfirmShown){
+                    b_imDone.click();
+                }
+            }
+        }
     }
 });
 document.addEventListener("keyup",e=>{

@@ -35,6 +35,9 @@ function getTypeSpeed(textLen:number){
 }
 
 b_imDone.addEventListener("click",async e=>{
+    if(!_canSubmitLesson) return;
+    _canSubmitLesson = false;
+
     if(lesson.currentSubTask){
         if(lesson.currentSubTask instanceof ValidateCode){
             let res = await lesson.currentSubTask.checkValidation();
@@ -46,11 +49,17 @@ b_imDone.addEventListener("click",async e=>{
                 click:true
             });
             if(b) await b.clickProm;
-            if(!res) return;
+            if(!res){
+                _canSubmitLesson = true;
+                focusGlobalInput();
+                return;
+            }
         }
         lesson.currentSubTask._resFinish();
         b_imDone.disabled = true;
     }
+    _canSubmitLesson = true;
+    focusGlobalInput();
 });
 b_replay.addEventListener("click",e=>{
     if(lesson.currentSubTask){
@@ -122,6 +131,7 @@ async function hideLessonConfirm(noWait=false){
     if(!noWait) await wait(50);
     d_lesson_confirm.style.opacity = "0";
     d_lesson_confirm.style.pointerEvents = "none";
+    _lessonConfirmShown = false;
     if(!noWait) await wait(1500);
 }
 function updateLessonConfirmDetails(ops:{
@@ -131,6 +141,8 @@ function updateLessonConfirmDetails(ops:{
     if(ops.text) lessonConfirmText.textContent = ops.text;
     if(ops.submit) lessonConfirmSubmit.textContent = ops.submit;
 }
+let _canSubmitLesson = true;
+let _lessonConfirmShown = false;
 async function showLessonConfirm(){
     let preTask = lesson.currentEvent;
     let preSubTask = lesson.currentSubTask;
@@ -142,7 +154,7 @@ async function showLessonConfirm(){
         hasReplay = false;
         updateLessonConfirmDetails({
             text:`Press "Submit" to let the Tutor know when you're finished.`,
-            submit:"Submit"
+            submit:"Submit (Alt+Enter)"
         });
     }
     else{
@@ -160,6 +172,7 @@ async function showLessonConfirm(){
     }
     d_lesson_confirm.style.opacity = "1";
     d_lesson_confirm.style.pointerEvents = null;
+    _lessonConfirmShown = true;
     if(hasGoBack){
         if(lesson._subTaskNum > 1) b_goBackStep.classList.remove("hide");
         else b_goBackStep.classList.add("hide");
@@ -6052,6 +6065,23 @@ enum BubbleLoc{
     refresh,
     xy
 }
+
+let _lastActiveElement:HTMLInputElement|undefined;
+function blurGlobalInput(){ // pause input
+    if("blur" in document.activeElement){
+        (document.activeElement as HTMLInputElement).blur();
+        _lastActiveElement = document.activeElement as HTMLInputElement;
+    }
+}
+function focusGlobalInput(){ // resume input
+    if(_lastActiveElement){
+        // _lastActiveElement.focus();
+        // do we need to set to undefined here?
+
+        lesson?.p.getCurEditor()?.focus();
+    }
+}
+
 function addBubbleAt(loc:BubbleLoc,text:string,dir?:string,ops?:any){
     let b = document.createElement("div");
     let _text = document.createElement("div");
@@ -6059,6 +6089,10 @@ function addBubbleAt(loc:BubbleLoc,text:string,dir?:string,ops?:any){
     g_bubbles_ov.appendChild(b);
     b.innerHTML = "<div class='bg'></div>";
     b.appendChild(_text);
+
+    if(loc == BubbleLoc.global){
+        blurGlobalInput();
+    }
 
     let data = {
         e:b,
