@@ -1308,3 +1308,8 @@
 - doesn't move onto the next task under the validation check is complete
 - added custom text for the lesson confirm menu for validation checks
 - Code Otterer
+
+### 8/20/24 - Paul
+ - Since my laptop got reset I lost a few comments from a while ago, idk exactly what
+ - Tweak layout of flashcards on Figma to match theme/vibe of webapp a litle better (challenge and submission menus specifically)
+ - Start work on frontend for flashcards
