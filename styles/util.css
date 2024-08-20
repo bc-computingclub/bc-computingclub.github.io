@@ -542,6 +542,12 @@ body .nav-links > .active{
     justify-content: flex-end;
     align-content:center;
 }
+.flx {
+    display: flex;
+}
+.gp {
+    gap: 1em;
+}
 
 /* Universal Pane Styles */
 .pane{
