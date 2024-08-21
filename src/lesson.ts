@@ -42,11 +42,13 @@ b_imDone.addEventListener("click",async e=>{
         if(lesson.currentSubTask instanceof ValidateCode){
             let res = await lesson.currentSubTask.checkValidation();
             let b:Bubble|undefined;
-            if(!res) b = addBubbleAt(BubbleLoc.global,"Sorry! That's not correct.",undefined,{
-                click:true
+            if(!res) b = addBubbleAt(BubbleLoc.global,"Sorry! That's incorrect.",undefined,{
+                click:true,
+                classes:["incorrect-bubble"]
             });
             else b = addBubbleAt(BubbleLoc.global,"Correct!",undefined,{
-                click:true
+                click:true,
+                classes:["correct-bubble"]
             });
             if(b) await b.clickProm;
             if(!res){
@@ -2048,7 +2050,7 @@ function addBubbleAtCursor(editor:monaco.editor.IStandaloneCodeEditor,preText:st
     return b2;
 }
 class ValidatePart{
-    async validate(dom:Document){
+    async validate(s:VState){
         return true;
     }
 }
@@ -2075,9 +2077,9 @@ class VP_Select extends ValidatePart{
     getElm(dom: Document): Element | undefined {
         return dom.querySelector(this.selector);
     }
-    async validate(dom: Document): Promise<boolean> {
-        if(!super.validate(dom)) return false;
-        let elm = this.getElm(dom);
+    async validate(s: VState): Promise<boolean> {
+        if(!super.validate(s)) return false;
+        let elm = this.getElm(s.dom);
         if(!elm) return false;
         let o = this.ops;
 
@@ -2085,6 +2087,52 @@ class VP_Select extends ValidatePart{
 
         return true;
     }
+}
+class VP_Text extends ValidatePart{
+    constructor(text:string,caseSensitive=false){
+        super();
+        this.text = text;
+        this.caseSensitive = caseSensitive;
+    }
+    text:string;
+    caseSensitive = false;
+
+    async validate(s: VState): Promise<boolean> {
+        let src = s.dom.children[0].textContent.trim();
+        let ans = this.text.trim();
+        
+        if(!this.caseSensitive){
+            src = src.toLowerCase();
+            ans = ans.toLowerCase();
+        }
+
+        return (src == ans);
+    }
+}
+class VP_QuizAns extends ValidatePart{
+    constructor(quizId:string){
+        super();
+        this.quizId = quizId;
+    }
+    quizId:string;
+    
+    async validate(s: VState): Promise<boolean> {
+        let q = s.quizzes.get(this.quizId);
+        if(!q){
+            alert("Error: quiz question wasn't loaded properly to check");
+            return false; // quiz didn't exist
+        }
+
+        let src = s.dom.children[0].textContent.trim() ?? "";
+        return q.isCorrect(...src.split("\n").filter(v=>v != undefined));
+    }
+}
+/**
+ * Validate state
+ */
+class VState{
+    dom:Document;
+    quizzes:Map<string,Quiz>;
 }
 class ValidateCode extends Task{
     constructor(parts:ValidatePart[]){
@@ -2101,7 +2149,11 @@ class ValidateCode extends Task{
         let dom = iframe.contentDocument;
         
         for(const part of this.parts){
-            let check = await part.validate(dom);
+            if(!dom) return false;
+            let check = await part.validate({
+                dom,
+                quizzes:lesson.quizzes
+            });
             if(!check) return false;
         }
         // this.canBeFinished = true;
@@ -2110,6 +2162,98 @@ class ValidateCode extends Task{
     }
     parts:ValidatePart[];
 }
+
+class Quiz{
+    constructor(id:string,ops:AddQuizQ_Ops){
+        this.id = id;
+        this.ops = ops;
+    }
+    id:string;
+    ops:AddQuizQ_Ops;
+
+    isCorrect(...yourAns:string[]){
+        if(!this.ops.caseSensitive) yourAns = yourAns.map(v=>v.toLowerCase());
+        
+        // let correctList = this.ops.options.filter(v=>v.correct);
+        for(let i = 0; i < this.ops.options.length; i++){
+            let ans = this.ops.options[i];
+            if(!ans.correct) continue;
+            
+            let answer = abc[i];
+            if(!this.ops.caseSensitive) answer = answer.toLowerCase();
+            console.log("check ans: ",{
+                yourAns,
+                answer
+            });
+            if(!yourAns.includes(answer)) return false;
+        }
+
+        return true;
+    }
+}
+
+interface AddQuizQ_Ops{
+    question:string;
+    options:QuizOption[];
+    randomize?:boolean; // default true
+    quizId?:string; // optional, q+(number of items in the quizzes map starting with 0)
+    caseSensitive?:boolean; // default false
+}
+interface QuizOption{
+    l:string; // label
+    correct?:boolean;
+    // description after wrong or right?
+}
+
+const abc = "abcdefghijklmnopqrstuvwxyz";
+
+class AddQuizQuestion extends Task{
+    constructor(ops:AddQuizQ_Ops){
+        super("Quiz Question");
+        if(ops.randomize == undefined) ops.randomize = true;
+
+        if(ops.randomize){
+            ops.options.sort((a,b)=>Math.random()-0.5);
+        }
+
+        // this.requiresDoneConfirm = false;
+
+        this.ops = ops;
+    }
+    ops:AddQuizQ_Ops;
+
+    async start(): Promise<string | void> {
+        await super.start();
+        let o = this.ops;
+
+        let file = `### Quiz Question
+
+${o.question}\n---\n\n
+`;
+
+        let i = 0;
+        for(const op of o.options){
+            let letter = abc[i];
+            file += letter.toUpperCase()+". "+op.l+"\n\n";
+            i++;
+        }
+
+        let quizId = "q"+lesson.quizzes.size;
+        let q = new Quiz(quizId,o);
+        lesson.quizzes.set(quizId,q);
+
+        let f = await lesson.tut.createFile("quiz.md",lesson.tut.textEncoder.encode(file),undefined,undefined);
+        f.open();
+
+        f.editor.updateOptions({wordWrap:"on"});
+
+        this.canBeFinished = true;
+        this._resFinish();
+        
+        return await this.finish();
+    }
+}
+
 class AddCode extends Task{
     constructor(parts:CodePart[],text="Let's add some code here.",dir?:string){
         super("Add Code Parts");
@@ -4715,6 +4859,8 @@ class Lesson{
 
     _clipboardText = "";
 
+    quizzes:Map<string,Quiz> = new Map();
+
     standardDelay = 350;
     /**
      * The standard delay is what ends most CodeParts; the time it waits the the end before going into the next one.
@@ -6082,7 +6228,14 @@ function focusGlobalInput(){ // resume input
     }
 }
 
-function addBubbleAt(loc:BubbleLoc,text:string,dir?:string,ops?:any){
+interface BubbleOps{
+    click?:boolean;
+    x?:number;
+    y?:number;
+    inEditor?:monaco.editor.IStandaloneCodeEditor;
+    classes?:string[];
+}
+function addBubbleAt(loc:BubbleLoc,text:string,dir?:string,ops?:BubbleOps){
     let b = document.createElement("div");
     let _text = document.createElement("div");
     _text.innerHTML = `<div>${formatBubbleText(text,ops)}</div>`;
@@ -6093,6 +6246,8 @@ function addBubbleAt(loc:BubbleLoc,text:string,dir?:string,ops?:any){
     if(loc == BubbleLoc.global){
         blurGlobalInput();
     }
+
+    if(ops?.classes) b.classList.add(...ops.classes);
 
     let data = {
         e:b,

@@ -1315,3 +1315,11 @@
  - Start work on frontend for flashcards. Found bug with menu bubble animation messing with z-index (?)
  - Create FlashcardMenu class, which takes in array of all Flashcard Sets available to the user, and displays them in a menu. Optionally pass in a Flashcard set for it to be pulled up.
  - Almost done with basic visuals for the menu. If you want to check this out caleb, use "createFlashcardPopup([lessonOneFlashcards,lessonOneFlashcards]);" on the lesson page to see what i've done so far
+
+### 8/20/24 - Claeb
+- ^^^ 👍
+- added a second question to Review I
+- started adding quiz system
+- quiz system answers can be created and waited for in lesson evts.js; they can be randomized and case sensitive or not but require you typing A, B, C or whatever how many choices there are and then hitting submit
+- fixed some bugs with submitting
+- quiz system works enough now to be usable!

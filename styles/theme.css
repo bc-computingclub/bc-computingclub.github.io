@@ -7,6 +7,19 @@ body.themestyle-light{
     --bubble-border:transparent;
     --udarken:rgba(0,0,0,0.1);
 
+    /* review lesson colors */
+    /* --incorrect-bg:rgb(100,20,20,1);
+    --incorrect-border:rgb(255,100,100);
+    --incorrect-col:whitesmoke; */
+    --incorrect-bg:rgb(100,20,20);
+    /* --incorrect-border:rgb(255,10,10); */
+    --incorrect-border:rgb(50,10,10);
+    --incorrect-col:whitesmoke;
+
+    --correct-bg:rgb(20,100,20);
+    --correct-border:rgb(10,50,10);
+    --correct-col:whitesmoke;
+
     /* --secondary-bg-col:rgb(255, 255, 255) !important;  just a placeholder */
 /* 
     & pre.code{

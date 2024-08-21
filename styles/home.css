@@ -47,6 +47,30 @@
     /* --tutor-col:rgb(93, 91, 41); */
     /* --tutor-col:rgb(41, 82, 93); */
     --tutor-col:rgb(61, 49, 109);
+
+    /* review lesson colors */
+    --incorrect-bg:rgb(255,100,100,0.5);
+    --incorrect-border:rgb(100,20,20);
+    --incorrect-col:whitesmoke;
+
+    --correct-bg:rgb(100,255,100,0.5);
+    --correct-border:rgb(20,100,20);
+    --correct-col:whitesmoke;
+}
+
+.bubble.incorrect-bubble{
+    color:var(--incorrect-col);
+}
+.bubble.incorrect-bubble .bg{
+    background-color:var(--incorrect-bg);
+    border:solid 1px var(--incorrect-border);
+}
+.bubble.correct-bubble{
+    color:var(--correct-col);
+}
+.bubble.correct-bubble .bg{
+    background-color:var(--correct-bg);
+    border:solid 1px var(--correct-border);
 }
 
 * {

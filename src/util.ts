@@ -3992,7 +3992,7 @@ document.addEventListener("keydown",e=>{
     }
 
     if(PAGE_ID == PAGEID.lesson){
-        e.preventDefault();
+        if(k == "alt") e.preventDefault();
         if(e.altKey && !e.shiftKey && !e.ctrlKey && !e.metaKey && k == "enter"){
             if(menusOpen.length == 0){
                 if(_lessonConfirmShown){
@@ -4431,7 +4431,7 @@ function whenEnter(elm:HTMLInputElement,f:(v:string)=>void,noBlur=false){
     });
 }
 
-function formatBubbleText(text:string,ops?:any){
+function formatBubbleText(text:string,ops?:BubbleOps){
     if(!text) return "";
     // text = escapeMarkup(text);
     // while(text.includes("[") && text[text.indexOf("[")-1] != "0"){
