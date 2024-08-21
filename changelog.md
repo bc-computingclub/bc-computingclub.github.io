@@ -1323,3 +1323,6 @@
 - quiz system answers can be created and waited for in lesson evts.js; they can be randomized and case sensitive or not but require you typing A, B, C or whatever how many choices there are and then hitting submit
 - fixed some bugs with submitting
 - quiz system works enough now to be usable!
+
+## 8/21/24 - Paul
+ - Continue work on frontend for flashcards

@@ -18,6 +18,10 @@
     width: 100%;
     border-radius: 2px;
     color: var(--col);
+
+    &.f-set-active{
+        background-color: var(--bg-col);
+    }
 }
 
 .f-close {
@@ -28,7 +32,7 @@
     align-items: center;
 }
 
-.f-outer-header {
+.f-outer-header, .f-title {
     font-size: 2rem;
     font-weight: bolder;
 }
@@ -62,4 +66,22 @@
     color: var(--secondary-bg-col);
     border-radius: 3px;
     padding: .5em 1em;
+}
+
+.f-card {
+    display: grid;
+    align-items: center;
+    background-color: var(--bg-col);
+    height: 16em;
+    width: 28em;
+    border-radius: 5px;
+    position: relative;
+}
+
+.f-card-top {
+    position: absolute;
+    top: 0em;
+    left: 0em;
+    padding: 1em;
+    width: 28em;
 }
