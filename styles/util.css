@@ -257,6 +257,11 @@ div.menu.force-hidden{
     animation: AddBubble forwards 0.35s ease-out;
 }
 
+.menu-flashcards {
+    width: max-content;
+    height: max-content;
+}
+
 .menu-new-file, .menu-new-folder { /* New files and folders created will have this sizing*/
     /* width: 350px; */
     /* height: 220px; */
@@ -514,10 +519,18 @@ body .nav-links > .active{
 .c{
     align-items:center;
 }
+.al-s {
+    align-items: start;
+}
 .flx-v{
     display:flex;
     flex-direction:column;
     /* gap:var(--editor-gap); */
+}
+.flx-v-sb {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
 }
 .flx-h{
     display:flex;
@@ -545,8 +558,28 @@ body .nav-links > .active{
 .flx {
     display: flex;
 }
-.gp {
+.gp1 {
     gap: 1em;
+}
+.gp05 {
+    gap: 0.5em;
+}
+.gp2 {
+    gap: 2em;
+}
+.pd1 {
+    padding: 1em;
+}
+.pd2 {
+    padding: 2em;
+}
+
+.col-secondary {
+    color: var(--secondary-bg-col);
+}
+
+.gd-c-auto{
+    grid-column: auto;
 }
 
 /* Universal Pane Styles */
@@ -1362,6 +1395,7 @@ body.themestyle-dark .menu textarea:focus{
     animation:OpenProjSettings 0.15s ease-out;
     /* animation:AddBubble forwards 0.35s ease-out; */
 }
+
 .callout::after{
     content:"";
     position:absolute;

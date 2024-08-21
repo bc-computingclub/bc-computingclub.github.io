@@ -1,0 +1,65 @@
+@import url(/styles/theme.css);
+@import url(/styles/util.css);
+
+.f-outer-bottom {
+    display: grid;
+    grid-template-columns: 2fr 3fr;
+}
+
+.f-sets-cont {
+    background-color: var(--learn-col);
+    border-radius: 5px;
+    height: 100%;
+}
+
+.f-set {
+    background-color: var(--secondary-bg-col);
+    padding: .5em 1em;
+    width: 100%;
+    border-radius: 2px;
+    color: var(--col);
+}
+
+.f-close {
+    display: flex;
+    justify-content: center;
+    height: 24px;
+    padding: .7em;
+    align-items: center;
+}
+
+.f-outer-header {
+    font-size: 2rem;
+    font-weight: bolder;
+}
+
+.f-arrow {
+    height: 48px;
+    width: 48px;
+    padding: 1em;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    
+    &:not([disabled]) {
+        cursor: pointer;
+    }
+    /* &[disabled] { idk how i feel about this, if we add it elsewhere you can uncomment, otherwise greyed out button that does nothing should be evident - paul
+        cursor: not-allowed;
+    } */
+}
+
+.f-reset-cards {
+    font-weight: regular !important;
+}
+
+.f-show-answer {
+    background-color: var(--learn-col);
+}
+
+.f-cur-index {
+    background-color: var(--col);
+    color: var(--secondary-bg-col);
+    border-radius: 3px;
+    padding: .5em 1em;
+}

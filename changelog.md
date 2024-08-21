@@ -1312,4 +1312,6 @@
 ### 8/20/24 - Paul
  - Since my laptop got reset I lost a few comments from a while ago, idk exactly what
  - Tweak layout of flashcards on Figma to match theme/vibe of webapp a litle better (challenge and submission menus specifically)
- - Start work on frontend for flashcards
+ - Start work on frontend for flashcards. Found bug with menu bubble animation messing with z-index (?)
+ - Create FlashcardMenu class, which takes in array of all Flashcard Sets available to the user, and displays them in a menu. Optionally pass in a Flashcard set for it to be pulled up.
+ - Almost done with basic visuals for the menu. If you want to check this out caleb, use "createFlashcardPopup([lessonOneFlashcards,lessonOneFlashcards]);" on the lesson page to see what i've done so far

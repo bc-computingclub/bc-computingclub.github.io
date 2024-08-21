@@ -52,7 +52,7 @@ class FlashcardMenu extends Menu {
     fSetArr: FlashcardSet[];
     fSet: FlashcardSet;
 
-    /*  notes for paul
+    /* paul's notes to self
 
         replace: f-title with displayed set's title
         replace: f-card-front with displayed card's question, language, and whether or not it's starred
@@ -62,20 +62,24 @@ class FlashcardMenu extends Menu {
 
     load() {
         super.load();
-        let sets = getFlashcardSets();
         
         this.menu.innerHTML = `
-            <div class="f-outer">
-                <div class="f-outer-top">
+            <div class="f-outer flx-v gp2 pd2">
+                <div class="f-outer-top flx-sb c">
+                    <div class="f-outer-header">Flashcards</div><button class="f-close material-symbols-outlined">close</button>
                 </div>
-                <div class="f-outer-bottom">
-                    <div class="f-sets-cont">
+                <div class="f-outer-bottom gp2">
+                    <div class="f-sets-cont flx-v gp05 pd1 al-s">
+                        <i class="col-secondary">Your Sets:</i>
                         <!-- Names of flashcard sets go here -->
                     </div>
-                    <div class="f-inner">
-                        <div class="f-inner-top">
+                    <div class="f-inner flx-v-sb">
+                        <div class="f-inner-top flx-v gp1">
                             <h2 class="f-title">${this.fSet.title}</h2>
-                            <button class="f-close">Close</button>
+                            <div class="flx-sb">
+                                <button class="f-reset-cards flx-c gp05">Reset Cards <span class="material-symbols-outlined">restart_alt</span></button>
+                                <div class="f-cur-index">1/${this.fSet.flashcards.length}</div>
+                            </div>
                         </div>
                         <div class="f-inner-middle">
                             <div class="f-card">
@@ -89,13 +93,13 @@ class FlashcardMenu extends Menu {
                                 </div>
                             </div>
                         </div>
-                        <div class="f-inner-bottom flx-b">
+                        <div class="f-inner-bottom flx-sb">
                             <div class="f-commands flx">
                                 <button class="f-show-answer">Show Answer</button>
                             </div>
-                            <div class="f-nav flx-c gp">
-                                <button class="f-prev material-symbols-outlined">arrow_forward</button>
-                                <button class="f-next material-symbols-outlined">arrow_back</button>
+                            <div class="f-nav flx-c gp05">
+                                <button class="f-prev f-arrow material-symbols-outlined">arrow_back</button>
+                                <button class="f-next f-arrow material-symbols-outlined">arrow_forward</button>
                             </div>
                         </div>
                     </div>
@@ -105,17 +109,25 @@ class FlashcardMenu extends Menu {
 
         let setsCont = this.menu.querySelector(".f-sets-cont") as HTMLElement;
         for(let set of this.fSetArr) {
-            let temp = document.createElement("div");
-            temp.className = "f-set";
+            let temp = document.createElement("button");
+            temp.className = "f-set flx-sb c gp1";
             
             // I think we should make it so that the user can't toggle the "completed" status of a set of flashcards - if they've completed the set, it's marked as complete. 
             // Otherwise, they have to go through and click "got it" for all flashcards, after which the status is updated.
             temp.innerHTML = `
                 <div class="f-set-name">${set.title}</div>
-                <div class="f-set-status material-symbols-outlined">${set.completed ? "check_box_outline_blank" : "check_box"}</div>
+                <div class="f-set-status material-symbols-outlined">${set.completed ? "check_box" : "arrow_right_alt"}</div>
             `; 
             setsCont.appendChild(temp);
         }
+
+        let fClose = this.menu.querySelector(".f-close") as HTMLElement;
+        fClose.addEventListener("click",() => this.close());
+
+        let arrowRight = this.menu.querySelector(".f-next") as HTMLButtonElement;
+        if(this.fSet.flashcards.length === 1) arrowRight.disabled = true;
+        let arrowLeft = this.menu.querySelector(".f-prev") as HTMLButtonElement;
+        arrowLeft.disabled = true;
 
         return this;
     }
