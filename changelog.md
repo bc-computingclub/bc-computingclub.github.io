@@ -1325,4 +1325,8 @@
 - quiz system works enough now to be usable!
 
 ## 8/21/24 - Paul
- - Continue work on frontend for flashcards
+ - Continue work on frontend for flashcards.
+  - Tweaked spacing/padding/font/icons, will keep tweaking as I figure out what feels good/bad. feedback welcome. 
+  - Made title to menu on top, for consistency with other menus in our web-app, as opposed to figma design.
+  - Bunch of progress, working on switching between flashcard sets right now. Need to add 'loadSet' function i can call and pass sets to in order for flashcardmenu to load them.
+  - createFlashcardPopup([lessonOneFlashcards,testFlashcards],bookmarkedFlashcards); to check out my progress if you want
