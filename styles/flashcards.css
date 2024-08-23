@@ -42,6 +42,10 @@
 .f-outer-header, .f-title {
     font-size: 2rem;
     font-weight: bolder;
+
+    >span {
+        font-size: inherit;
+    }
 }
 
 .f-arrow {

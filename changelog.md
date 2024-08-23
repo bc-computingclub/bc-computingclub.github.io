@@ -1324,9 +1324,17 @@
 - fixed some bugs with submitting
 - quiz system works enough now to be usable!
 
-## 8/21/24 - Paul
+### 8/21/24 - Paul
  - Continue work on frontend for flashcards.
   - Tweaked spacing/padding/font/icons, will keep tweaking as I figure out what feels good/bad. feedback welcome. 
   - Made title to menu on top, for consistency with other menus in our web-app, as opposed to figma design.
   - Bunch of progress, working on switching between flashcard sets right now. Need to add 'loadSet' function i can call and pass sets to in order for flashcardmenu to load them.
   - createFlashcardPopup([lessonOneFlashcards,testFlashcards],bookmarkedFlashcards); to check out my progress if you want
+
+  ### 8/22/24 - Paul
+ - Continue work for frontend on flashcards
+ - You can now click a set to load its flashcards. I plan to add animations to this, but not until I've finished more of the basic functionality of the flashcard menu
+ - You can now click the left and right arrow keys to navigate through the flashcards. This will not alter the set of flashcards in any way.
+ - Planned for some backend code, although I'm far from actually being set up for any of it (and still changing fields/classes).
+ - Created planning.md so I can keep track of brainstorming/planning for my flashcards, and also have a place to plan my lessons and projects once I actually get to writing them (challenge: impossible).
+ - NOTE: Bookmarking is broken, will hopefully figure out a fix by tomorrow night, I think I'm missing an array.some() method. (If I don't fix it by tomorrow, it'll have to wait 'til 8/26 Monday)

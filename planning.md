@@ -24,6 +24,4 @@
  - JavaScript Lesson
      - In-depth lesson on query-selector, and how you can use it. 
         - Selecting using classnames, IDs, selecting children of elements, selecting using an element's attributes, etc etc etc. I think there's potential for a nice 5-10 minute lesson here alone. Maybe as a lesson marked "optional" after an introduction to JavaScript? Or is that too soon, and would it confuse users?
-        - I'd love to do this typescript-style (and talk about as HMTLElement or NodeListOf<HTMLElement>), but that's probably not a good idea until we considered a typescript set of lessons.
-
-For changelog.md: Created planning.md so I can keep track of brainstorming/planning for my flashcards, and also have a place to plan my lessons and projects once I actually get to writing them (challenge: impossible).
+        - I'd love to do this typescript-style (and talk about as HMTLElement or NodeListOfHTMLElement), but that's probably not a good idea until we considered a typescript set of lessons.
