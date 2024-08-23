@@ -49,9 +49,8 @@
 }
 
 .f-arrow {
-    height: 48px;
-    width: 48px;
-    padding: 1em 1.6em;
+    height: 100%;
+    padding-inline: 1.4em;
     display: flex;
     justify-content: center;
     align-items: center;
@@ -76,6 +75,11 @@
     padding: 1em 1.6em;
     font-weight: 600;
     text-transform: uppercase;
+    height: 100%;
+}
+
+.f-rank {
+    color: var(--secondary-bg-col);
 }
 
 .f-cur-index {
@@ -94,6 +98,44 @@
     width: 100%;
     border-radius: 5px;
     position: relative;
+
+    &.flip {
+        animation-name: flip; /*Flip over horizontal axis*/
+        animation-duration: 0.15s;
+        animation-timing-function: ease-out;
+        animation-fill-mode: forwards;
+    }
+
+    &.fade-out {
+        .f-card-top {
+            animation-name: fade-out;
+            animation-duration: 0.15s;
+            animation-timing-function: linear;
+        }
+        .f-card-bottom {
+            animation-name: fade-out;
+            animation-duration: 0.15s;
+            animation-timing-function: linear;
+        }
+    }
+}
+
+@keyframes fade-out {
+    from {
+        opacity: 1;
+    }
+    to {
+        opacity: 0;
+    }   
+}
+
+@keyframes flip {
+    from {
+        transform: rotateX(0deg);
+    }
+    to {
+        transform: rotateX(180deg);
+    }
 }
 
 .f-card-prompt {
@@ -127,4 +169,34 @@
     display: flex;
     justify-content: center;
     align-items: center;
+}
+
+.f-controls {
+    background-color: var(--col);
+}
+
+.f-commands {
+    background-color: var(--col);
+    gap: 1em;
+    border-radius: 3px;
+    height: 100%;
+    >.f-show-answer {
+        padding: 1.4em;
+        padding-inline-start: 1em;
+    }
+
+    &.padding {
+        padding: 0.4em;
+        padding-inline-start: 1em;
+    }
+}
+
+.f-shuffle {
+    background-color: var(--incorrect-bg);
+    color: var(--secondary-bg-col);
+}
+
+.f-got-it {
+    background-color: var(--correct-bg);
+    color: var(--secondary-bg-col);
 }

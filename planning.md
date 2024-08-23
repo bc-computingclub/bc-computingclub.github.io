@@ -12,10 +12,30 @@
     For now, when you want a flashcard menu, you pass in an array of the sets available to the user, and an array of the user's bookmarked flashcards. Like mentioned above, I plan on changing this, so eventually user's bookmarked flashcards will instead be an array of key value pairs that track the name of the set and the index (or indices) of bookmarked flashcards.
     You can also pass in a flashcard set to load - but this is not necessary, and by default the user's bookmarked flashcards are loaded. 
      - Now that I think about this, since the flashcard set to load will be included in the user's available flashcard sets, I should just be passing in its name...
+ - GOT IT/SHUFFLE FUNCTIONALITY
+   Got it button sets card's completed status to true and calls this.showNextCard();
+   Need to track which cards are completed or not...
+   Might need to add a visual indicator to tell the user that there are some cards that are completed, and therefore not visible in the set unless you click 'reset cards;
+    - Add something next to the "reset cards" prompt?
+   Make the cards
+   Shuffle card button calls goToNextCard() and repositions itself in the array.
 
     >> TODO: (minor stuff, not worth adding to notion but still worth writing down so I don't forget)
-        - Change the way I'm passing in bookmarked flashcards to name of set and array of indices of bookmarked flashcards
-        - Don't pass in the actual set I'm going to load, I can just pass in the name of the set.
+        - Change the way I'm passing in bookmarked flashcards to name of set and array of indices of bookmarked flashcards // pushed off 'til later - for now, just pulling bookmarked flashcards from user's sets.
+        - Don't pass in the actual set I'm going to load, I can just pass in the name of the set. // done
+        - Minor animations to indicate switching between cards
+
+   /* paul's notes to self
+
+        replace: f-title with displayed set's title
+        replace: f-card-front with displayed card's question, language, and whether or not it's starred
+        flashcard arrow buttons should be disabled if index is at the beginning or end of the array.
+        flashcard arrow buttons do not a) shuffle the array, b) change the order of the array, or c) change the "completed" status of a flashcard or flashcard set. they only change index of the displayed flashcard, and update the display accordingly.
+    
+        simple card flip: fade out text on card, remvoe text, play flip animation, add in back of card text, fade in text on card.
+
+        remember to add event listeners in load function, since it changes and/or overwrites a lot of html
+    */
 
 ### LESSONS
  - Mini Project 

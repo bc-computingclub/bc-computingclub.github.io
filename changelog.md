@@ -1342,3 +1342,10 @@
 ### 8/22/24 - Claeb
 - added try again and skip / replay later buttons when failing a review problem
 - added replay later functionality and support to reviews and backend for resuming
+
+### 8/23/24 - Paul
+ - Continue work for frontend on flashcards
+ - Added default state for empty set of bookmarks: You're told to go bookmark some cards via the little button to add them to the flashcard set.
+ - Bookmarks are now fully functional on the frontend, can be added/removed as you would expect via the bookmark button.
+ - Start working on 'got it' & 'shuffle card' buttons - visually done, but not yet functional.
+ - The "show answer" button now works, and plays a brief 'card-flip' animation to reveal the answer. Thinking of adding a 'flip back' button, but idk - I'll definitely add the functionality to click the card to flip, so hopefully that ends up being enough. (will add an animation to this later so the 'rank' button and its options fade in with the reveal of the back-side, so it's more intuitive).
