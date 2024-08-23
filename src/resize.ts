@@ -148,3 +148,32 @@ document.addEventListener("selectionchange",e=>{
         getSelection().removeAllRanges();
     }
 }); 
+
+// let gEv:MouseEvent;
+// document.addEventListener("mousemove",e=>{
+//     gEv = e;
+// });
+// async function test0(){
+//     let amtX = -600;
+//     pane_preview.style.width = "600px";
+//     (pane_code.querySelector(".resize") as any).onmousedown(gEv);
+//     // document.dispatchEvent(new MouseEvent("mousedown",{
+//     //     clientX:gEv.clientX,
+//     //     clientY:gEv.clientY
+//     // }));
+//     await wait(1000);
+//     document.dispatchEvent(new MouseEvent("mousemove",{
+//         clientX:gEv.clientX,
+//         clientY:gEv.clientY
+//     }));
+//     await wait(1000);
+//     document.dispatchEvent(new MouseEvent("mousemove",{
+//         clientX:gEv.clientX+amtX,
+//         clientY:gEv.clientY
+//     }));
+//     await wait(1000);
+//     document.dispatchEvent(new MouseEvent("mouseup",{
+//         clientX:gEv.clientX+amtX,
+//         clientY:gEv.clientY
+//     }));
+// }

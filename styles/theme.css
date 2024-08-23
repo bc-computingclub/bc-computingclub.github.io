@@ -11,13 +11,17 @@ body.themestyle-light{
     /* --incorrect-bg:rgb(100,20,20,1);
     --incorrect-border:rgb(255,100,100);
     --incorrect-col:whitesmoke; */
-    --incorrect-bg:rgb(100,20,20);
     /* --incorrect-border:rgb(255,10,10); */
-    --incorrect-border:rgb(50,10,10);
+    
+    /* --incorrect-rgb(177, 39, 39)20); */
+    --incorrect-bg:rgb(164, 34, 34);
+    /* --incorrect-border:rgb(110, 22, 22); */
+    --incorrect-border:var(--incorrect-bg);
     --incorrect-col:whitesmoke;
 
-    --correct-bg:rgb(20,100,20);
-    --correct-border:rgb(10,50,10);
+    /* --correct-bg:rgb(28, 143, 28); */
+    --correct-bg:green;
+    --correct-border:green;
     --correct-col:whitesmoke;
 
     /* --secondary-bg-col:rgb(255, 255, 255) !important;  just a placeholder */
@@ -146,9 +150,15 @@ body.theme-light{
     --faded-col:rgb(150, 157, 184);
     
     /* Colors for cards */
-    --learn-col: #384777; 
+    /* --learn-col: #384777; 
     --experiment-col: #216779; 
-    --practice-col:#503e6e; 
+    --practice-col:#503e6e;  */
+    --learn-col: #4f64a8;
+    --experiment-col: #2e8ca4; 
+    --practice-col:#6f5697; 
+
+    /* testing */
+    /* --learn-col: #cadcff; */
 
     /* bright color scheme */
     /* --learn-col:royalblue;

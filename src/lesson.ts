@@ -42,15 +42,66 @@ b_imDone.addEventListener("click",async e=>{
         if(lesson.currentSubTask instanceof ValidateCode){
             let res = await lesson.currentSubTask.checkValidation();
             let b:Bubble|undefined;
-            if(!res) b = addBubbleAt(BubbleLoc.global,"Sorry! That's incorrect.",undefined,{
-                click:true,
-                classes:["incorrect-bubble"]
-            });
-            else b = addBubbleAt(BubbleLoc.global,"Correct!",undefined,{
-                click:true,
-                classes:["correct-bubble"]
-            });
-            if(b) await b.clickProm;
+            if(!res){
+                b = addBubbleAt(BubbleLoc.global,"Sorry! That's incorrect.",undefined,{
+                    classes:["incorrect-bubble"]
+                });
+                // let b_continue = document.createElement("button");
+                let b_replay = document.createElement("button");
+                let b_replayLater = document.createElement("button");
+                b_replay.textContent = "Try Again";
+                b_replayLater.textContent = "Skip (Replay Later)";
+                // b.e.appendChild(b_continue);
+                let c = document.createElement("div");
+                c.style.display = "flex";
+                c.style.justifyContent = "space-between";
+                c.style.marginTop = "30px";
+                c.appendChild(b_replay);
+                c.appendChild(b_replayLater);
+                b.e.appendChild(c);
+                blurGlobalInput();
+                b_replay.addEventListener("keydown",async e=>{
+                    if(e.key == "Escape"){
+                        b_replay.click();
+                    }
+                    if(e.key == "Enter"){
+                        e.stopPropagation();
+                        e.stopImmediatePropagation();
+                        // await wait(50);
+                        // b_replay.click();
+                    }
+                });
+                b_replayLater.addEventListener("keydown",async e=>{
+                    if(e.key == "Escape"){
+                        b_replay.click();
+                    }
+                    if(e.key == "Enter"){
+                        e.stopPropagation();
+                        e.stopImmediatePropagation();
+                        // await wait(50);
+                        // b_replayLater.click();
+                    }
+                });
+                b_replay.focus();
+                await new Promise<void>(resolve=>{
+                    b_replay.addEventListener("click",e=>{
+                        resolve();
+                        closeBubble(b);
+                    });
+                    b_replayLater.addEventListener("click",e=>{
+                        lesson.replayLater();
+                        resolve();
+                        closeBubble(b);
+                    });
+                });
+            }
+            else{
+                b = addBubbleAt(BubbleLoc.global,"Correct!",undefined,{
+                    click:true,
+                    classes:["correct-bubble"]
+                });
+                if(b) await b.clickProm;
+            }
             if(!res){
                 _canSubmitLesson = true;
                 focusGlobalInput();
@@ -2174,6 +2225,8 @@ class Quiz{
     isCorrect(...yourAns:string[]){
         if(!this.ops.caseSensitive) yourAns = yourAns.map(v=>v.toLowerCase());
         
+        if(yourAns.length) yourAns = [yourAns[0]];
+
         // let correctList = this.ops.options.filter(v=>v.correct);
         for(let i = 0; i < this.ops.options.length; i++){
             let ans = this.ops.options[i];
@@ -5001,6 +5054,29 @@ class Lesson{
     sceneReplayLater(){
         
     }
+    async replayLater(){
+        console.log(">> REPLAYING LATER");
+        let ind = this.progress.sceneI;
+        if(ind == -1){
+            console.log("-- failed");
+            return;
+        }
+
+        let res = await new Promise<any>(resolve=>{
+            socket.emit("replaySceneLater",lesson.lid,ind,(data:any)=>{
+                if(!data || typeof data == "number"){
+                    alert(`Error ${data} while trying to replay problem later`);
+                    resolve(undefined);
+                }
+                else resolve(data);
+            });
+        });
+        if(!res) return;
+
+        this.progress.final_order = res;
+
+        await this.goToNextScene();
+    }
     
     // 
 
@@ -5127,6 +5203,7 @@ class Lesson{
         // this.isQuitting = false;
     }
 
+    // the og data
     static parse(data:any,parent:HTMLElement,tutParent:HTMLElement){        
         let a = new Lesson(data.lid,data.name,parent,tutParent);
 
@@ -5935,6 +6012,14 @@ async function initLessonPage(){
         await loadLessonPage(scene._data,data);
     }
     else await loadLessonPage(lessonData,data);
+
+    // do we need this?
+    // if(lessonData.sections){
+    //     let ar:ReviewSection[] = [];
+    //     for(const id of ){
+    //         let [sectionId,sceneId] = id.
+    //     }
+    // }
 }
 async function loadLessonPage(lessonData:TreeLesson,_restoreData:any){
     lesson = Lesson.parse(lessonData,pane_code,pane_tutor_code);
@@ -6066,7 +6151,13 @@ async function loadLessonPage(lessonData:TreeLesson,_restoreData:any){
 // };
 onResize = function(isFirst=false,who?:HTMLElement){
     let pf = pane_tutor_code; //pane_files
-    if(isFirst) pane_tutor_code.style.width = (innerWidth*0.28)+"px";
+    // console.log("OG: ",lesson?.hasLoaded,lesson?.info);
+    if(false){
+        if(isFirst) pane_tutor_code.style.width = (innerWidth*0.4)+"px";
+    }
+    else{
+        if(isFirst) pane_tutor_code.style.width = (innerWidth*0.28)+"px";
+    }
     let remainingWidth = innerWidth - pf.offsetWidth - 15;
     if(isFirst){
         pane_code.style.width = (remainingWidth/2)+"px";

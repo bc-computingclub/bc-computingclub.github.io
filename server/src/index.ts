@@ -598,6 +598,51 @@ io.on("connection",socket=>{
             call(0);
         }
     });
+    socket.on("replaySceneLater",async (lid:string,ind:number,call:(data:any)=>void)=>{
+        if(!valVar2(lid,"string",call)) return;
+        if(!valVar2(ind,"number",call)) return;
+
+        let user = getSession(socket.id);
+        if(!user){
+            call(-3);
+            return;
+        }
+
+        let lessonMeta = await user.getLessonMeta(lid,false,false);
+        if(!lessonMeta){
+            call(1); // couldn't find progress data
+            return;
+        }
+
+        if(!lessonMeta.meta.final_order){
+            call(2);
+            return;
+        }
+
+        if(!lessonMeta.meta.final_order[ind]){
+            call(3);
+            return;
+        }
+
+        let [curSection,curScene] = lessonMeta.meta.final_order[ind].split("^");
+        let hasAdded = false;
+        for(let i = lessonMeta.meta.final_order.length-1; i >= 0; i--){
+            let v = lessonMeta.meta.final_order[i];
+            if(!v) continue;
+            let [sec,scene] = v.split("^");
+            if(sec == curSection){
+                lessonMeta.meta.final_order.splice(i,0,lessonMeta.meta.final_order[ind]);
+                hasAdded = true;
+                break;
+            }
+        }
+        if(!hasAdded){
+            lessonMeta.meta.final_order.push(lessonMeta.meta.final_order[ind]);
+        }
+        lessonMeta.meta.final_order.push();
+
+        call(lessonMeta.meta.final_order);
+    });
     let __maxHP = 1; // max_HasPost xD
     socket.on("startLesson",async (lid:string,mode:LessonMode,call:(data:any)=>void)=>{        
         if(!valVar2(lid,"string",call)) return;
