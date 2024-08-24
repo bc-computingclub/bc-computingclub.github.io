@@ -684,11 +684,11 @@ class LessonMenu extends Menu{
 
     load(priority?: number, newLayer?: boolean): this {
         super.load(priority,newLayer);
-        this.menu.classList.add("menu-lesson");
+        this.outerMenu.classList.add("menu-lesson");
 
         if(this.typeData.accent){
-            this.menu.style.setProperty("--accent",this.typeData.accent);
-            this.menu.style.setProperty("--cta-btn-col",this.typeData.accent);
+            this.outerMenu.style.setProperty("--accent",this.typeData.accent);
+            this.outerMenu.style.setProperty("--cta-btn-col",this.typeData.accent);
         }
 
         // 

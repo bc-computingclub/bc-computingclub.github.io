@@ -289,7 +289,12 @@ div.menu.force-hidden{
     opacity:1;
 } */
 .menu-sub-cont{
+
+}
+.menu-sub-cont:has(> :first-child){
+    height:100%;
     background-color:var(--secondary-bg-col);
+    border-radius:inherit;
 }
 .menu > .before.loaded{
     top:15px;

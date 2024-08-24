@@ -684,7 +684,7 @@ body.themestyle-dark .sign-stem{
     /* background-color:rgb(91, 49, 18); */
     background-color:var(--stroke-col);
 }
-.menu-sign{
+.menu.menu-sign{
     width:500px;
     height:max-content;
 }
@@ -832,7 +832,7 @@ body.themestyle-light .path-cont{
 }
 
 /*  */
-.menu-lesson{
+.menu.menu-lesson{
     /* max-width:1150px; */
     max-width:1000px;
     min-width:950px;

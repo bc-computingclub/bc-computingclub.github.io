@@ -124,6 +124,8 @@ class Menu{
     head:HTMLElement;
     body:HTMLElement;
 
+    isCustom = false;
+
     reset(){
         this.menu = null;
         this.body = null;
@@ -146,13 +148,17 @@ class Menu{
             this.body.remove();
         }
         
-        let _before = document.createElement("div");
-        _before.className = "before pse-bg loaded";
-        m.appendChild(_before);
+        if(!m.querySelector(".before.pse-bg")){
+            let _before = document.createElement("div");
+            _before.className = "before pse-bg loaded";
+            m.appendChild(_before);
+        }
 
-        let _after = document.createElement("div");
-        _after.className = "after pse-bg loaded";
-        m.appendChild(_after);
+        if(!m.querySelector(".after.pse-bg")){
+            let _after = document.createElement("div");
+            _after.className = "after pse-bg loaded";
+            m.appendChild(_after);
+        }
     }
     load(priority=0,newLayer=false){
         if(this._newLayer != null) newLayer = this._newLayer;
@@ -185,7 +191,12 @@ class Menu{
         let menuSubCont = document.createElement("div");
         menuSubCont.className = "menu-sub-cont";
         menu.appendChild(menuSubCont);
-        this.menu = menuSubCont;
+        if(this.isCustom){
+            this.menu = menuSubCont;
+        }
+        else{
+            this.menu = menu;
+        }
 
         if(isHidden) menu.style.display = "none";
 
@@ -220,7 +231,7 @@ class Menu{
     }
 
     close(){
-        let menu = this.menu?.parentElement;
+        let menu = this.outerMenu;
         if(!menu){
             // console.log("Err couldn't close menu: ",this);
             return;
@@ -4734,6 +4745,9 @@ class ChallengeMenu extends Menu {
         cBtn.onclick = () => {
             this.close();
         };
+
+        this.postLoad();
+
         return this;
     }
 }
@@ -4770,6 +4784,7 @@ class ImagePreview extends Menu {
                 <img src="${this.url}" alt="challenge image">
             </div>
         `;
+        this.postLoad();
         return this;
     }
 }
@@ -5351,6 +5366,9 @@ class SubmissionMenu extends Menu {
         sPopupClose.onclick = () => {
             this.close();
         };
+
+        this.postLoad();
+
         return this;
     }
 }

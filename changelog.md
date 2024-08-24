@@ -1357,3 +1357,4 @@
 - fixed up some of my button styling and added new button classes: low-contrast, no-bg
 - changed styling of flashcards menu to more fit the theme of code otter
 - changed the order of flashcards rank to have "Got It" be first so you can flip without taking your eyes off the cards
+- fixed other menus and various tweaks

@@ -97,6 +97,8 @@ class FlashcardMenu extends Menu {
             this.loadedSetTitle = this.bookmarkedFlashcards.title;
         }
         this.bookmarkedFlashcards.completed = this.getSetCompletion(this.bookmarkedFlashcards);
+
+        this.isCustom = true;
     }
 
     fSetArr: FlashcardSet[];
