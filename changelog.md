@@ -1353,3 +1353,7 @@
 ### 8/24/24 - Claeb
 - (Update 1)
 - fixed some styling and sizing on the flashcards menu and to better support dark theme
+- (Update 2)
+- fixed up some of my button styling and added new button classes: low-contrast, no-bg
+- changed styling of flashcards menu to more fit the theme of code otter
+- changed the order of flashcards rank to have "Got It" be first so you can flip without taking your eyes off the cards

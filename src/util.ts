@@ -119,6 +119,9 @@ class Menu{
     icon:string;
     title:string;
     menu:HTMLElement;
+    outerMenu:HTMLElement;
+
+    head:HTMLElement;
     body:HTMLElement;
 
     reset(){
@@ -133,6 +136,24 @@ class Menu{
     _priority = 0;
     _newLayer:null|boolean = null;
 
+    /**
+     * You will need to manually invoke this at the end of your load method if you overrode the entire menu's html
+     */
+    postLoad(isInternal=false){
+        let m = this.outerMenu;
+        if(!isInternal){
+            this.head.remove();
+            this.body.remove();
+        }
+        
+        let _before = document.createElement("div");
+        _before.className = "before pse-bg loaded";
+        m.appendChild(_before);
+
+        let _after = document.createElement("div");
+        _after.className = "after pse-bg loaded";
+        m.appendChild(_after);
+    }
     load(priority=0,newLayer=false){
         if(this._newLayer != null) newLayer = this._newLayer;
         if(newLayer){
@@ -158,8 +179,13 @@ class Menu{
         let menu = document.createElement("div");
         menu.className = "menu";
         menu.classList.add("menu-"+this.title.replaceAll(" ","-").toLowerCase());
-        this.menu = menu;
         menuCont.appendChild(menu);
+        this.outerMenu = menu;
+        
+        let menuSubCont = document.createElement("div");
+        menuSubCont.className = "menu-sub-cont";
+        menu.appendChild(menuSubCont);
+        this.menu = menuSubCont;
 
         if(isHidden) menu.style.display = "none";
 
@@ -172,6 +198,7 @@ class Menu{
             </div>
             ${this.canClose() ? '<div class="material-symbols-outlined b-close">close</div>' : ""}
         `;
+        this.head = head;
         menu.appendChild(head);
 
         let b_close = head.querySelector(".b-close");
@@ -187,12 +214,19 @@ class Menu{
         if(!menusOpen.length) menuCont.classList.add("show");
         menusOpen.push(this);
 
+        this.postLoad(true);
+
         return this;
     }
 
     close(){
-        if(this.menu?.parentElement){
-            this.menu.parentElement.removeChild(this.menu);
+        let menu = this.menu?.parentElement;
+        if(!menu){
+            // console.log("Err couldn't close menu: ",this);
+            return;
+        }
+        if(menu?.parentElement){
+            menu.remove();
             this.onClose();
             this.reset();
 

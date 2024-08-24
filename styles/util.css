@@ -66,11 +66,11 @@ body.hide-menus .menu{
     font-size:20px;
 }
 
-.icon-btn.accent{
+button.accent{
     background-color:var(--cta-btn-col) !important;
     color:whitesmoke;
 }
-.icon-btn.regular{
+button.regular{
     background-color:var(--menu-btn-bg);
     color:whitesmoke;
 }
@@ -177,28 +177,129 @@ div.menu.force-hidden{
         font-family:var(--font);
         font-size:14px;
     } */
+
+    /* backdrop timing functions */
+    /* --bd-tf:cubic-bezier(0.175, 0.885, 0.32, 1.275); */
+    --bd-tf:ease-out;
+    --bd-time:0.15s;
 }
-.menu::before{
+.menu > .before{
     content:"";
     position:absolute;
-    top:15px;
-    left:15px;
+    top:0px;
+    left:0px;
+    /* opacity:0; */
     width:100%;
     height:100%;
     background-color:var(--menu-btn-bg);
     z-index:-2;
     border-radius:inherit;
+    transition:left 0.5s ease-out, right 0.5s ease-out;
+    transition-timing-function:var(--bd-tf);
+    transition-duration:var(--bd-time);
 }
-.menu::after{
+.menu > .after{
     content:"";
     position:absolute;
-    top:30px;
-    left:-15px;
+    top:0px;
+    left:0px;
+    /* opacity:0; */
     width:100%;
     height:100%;
     background-color:var(--accent,var(--cta-btn-col));
     z-index:-1;
     border-radius:inherit;
+    transition:left 0.5s ease-out, right 0.5s ease-out;
+    transition-timing-function:var(--bd-tf);
+    transition-duration:var(--bd-time);
+}
+.pse-bg{
+    position:absolute;
+    top:0px;
+    left:0px;
+    width:100%;
+    height:100%;
+}
+.menu-bubble-anim{
+    animation:MenuOpen forwards 0.35s ease-out;
+    animation-fill-mode:none;
+
+    & > .before{
+        animation:MenuOpen_Before forwards 0.35s ease-out;
+        scale:0;
+        animation-delay:0.05s;
+    }
+    & > .after{
+        animation:MenuOpen_After forwards 0.35s ease-out;
+        scale:0;
+        animation-delay:0.05s;
+    }
+}
+@keyframes MenuOpen{
+    0%{
+        scale:0.8;
+    }
+    40%{
+        scale:1.01;
+    }
+    100%{
+        scale:1;
+    }
+}
+@keyframes MenuOpen_Before{
+    0%{
+        scale:0.8;
+    }
+    30%{
+        scale:1.01;
+    }
+    100%{
+        scale:1;
+    }
+}
+@keyframes MenuOpen_After{
+    0%{
+        scale:0.8;
+    }
+    40%{
+        scale:1.01;
+    }
+    100%{
+        scale:1;
+    }
+}
+/* .menu-bubble-anim::before{
+    top:0px;
+    left:0px;
+    opacity:0;
+}
+.menu-bubble-anim::after{
+    top:0px;
+    left:0px;
+    opacity:0;
+} */
+/* .menu-open-post::before{
+    top:15px;
+    left:15px;
+    opacity:1;
+}
+.menu-open-post::after{
+    top:30px;
+    left:-15px;
+    opacity:1;
+} */
+.menu-sub-cont{
+    background-color:var(--secondary-bg-col);
+}
+.menu > .before.loaded{
+    top:15px;
+    left:15px;
+    opacity:1;
+}
+.menu > .after.loaded{
+    top:30px;
+    left:-15px;
+    opacity:1;
 }
 .menu-header{
     display:flex;
@@ -376,6 +477,20 @@ button.icon-btn-v{
 }
 button.accent:active{
     outline:solid 2px var(--col);
+}
+button.low-contrast{
+    background-color:var(--darken2);
+    color:var(--col);
+}
+button.low-contrast:hover{
+    background-color:var(--darken0);
+}
+button.no-bg{
+    background:none;
+    color:var(--col);
+}
+button.no-bg:hover{
+    background-color:var(--darken);
 }
 button.warn{
     /* background-color:rgba(200,70,50,0.7); */

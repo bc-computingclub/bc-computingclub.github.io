@@ -109,10 +109,16 @@ class FlashcardMenu extends Menu {
         super.load();
         let incompleteCards:Flashcard[] = this.getNonCompletedCards();
 
+        this.outerMenu.addEventListener("animationend",e=>{
+            this.outerMenu.classList.remove("menu-bubble-anim");
+            this.outerMenu.classList.add("menu-open-post");
+        });
+        this.outerMenu.classList.add("menu-bubble-anim");
+
         this.menu.innerHTML = `
             <div class="f-outer flx-v gp2 pd2">
                 <div class="f-outer-top flx-sb c">
-                    <div class="f-outer-header">Flashcards</div><button class="f-close material-symbols-outlined">close</button>
+                    <div class="f-outer-header">Flashcards</div><button class="f-close no-bg material-symbols-outlined">close</button>
                 </div>
                 <div class="f-outer-bottom gp2">
                     <div class="f-sets-cont flx-v gp05 pd1 al-s">
@@ -122,7 +128,7 @@ class FlashcardMenu extends Menu {
                         <div class="f-inner-top flx-v gp1">
                             <span class="f-title flx c gp05">${this.loadedSet.title}</span>
                             <div class="flx-sb">
-                                <button class="f-reset-cards flx-c gp05 c">Reset Cards <span class="material-symbols-outlined">restart_alt</span></button>
+                                <button class="f-reset-cards flx-c gp05 c icon-btn regular">Reset Cards <span class="material-symbols-outlined">restart_alt</span></button>
                                 <div class="f-cur-index flx c"><span class="f-index-front">1</span class="f-index-middle">/<span class="f-index-back">${this.loadedSet.flashcards.length}</span></div>
                             </div>
                         </div>
@@ -137,8 +143,8 @@ class FlashcardMenu extends Menu {
                             </div>
                         </div>
                         <div class="f-inner-bottom flx-sb">
-                            <div class="f-commands flx c sb gp1 pd1 icon-btn accent">
-                                <button class="f-show-answer">Show Answer</button>
+                            <div class="f-commands flx c sb gp1 pd1">
+                                <button class="f-show-answer icon-btn accent">Show Answer</button>
                             </div>
                             <div class="f-nav flx-c gp05">
                                 <button class="f-prev f-arrow material-symbols-outlined">arrow_back</button>
@@ -153,7 +159,7 @@ class FlashcardMenu extends Menu {
         let setsCont = this.menu.querySelector(".f-sets-cont") as HTMLElement;
 
         setsCont.innerHTML = `
-            <i class="col-secondary f-your-sets">Your Sets:</i>
+            <span class="f-your-sets">Your Sets</span>
             <button class="f-set flx-sb c gp1 bm">
                 <i class="f-set-name flx c gp05" title="Bookmarked Flashcards"><span class="material-symbols-outlined">${this.bookmarkedFlashcards.icon || "bookmark"}</span> Bookmarked Flashcards</i>
                 <div class="f-set-status material-symbols-outlined"></div>
@@ -189,6 +195,8 @@ class FlashcardMenu extends Menu {
         fClose.addEventListener("click",() => this.close());
 
         this.loadFlashcardSet(this.loadedSet);
+
+        this.postLoad();
 
         return this;
     }
@@ -229,7 +237,7 @@ class FlashcardMenu extends Menu {
             <div class="f-inner-top flx-v gp1">
                 <span class="f-title flx c gp05"><span class="material-symbols-outlined">${this.loadedSet.icon || "chevron_forward"}</span>${this.loadedSet.title}</span>
                 <div class="flx-sb">
-                    <button class="f-reset-cards flx-c gp05 c" disabled>Reset Cards <span class="material-symbols-outlined">restart_alt</span></button>
+                    <button class="f-reset-cards flx-c gp05 c icon-btn regular" disabled>Reset Cards <span class="material-symbols-outlined">restart_alt</span></button>
                     <div class="f-cur-index flx c">0</div>
                 </div>
             </div>
@@ -245,7 +253,7 @@ class FlashcardMenu extends Menu {
             </div>
             <div class="f-inner-bottom flx-sb">
                 <div class="f-commands flx">
-                    <button class="f-show-answer" disabled>Show Answer</button>
+                    <button class="f-show-answer icon-btn accent" disabled>Show Answer</button>
                 </div>
                 <div class="f-nav flx-c gp05">
                     <button class="f-prev f-arrow material-symbols-outlined" disabled>arrow_back</button>
@@ -315,7 +323,7 @@ class FlashcardMenu extends Menu {
         <div class="f-inner-top flx-v gp1">
             <span class="f-title flx c gp05"></span>
             <div class="flx-sb">
-                <button class="f-reset-cards flx-c gp05 c">Reset Cards <span class="material-symbols-outlined">restart_alt</span></button>
+                <button class="f-reset-cards flx-c gp05 c icon-btn regular">Reset Cards <span class="material-symbols-outlined">restart_alt</span></button>
                 <div class="f-cur-index flx c"><span class="f-index-front">1</span class="f-index-middle">/<span class="f-index-back"></span></div>
             </div>
         </div>
@@ -331,7 +339,7 @@ class FlashcardMenu extends Menu {
         </div>
         <div class="f-inner-bottom flx-sb">
             <div class="f-commands flx">
-                <button class="f-show-answer">Show Answer</button>
+                <button class="f-show-answer icon-btn accent">Show Answer</button>
             </div>
             <div class="f-nav flx-c gp05">
                 <button class="f-prev f-arrow material-symbols-outlined">arrow_back</button>
@@ -411,8 +419,8 @@ class FlashcardMenu extends Menu {
             fCommands.innerHTML = `
                 <span class="f-rank">RANK </span>
                 <div class="flx gp05">
-                    <button class="flx c gp1 f-shuffle icon-btn">SHUFFLE<span class="material-symbols-outlined">shuffle</span></button>
                     <button class="flx c gp1 f-got-it icon-btn">GOT IT<span class="material-symbols-outlined">check</span></button>
+                    <button class="flx c gp1 f-shuffle icon-btn">SHUFFLE<span class="material-symbols-outlined">shuffle</span></button>
                 </div>
             `;
             this.setupGotIt();
@@ -424,7 +432,7 @@ class FlashcardMenu extends Menu {
         let fInnerBottom = this.menu.querySelector(".f-inner-bottom") as HTMLElement;
         fInnerBottom.innerHTML = `
             <div class="f-commands flx c sb">
-                <button class="f-show-answer">Show Answer</button>
+                <button class="f-show-answer icon-btn accent">Show Answer</button>
             </div>
             <div class="f-nav flx-c gp05">
                 <button class="f-prev f-arrow material-symbols-outlined">arrow_back</button>
