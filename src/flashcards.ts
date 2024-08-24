@@ -137,7 +137,7 @@ class FlashcardMenu extends Menu {
                             </div>
                         </div>
                         <div class="f-inner-bottom flx-sb">
-                            <div class="f-commands flx c sb gp1 pd1">
+                            <div class="f-commands flx c sb gp1 pd1 icon-btn accent">
                                 <button class="f-show-answer">Show Answer</button>
                             </div>
                             <div class="f-nav flx-c gp05">
@@ -411,8 +411,8 @@ class FlashcardMenu extends Menu {
             fCommands.innerHTML = `
                 <span class="f-rank">RANK </span>
                 <div class="flx gp05">
-                    <button class="flx c gp1 f-shuffle">SHUFFLE<span class="material-symbols-outlined">shuffle</span></button>
-                    <button class="flx c gp1 f-got-it">GOT IT<span class="material-symbols-outlined">check</span></button>
+                    <button class="flx c gp1 f-shuffle icon-btn">SHUFFLE<span class="material-symbols-outlined">shuffle</span></button>
+                    <button class="flx c gp1 f-got-it icon-btn">GOT IT<span class="material-symbols-outlined">check</span></button>
                 </div>
             `;
             this.setupGotIt();

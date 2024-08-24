@@ -71,7 +71,7 @@
 }
 
 .f-show-answer {
-    background-color: var(--learn-col);
+    /* background-color: var(--learn-col); */
     padding: 1em 1.6em;
     font-weight: 600;
     text-transform: uppercase;
@@ -79,7 +79,8 @@
 }
 
 .f-rank {
-    color: var(--secondary-bg-col);
+    /* color: var(--secondary-bg-col); */
+    color: var(--col);
 }
 
 .f-cur-index {
@@ -93,7 +94,8 @@
 .f-card {
     display: grid;
     align-items: center;
-    background-color: var(--bg-col);
+    /* background-color: var(--bg-col); */
+    background-color: var(--darken);
     height: 20em;
     width: 100%;
     border-radius: 5px;
@@ -176,7 +178,8 @@
 }
 
 .f-commands {
-    background-color: var(--col);
+    /* background-color: var(--col); */
+    background-color: var(--darken);
     gap: 1em;
     border-radius: 3px;
     height: 100%;
@@ -193,10 +196,16 @@
 
 .f-shuffle {
     background-color: var(--incorrect-bg);
-    color: var(--secondary-bg-col);
+    /* color: var(--secondary-bg-col); */
+    color: var(--incorrect-col);
 }
 
 .f-got-it {
     background-color: var(--correct-bg);
-    color: var(--secondary-bg-col);
+    /* color: var(--secondary-bg-col); */
+    color: var(--correct-col);
+}
+
+.f-inner-bottom {
+    height: 52px;
 }

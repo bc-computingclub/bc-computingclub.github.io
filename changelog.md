@@ -1349,3 +1349,7 @@
  - Bookmarks are now fully functional on the frontend, can be added/removed as you would expect via the bookmark button.
  - Start working on 'got it' & 'shuffle card' buttons - visually done, but not yet functional.
  - The "show answer" button now works, and plays a brief 'card-flip' animation to reveal the answer. Thinking of adding a 'flip back' button, but idk - I'll definitely add the functionality to click the card to flip, so hopefully that ends up being enough. (will add an animation to this later so the 'rank' button and its options fade in with the reveal of the back-side, so it's more intuitive).
+
+### 8/24/24 - Claeb
+- (Update 1)
+- fixed some styling and sizing on the flashcards menu and to better support dark theme

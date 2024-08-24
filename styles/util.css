@@ -575,7 +575,8 @@ body .nav-links > .active{
 }
 
 .col-secondary {
-    color: var(--secondary-bg-col);
+    /* color: var(--secondary-bg-col); */
+    color: var(--accent-col);
 }
 
 .gd-c-auto{
