@@ -631,7 +631,7 @@ io.on("connection",socket=>{
             if(!v) continue;
             let [sec,scene] = v.split("^");
             if(sec == curSection){
-                lessonMeta.meta.final_order.splice(i,0,lessonMeta.meta.final_order[ind]);
+                lessonMeta.meta.final_order.splice(i+1,0,lessonMeta.meta.final_order[ind]);
                 hasAdded = true;
                 break;
             }

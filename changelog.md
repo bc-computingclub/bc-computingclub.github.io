@@ -1358,3 +1358,7 @@
 - changed styling of flashcards menu to more fit the theme of code otter
 - changed the order of flashcards rank to have "Got It" be first so you can flip without taking your eyes off the cards
 - fixed other menus and various tweaks
+- (Update 3)
+- i'll fill this in later but mostly some bug fixes/tweaks
+- not yet menu flips and darkens correctly now even across themes
+- moved correct and incorrect buttons and labels into the show lesson confirm container (they are all working currently except for the tutor displaying their correct answer)

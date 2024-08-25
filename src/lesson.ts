@@ -21,6 +21,7 @@ const lessonConfirmText = d_lesson_confirm.querySelector(".lesson-confirm-text")
 const lessonConfirmSubmit = d_lesson_confirm.querySelector(".lesson-confirm-submit") as HTMLButtonElement;
 const b_replay = d_lesson_confirm.querySelector(".b-replay");
 const b_goBackStep = d_lesson_confirm.querySelector(".b-go-back-step");
+const d_extraLessonConfirmBtns = document.querySelector(".extra-lesson-confirm-btns");
 setupCallout(b_replay,"Replay Step");
 setupCallout(b_goBackStep,"Go Back Step");
 
@@ -38,69 +39,99 @@ b_imDone.addEventListener("click",async e=>{
     if(!_canSubmitLesson) return;
     _canSubmitLesson = false;
 
-    if(lesson.currentSubTask){
+    let mode = _curLessonConfirmMode;
+    if(mode == LessonConfirmMode.review_incorrect){
+        console.log("-- INCOR");
+        setLessonConfirmMode(LessonConfirmMode.none);
+    }
+    else if(mode == LessonConfirmMode.review_correct){
+        console.log("-- CORRECT");
+        lesson.currentSubTask._resFinish();
+        b_imDone.disabled = true;
+    }
+    else if(lesson.currentSubTask){
+        console.log("-- NONE");
         if(lesson.currentSubTask instanceof ValidateCode){
             let res = await lesson.currentSubTask.checkValidation();
             let b:Bubble|undefined;
             if(!res){
-                b = addBubbleAt(BubbleLoc.global,"Sorry! That's incorrect.",undefined,{
-                    classes:["incorrect-bubble"]
-                });
-                // let b_continue = document.createElement("button");
-                let b_replay = document.createElement("button");
-                let b_replayLater = document.createElement("button");
-                b_replay.textContent = "Try Again";
-                b_replayLater.textContent = "Skip (Replay Later)";
-                // b.e.appendChild(b_continue);
-                let c = document.createElement("div");
-                c.style.display = "flex";
-                c.style.justifyContent = "space-between";
-                c.style.marginTop = "30px";
-                c.appendChild(b_replay);
-                c.appendChild(b_replayLater);
-                b.e.appendChild(c);
-                blurGlobalInput();
-                b_replay.addEventListener("keydown",async e=>{
-                    if(e.key == "Escape"){
-                        b_replay.click();
-                    }
-                    if(e.key == "Enter"){
-                        e.stopPropagation();
-                        e.stopImmediatePropagation();
-                        // await wait(50);
-                        // b_replay.click();
-                    }
-                });
-                b_replayLater.addEventListener("keydown",async e=>{
-                    if(e.key == "Escape"){
-                        b_replay.click();
-                    }
-                    if(e.key == "Enter"){
-                        e.stopPropagation();
-                        e.stopImmediatePropagation();
-                        // await wait(50);
-                        // b_replayLater.click();
-                    }
-                });
-                b_replay.focus();
-                await new Promise<void>(resolve=>{
-                    b_replay.addEventListener("click",e=>{
-                        resolve();
-                        closeBubble(b);
-                    });
-                    b_replayLater.addEventListener("click",e=>{
-                        lesson.replayLater();
-                        resolve();
-                        closeBubble(b);
-                    });
-                });
+                // b = addBubbleAt(BubbleLoc.global,"Sorry! That's incorrect.",undefined,{
+                //     classes:["incorrect-bubble"]
+                // });
+                setLessonConfirmMode(LessonConfirmMode.review_incorrect);
+                
+                // // let b_continue = document.createElement("button");
+                // let b_replay = document.createElement("button");
+                // let b_replayLater = document.createElement("button");
+                // b_replay.textContent = "Try Again";
+                // b_replayLater.textContent = "Skip (Replay Later)";
+                // // b.e.appendChild(b_continue);
+                // let c = document.createElement("div");
+                // c.style.display = "flex";
+                // c.style.justifyContent = "space-between";
+                // c.style.marginTop = "30px";
+                // c.appendChild(b_replay);
+                // c.appendChild(b_replayLater);
+                // b.e.appendChild(c);
+                // blurGlobalInput();
+                // b_replay.addEventListener("keydown",async e=>{
+                //     if(e.key == "Escape"){
+                //         b_replay.click();
+                //     }
+                //     if(e.key == "Enter"){
+                //         e.stopPropagation();
+                //         e.stopImmediatePropagation();
+                //         // await wait(50);
+                //         // b_replay.click();
+                //     }
+                // });
+                // b_replayLater.addEventListener("keydown",async e=>{
+                //     if(e.key == "Escape"){
+                //         b_replay.click();
+                //     }
+                //     if(e.key == "Enter"){
+                //         e.stopPropagation();
+                //         e.stopImmediatePropagation();
+                //         // await wait(50);
+                //         // b_replayLater.click();
+                //     }
+                // });
+                // b_replay.focus();
+                // await new Promise<void>(resolve=>{
+                //     b_replay.addEventListener("click",e=>{
+                //         resolve();
+                //         closeBubble(b);
+                //     });
+                //     b_replayLater.addEventListener("click",e=>{
+                //         lesson.replayLater();
+                //         resolve();
+                //         closeBubble(b);
+                //     });
+                // });
             }
             else{
-                b = addBubbleAt(BubbleLoc.global,"Correct!",undefined,{
-                    click:true,
-                    classes:["correct-bubble"]
-                });
-                if(b) await b.clickProm;
+                let ed = lesson.tut.getCurEditor();
+                setLessonConfirmMode(LessonConfirmMode.review_correct);
+                e.stopImmediatePropagation();
+                e.stopPropagation();
+
+                // if(!ed){
+                //     b = addBubbleAt(BubbleLoc.global,"Correct!",undefined,{
+                //         click:true,
+                //         classes:["correct-bubble"]
+                //     });
+                //     if(b) await b.clickProm;
+                // }
+                // else{
+                //     let r = ed.getDomNode().getBoundingClientRect();
+                //     b = addBubbleAt(BubbleLoc.xy,"Correct!","d",{
+                //         click:true,
+                //         x:r.x,
+                //         y:r.y,
+                //         classes:["correct-bubble"]
+                //     });
+                //     if(b) await b.clickProm;
+                // }
             }
             if(!res){
                 _canSubmitLesson = true;
@@ -108,8 +139,8 @@ b_imDone.addEventListener("click",async e=>{
                 return;
             }
         }
-        lesson.currentSubTask._resFinish();
-        b_imDone.disabled = true;
+        // lesson.currentSubTask._resFinish();
+        // b_imDone.disabled = true;
     }
     _canSubmitLesson = true;
     focusGlobalInput();
@@ -196,19 +227,64 @@ function updateLessonConfirmDetails(ops:{
 }
 let _canSubmitLesson = true;
 let _lessonConfirmShown = false;
+enum LessonConfirmMode{
+    none,
+    review_incorrect,
+    review_correct,
+}
+let _curLessonConfirmMode = LessonConfirmMode.none;
+function setLessonConfirmMode(mode:LessonConfirmMode){
+    _curLessonConfirmMode = mode;
+    if(d_lesson_confirm.style.opacity == "1") showLessonConfirm();
+}
 async function showLessonConfirm(){
     let preTask = lesson.currentEvent;
     let preSubTask = lesson.currentSubTask;
     let hasGoBack = true;
     let hasReplay = true;
 
+    d_lesson_confirm.className = "d-lesson-confirm"; // reset classname back to default
+    d_extraLessonConfirmBtns.textContent = "";
+    
     if(preSubTask instanceof ValidateCode){
         hasGoBack = false;
         hasReplay = false;
-        updateLessonConfirmDetails({
-            text:`Press "Submit" to let the Tutor know when you're finished.`,
-            submit:"Submit (Alt+Enter)"
-        });
+        let mode = _curLessonConfirmMode;
+        if(mode == LessonConfirmMode.none){
+            updateLessonConfirmDetails({
+                text:`Press "Submit" to let the Tutor know when you're finished.`,
+                submit:"Submit (Alt+Enter)"
+            });
+        }
+        else if(mode == LessonConfirmMode.review_incorrect){
+            updateLessonConfirmDetails({
+                text:`Sorry, that's incorrect.`,
+                submit:"Retry (Alt+Enter)"
+            });
+            d_lesson_confirm.classList.add("incorrect");
+            let b_extra = document.createElement("button");
+            b_extra.textContent = "Skip (Replay Later)";
+            b_extra.style.padding = "6px 12px";
+            b_extra.addEventListener("click",e=>{
+                lesson.replayLater();
+            });
+            d_extraLessonConfirmBtns.appendChild(b_extra);
+
+            blurGlobalInput();
+            await wait(100);
+            b_imDone.focus();
+        }
+        else if(mode == LessonConfirmMode.review_correct){
+            updateLessonConfirmDetails({
+                text:`Correct! Check out my answer on the left!`,
+                submit:"Continue (Alt+Enter)"
+            });
+            d_lesson_confirm.classList.add("correct");
+
+            blurGlobalInput();
+            await wait(100);
+            b_imDone.focus();
+        }
     }
     else{
         updateLessonConfirmDetails({
@@ -2300,6 +2376,20 @@ ${o.question}\n---\n\n
 
         f.editor.updateOptions({wordWrap:"on"});
 
+        // user's file
+        let mainFile = lesson.p.files[0];
+        let helperText = `<!-- Type the letter of your answer into this file to answer! -->\n\n`;
+        if(!mainFile){
+            mainFile = await lesson.p.createFile("index.html",lesson.p.textEncoder.encode(helperText),undefined,undefined,true);
+            mainFile.open();
+        }
+        else if(lesson.p.textDecoder.decode(mainFile.buf) == ""){
+            mainFile.editor.setValue(helperText);
+        }
+
+        mainFile.editor.updateOptions({wordWrap:"on"});
+
+        // finish
         this.canBeFinished = true;
         this._resFinish();
         
@@ -5871,6 +5961,8 @@ async function deloadLesson(){
     // d_curProject
 
     await hideLessonConfirm(true);
+
+    setLessonConfirmMode(LessonConfirmMode.none);
 
     pane_tutor_code.textContent = "";
     pane_code.textContent = "";

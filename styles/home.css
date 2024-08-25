@@ -53,10 +53,14 @@
     --incorrect-bg:rgb(255,100,100,0.5);
     --incorrect-border:rgb(100,20,20);
     --incorrect-col:whitesmoke;
+    --incorrect-fade:rgb(255,100,100,0.15);
+    --incorrect-fade-col:gainsboro;
 
     --correct-bg:rgb(100,255,100,0.5);
     --correct-border:rgb(20,100,20);
     --correct-col:whitesmoke;
+    --correct-fade:rgba(100,255,100,0.15);
+    --correct-fade-col:gainsboro;
 }
 
 .bubble.incorrect-bubble{

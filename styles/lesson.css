@@ -383,6 +383,24 @@ hr{
     opacity:0;
     margin-left:auto;
 }
+.d-lesson-confirm.incorrect{
+    background-color:var(--incorrect-fade);
+    color:var(--incorrect-fade-col);
+
+    & button{
+        background-color:var(--incorrect-bg);
+        color:var(--incorrect-col);
+    }
+}
+.d-lesson-confirm.correct{
+    background-color:var(--correct-fade);
+    color:var(--correct-fade-col);
+
+    & button{
+        background-color:var(--correct-bg);
+        color:var(--correct-col);
+    }
+}
 .b-im-done{
     margin-left:4px;
     background-color:var(--col);

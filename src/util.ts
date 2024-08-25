@@ -120,11 +120,14 @@ class Menu{
     title:string;
     menu:HTMLElement;
     outerMenu:HTMLElement;
+    /** this isn't always needed but here in case you need an absolute ref to it */
+    subCont:HTMLElement;
 
     head:HTMLElement;
     body:HTMLElement;
 
     isCustom = false;
+    hasOpenAnim = false; // false
 
     reset(){
         this.menu = null;
@@ -141,7 +144,7 @@ class Menu{
     /**
      * You will need to manually invoke this at the end of your load method if you overrode the entire menu's html
      */
-    postLoad(isInternal=false){
+    _postLoad(isInternal=false){
         let m = this.outerMenu;
         if(!isInternal){
             this.head.remove();
@@ -158,6 +161,14 @@ class Menu{
             let _after = document.createElement("div");
             _after.className = "after pse-bg loaded";
             m.appendChild(_after);
+        }
+
+        if(this.hasOpenAnim){
+            this.outerMenu.addEventListener("animationend",e=>{
+                this.outerMenu.classList.remove("menu-bubble-anim");
+                this.outerMenu.classList.add("menu-open-post");
+            });
+            this.outerMenu.classList.add("menu-bubble-anim");
         }
     }
     load(priority=0,newLayer=false){
@@ -191,6 +202,7 @@ class Menu{
         let menuSubCont = document.createElement("div");
         menuSubCont.className = "menu-sub-cont";
         menu.appendChild(menuSubCont);
+        this.subCont = menuSubCont;
         if(this.isCustom){
             this.menu = menuSubCont;
         }
@@ -225,7 +237,7 @@ class Menu{
         if(!menusOpen.length) menuCont.classList.add("show");
         menusOpen.push(this);
 
-        this.postLoad(true);
+        this._postLoad(true);
 
         return this;
     }
@@ -734,6 +746,7 @@ function genHeader(i:number,isCompact=true,id:string){
             </button>
             <button class="b-replay"><div class="material-symbols-outlined">replay</div></button>
             <button class="b-go-back-step hide"><div class="material-symbols-outlined">keyboard_double_arrow_left</div></button>
+            <div class="extra-lesson-confirm-btns"></div>
         </div>
         <div class="nav-links">
             <button class="icon-btn-single co-item b-feedback" co-label="Send Feedback"><div class="material-symbols-outlined">forum</div></button>
@@ -3171,12 +3184,19 @@ function cursorLoop(){
 
     let delay = 500;
     let list = document.querySelectorAll(".custom-cursor");
-    if(lesson?.currentSubTask instanceof ValidateCode){
-        for(const c of list){
-            c.classList.add("hide");
+    try{
+        if(lesson?.currentSubTask instanceof ValidateCode){
+            for(const c of list){
+                c.classList.add("hide");
+            }
+        }
+        else{
+            for(const c of list){
+                c.classList.toggle("hide");
+            }
         }
     }
-    else{
+    catch(e){
         for(const c of list){
             c.classList.toggle("hide");
         }
@@ -3189,7 +3209,7 @@ setTimeout(()=>{
 },500);
 
 // From Jaredcheeda, https://stackoverflow.com/questions/7381974/which-characters-need-to-be-escaped-in-html
-function escapeMarkup (dangerousInput) {
+function escapeMarkup (dangerousInput:any) {
     const dangerousString = String(dangerousInput);
     const matchHtmlRegExp = /["'&<>]/;
     const match = matchHtmlRegExp.exec(dangerousString);
@@ -4746,7 +4766,7 @@ class ChallengeMenu extends Menu {
             this.close();
         };
 
-        this.postLoad();
+        this._postLoad();
 
         return this;
     }
@@ -4784,7 +4804,7 @@ class ImagePreview extends Menu {
                 <img src="${this.url}" alt="challenge image">
             </div>
         `;
-        this.postLoad();
+        this._postLoad();
         return this;
     }
 }
@@ -5367,7 +5387,7 @@ class SubmissionMenu extends Menu {
             this.close();
         };
 
-        this.postLoad();
+        this._postLoad();
 
         return this;
     }

@@ -99,6 +99,7 @@ class FlashcardMenu extends Menu {
         this.bookmarkedFlashcards.completed = this.getSetCompletion(this.bookmarkedFlashcards);
 
         this.isCustom = true;
+        this.hasOpenAnim = true;
     }
 
     fSetArr: FlashcardSet[];
@@ -110,12 +111,6 @@ class FlashcardMenu extends Menu {
     load() {
         super.load();
         let incompleteCards:Flashcard[] = this.getNonCompletedCards();
-
-        this.outerMenu.addEventListener("animationend",e=>{
-            this.outerMenu.classList.remove("menu-bubble-anim");
-            this.outerMenu.classList.add("menu-open-post");
-        });
-        this.outerMenu.classList.add("menu-bubble-anim");
 
         this.menu.innerHTML = `
             <div class="f-outer flx-v gp2 pd2">
@@ -198,7 +193,7 @@ class FlashcardMenu extends Menu {
 
         this.loadFlashcardSet(this.loadedSet);
 
-        this.postLoad();
+        this._postLoad();
 
         return this;
     }

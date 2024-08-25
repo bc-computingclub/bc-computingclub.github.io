@@ -261,6 +261,8 @@ async function restoreLessonFiles(lesson:Lesson){
     console.log(":::META",data.meta);
     lesson.info = data.info;
 
+    document.title = lesson.info.name+" - Code Otter Lesson";
+
     // select the first file to be consistent (usually this will be the index.html)
     await wait(0);
     // if(lesson.p.files.length) lesson.p.files[0].open();
@@ -444,8 +446,18 @@ class NotYetMenu extends Menu{
     constructor(){
         super("not-yet");
     }
+    bodyBack:HTMLElement;
+
     load(priority?: number, newLayer?: boolean): this {
         super.load(priority,newLayer);
+
+        let bodyBack = document.createElement("div");
+        bodyBack.className = "menu-body-back";
+        this.bodyBack = bodyBack;
+
+        this.subCont.appendChild(this.head);
+        this.subCont.appendChild(this.body);
+        this.subCont.appendChild(bodyBack);
         
         this.startTheNotReadyYet();
         return this;
@@ -580,12 +592,16 @@ class NotYetMenu extends Menu{
         await SWait(1500);
         this.menu.classList.add("flip");
         await SWait(2000);
-        this.body.style.animation = "none";
-        await SWait(500);
 
         await clearText();
         await typeText("You see an inscription on it, it writes:<br>");
+        await SWait(1500);
+
+        // this.bodyBack.style.animation = "none";
+        // await SWait(500);
+        
         await typeText("There will come a time when humans can pass, but only the worthy will survive. Are you ready for this?");
+        await SWait(5000);
 
         choice = await typeText("Continue reading?",{
             choices:[
