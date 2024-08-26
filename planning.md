@@ -2,11 +2,9 @@
 
  ### FLASHCARDS
  - ANIMATIONS
-    Don't want to have too many animations, but I still want a few - they make the experience more premium, as long as they're used well. Notably, at least some form of visual confirmation that you're switching between flashcards beyond just text switching. (An animation for stuff sliding in/off screen feels potentially tacky, depends on how I implement it idk for now I don't have a clean concept in mind)
+    Don't want to have too many animations, but I still want a few - they make the experience more premium, as long as they're used without too much intrusion on responsiveness. Notably, at least some form of visual confirmation that you're switching between flashcards beyond just replacing the text on the cards. (An animation for stuff sliding in/off screen feels potentially tacky, depends on how I implement it idk for now I don't have a clean concept in mind)
  - BOOKMARKING
-    I'm making the 'starred' section be the bookmarked section out of pure convenience, since there's a bunch of stuff in google fonts with different states for the bookmark that I can play around with. 
-    The way I am doing bookmarks is adding/removing flashcards from the bookmarks is by adding/removing the actual flashcards to an array called bookmarkedFlaschards.
-    This is absolutely inefficient as hell, I know I should be storing the set/index of bookmarked flashcards in an array of key value pairs. I promise I will do this eventually, most likely sooner than later. Will save some backend space, & save some bandwidth (since I'm assuming that I'll be callling the backend every time the 'bookmark' status of a flashcard changes, as long as it's not being spammed).
+    I'm changing the 'starred' section to the 'bookmarked' section out of pure convenience, since there's a bunch of stuff in google fonts with different states for the bookmark that I can play around with. 
  - USING MY FLASHCARD MENU
     I decided not to track progress through indices of flashcards, since I don't think that's ever going to be masively relevant. If anything, I can add a way to skip to a specific index one day if users ask for the feature.
     For now, when you want a flashcard menu, you pass in an array of the sets available to the user, and an array of the user's bookmarked flashcards. Like mentioned above, I plan on changing this, so eventually user's bookmarked flashcards will instead be an array of key value pairs that track the name of the set and the index (or indices) of bookmarked flashcards.

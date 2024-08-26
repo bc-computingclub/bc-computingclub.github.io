@@ -1362,3 +1362,7 @@
 - i'll fill this in later but mostly some bug fixes/tweaks
 - not yet menu flips and darkens correctly now even across themes
 - moved correct and incorrect buttons and labels into the show lesson confirm container (they are all working currently except for the tutor displaying their correct answer)
+
+### 8/26/24 - Paul
+ - Fix small bugs in flashcard menu, like forgetting to set up flashcard controls in certain scenarios.
+ - Implement the "shuffle card" functionality. If you click the button, the card you're on is removed from loadedSet, added back in to it randomly, and the set is loaded again. (You're guaranteed not to land on the same card immediately, but it can show up when you click the 'next' button, or once you clikc 'got it' on the currrent flashcard).

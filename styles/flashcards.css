@@ -64,13 +64,6 @@
     } */
 }
 
-.f-reset-cards {
-    /* font-weight: regular !important; */
-    /* padding: 0.8em 1.6em; */
-    /* font-weight: 600; */
-    /* text-transform: uppercase; */
-}
-
 .f-show-answer {
     background-color: var(--learn-col);
     padding: 1em 1.6em;
@@ -102,7 +95,7 @@
     border-radius: 5px;
     position: relative;
 
-    &.flip {
+    &.flip{
         animation-name: flip; /*Flip over horizontal axis*/
         animation-duration: 0.15s;
         animation-timing-function: ease-out;

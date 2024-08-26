@@ -82,6 +82,7 @@ class FlashcardMenu extends Menu {
     constructor(fSetArr: FlashcardSet[], loadedSetTitle?: string) {
         super("Flashcards"); // just creates menu-flashcards class for menu. does not affect menu appearance.
         this.fSetArr = fSetArr;
+        this.originalArr = fSetArr.map(set => JSON.parse(JSON.stringify(set))); // credit to mr gpt
         this.bookmarkedFlashcards = {
             title: "Bookmarked Flashcards",
             flashcards: [],
@@ -103,14 +104,15 @@ class FlashcardMenu extends Menu {
     }
 
     fSetArr: FlashcardSet[];
+    originalArr: FlashcardSet[];
     loadedSetTitle: string;
     loadedSet: FlashcardSet;
     fIndex: number = 0; // only for the current (opened) set of flashcards.
     bookmarkedFlashcards: FlashcardSet;
+    side: "front" | "back" = "front";
 
     load() {
         super.load();
-        let incompleteCards:Flashcard[] = this.getNonCompletedCards();
 
         this.menu.innerHTML = `
             <div class="f-outer flx-v gp2 pd2">
@@ -198,10 +200,6 @@ class FlashcardMenu extends Menu {
         return this;
     }
 
-    getNonCompletedCards() {
-        return this.loadedSet.flashcards.filter((fCard) => { !fCard.completed })
-    }
-
     updateBookmarkedFlashcards() {
         let temp = this.fSetArr.filter((flashcardSet) => {
             return flashcardSet.flashcards.some((flashcard) => flashcard.bookmarked);
@@ -263,14 +261,14 @@ class FlashcardMenu extends Menu {
     /**
      * Pass in a set of flashcards to load, and this method will display them on the flashcard menu.
      */
-    loadFlashcardSet(loadingSet:FlashcardSet) {
+    loadFlashcardSet(loadingSet:FlashcardSet, index?: number) {
         console.log("Loading Flashcard set: " + loadingSet.title);
         let tempSet = this.loadedSet;
         this.loadedSet = loadingSet;
         let tempCompletion = this.loadedSet.completed;
         this.loadedSet.completed = this.getSetCompletion(this.loadedSet);
         if(!tempCompletion === this.loadedSet.completed) { toggleSetCompletion(this.loadedSet,tempCompletion); } // if status of set completion has changed, call function to update backend correspondingly.
-        this.fIndex = 0;
+        this.fIndex = index ?? 0;
 
         this.refreshFlashcardHTML();
 
@@ -302,7 +300,7 @@ class FlashcardMenu extends Menu {
         this.setupBookmarkToggle();
         this.setupNext();
         this.setupPrev();
-        this.setupShowAnswer();
+        this.setupShowAnswerButton();
     }
 
     setupNext() {
@@ -317,33 +315,41 @@ class FlashcardMenu extends Menu {
 
     refreshFlashcardHTML() {
         this.menu.querySelector(".f-inner").innerHTML = `
-        <div class="f-inner-top flx-v gp1">
-            <span class="f-title flx c gp05"></span>
-            <div class="flx-sb">
-                <button class="f-reset-cards flx-c gp05 c icon-btn regular">Reset Cards <span class="material-symbols-outlined">restart_alt</span></button>
-                <div class="f-cur-index flx c"><span class="f-index-front">1</span class="f-index-middle">/<span class="f-index-back"></span></div>
-            </div>
-        </div>
-        <div class="f-inner-middle">
-            <div class="f-card pd2">
-                <div class="f-card-top flx-sb">
-                    <i class="f-language-tag flx-c"></i><button class="f-bookmark-toggle material-symbols-outlined">${this.loadedSet.flashcards[this.fIndex].bookmarked ? "bookmark_added" : "bookmark_add"}</button>
-                </div>
-                <div class="f-card-bottom al-st">
-                    <div class="f-card-prompt"></div>
+            <div class="f-inner-top flx-v gp1">
+                <span class="f-title flx c gp05"></span>
+                <div class="flx-sb">
+                    <button class="f-reset-cards flx-c gp05 c icon-btn regular">Reset Cards <span class="material-symbols-outlined">restart_alt</span></button>
+                    <div class="f-cur-index flx c"><span class="f-index-front">1</span class="f-index-middle">/<span class="f-index-back"></span></div>
                 </div>
             </div>
-        </div>
-        <div class="f-inner-bottom flx-sb">
-            <div class="f-commands flx">
-                <button class="f-show-answer icon-btn accent">Show Answer</button>
+            <div class="f-inner-middle">
+                <div class="f-card pd2">
+                    <div class="f-card-top flx-sb">
+                        <i class="f-language-tag flx-c"></i><button class="f-bookmark-toggle material-symbols-outlined">${this.loadedSet.flashcards[this.fIndex].bookmarked ? "bookmark_added" : "bookmark_add"}</button>
+                    </div>
+                    <div class="f-card-bottom al-st">
+                        <div class="f-card-prompt"></div>
+                    </div>
+                </div>
             </div>
-            <div class="f-nav flx-c gp05">
-                <button class="f-prev f-arrow material-symbols-outlined">arrow_back</button>
-                <button class="f-next f-arrow material-symbols-outlined">arrow_forward</button>
+            <div class="f-inner-bottom flx-sb">
+                <div class="f-commands flx">
+                    <button class="f-show-answer icon-btn accent">Show Answer</button>
+                </div>
+                <div class="f-nav flx-c gp05">
+                    <button class="f-prev f-arrow material-symbols-outlined">arrow_back</button>
+                    <button class="f-next f-arrow material-symbols-outlined">arrow_forward</button>
+                </div>
             </div>
-        </div>
-    `;
+        `;
+        this.setupResetButton();
+    }
+
+    setupResetButton() {
+        let resetBtn = this.menu.querySelector(".f-reset-cards") as HTMLElement;
+        resetBtn.addEventListener('click', () => {
+            this.resetFlashcardSet(this.loadedSet.title);
+        })
     }
 
     goToNextFlashcard() {
@@ -361,8 +367,9 @@ class FlashcardMenu extends Menu {
         this.setupFlashcardCommands();
         let displayIndex = document.querySelector(".f-index-front") as HTMLElement;
         displayIndex.innerHTML = (this.fIndex + 1).toString();
+        this.setupBookmarkToggle();
 
-        this.setupShowAnswer();
+        this.setupShowAnswerButton();
     }
 
     goToPrevFlashcard() {
@@ -377,14 +384,14 @@ class FlashcardMenu extends Menu {
                 <div class="f-card-prompt">${this.loadedSet.flashcards[this.fIndex].question}</div>
             </div>
         `;
-        this.setupShowAnswer();
+        this.setupShowAnswerButton();
         let displayIndex = document.querySelector(".f-index-front");
         displayIndex.innerHTML = (this.fIndex + 1).toString();
 
         this.setupBookmarkToggle();
     }
 
-    setupShowAnswer() {
+    setupShowAnswerButton() {
         this.setupFlashcardCommands();
 
         let fCommands = this.menu.querySelector(".f-commands") as HTMLElement;
@@ -392,6 +399,8 @@ class FlashcardMenu extends Menu {
         let fCard = this.menu.querySelector(".f-card") as HTMLElement;
 
         showAnswerButton.addEventListener('click', () => {
+            console.log("Attempting to show answer");
+            // this.flipCard();
             fCard.addEventListener('animationend', (anim) => {
                 if(anim.animationName === "fade-out") fCard.innerHTML = "";
                 fCard.classList.add("flip");
@@ -421,8 +430,12 @@ class FlashcardMenu extends Menu {
                 </div>
             `;
             this.setupGotIt();
-            this.setupShuffle();
+            this.setupShuffleButton();
         });
+    }
+
+    flipCard() {
+        
     }
 
     setupFlashcardCommands() {
@@ -441,8 +454,24 @@ class FlashcardMenu extends Menu {
         this.setupPrev();
     }
 
-    setupShuffle() {
+    setupShuffleButton() {
+        let shuffleBtn = this.menu.querySelector(".f-shuffle");
+        shuffleBtn.addEventListener('click', () => {
+            this.shuffleFlashcardIntoSet(this.loadedSet.flashcards[this.fIndex]);
+        });
+    }
 
+    shuffleFlashcardIntoSet(f: Flashcard) {
+        this.loadedSet.flashcards = this.loadedSet.flashcards.filter((e) => e !== f);
+    
+        let randomIndex: number;
+        do { // ty mr copilot, i couldnt figure this one out
+            randomIndex = Math.floor(Math.random() * (this.loadedSet.flashcards.length + 1));
+        } while (randomIndex === this.fIndex);
+    
+        this.loadedSet.flashcards.splice(randomIndex, 0, f);
+        // this.fIndex++;
+        this.loadFlashcardSet(this.loadedSet);
     }
 
     setupGotIt() {
@@ -459,15 +488,15 @@ class FlashcardMenu extends Menu {
 
     setupBookmarkToggle() {
         let fBookmarkToggle = this.menu.querySelector(".f-bookmark-toggle") as HTMLElement;
-        fBookmarkToggle.addEventListener("click",() => {
+        fBookmarkToggle.removeEventListener('click', () => {});
+        fBookmarkToggle.addEventListener('click',() => {
             let bookmarkStatus = this.loadedSet.flashcards[this.fIndex].bookmarked;
             this.loadedSet.flashcards[this.fIndex].bookmarked = !bookmarkStatus;
-            fBookmarkToggle.innerHTML = bookmarkStatus ? "bookmark_add" : "bookmark_added";
+            this.updateCardBookmarkStatus(bookmarkStatus);
             if(!this.loadedSet.flashcards[this.fIndex].bookmarked) { // if it's now no longer bookmarked, go through bookmarked cards and only return flashcards that aren't the same as this flashcard.
                 this.bookmarkedFlashcards.flashcards.filter((e) => {e.question != this.loadedSet.flashcards[this.fIndex].question});
             } else this.bookmarkedFlashcards.flashcards.push(this.loadedSet.flashcards[this.fIndex]);
 
-            console.log("Toggled bookmark status: " + this.loadedSet.flashcards[this.fIndex].bookmarked);
             toggleFlashcardBookmark(this.loadedSet,this.fIndex,this.loadedSet.flashcards[this.fIndex].bookmarked); // backend call that does nothing right now
             if(this.loadedSet.title === "Bookmarked Flashcards") {
                 this.updateBookmarkedFlashcards();
@@ -475,12 +504,37 @@ class FlashcardMenu extends Menu {
                 else this.loadFlashcardSet(this.loadedSet);
             }
         });
+    }
 
+    updateCardBookmarkStatus(bookmarkStatus: boolean) {
+        console.log("Toggled bookmark status: " + this.loadedSet.flashcards[this.fIndex].bookmarked);
+    
+        let fBookmarkToggle = this.menu.querySelector(".f-bookmark-toggle") as HTMLElement;
+        fBookmarkToggle.innerHTML = bookmarkStatus ? "bookmark_add" : "bookmark_added";
     }
 
     getSetCompletion(set: FlashcardSet): boolean {
         if (set.flashcards.length === 0) return false;
         return !set.flashcards.some((flashcard) => !flashcard.completed); //returns false if at least one of the flashcards is not completed (meaning that the whole set can't be complete)
+    }
+
+    resetFlashcardSet(setTitle: string) {
+        const originalSet = this.originalArr.find(set => set.title === setTitle);
+        if (originalSet) {
+            const index = this.fSetArr.findIndex(set => set.title === setTitle);
+            if (index !== -1) {
+                this.fSetArr[index] = JSON.parse(JSON.stringify(originalSet)); // Reset to the original state
+                this.updateBookmarkedFlashcards();
+                if (this.loadedSetTitle === setTitle) {
+                    this.loadedSet = this.fSetArr[index];
+                    for(let fcard of this.loadedSet.flashcards) { 
+                        fcard.bookmarked = false;
+                        this.updateCardBookmarkStatus(false);
+                    }
+                    this.loadFlashcardSet(this.loadedSet);
+                }
+            }
+        }
     }
 }
 
