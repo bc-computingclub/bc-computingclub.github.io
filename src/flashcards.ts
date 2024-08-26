@@ -201,14 +201,7 @@ class FlashcardMenu extends Menu {
     }
 
     updateBookmarkedFlashcards() {
-        let temp = this.fSetArr.filter((flashcardSet) => {
-            return flashcardSet.flashcards.some((flashcard) => flashcard.bookmarked);
-        });
-        let returnThis: Flashcard[] = [];
-        temp.forEach((fset) => {
-            fset.flashcards.forEach((flashcard:Flashcard) => { if(flashcard.bookmarked) returnThis.push(flashcard) })
-        });
-        this.bookmarkedFlashcards.flashcards = returnThis;
+        this.bookmarkedFlashcards.flashcards = this.fSetArr.flatMap(flashcardSet => flashcardSet.flashcards.filter(flashcard => flashcard.bookmarked));
     }
 
     swapFlashcardSet(fSet:FlashcardSet) {
