@@ -172,7 +172,8 @@ class FlashcardMenu extends Menu {
             this.swapFlashcardSet(this.bookmarkedFlashcards);
         });
 
-        for(let set of this.fSetArr) {
+        for(let i = 0; i < this.fSetArr.length; i++) {
+            let set = this.fSetArr[i];
             let temp = document.createElement("button");
             temp.className = "f-set flx-sb c gp1";
             if(set === this.loadedSet) temp.classList.add("f-set-active");
@@ -184,7 +185,7 @@ class FlashcardMenu extends Menu {
             `;
 
             temp.addEventListener('click', () => {
-                this.swapFlashcardSet(set);
+                this.swapFlashcardSet(this.fSetArr[i]);
             });
 
             setsCont.appendChild(temp);
@@ -256,7 +257,6 @@ class FlashcardMenu extends Menu {
      */
     loadFlashcardSet(loadingSet:FlashcardSet, index?: number) {
         console.log("Loading Flashcard set: " + loadingSet.title);
-        let tempSet = this.loadedSet;
         this.loadedSet = loadingSet;
         let tempCompletion = this.loadedSet.completed;
         this.loadedSet.completed = this.getSetCompletion(this.loadedSet);
@@ -520,10 +520,6 @@ class FlashcardMenu extends Menu {
                 this.updateBookmarkedFlashcards();
                 if (this.loadedSetTitle === setTitle) {
                     this.loadedSet = this.fSetArr[index];
-                    for(let fcard of this.loadedSet.flashcards) { 
-                        fcard.bookmarked = false;
-                        this.updateCardBookmarkStatus(false);
-                    }
                     this.loadFlashcardSet(this.loadedSet);
                 }
             }

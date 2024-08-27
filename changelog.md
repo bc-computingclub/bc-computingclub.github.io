@@ -1366,3 +1366,6 @@
 ### 8/26/24 - Paul
  - Fix small bugs in flashcard menu, like forgetting to set up flashcard controls in certain scenarios.
  - Implement the "shuffle card" functionality. If you click the button, the card you're on is removed from loadedSet, added back in to it randomly, and the set is loaded again. (You're guaranteed not to land on the same card immediately, but it can show up when you click the 'next' button, or once you clikc 'got it' on the currrent flashcard).
+
+ ### 8/27/24 - Paul
+ - Thanks to Caleb, the bug with the reset-cards button is now solved
