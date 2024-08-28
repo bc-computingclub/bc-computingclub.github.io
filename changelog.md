@@ -1369,3 +1369,7 @@
 
  ### 8/27/24 - Paul
  - Thanks to Caleb, the bug with the reset-cards button is now solved
+
+ ### 8/28/24 - Paul
+ - A new bug was happening with resetting bookmarked flashcards from a set that wasn't passed in by default. I've now fixed that
+ - Bookmarked flashcards should now be fully operational! (..in theory)

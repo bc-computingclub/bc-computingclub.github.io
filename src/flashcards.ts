@@ -340,6 +340,7 @@ class FlashcardMenu extends Menu {
 
     setupResetButton() {
         let resetBtn = this.menu.querySelector(".f-reset-cards") as HTMLElement;
+        resetBtn.removeEventListener('click', () => {});
         resetBtn.addEventListener('click', () => {
             this.resetFlashcardSet(this.loadedSet.title);
         })
@@ -392,7 +393,7 @@ class FlashcardMenu extends Menu {
         let fCard = this.menu.querySelector(".f-card") as HTMLElement;
 
         showAnswerButton.addEventListener('click', () => {
-            console.log("Attempting to show answer");
+            // console.log("Attempting to show answer");
             // this.flipCard();
             fCard.addEventListener('animationend', (anim) => {
                 if(anim.animationName === "fade-out") fCard.innerHTML = "";
@@ -463,7 +464,6 @@ class FlashcardMenu extends Menu {
         } while (randomIndex === this.fIndex);
     
         this.loadedSet.flashcards.splice(randomIndex, 0, f);
-        // this.fIndex++;
         this.loadFlashcardSet(this.loadedSet);
     }
 
@@ -512,18 +512,35 @@ class FlashcardMenu extends Menu {
     }
 
     resetFlashcardSet(setTitle: string) {
+        // console.log("Resetting: " + this.loadedSet);
+        if(this.loadedSet.title === "Bookmarked Flashcards" && setTitle === "Bookmarked Flashcards") { this.resetBookmarkedFlashcards(); } // I'm sorry caleb hehe I really need to redo this menu
         const originalSet = this.originalArr.find(set => set.title === setTitle);
         if (originalSet) {
             const index = this.fSetArr.findIndex(set => set.title === setTitle);
             if (index !== -1) {
                 this.fSetArr[index] = JSON.parse(JSON.stringify(originalSet)); // Reset to the original state
                 this.updateBookmarkedFlashcards();
-                if (this.loadedSetTitle === setTitle) {
+                if(this.loadedSet.title === this.fSetArr[index].title) {
                     this.loadedSet = this.fSetArr[index];
                     this.loadFlashcardSet(this.loadedSet);
                 }
             }
         }
+    }
+
+    resetBookmarkedFlashcards() {
+        console.log("Resetting bookmarked flashcards");
+        let bookmarkedSets = this.fSetArr.filter((set) => { // bookmarked sets is an array of sets which contain at least one bookmarked flashcard
+            return set.flashcards.some((card) => card.bookmarked);
+        });
+        if(bookmarkedSets.length != 0) {
+            for(let set of bookmarkedSets) { 
+                this.resetFlashcardSet(set.title); 
+            }
+            this.updateBookmarkedFlashcards();
+            console.log(this.bookmarkedFlashcards);
+            this.loadEmptyBookmarkSet();
+        } else console.warn("No sets containing bookmarked flashcards to reset");
     }
 }
 
