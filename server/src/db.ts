@@ -43,6 +43,7 @@ console.log("SERVER MODE: ",ServerMode[serverMode]);
 
 const dbName = _dbs[serverMode];
 const uri = "mongodb+srv://claebcode:2Z6WY3Nv3AgE0vke@code-otter-0.67qhyto.mongodb.net/"+dbName+"?retryWrites=true&w=majority&appName=code-otter-0";
+// mongodb+srv://claebcode:2Z6WY3Nv3AgE0vke@code-otter-0.67qhyto.mongodb.net/code-otter-dev?retryWrites=true&w=majority&appName=code-otter-0;
 
 // Mongo Init
 

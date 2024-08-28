@@ -139,8 +139,10 @@ b_imDone.addEventListener("click",async e=>{
                 return;
             }
         }
-        // lesson.currentSubTask._resFinish();
-        // b_imDone.disabled = true;
+        else{
+            lesson.currentSubTask._resFinish();
+            b_imDone.disabled = true;
+        }
     }
     _canSubmitLesson = true;
     focusGlobalInput();
