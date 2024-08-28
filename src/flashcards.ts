@@ -109,7 +109,7 @@ class FlashcardMenu extends Menu {
     loadedSet: FlashcardSet;
     fIndex: number = 0; // only for the current (opened) set of flashcards.
     bookmarkedFlashcards: FlashcardSet;
-    side: "front" | "back" = "front";
+    side: boolean;
 
     load() {
         super.load();
@@ -256,7 +256,7 @@ class FlashcardMenu extends Menu {
      * Pass in a set of flashcards to load, and this method will display them on the flashcard menu.
      */
     loadFlashcardSet(loadingSet:FlashcardSet, index?: number) {
-        console.log("Loading Flashcard set: " + loadingSet.title);
+        // console.log("Loading Flashcard set: " + loadingSet.title);
         this.loadedSet = loadingSet;
         let tempCompletion = this.loadedSet.completed;
         this.loadedSet.completed = this.getSetCompletion(this.loadedSet);
@@ -290,12 +290,22 @@ class FlashcardMenu extends Menu {
         let displayIndex = document.querySelector(".f-index-front") as HTMLElement;
         displayIndex.innerHTML = (this.fIndex + 1).toString();
 
+        this.side = true;
         this.setupBookmarkToggle();
         this.setupNext();
         this.setupPrev();
         this.setupShowAnswerButton();
+        this.setupClickToFlip();
     }
 
+    setupClickToFlip() {
+        let fCard = this.menu.querySelector(".f-card") as HTMLElement;
+        fCard.addEventListener('click', (e) => {
+            if((e.target as HTMLElement).classList.contains("f-bookmark-toggle")) return;
+            this.flipCard(); 
+        });
+    }
+    
     setupNext() {
         let fNext = this.menu.querySelector(".f-next") as HTMLElement;
         fNext.addEventListener("click",() => { this.goToNextFlashcard(); });
@@ -340,10 +350,9 @@ class FlashcardMenu extends Menu {
 
     setupResetButton() {
         let resetBtn = this.menu.querySelector(".f-reset-cards") as HTMLElement;
-        resetBtn.removeEventListener('click', () => {});
         resetBtn.addEventListener('click', () => {
             this.resetFlashcardSet(this.loadedSet.title);
-        })
+        });
     }
 
     goToNextFlashcard() {
@@ -370,6 +379,7 @@ class FlashcardMenu extends Menu {
         let oldIndex = this.fIndex;
         this.fIndex = (oldIndex > 0) ? (oldIndex - 1) : (this.loadedSet.flashcards.length - 1);
         let fCard = this.menu.querySelector(".f-card");
+        
         fCard.innerHTML = `
             <div class="f-card-top flx-sb">
                 <i class="f-language-tag flx-c">${this.loadedSet.flashcards[this.fIndex].languagetag}</i><button class="f-bookmark-toggle material-symbols-outlined">${this.loadedSet.flashcards[this.fIndex].bookmarked ? "bookmark_added" : "bookmark_add"}</button>
@@ -390,31 +400,11 @@ class FlashcardMenu extends Menu {
 
         let fCommands = this.menu.querySelector(".f-commands") as HTMLElement;
         let showAnswerButton = this.menu.querySelector(".f-show-answer") as HTMLElement;
-        let fCard = this.menu.querySelector(".f-card") as HTMLElement;
 
         showAnswerButton.addEventListener('click', () => {
-            // console.log("Attempting to show answer");
-            // this.flipCard();
-            fCard.addEventListener('animationend', (anim) => {
-                if(anim.animationName === "fade-out") fCard.innerHTML = "";
-                fCard.classList.add("flip");
-            })
-            fCard.addEventListener('animationend', (anim) => {
-                if(anim.animationName === "flip") fCard.innerHTML = "";
-                fCard.addEventListener('animationend', (anim) => { 
-                    if(anim.animationName === "flip") {
-                        fCard.classList.remove("flip");
-                        fCard.classList.remove("fade-out");
-                        fCard.innerHTML = `
-                            <div class="f-card-top flx-sb"></div>
-                            <div class="f-card-bottom al-st">
-                                <div class="f-card-prompt">${this.loadedSet.flashcards[this.fIndex].answer}</div>
-                            </div>
-                        `;
-                    }
-                });
-            });
-            fCard.classList.add("fade-out");
+            console.log("Attempting to show answer");
+            this.flipCard();
+
             fCommands.classList.add("padding");
             fCommands.innerHTML = `
                 <span class="f-rank">RANK </span>
@@ -429,7 +419,24 @@ class FlashcardMenu extends Menu {
     }
 
     flipCard() {
-        
+        let fCard = this.menu.querySelector(".f-card") as HTMLElement;
+        this.side = !this.side;
+        let top: string = `
+            <i class="f-language-tag flx-c">${this.loadedSet.flashcards[this.fIndex].languagetag ?? 'Unknown'}</i>
+            <button class="f-bookmark-toggle material-symbols-outlined">
+                ${this.loadedSet.flashcards[this.fIndex].bookmarked ? "bookmark_added" : "bookmark_add"}
+            </button>
+        `;
+        fCard.innerHTML = `
+                <div class="f-card-top flx-sb">
+                    ${this.side ? top : ''}
+                </div>
+                <div class="f-card-bottom al-st">
+                    <div class="f-card-prompt">${this.side ? this.loadedSet.flashcards[this.fIndex].question : this.loadedSet.flashcards[this.fIndex].answer}</div>
+                </div>
+        `;
+        fCard.classList.toggle("flipped");
+        if(this.side) this.setupBookmarkToggle();
     }
 
     setupFlashcardCommands() {
@@ -474,29 +481,32 @@ class FlashcardMenu extends Menu {
             this.loadedSet.completed = this.getSetCompletion(this.loadedSet);
             toggleSetCompletion(this.loadedSet,this.loadedSet.completed);
             if(this.loadedSet.completed) console.log("Set completed: " + this.loadedSet.title);
-            else console.log("Flashcard completed");
-            this.goToNextFlashcard();
+            this.loadedSet.flashcards = this.loadedSet.flashcards.filter((card) => { return !card.completed })
+            this.loadFlashcardSet(this.loadedSet);
+            let counter = this.menu.querySelector(".f-cur-index");
+            counter.innerHTML = `${this.fIndex + 1}/${this.loadedSet.flashcards.length}`;
         });
     }
 
     setupBookmarkToggle() {
         let fBookmarkToggle = this.menu.querySelector(".f-bookmark-toggle") as HTMLElement;
-        fBookmarkToggle.removeEventListener('click', () => {});
-        fBookmarkToggle.addEventListener('click',() => {
-            let bookmarkStatus = this.loadedSet.flashcards[this.fIndex].bookmarked;
-            this.loadedSet.flashcards[this.fIndex].bookmarked = !bookmarkStatus;
-            this.updateCardBookmarkStatus(bookmarkStatus);
-            if(!this.loadedSet.flashcards[this.fIndex].bookmarked) { // if it's now no longer bookmarked, go through bookmarked cards and only return flashcards that aren't the same as this flashcard.
-                this.bookmarkedFlashcards.flashcards.filter((e) => {e.question != this.loadedSet.flashcards[this.fIndex].question});
-            } else this.bookmarkedFlashcards.flashcards.push(this.loadedSet.flashcards[this.fIndex]);
-
-            toggleFlashcardBookmark(this.loadedSet,this.fIndex,this.loadedSet.flashcards[this.fIndex].bookmarked); // backend call that does nothing right now
-            if(this.loadedSet.title === "Bookmarked Flashcards") {
-                this.updateBookmarkedFlashcards();
-                if (this.loadedSet.flashcards.length === 0) this.loadEmptyBookmarkSet();
-                else this.loadFlashcardSet(this.loadedSet);
-            }
-        });
+        if(fBookmarkToggle) {
+            fBookmarkToggle.addEventListener('click',() => {
+                let bookmarkStatus = this.loadedSet.flashcards[this.fIndex].bookmarked;
+                this.loadedSet.flashcards[this.fIndex].bookmarked = !bookmarkStatus;
+                this.updateCardBookmarkStatus(bookmarkStatus);
+                if(!this.loadedSet.flashcards[this.fIndex].bookmarked) { // if it's now no longer bookmarked, go through bookmarked cards and only return flashcards that aren't the same as this flashcard.
+                    this.bookmarkedFlashcards.flashcards.filter((e) => {e.question != this.loadedSet.flashcards[this.fIndex].question});
+                } else this.bookmarkedFlashcards.flashcards.push(this.loadedSet.flashcards[this.fIndex]);
+    
+                toggleFlashcardBookmark(this.loadedSet,this.fIndex,this.loadedSet.flashcards[this.fIndex].bookmarked); // backend call that does nothing right now
+                if(this.loadedSet.title === "Bookmarked Flashcards") {
+                    this.updateBookmarkedFlashcards();
+                    if (this.loadedSet.flashcards.length === 0) this.loadEmptyBookmarkSet();
+                    else this.loadFlashcardSet(this.loadedSet);
+                }
+            });
+        } else console.log("Bookmark toggle does not exist");
     }
 
     updateCardBookmarkStatus(bookmarkStatus: boolean) {
@@ -535,12 +545,15 @@ class FlashcardMenu extends Menu {
         });
         if(bookmarkedSets.length != 0) {
             for(let set of bookmarkedSets) { 
-                this.resetFlashcardSet(set.title); 
+                for(let card of set.flashcards) {
+                    card.bookmarked = false;
+                }
             }
             this.updateBookmarkedFlashcards();
             console.log(this.bookmarkedFlashcards);
             this.loadEmptyBookmarkSet();
         } else console.warn("No sets containing bookmarked flashcards to reset");
+        this.setupBookmarkToggle();
     }
 }
 

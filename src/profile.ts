@@ -89,7 +89,7 @@ async function genProfile() {
                         <span class="material-symbols-outlined">${lessonStats[1].icon}</span>
                         <span class="">${lessonStats[1].title}</span>
                     </div>
-                    <span class="p-stat-contents">${stats.totalLessonTime} hours</span>
+                    <span class="p-stat-contents">${timeConversion(stats.totalLessonTime)}</span>
                 </div>
             </div>
             <div class="p-stat split-stat">
@@ -98,7 +98,7 @@ async function genProfile() {
                         <span class="material-symbols-outlined">${lessonStats[2].icon}</span>
                         <span class="">${lessonStats[2].title}</span>
                     </div>
-                    <span class="p-stat-contents">${stats.averageLessonTime} hours</span>
+                    <span class="p-stat-contents">${timeConversion(stats.averageLessonTime)}</span>
                 </div>
             </div>
         </div>
@@ -160,7 +160,7 @@ async function genProfile() {
                 </span>
                 <span class="">${projectStats[1].title}</span>
             </div>
-            <span class="flx-e">${stats.totalProjectTime} hours</span>
+            <span class="flx-e">${timeConversion(stats.totalProjectTime)} hours</span>
         </div>
         <div class="flx p-proj-stat">
             <div>
@@ -169,7 +169,7 @@ async function genProfile() {
                 </span>
                 <span class="">${projectStats[2].title}</span>
             </div>
-            <span class="flx-e">${stats.averageProjectTime} hours</span>
+            <span class="flx-e">${timeConversion(stats.averageProjectTime)} hours</span>
         </div>
     `;
     setupStatVisibilityCheckbox("project",stats);
@@ -239,4 +239,9 @@ async function getUserStats() {
     console.log("STATS:",tempStats);
 
     return tempStats;
+}
+
+function timeConversion(time:number) {
+    if(time/1000/60/60 < 1) return (time/1000/60).toFixed(1) + " minutes";
+    return (time/1000/60/60).toFixed(1) + " hours";
 }

@@ -88,51 +88,29 @@
 .f-card {
     display: grid;
     align-items: center;
-    /* background-color: var(--bg-col); */
     background-color: var(--darken2);
     height: 20em;
     width: 100%;
     border-radius: 5px;
     position: relative;
+    user-select: none;
 
-    &.flip{
-        animation-name: flip; /*Flip over horizontal axis*/
-        animation-duration: 0.15s;
-        animation-timing-function: ease-out;
-        animation-fill-mode: forwards;
-    }
+    transition: transform 0.15s ease-out;
+    transform: rotateX(0deg);
 
-    &.fade-out {
-        .f-card-top {
-            animation-name: fade-out;
-            animation-duration: 0.15s;
-            animation-timing-function: linear;
-        }
-        .f-card-bottom {
-            animation-name: fade-out;
-            animation-duration: 0.15s;
-            animation-timing-function: linear;
-        }
-    }
-}
-
-@keyframes fade-out {
-    from {
-        opacity: 1;
-    }
-    to {
-        opacity: 0;
-    }   
-}
-
-@keyframes flip {
-    from {
+    .f-card-top, .f-card-bottom {
         transform: rotateX(0deg);
+        transition-duration: 0ms;
     }
-    to {
+    
+    &.flipped {
         transform: rotateX(180deg);
+        .f-card-top, .f-card-bottom {
+            transform: rotateX(180deg);
+        }
     }
 }
+
 
 .f-card-prompt {
     font-size: 1.6rem;
