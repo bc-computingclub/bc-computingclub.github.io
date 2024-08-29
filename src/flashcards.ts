@@ -215,6 +215,10 @@ class FlashcardMenu extends Menu {
         let newActiveSet = setsCont.querySelector(`[title*="${fSet.title}"]`)?.parentElement as HTMLElement;
         if (newActiveSet) newActiveSet.classList.add("f-set-active");
         if(fSet.title === "Bookmarked Flashcards" && fSet.flashcards.length === 0) this.loadEmptyBookmarkSet();
+        else if (fSet.completed) {
+            this.loadedSet = this.fSetArr.find((e) => e.title === fSet.title);
+            this.loadCompletionScreen();
+        }
         else this.loadFlashcardSet(fSet);
     }
 
@@ -234,6 +238,7 @@ class FlashcardMenu extends Menu {
                 <div class="f-card pd2">
                     <div class="f-card-top flx-sb">
                         <i class="f-language-tag flx-c">&lt;...&gt;</i>
+                        </i><button class="f-bookmark-toggle material-symbols-outlined" disabled>bookmark_add</button>
                     </div>
                     <div class="f-card-bottom al-st">
                         <i class="f-card-prompt">Click the '<span class="material-symbols-outlined">bookmark</span>' icon on the top right of flashcards to bookmark them!</i>
@@ -480,11 +485,16 @@ class FlashcardMenu extends Menu {
             this.loadedSet.flashcards[this.fIndex].completed = true;
             this.loadedSet.completed = this.getSetCompletion(this.loadedSet);
             toggleSetCompletion(this.loadedSet,this.loadedSet.completed);
-            if(this.loadedSet.completed) console.log("Set completed: " + this.loadedSet.title);
-            this.loadedSet.flashcards = this.loadedSet.flashcards.filter((card) => { return !card.completed })
-            this.loadFlashcardSet(this.loadedSet);
-            let counter = this.menu.querySelector(".f-cur-index");
-            counter.innerHTML = `${this.fIndex + 1}/${this.loadedSet.flashcards.length}`;
+            this.loadedSet.flashcards = this.loadedSet.flashcards.filter((card) => { return !card.completed }); // remove completed flashcards from the set
+            if(this.loadedSet.completed) {
+                console.log("Set completed: " + this.loadedSet.title);
+                this.loadCompletionScreen();
+            }
+            else {
+                this.loadFlashcardSet(this.loadedSet);
+                let counter = this.menu.querySelector(".f-cur-index");
+                counter.innerHTML = `${this.fIndex + 1}/${this.loadedSet.flashcards.length}`;
+            }
         });
     }
 
@@ -554,6 +564,39 @@ class FlashcardMenu extends Menu {
             this.loadEmptyBookmarkSet();
         } else console.warn("No sets containing bookmarked flashcards to reset");
         this.setupBookmarkToggle();
+    }
+
+    loadCompletionScreen() {
+        let fInner = this.menu.querySelector(".f-inner") as HTMLElement;
+        fInner.innerHTML = `
+            <div class="f-inner-top flx-v gp1">
+                <span class="f-title flx c gp05"><span class="material-symbols-outlined">${this.loadedSet.icon || "chevron_forward"}</span>${this.loadedSet.title}</span>
+                <div class="flx-sb">
+                    <button class="f-reset-cards flx-c gp05 c icon-btn regular">Reset Cards <span class="material-symbols-outlined">restart_alt</span></button>
+                    <div class="f-cur-index flx c">0</div>
+                </div>
+            </div>
+            <div class="f-inner-middle">
+                <div class="f-card pd2">
+                    <div class="f-card-top flx-sb">
+                        <i class="f-language-tag flx-c"><...></i><button class="f-bookmark-toggle material-symbols-outlined" disabled>bookmark_add</button>
+                    </div>
+                    <div class="f-card-bottom al-st">
+                        <i class="f-card-prompt">You've completed the set! You can move on to another set, or click 'reset cards' to start again. </i>
+                    </div>
+                </div>
+            </div>
+            <div class="f-inner-bottom flx-sb">
+                <div class="f-commands flx c sb gp1">
+                    <button class="f-show-answer icon-btn accent" disabled>Show Answer</button>
+                </div>
+                <div class="f-nav flx-c gp05">
+                    <button class="f-prev f-arrow material-symbols-outlined" disabled>arrow_back</button>
+                    <button class="f-next f-arrow material-symbols-outlined" disabled>arrow_forward</button>
+                </div>
+            </div>
+        `;
+        this.setupResetButton();
     }
 }
 

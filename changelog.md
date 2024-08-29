@@ -1372,7 +1372,10 @@
 
  ### 8/28/24 - Paul
  - Several bug fixes and tweaks to the flashcard menu.
- - A new bug was happening with resetting bookmarked flashcards from a set that wasn't passed in by default. I've now fixed that
- - Bookmarked flashcards should now be fully operational! (..in theory)
+ - A new bug was happening when resetting bookmarked flashcards from a set that wasn't passed in by default. I've now fixed that
+ - Bookmarked flashcards should now be fully operational, and bug free! (..from my testing)
  - There was a weird bug making the cards spin infinitely instead of flipping once. I've fixed that now.
  - Show Answer button now works again, and flips the card.
+
+ ### 8/29/24
+ - Implement a screen to the flashcard menu that shows when you've finished all the cards in a set. It tells you to move on to a new set, or to click 'reset cards' to start over.
