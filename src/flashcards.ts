@@ -363,7 +363,17 @@ class FlashcardMenu extends Menu {
     goToNextFlashcard() {
         let oldIndex = this.fIndex;
         this.fIndex = (oldIndex >= this.loadedSet.flashcards.length - 1) ? 0 : (oldIndex + 1);
-        let fCard = this.menu.querySelector(".f-card");
+        let fCard = this.menu.querySelector(".f-card") as HTMLElement;
+        let resetTransitionDuration = () => {
+            fCard.style.transitionDuration = "0.15s";
+            fCard.removeEventListener("transitionend", resetTransitionDuration);
+        };
+    
+        if (fCard.classList.contains("flipped")) {
+            fCard.style.transitionDuration = "1ms";
+            fCard.classList.remove("flipped");
+            fCard.addEventListener("transitionend", resetTransitionDuration);
+        }
 
         fCard.innerHTML = `
             <div class="f-card-top flx-sb">
@@ -377,6 +387,7 @@ class FlashcardMenu extends Menu {
         let displayIndex = document.querySelector(".f-index-front") as HTMLElement;
         displayIndex.innerHTML = (this.fIndex + 1).toString();
         this.setupBookmarkToggle();
+        this.side = true;
 
         this.setupShowAnswerButton();
     }
@@ -384,7 +395,17 @@ class FlashcardMenu extends Menu {
     goToPrevFlashcard() {
         let oldIndex = this.fIndex;
         this.fIndex = (oldIndex > 0) ? (oldIndex - 1) : (this.loadedSet.flashcards.length - 1);
-        let fCard = this.menu.querySelector(".f-card");
+        let fCard = this.menu.querySelector(".f-card") as HTMLElement;
+        let resetTransitionDurationO = () => {
+            fCard.style.transitionDuration = "0.15s";
+            fCard.removeEventListener("transitionend", resetTransitionDurationO);
+        };
+    
+        if (fCard.classList.contains("flipped")) {
+            fCard.style.transitionDuration = "1ms";
+            fCard.classList.remove("flipped");
+            fCard.addEventListener("transitionend", resetTransitionDurationO);
+        }
 
         fCard.innerHTML = `
             <div class="f-card-top flx-sb">
@@ -397,6 +418,7 @@ class FlashcardMenu extends Menu {
         this.setupShowAnswerButton();
         let displayIndex = document.querySelector(".f-index-front");
         displayIndex.innerHTML = (this.fIndex + 1).toString();
+        this.side = true;
 
         this.setupBookmarkToggle();
     }
@@ -442,7 +464,8 @@ class FlashcardMenu extends Menu {
                     <div class="f-card-prompt">${this.side ? this.loadedSet.flashcards[this.fIndex].question : this.loadedSet.flashcards[this.fIndex].answer}</div>
                 </div>
         `;
-        fCard.classList.toggle("flipped");
+        if(fCard.classList.contains("flipped")) fCard.classList.remove("flipped");
+        if(!this.side) fCard.classList.add("flipped");
         if(this.side) this.setupBookmarkToggle();
     }
 

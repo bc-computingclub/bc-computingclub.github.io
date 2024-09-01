@@ -92,14 +92,15 @@
     position: relative;
     user-select: none;
 
-    transition: transform 0.15s ease-out;
+    transition: transform 0.15s;
+    transition-timing-function: ease-out;
     transform: rotateX(0deg);
 
     .f-card-top, .f-card-bottom {
         transform: rotateX(0deg);
         transition-duration: 0ms;
     }
-    
+
     &.flipped {
         transform: rotateX(180deg);
         .f-card-top, .f-card-bottom {

@@ -1384,3 +1384,4 @@
  ### 9/01/24 - Paul
  - Bug: flipping the card and then clicking go next or go prev causes the card to generate with top part on the bottom.
  - Misc tweaks
+ - Update: Fixed the card flip bug, was caused by presence of "flipped" class, since fCard was not being fully reset by goToNextCard or goTo

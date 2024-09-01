@@ -218,7 +218,7 @@ function setupStatVisibilityCheckbox(id:"lesson"|"challenge"|"project",stats:Use
         let res = await httpReq<{value:boolean}>("PATCH","/user/stat_visibility",{
             id,value:cb_vis.checked
         },{isJSON:true});
-        if(!res){
+        if(!res){this is going to be so _moveCursorHome
             // failed, set it back to initial
             cb_vis.checked = initial;
             return;
