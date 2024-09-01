@@ -46,7 +46,7 @@ body {
 .c-home {
     padding-block: 1em;
     display: grid;
-    grid-template-columns: 2fr 7fr;
+    grid-template-columns: 2fr 8fr;
     gap: 1em;
     position: relative;
 }
@@ -157,8 +157,7 @@ body {
     background-color: var(--bg-col);
     font: var(--font);
     font-size: 13px;
-    padding: 5px;
-    padding-inline: 10px;
+    padding: 0.6em 1.2em;
     cursor: pointer;
 }
 
@@ -272,7 +271,8 @@ body {
 }
 
 .c-card {
-    padding: 10px;
+    /* padding: 10px; */
+    padding: 1em;
 
     display: grid;
     grid-template-rows: auto;
@@ -368,6 +368,10 @@ body {
     gap: .5em;
     height: 100%;
     width: 100%;
+}
+
+.c-preview {
+    background-color: var(--cta-btn-col);
 }
 
 .c-submitted {

@@ -1376,6 +1376,11 @@
  - Bookmarked flashcards should now be fully operational, and bug free! (..from my testing)
  - There was a weird bug making the cards spin infinitely instead of flipping once. I've fixed that now.
  - Show Answer button now works again, and flips the card.
+ - Profile page now shows the time correctly, with a case for time spent being less than an hour (thank you caleb for the help with this)
 
  ### 8/29/24
  - Implement a screen to the flashcard menu that shows when you've finished all the cards in a set. It tells you to move on to a new set, or to click 'reset cards' to start over.
+
+ ### 9/01/24 - Paul
+ - Bug: flipping the card and then clicking go next or go prev causes the card to generate with top part on the bottom.
+ - Misc tweaks

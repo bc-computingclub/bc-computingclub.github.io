@@ -364,6 +364,7 @@ class FlashcardMenu extends Menu {
         let oldIndex = this.fIndex;
         this.fIndex = (oldIndex >= this.loadedSet.flashcards.length - 1) ? 0 : (oldIndex + 1);
         let fCard = this.menu.querySelector(".f-card");
+
         fCard.innerHTML = `
             <div class="f-card-top flx-sb">
                 <i class="f-language-tag flx-c">${this.loadedSet.flashcards[this.fIndex].languagetag}</i><button class="f-bookmark-toggle material-symbols-outlined">${this.loadedSet.flashcards[this.fIndex].bookmarked ? "bookmark_added" : "bookmark_add"}</button>
@@ -384,7 +385,7 @@ class FlashcardMenu extends Menu {
         let oldIndex = this.fIndex;
         this.fIndex = (oldIndex > 0) ? (oldIndex - 1) : (this.loadedSet.flashcards.length - 1);
         let fCard = this.menu.querySelector(".f-card");
-        
+
         fCard.innerHTML = `
             <div class="f-card-top flx-sb">
                 <i class="f-language-tag flx-c">${this.loadedSet.flashcards[this.fIndex].languagetag}</i><button class="f-bookmark-toggle material-symbols-outlined">${this.loadedSet.flashcards[this.fIndex].bookmarked ? "bookmark_added" : "bookmark_add"}</button>
@@ -432,6 +433,7 @@ class FlashcardMenu extends Menu {
                 ${this.loadedSet.flashcards[this.fIndex].bookmarked ? "bookmark_added" : "bookmark_add"}
             </button>
         `;
+        
         fCard.innerHTML = `
                 <div class="f-card-top flx-sb">
                     ${this.side ? top : ''}

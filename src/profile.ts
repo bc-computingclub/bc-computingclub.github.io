@@ -160,7 +160,7 @@ async function genProfile() {
                 </span>
                 <span class="">${projectStats[1].title}</span>
             </div>
-            <span class="flx-e">${timeConversion(stats.totalProjectTime)} hours</span>
+            <span class="flx-e">${timeConversion(stats.totalProjectTime)}</span>
         </div>
         <div class="flx p-proj-stat">
             <div>
@@ -169,7 +169,7 @@ async function genProfile() {
                 </span>
                 <span class="">${projectStats[2].title}</span>
             </div>
-            <span class="flx-e">${timeConversion(stats.averageProjectTime)} hours</span>
+            <span class="flx-e">${timeConversion(stats.averageProjectTime)}</span>
         </div>
     `;
     setupStatVisibilityCheckbox("project",stats);

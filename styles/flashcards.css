@@ -59,9 +59,6 @@
     &:not([disabled]) {
         cursor: pointer;
     }
-    /* &[disabled] { idk how i feel about this, if we add it elsewhere you can uncomment, otherwise greyed out button that does nothing should be evident - paul
-        cursor: not-allowed;
-    } */
 }
 
 .f-show-answer {
@@ -133,7 +130,6 @@
 .f-your-sets {
     font-size: 18px;
     padding: 0.2em 0em 0.8em 0.2em; /* hear me out... it made sense in my head*/
-    /* font-weight: bold; */
 
     /* Claeb: xD */
     text-transform:uppercase;
