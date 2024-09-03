@@ -135,7 +135,7 @@ async function genProfile() {
                         <span class="material-symbols-outlined">${challengeStats[2].icon}</span>
                         <span class="">${challengeStats[2].title}</span>
                     </div>
-                    <span class="p-stat-contents">${stats.challengesInProgress}</span>
+                    <span class="p-stat-contents">${stats.challengesInProgress === 0 ? "None" : stats.challengesInProgress}</span>
                 </div>
             </div>
         </div>
@@ -145,7 +145,7 @@ async function genProfile() {
     projectStatContainer.className = "p-project-stats";
     projectStatContainer.innerHTML = `
         <div class="flx p-proj-stat">
-            <div>
+            <div class="flx">
                 <span class="material-symbols-outlined">
                     <span class="material-symbols-outlined">${projectStats[0].icon}</span>
                 </span>
@@ -154,7 +154,7 @@ async function genProfile() {
             <span class="flx-e">${stats.totalProjects}</span>
         </div>
         <div class="flx p-proj-stat">
-            <div>
+            <div class="flx">
                 <span class="material-symbols-outlined">
                     <span class="material-symbols-outlined">${projectStats[1].icon}</span>
                 </span>
@@ -163,7 +163,7 @@ async function genProfile() {
             <span class="flx-e">${timeConversion(stats.totalProjectTime)}</span>
         </div>
         <div class="flx p-proj-stat">
-            <div>
+            <div class="flx">
                 <span class="material-symbols-outlined">
                     <span class="material-symbols-outlined">${projectStats[2].icon}</span>
                 </span>
@@ -218,7 +218,7 @@ function setupStatVisibilityCheckbox(id:"lesson"|"challenge"|"project",stats:Use
         let res = await httpReq<{value:boolean}>("PATCH","/user/stat_visibility",{
             id,value:cb_vis.checked
         },{isJSON:true});
-        if(!res){this is going to be so _moveCursorHome
+        if(!res){ _moveCursorHome
             // failed, set it back to initial
             cb_vis.checked = initial;
             return;
@@ -242,6 +242,6 @@ async function getUserStats() {
 }
 
 function timeConversion(time:number) {
-    if(time/1000/60/60 < 1) return (time/1000/60).toFixed(1) + " minutes";
+    if(time/1000/60/60 < 1) return (time/1000/60).toFixed(1) + " min";
     return (time/1000/60/60).toFixed(1) + " hours";
 }
