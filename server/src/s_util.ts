@@ -34,7 +34,7 @@ export function read(path:string,encoding?:BufferEncoding,nolog=false){
     return new Promise<any>(resolve=>{
         fs.readFile(path,{encoding},(err,data)=>{
             if(err){
-                if(!nolog) console.log("err: ",err);
+                if(!nolog) console.log("err (file): ",err,path);
                 resolve(null);
             }
             else resolve(data);
