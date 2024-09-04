@@ -1364,24 +1364,29 @@
 - moved correct and incorrect buttons and labels into the show lesson confirm container (they are all working currently except for the tutor displaying their correct answer)
 
 ### 8/26/24 - Paul
- - Fix small bugs in flashcard menu, like forgetting to set up flashcard controls in certain scenarios.
- - Implement the "shuffle card" functionality. If you click the button, the card you're on is removed from loadedSet, added back in to it randomly, and the set is loaded again. (You're guaranteed not to land on the same card immediately, but it can show up when you click the 'next' button, or once you clikc 'got it' on the currrent flashcard).
+- Fix small bugs in flashcard menu, like forgetting to set up flashcard controls in certain scenarios.
+- Implement the "shuffle card" functionality. If you click the button, the card you're on is removed from loadedSet, added back in to it randomly, and the set is loaded again. (You're guaranteed not to land on the same card immediately, but it can show up when you click the 'next' button, or once you clikc 'got it' on the currrent flashcard).
 
- ### 8/27/24 - Paul
- - Thanks to Caleb, the bug with the reset-cards button is now solved
+### 8/27/24 - Paul
+- Thanks to Caleb, the bug with the reset-cards button is now solved
 
- ### 8/28/24 - Paul
- - Several bug fixes and tweaks to the flashcard menu.
- - A new bug was happening when resetting bookmarked flashcards from a set that wasn't passed in by default. I've now fixed that
- - Bookmarked flashcards should now be fully operational, and bug free! (..from my testing)
- - There was a weird bug making the cards spin infinitely instead of flipping once. I've fixed that now.
- - Show Answer button now works again, and flips the card.
- - Profile page now shows the time correctly, with a case for time spent being less than an hour (thank you caleb for the help with this)
+### 8/28/24 - Paul
+- Several bug fixes and tweaks to the flashcard menu.
+- A new bug was happening when resetting bookmarked flashcards from a set that wasn't passed in by default. I've now fixed that
+- Bookmarked flashcards should now be fully operational, and bug free! (..from my testing)
+- There was a weird bug making the cards spin infinitely instead of flipping once. I've fixed that now.
+- Show Answer button now works again, and flips the card.
+- Profile page now shows the time correctly, with a case for time spent being less than an hour (thank you caleb for the help with this)
 
- ### 8/29/24
- - Implement a screen to the flashcard menu that shows when you've finished all the cards in a set. It tells you to move on to a new set, or to click 'reset cards' to start over.
+### 8/29/24
+- Implement a screen to the flashcard menu that shows when you've finished all the cards in a set. It tells you to move on to a new set, or to click 'reset cards' to start over.
 
- ### 9/01/24 - Paul
- - Bug: flipping the card and then clicking go next or go prev causes the card to generate with top part on the bottom.
- - Misc tweaks
- - Update: Fixed the card flip bug, was caused by presence of "flipped" class, since fCard was not being fully reset by goToNextCard or goTo
+### 9/01/24 - Paul
+- Bug: flipping the card and then clicking go next or go prev causes the card to generate with top part on the bottom.
+- Misc tweaks
+- Update: Fixed the card flip bug, was caused by presence of "flipped" class, since fCard was not being fully reset by goToNextCard or goTo
+
+### 9/4/24 - Claeb
+- stuff from before
+- added two questions for review 1
+- fixed some styling / bugs

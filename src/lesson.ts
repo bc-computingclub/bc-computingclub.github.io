@@ -953,6 +953,9 @@ class CP_DeleteLines extends CodePart{
         await this.waitS();
     }
 }
+/**
+ * Don't use this unless you know what you're doing
+ */
 class CP_EditorAction extends CodePart{
     constructor(f:(actions:TutEditorActions)=>string,params:any[]){
         super();

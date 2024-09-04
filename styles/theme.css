@@ -18,11 +18,13 @@ body.themestyle-light{
     /* --incorrect-border:rgb(110, 22, 22); */
     --incorrect-border:var(--incorrect-bg);
     --incorrect-col:whitesmoke;
+    --incorrect-fade-col:#533;
 
     /* --correct-bg:rgb(28, 143, 28); */
     --correct-bg:green;
     --correct-border:green;
     --correct-col:whitesmoke;
+    --correct-fade-col:#353;
 
     /* --secondary-bg-col:rgb(255, 255, 255) !important;  just a placeholder */
 /* 

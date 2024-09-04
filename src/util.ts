@@ -2543,7 +2543,8 @@ class FFile extends FItem{
             "ts":"typescript",
             "rs":"rust",
             "md":"markdown",
-            "java":"java"
+            "java":"java",
+            "json":"json"
         };
         return map[ext] || "text";
     }
